@@ -1,0 +1,107 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Local Agent
+        - strong [ref=e8]: 本地智能体
+      - generic [ref=e11]: 等待首次任务
+    - navigation "主导航" [ref=e12]:
+      - button "工作台" [ref=e13] [cursor=pointer]
+      - button "对话页" [ref=e14] [cursor=pointer]
+      - button "日志页" [ref=e15] [cursor=pointer]
+      - button "设置" [ref=e16] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: 工作区
+        - strong [ref=e21]: 文档区
+      - generic [ref=e22]:
+        - generic [ref=e23]: 会话
+        - strong [ref=e24]: 尚未创建
+      - generic [ref=e25]:
+        - generic [ref=e26]: 运行
+        - strong [ref=e27]: 空闲
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: 当前模型
+        - combobox "当前模型" [ref=e31]:
+          - option "MiniMax M2.5" [selected]
+          - option "OpenAI GPT-5.4"
+          - option "OpenAI GPT-5.3 Codex"
+          - option "OpenAI GPT-5.2（暂不可用）" [disabled]
+      - generic [ref=e32]:
+        - generic [ref=e33]: 运行模式
+        - combobox "运行模式" [ref=e34]:
+          - option "观察模式"
+          - option "标准模式" [selected]
+          - option "全权限模式"
+    - generic [ref=e35]:
+      - paragraph [ref=e39]: 当前为占位，后续接入真实记忆与容量指标。
+      - generic [ref=e40]:
+        - strong [ref=e41]: 文档区
+        - generic [ref=e42]: 上下文已同步
+  - article [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]: 工作台
+        - heading "等待第一条任务" [level=1] [ref=e48]
+        - paragraph [ref=e49]: 这里保留任务概览和调查入口，完整对话移到独立对话页。
+      - generic [ref=e50]:
+        - button "进入对话页" [ref=e51] [cursor=pointer]
+        - button "查看调查层" [ref=e52] [cursor=pointer]
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]: 当前任务
+        - strong [ref=e56]: 等待第一条任务
+        - paragraph [ref=e57]: 等待首次任务
+      - generic [ref=e58]:
+        - generic [ref=e59]: 当前运行
+        - strong [ref=e60]: 空闲
+        - paragraph [ref=e61]: 尚未创建会话
+      - generic [ref=e62]:
+        - generic [ref=e63]: 工作区
+        - strong [ref=e64]: 文档区
+        - paragraph [ref=e65]: MiniMax M2.5
+      - generic [ref=e66]:
+        - generic [ref=e67]: 风险状态
+        - strong [ref=e68]: 稳定
+        - paragraph [ref=e69]: 当前没有待确认动作
+      - generic [ref=e70]:
+        - generic [ref=e71]: 事件流
+        - strong [ref=e72]: 0 条
+        - paragraph [ref=e73]: 用于查看当前任务过程
+        - button "打开调查层" [ref=e74] [cursor=pointer]
+      - generic [ref=e75]:
+        - generic [ref=e76]: 全局日志
+        - strong [ref=e77]: 0 条
+        - paragraph [ref=e78]: 用于查看稳定日志复盘
+        - button "进入日志页" [ref=e79] [cursor=pointer]
+  - generic [ref=e80]:
+    - generic [ref=e81]:
+      - generic [ref=e82]:
+        - text: 调查层
+        - heading "任务事件调查层" [level=2] [ref=e83]
+        - paragraph [ref=e84]: 这里只保留当前任务事件流，稳定日志统一进入独立日志页查看。
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: 数量摘要
+          - strong [ref=e88]: 0 条事件
+        - button "展开调查层" [ref=e89] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - generic [ref=e92]: 联动状态
+        - strong [ref=e93]: 任务中枢同步中
+      - generic [ref=e94]:
+        - generic [ref=e95]: 调查模式
+        - strong [ref=e96]: 任务过程调查
+      - generic [ref=e97]:
+        - generic [ref=e98]: 事件流规模
+        - strong [ref=e99]: 0 条
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - strong [ref=e102]: 当前任务过程
+        - paragraph [ref=e103]: 任务开始后，这里会出现当前会话的过程推进。
+      - generic [ref=e104]:
+        - generic [ref=e105]: 任务中枢已同步
+        - generic [ref=e106]: 等待事件
+        - generic [ref=e107]: 当前会话
+        - generic [ref=e108]: 按顺序观察

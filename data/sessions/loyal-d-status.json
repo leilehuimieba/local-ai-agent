@@ -1,0 +1,20 @@
+{
+  "session_id": "loyal-d-status",
+  "compressed_summary": "第1轮 用户：????????????? | 智能体：主回答未成功，已切换到会话摘要恢复路径。\n当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。",
+  "short_term": {
+    "current_goal": "?????????????",
+    "current_plan": "当前任务已完成",
+    "open_issue": "",
+    "recent_observation": "主回答未成功，已切换到会话摘要恢复路径。\n当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。",
+    "recent_tool_result": "模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (28) Operation timed out after 12004 milliseconds with 0 bytes received",
+    "pending_confirmation": ""
+  },
+  "recent_turns": [
+    {
+      "user_input": "?????????????",
+      "final_answer": "主回答未成功，已切换到会话摘要恢复路径。\n当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。",
+      "summary": "模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (28) Operation timed out after 12004 milliseconds with 0 bytes received",
+      "timestamp": "1775287119794"
+    }
+  ]
+}

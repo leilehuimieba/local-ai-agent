@@ -1,0 +1,20 @@
+{
+  "session_id": "session-siyuan-reuse-5",
+  "compressed_summary": "第1轮 用户：写入思源 | 智能体：思源导出完成：D:/newwork/本地智能体/data/siyuan/exported\\main-run-siyuan-reuse-5.md\n已开启摘要回写。",
+  "short_term": {
+    "current_goal": "写入思源",
+    "current_plan": "当前任务已完成",
+    "open_issue": "",
+    "recent_observation": "思源导出完成：D:/newwork/本地智能体/data/siyuan/exported\\main-run-siyuan-reuse-5.md\n已开启摘要回写。",
+    "recent_tool_result": "知识已导出到思源目录。",
+    "pending_confirmation": ""
+  },
+  "recent_turns": [
+    {
+      "user_input": "写入思源",
+      "final_answer": "思源导出完成：D:/newwork/本地智能体/data/siyuan/exported\\main-run-siyuan-reuse-5.md\n已开启摘要回写。",
+      "summary": "知识已导出到思源目录。",
+      "timestamp": "1775118248714"
+    }
+  ]
+}

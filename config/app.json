@@ -1,0 +1,79 @@
+{
+  "app_name": "本地智能体",
+  "gateway_port": 8897,
+  "runtime_port": 8898,
+  "default_mode": "standard",
+  "default_model": {
+    "provider_id": "scnet",
+    "model_id": "MiniMax-M2.5",
+    "display_name": "MiniMax M2.5",
+    "enabled": true,
+    "available": true
+  },
+  "available_models": [
+    {
+      "provider_id": "scnet",
+      "model_id": "MiniMax-M2.5",
+      "display_name": "MiniMax M2.5",
+      "enabled": true,
+      "available": true
+    },
+    {
+      "provider_id": "openai",
+      "model_id": "gpt-5.4",
+      "display_name": "OpenAI GPT-5.4",
+      "enabled": true,
+      "available": true
+    },
+    {
+      "provider_id": "openai",
+      "model_id": "gpt-5.3-codex",
+      "display_name": "OpenAI GPT-5.3 Codex",
+      "enabled": true,
+      "available": true
+    },
+    {
+      "provider_id": "openai",
+      "model_id": "gpt-5.2",
+      "display_name": "OpenAI GPT-5.2（暂不可用）",
+      "enabled": true,
+      "available": false
+    }
+  ],
+  "providers": [
+    {
+      "provider_id": "scnet",
+      "display_name": "SCNet LLM",
+      "base_url": "https://api.scnet.cn/api/llm/v1",
+      "chat_completions_path": "/chat/completions",
+      "models_path": "/models",
+      "api_key": "sk-NzI4LTIxMjczNzI3MTk2LTE3NzMzODU0NzI3NjU="
+    }
+  ],
+  "default_workspace": {
+    "workspace_id": "main",
+    "name": "本地智能体",
+    "root_path": "D:/newwork/本地智能体",
+    "is_active": true
+  },
+  "workspaces": [
+    {
+      "workspace_id": "main",
+      "name": "本地智能体",
+      "root_path": "D:/newwork/本地智能体",
+      "is_active": true
+    },
+    {
+      "workspace_id": "docs",
+      "name": "文档区",
+      "root_path": "D:/newwork/本地智能体/docs",
+      "is_active": false
+    }
+  ],
+  "siyuan": {
+    "root_dir": "D:/newwork/本地智能体/data/siyuan",
+    "export_dir": "D:/newwork/本地智能体/data/siyuan/exported",
+    "auto_write_enabled": true,
+    "sync_enabled": true
+  }
+}

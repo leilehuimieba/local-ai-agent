@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+
+  --bg-canvas: #161618;
+  --bg-subtle: rgba(255, 255, 255, 0.04);
+  --bg-muted: rgba(255, 255, 255, 0.055);
+  --bg-panel: rgba(28, 30, 36, 0.72);
+  --bg-panel-soft: rgba(255, 255, 255, 0.05);
+  --bg-emphasis: rgba(124, 140, 255, 0.14);
+
+  --text-primary: #f4f6fb;
+  --text-secondary: #b3bccb;
+  --text-tertiary: #8791a3;
+  --text-disabled: #636c7c;
+  --text-inverse: #0f1115;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(154, 166, 255, 0.28);
+
+  --accent-primary: #7c8cff;
+  --accent-primary-hover: #96a3ff;
+  --accent-primary-soft: rgba(124, 140, 255, 0.16);
+  --accent-secondary: rgba(255, 255, 255, 0.05);
+  --accent-secondary-hover: rgba(255, 255, 255, 0.09);
+
+  --state-idle-bg: rgba(255, 255, 255, 0.05);
+  --state-idle-text: #d0d6e2;
+  --state-idle-border: rgba(255, 255, 255, 0.12);
+  --state-running-bg: rgba(72, 166, 149, 0.16);
+  --state-running-text: #9fe3d0;
+  --state-running-border: rgba(97, 211, 188, 0.28);
+  --state-awaiting-bg: rgba(214, 151, 67, 0.16);
+  --state-awaiting-text: #ffd48d;
+  --state-awaiting-border: rgba(245, 184, 95, 0.28);
+  --state-failed-bg: rgba(191, 92, 92, 0.16);
+  --state-failed-text: #ffb4b4;
+  --state-failed-border: rgba(255, 132, 132, 0.28);
+  --state-completed-bg: rgba(94, 130, 255, 0.16);
+  --state-completed-text: #bdd1ff;
+  --state-completed-border: rgba(124, 140, 255, 0.28);
+
+  --shadow-sm: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 24px 60px rgba(0, 0, 0, 0.32);
+
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}

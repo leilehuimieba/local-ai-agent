@@ -1,0 +1,20 @@
+{
+  "session_id": "loyal-c-success",
+  "compressed_summary": "第1轮 用户：write: tmp/loyal-user-acceptance/c-success.txt\n可信执行成功样本 | 智能体：文件写入完成：D:\\newwork\\本地智能体\\tmp\\loyal-user-acceptance\\c-success.txt\n写入字符数：8\n内容摘要：可信执行成功样本",
+  "short_term": {
+    "current_goal": "write: tmp/loyal-user-acceptance/c-success.txt\n可信执行成功样本",
+    "current_plan": "当前任务已完成",
+    "open_issue": "",
+    "recent_observation": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\loyal-user-acceptance\\c-success.txt\n写入字符数：8\n内容摘要：可信执行成功样本",
+    "recent_tool_result": "文件写入成功，共写入 8 个字符。",
+    "pending_confirmation": ""
+  },
+  "recent_turns": [
+    {
+      "user_input": "write: tmp/loyal-user-acceptance/c-success.txt\n可信执行成功样本",
+      "final_answer": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\loyal-user-acceptance\\c-success.txt\n写入字符数：8\n内容摘要：可信执行成功样本",
+      "summary": "文件写入成功，共写入 8 个字符。",
+      "timestamp": "1775289343275"
+    }
+  ]
+}

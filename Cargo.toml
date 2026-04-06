@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "crates/runtime-core",
+  "crates/runtime-host"
+]
+resolver = "2"

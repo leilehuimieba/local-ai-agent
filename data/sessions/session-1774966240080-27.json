@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774966240080-27",
+  "compressed_summary": "第1轮 用户：write: tmp/observe-check.txt\nblocked | 智能体：当前处于观察模式，系统不会执行修改性动作。请切换到标准模式或全权限模式后重试。",
+  "recent_turns": [
+    {
+      "user_input": "write: tmp/observe-check.txt\nblocked",
+      "final_answer": "当前处于观察模式，系统不会执行修改性动作。请切换到标准模式或全权限模式后重试。",
+      "summary": "当前处于观察模式，系统不会执行修改性动作。请切换到标准模式或全权限模式后重试。",
+      "timestamp": "1774966240081"
+    }
+  ]
+}

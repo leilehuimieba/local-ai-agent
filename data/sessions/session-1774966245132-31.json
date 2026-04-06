@@ -1,0 +1,18 @@
+{
+  "session_id": "session-1774966245132-31",
+  "compressed_summary": "第1轮 用户：remember: preference|继续使用中文\n以后继续用中文回复。 | 智能体：记忆写入完成。\n类型：preference\n摘要：继续使用中文\n内容摘要：以后继续用中文回复。 || 第2轮 用户：recall: 中文 | 智能体：已召回相关长期记忆：\n1. [preference] 继续使用中文\n   以后继续用中文回复。\n2. [preference] 继续使用中文\n   以后继续用中文回复。\n3. [preference] prefer chinese replies\n   Keep replying in Chinese.",
+  "recent_turns": [
+    {
+      "user_input": "remember: preference|继续使用中文\n以后继续用中文回复。",
+      "final_answer": "记忆写入完成。\n类型：preference\n摘要：继续使用中文\n内容摘要：以后继续用中文回复。",
+      "summary": "已写入 `preference` 记忆：继续使用中文",
+      "timestamp": "1774966245134"
+    },
+    {
+      "user_input": "recall: 中文",
+      "final_answer": "已召回相关长期记忆：\n1. [preference] 继续使用中文\n   以后继续用中文回复。\n2. [preference] 继续使用中文\n   以后继续用中文回复。\n3. [preference] prefer chinese replies\n   Keep replying in Chinese.",
+      "summary": "已召回 3 条相关记忆。",
+      "timestamp": "1774966250173"
+    }
+  ]
+}

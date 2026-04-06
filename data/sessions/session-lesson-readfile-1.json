@@ -1,0 +1,20 @@
+{
+  "session_id": "session-lesson-readfile-1",
+  "compressed_summary": "第1轮 用户：read: docs/not-exists-177522.md | 智能体：文件读取失败：系统找不到指定的文件。 (os error 2)",
+  "short_term": {
+    "current_goal": "read: docs/not-exists-177522.md",
+    "current_plan": "当前任务已失败，等待下一步处理",
+    "open_issue": "文件读取失败：系统找不到指定的文件。 (os error 2)",
+    "recent_observation": "文件读取失败：系统找不到指定的文件。 (os error 2)",
+    "recent_tool_result": "文件读取失败：系统找不到指定的文件。 (os error 2)",
+    "pending_confirmation": ""
+  },
+  "recent_turns": [
+    {
+      "user_input": "read: docs/not-exists-177522.md",
+      "final_answer": "文件读取失败：系统找不到指定的文件。 (os error 2)",
+      "summary": "文件读取失败：系统找不到指定的文件。 (os error 2)",
+      "timestamp": "1775221442294"
+    }
+  ]
+}

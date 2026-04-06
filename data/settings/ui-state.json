@@ -1,0 +1,26 @@
+{
+  "mode": "full_access",
+  "model_provider_id": "scnet",
+  "model_id": "MiniMax-M2.5",
+  "workspace_id": "docs",
+  "directory_prompt_enabled": true,
+  "show_risk_level": false,
+  "approved_workspace_ids": [
+    "main",
+    "docs"
+  ],
+  "approved_directories": [
+    {
+      "approval_id": "main",
+      "workspace_id": "main",
+      "name": "本地智能体",
+      "root_path": "D:/newwork/本地智能体"
+    },
+    {
+      "approval_id": "docs",
+      "workspace_id": "docs",
+      "name": "文档区",
+      "root_path": "D:/newwork/本地智能体/docs"
+    }
+  ]
+}

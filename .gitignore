@@ -1,0 +1,26 @@
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Build
+frontend/dist/
+target/
+target-buildcheck/
+target-buildcheck-memory/
+*.tsbuildinfo
+
+# Logs & Temporary
+logs/
+tmp/
+tmp-*.png
+*.log
+
+# Project specific
+.playwright-cli/
+.env*
+.DS_Store
+
+# User Data (Usually excluded from git)
+data/cache/
+data/sessions/
+data/storage/

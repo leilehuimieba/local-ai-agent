@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774962761607-1",
+  "compressed_summary": "第1轮 用户：list: | 智能体：目录内容：D:\\newwork\\本地智能体\\docs\n00-charter, 01-boundary, 02-architecture, 03-runtime, 04-api, 05-migration, 06-development, 07-test",
+  "recent_turns": [
+    {
+      "user_input": "list:",
+      "final_answer": "目录内容：D:\\newwork\\本地智能体\\docs\n00-charter, 01-boundary, 02-architecture, 03-runtime, 04-api, 05-migration, 06-development, 07-test",
+      "summary": "目录列举成功：00-charter, 01-boundary, 02-architecture, 03-runtime, 04-api, 05-migration, 06-development, 07-test",
+      "timestamp": "1774962761609"
+    }
+  ]
+}

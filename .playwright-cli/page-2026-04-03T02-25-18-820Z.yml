@@ -1,0 +1,216 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Local Agent
+        - strong [ref=e8]: 本地智能体
+      - generic [ref=e11]: 等待确认
+    - navigation "主导航" [ref=e12]:
+      - button "工作台" [ref=e13] [cursor=pointer]
+      - button "对话页" [ref=e14] [cursor=pointer]
+      - button "日志页" [ref=e15] [cursor=pointer]
+      - button "设置" [active] [ref=e16] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: 工作区
+        - strong [ref=e21]: 文档区
+      - generic [ref=e22]:
+        - generic [ref=e23]: 会话
+        - strong [ref=e24]: session-1775183090671-4
+      - generic [ref=e25]:
+        - generic [ref=e26]: 运行
+        - strong [ref=e27]: run-1775183090671-6
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: 当前模型
+        - combobox "当前模型" [ref=e31]:
+          - option "MiniMax M2.5" [selected]
+          - option "OpenAI GPT-5.4"
+          - option "OpenAI GPT-5.3 Codex"
+          - option "OpenAI GPT-5.2（暂不可用）" [disabled]
+      - generic [ref=e32]:
+        - generic [ref=e33]: 运行模式
+        - combobox "运行模式" [ref=e34]:
+          - option "观察模式"
+          - option "标准模式" [selected]
+          - option "全权限模式"
+    - generic [ref=e35]:
+      - paragraph [ref=e39]: 当前为占位，后续接入真实记忆与容量指标。
+      - generic [ref=e40]:
+        - strong [ref=e41]: 文档区
+        - generic [ref=e42]: 上下文已同步
+  - article [ref=e387]:
+    - generic [ref=e389]:
+      - text: Settings
+      - heading "运行时控制面板" [level=2] [ref=e390]
+      - paragraph [ref=e391]: 这里集中说明系统如何运行、围绕哪个工作区工作，以及哪些策略正在生效。
+    - generic [ref=e392]:
+      - generic [ref=e393]:
+        - generic [ref=e394]:
+          - generic [ref=e395]:
+            - text: Runtime Overview
+            - heading "环境摘要带" [level=2] [ref=e396]
+          - paragraph [ref=e397]: 这里先集中说明当前系统如何运行，再进入下方各模块控制区。
+        - generic [ref=e398]:
+          - generic [ref=e399]:
+            - generic [ref=e400]: 运行状态
+            - strong [ref=e401]: 等待确认
+          - generic [ref=e402]:
+            - generic [ref=e403]: 当前模型
+            - strong [ref=e404]: MiniMax M2.5
+          - generic [ref=e405]:
+            - generic [ref=e406]: 当前模式
+            - strong [ref=e407]: standard
+          - generic [ref=e408]:
+            - generic [ref=e409]: 当前工作区
+            - strong [ref=e410]: 文档区
+        - generic [ref=e411]:
+          - generic [ref=e412]:
+            - term [ref=e413]: 应用
+            - definition [ref=e414]: 本地智能体
+          - generic [ref=e415]:
+            - term [ref=e416]: 模型状态
+            - definition [ref=e417]: 可用
+          - generic [ref=e418]:
+            - term [ref=e419]: 工作区根目录
+            - definition [ref=e420]: D:/newwork/本地智能体/docs
+          - generic [ref=e421]:
+            - term [ref=e422]: Gateway
+            - definition [ref=e423]: "8897"
+          - generic [ref=e424]:
+            - term [ref=e425]: Runtime
+            - definition [ref=e426]: "8898"
+          - generic [ref=e427]:
+            - term [ref=e428]: Session
+            - definition [ref=e429]: session-1775183090671-4
+          - generic [ref=e430]:
+            - term [ref=e431]: 事件数
+            - definition [ref=e432]: "4"
+          - generic [ref=e433]:
+            - term [ref=e434]: 全局日志
+            - definition [ref=e435]: "120"
+      - generic [ref=e436]:
+        - generic [ref=e437]: Performance Mode
+        - heading "待命" [level=3] [ref=e438]
+        - paragraph [ref=e439]: 系统状态稳定，可继续调整控制项。
+        - generic [ref=e440]:
+          - generic [ref=e441]: standard
+          - generic [ref=e442]: scnet
+    - generic [ref=e443]:
+      - generic [ref=e444]:
+        - generic [ref=e445]:
+          - heading "Runtime Environment" [level=3] [ref=e447]
+          - generic [ref=e448]: 可达
+        - generic [ref=e449]:
+          - generic [ref=e450]:
+            - generic [ref=e451]: 应用名
+            - strong [ref=e452]: 本地智能体
+            - paragraph [ref=e453]: 当前桌面客户端名称
+          - generic [ref=e454]:
+            - generic [ref=e455]: Runtime
+            - strong [ref=e456]: 可达
+            - paragraph [ref=e457]: runtime-host / 0.1.0
+          - generic [ref=e458]:
+            - generic [ref=e459]: Gateway 端口
+            - strong [ref=e460]: "8897"
+            - paragraph [ref=e461]: 控制面入口端口
+          - generic [ref=e462]:
+            - generic [ref=e463]: 当前工作区
+            - strong [ref=e464]: 文档区
+            - paragraph [ref=e465]: D:/newwork/本地智能体/docs
+      - generic [ref=e466]:
+        - generic [ref=e467]:
+          - heading "Model Providers & Routing" [level=3] [ref=e469]
+          - generic [ref=e470]: scnet
+        - generic [ref=e471]:
+          - generic [ref=e472]:
+            - generic [ref=e473]: 当前模型
+            - combobox "当前模型" [ref=e474]:
+              - option "MiniMax M2.5" [selected]
+              - option "OpenAI GPT-5.4"
+              - option "OpenAI GPT-5.3 Codex"
+              - option "OpenAI GPT-5.2（暂不可用）" [disabled]
+          - generic [ref=e475]:
+            - generic [ref=e476]: 运行模式
+            - combobox "运行模式" [ref=e477]:
+              - option "观察模式"
+              - option "标准模式" [selected]
+              - option "全权限模式"
+          - generic [ref=e478]:
+            - strong [ref=e479]: 当前 provider
+            - paragraph [ref=e480]: scnet
+          - generic [ref=e481]:
+            - strong [ref=e482]: 可用性说明
+            - paragraph [ref=e483]: 灰置模型表示当前不可用。后续可在这里接入 provider 健康状态和备用模型策略。
+      - generic [ref=e484]:
+        - generic [ref=e485]:
+          - heading "Workspace Roots" [level=3] [ref=e487]
+          - generic [ref=e488]: "2"
+        - generic [ref=e489]:
+          - generic [ref=e490]:
+            - generic [ref=e491]: 当前工作区
+            - combobox "当前工作区" [ref=e492]:
+              - option "本地智能体"
+              - option "文档区" [selected]
+          - generic [ref=e493]:
+            - strong [ref=e494]: 当前路径
+            - paragraph [ref=e495]: D:/newwork/本地智能体/docs
+          - generic [ref=e496]:
+            - strong [ref=e497]: Repo Context 状态入口
+            - paragraph [ref=e498]: 当前页先预留入口位，真实 repo context 详情仍以首页右侧任务中枢为准。
+          - generic [ref=e499]:
+            - strong [ref=e500]: 已记住授权列表
+            - generic [ref=e502]:
+              - generic [ref=e503]:
+                - generic [ref=e504]: 本地智能体
+                - generic [ref=e505]: D:/newwork/本地智能体
+              - button "移除授权" [ref=e506] [cursor=pointer]
+      - generic [ref=e507]:
+        - generic [ref=e508]:
+          - heading "Risk & Permissions" [level=3] [ref=e510]
+          - generic [ref=e511]: 策略
+        - generic [ref=e512]:
+          - generic [ref=e513]:
+            - checkbox "新目录首次接触提醒 打开新的工作区目录时，先提示授权边界。" [checked] [ref=e514]
+            - generic [ref=e515]:
+              - strong [ref=e516]: 新目录首次接触提醒
+              - paragraph [ref=e517]: 打开新的工作区目录时，先提示授权边界。
+          - generic [ref=e518]:
+            - checkbox "显示风险等级 在确认卡片与相关提示中展示风险等级标签。" [checked] [ref=e519]
+            - generic [ref=e520]:
+              - strong [ref=e521]: 显示风险等级
+              - paragraph [ref=e522]: 在确认卡片与相关提示中展示风险等级标签。
+          - generic [ref=e523]:
+            - strong [ref=e524]: 后续策略项
+            - paragraph [ref=e525]: 高风险动作二次确认、目录外访问提醒和写入阈值将在后续版本接入。
+      - generic [ref=e526]:
+        - generic [ref=e527]:
+          - heading "Memory Policy" [level=3] [ref=e529]
+          - generic [ref=e530]: 后续接入
+        - generic [ref=e531]:
+          - generic [ref=e532]:
+            - strong [ref=e533]: 记忆状态
+            - paragraph [ref=e534]: 后续接入
+          - generic [ref=e535]:
+            - strong [ref=e536]: 写入策略
+            - paragraph [ref=e537]: 后续接入记忆摘要与写入阈值配置。
+          - generic [ref=e538]:
+            - strong [ref=e539]: 清理策略
+            - paragraph [ref=e540]: 后续接入记忆清理与保留期控制。
+      - generic [ref=e541]:
+        - generic [ref=e542]:
+          - heading "Diagnostics & Utilities" [level=3] [ref=e544]
+          - generic [ref=e545]: 工具区
+        - generic [ref=e546]:
+          - button "导出运行日志 后续接入" [disabled] [ref=e547]:
+            - strong [ref=e548]: 导出运行日志
+            - generic [ref=e549]: 后续接入
+          - button "导出当前配置 后续接入" [disabled] [ref=e550]:
+            - strong [ref=e551]: 导出当前配置
+            - generic [ref=e552]: 后续接入
+          - button "打开诊断信息 后续接入" [disabled] [ref=e553]:
+            - strong [ref=e554]: 打开诊断信息
+            - generic [ref=e555]: 后续接入
+          - button "扩展参数 预留位" [disabled] [ref=e556]:
+            - strong [ref=e557]: 扩展参数
+            - generic [ref=e558]: 预留位

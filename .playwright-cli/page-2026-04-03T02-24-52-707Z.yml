@@ -1,0 +1,134 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Local Agent
+        - strong [ref=e8]: 本地智能体
+      - generic [ref=e11]: 等待确认
+    - navigation "主导航" [ref=e12]:
+      - button "工作台" [ref=e13] [cursor=pointer]
+      - button "对话页" [ref=e14] [cursor=pointer]
+      - button "日志页" [ref=e15] [cursor=pointer]
+      - button "设置" [ref=e16] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: 工作区
+        - strong [ref=e21]: 文档区
+      - generic [ref=e22]:
+        - generic [ref=e23]: 会话
+        - strong [ref=e24]: session-1775183090671-4
+      - generic [ref=e25]:
+        - generic [ref=e26]: 运行
+        - strong [ref=e27]: run-1775183090671-6
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: 当前模型
+        - combobox "当前模型" [ref=e31]:
+          - option "MiniMax M2.5" [selected]
+          - option "OpenAI GPT-5.4"
+          - option "OpenAI GPT-5.3 Codex"
+          - option "OpenAI GPT-5.2（暂不可用）" [disabled]
+      - generic [ref=e32]:
+        - generic [ref=e33]: 运行模式
+        - combobox "运行模式" [ref=e34]:
+          - option "观察模式"
+          - option "标准模式" [selected]
+          - option "全权限模式"
+    - generic [ref=e35]:
+      - paragraph [ref=e39]: 当前为占位，后续接入真实记忆与容量指标。
+      - generic [ref=e40]:
+        - strong [ref=e41]: 文档区
+        - generic [ref=e42]: 上下文已同步
+  - article [ref=e283]:
+    - generic [ref=e284]:
+      - generic [ref=e285]:
+        - generic [ref=e286]: 任务总览
+        - heading "首次接触目录：D:/newwork/本地智能体/docs" [level=1] [ref=e341]
+      - generic [ref=e288]:
+        - generic [ref=e289]:
+          - generic [ref=e290]: 当前状态
+          - strong [ref=e291]: 等待确认
+        - generic [ref=e292]:
+          - generic [ref=e293]: 运行
+          - strong [ref=e294]: run-1775183090671-6
+        - generic [ref=e295]:
+          - generic [ref=e296]: 工作区
+          - strong [ref=e297]: 文档区
+    - generic [ref=e298]:
+      - article [ref=e299]:
+        - generic [ref=e300]: 已完成
+        - strong [ref=e301]: 建立
+        - paragraph [ref=e302]: 任务线程
+      - article [ref=e303]:
+        - generic [ref=e304]: 已完成
+        - strong [ref=e305]: 推进
+        - paragraph [ref=e306]: 执行中
+      - article [ref=e307]:
+        - generic [ref=e308]: 待开始
+        - strong [ref=e309]: 收口
+        - paragraph [ref=e310]: 结果整理
+    - generic [ref=e311]:
+      - generic [ref=e312]:
+        - generic [ref=e313]:
+          - text: 任务执行流
+          - heading "与智能体对话" [level=3] [ref=e314]
+        - paragraph [ref=e315]: 当前页面以任务对话为主。
+      - generic [ref=e342]:
+        - generic [ref=e343]:
+          - generic [ref=e344]: 任务输入
+          - generic [ref=e345]: "01"
+        - paragraph [ref=e347]: 测试风险等级显示
+    - generic [ref=e329]:
+      - generic [ref=e330]:
+        - generic [ref=e331]:
+          - text: 任务输入
+          - heading "继续推进任务" [level=3] [ref=e332]
+        - paragraph [ref=e333]: 直接写要继续推进的内容。
+      - 'textbox "描述你希望智能体完成的任务。 示例： read: docs/10-v2/V2前端视觉与界面实现方案_V1.md cmd: npm run build 继续整理刚才的实现结果" [ref=e334]':
+        - /placeholder: "描述你希望智能体完成的任务。\n\n示例：\nread: docs/10-v2/V2前端视觉与界面实现方案_V1.md\ncmd: npm run build\n继续整理刚才的实现结果"
+      - generic [ref=e335]:
+        - generic [ref=e336]:
+          - generic [ref=e337]: MiniMax M2.5
+          - generic [ref=e338]: 文档区
+          - generic [ref=e339]: standard
+        - button "提交任务" [disabled] [ref=e340]
+    - generic [ref=e348]:
+      - generic [ref=e349]:
+        - generic [ref=e350]:
+          - text: Risk Gate
+          - heading "需要确认后继续" [level=3] [ref=e351]
+        - generic [ref=e352]: medium
+      - paragraph [ref=e353]: 首次接触目录：D:/newwork/本地智能体/docs
+      - generic [ref=e354]:
+        - generic [ref=e355]:
+          - generic [ref=e356]: 原因
+          - strong [ref=e357]: 这是当前会话第一次进入该工作区，系统需要先确认是否继续。
+        - generic [ref=e358]:
+          - generic [ref=e359]: 影响范围
+          - strong [ref=e360]: 当前工作区及其子目录
+        - generic [ref=e361]:
+          - generic [ref=e362]: 动作类型
+          - strong [ref=e363]: workspace_access
+        - generic [ref=e364]:
+          - generic [ref=e365]: 是否可回退
+          - strong [ref=e366]: 可回退
+      - generic [ref=e367]:
+        - strong [ref=e368]: 目标路径
+        - list [ref=e369]:
+          - listitem [ref=e370]: D:/newwork/本地智能体/docs
+      - generic [ref=e371]:
+        - strong [ref=e372]: 潜在危害
+        - list [ref=e373]:
+          - listitem [ref=e374]: 可能在陌生目录中执行读写或命令动作
+      - generic [ref=e375]:
+        - strong [ref=e376]: 可选替代方案
+        - list [ref=e377]:
+          - listitem [ref=e378]: 取消本次任务
+          - listitem [ref=e379]: 切回已信任的工作区
+      - generic [ref=e380]:
+        - checkbox "记住这个目录，后续不再提醒" [checked] [ref=e381]
+        - text: 记住这个目录，后续不再提醒
+      - generic [ref=e382]:
+        - button "继续执行" [ref=e383] [cursor=pointer]
+        - button "拒绝" [ref=e384] [cursor=pointer]
+        - button "取消" [ref=e385] [cursor=pointer]

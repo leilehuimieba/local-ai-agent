@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774966487066-1",
+  "compressed_summary": "第1轮 用户：write: tmp/debug-file.txt\nhello-file | 智能体：文件写入完成：D:\\newwork\\本地智能体\\tmp\\debug-file.txt\n写入字符数：10\n内容摘要：hello-file",
+  "recent_turns": [
+    {
+      "user_input": "write: tmp/debug-file.txt\nhello-file",
+      "final_answer": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\debug-file.txt\n写入字符数：10\n内容摘要：hello-file",
+      "summary": "文件写入成功，共写入 10 个字符。",
+      "timestamp": "1774966487068"
+    }
+  ]
+}

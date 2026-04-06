@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774966492288-5",
+  "compressed_summary": "第1轮 用户：cmd: Write-Output acceptance-command-ok | 智能体：命令已执行完成。\n工作区：D:/newwork/本地智能体\n命令：Write-Output acceptance-command-ok\n输出摘要：acceptance-command-ok",
+  "recent_turns": [
+    {
+      "user_input": "cmd: Write-Output acceptance-command-ok",
+      "final_answer": "命令已执行完成。\n工作区：D:/newwork/本地智能体\n命令：Write-Output acceptance-command-ok\n输出摘要：acceptance-command-ok",
+      "summary": "命令执行成功，输出摘要：acceptance-command-ok",
+      "timestamp": "1774966492494"
+    }
+  ]
+}

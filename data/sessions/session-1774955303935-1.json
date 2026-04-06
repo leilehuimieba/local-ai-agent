@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774955303935-1",
+  "compressed_summary": "第1轮 用户：knowledge: ???? | 智能体：当前没有在本地知识源中找到与 `????` 相关的内容。",
+  "recent_turns": [
+    {
+      "user_input": "knowledge: ????",
+      "final_answer": "当前没有在本地知识源中找到与 `????` 相关的内容。",
+      "summary": "没有找到相关知识内容。",
+      "timestamp": "1774955303950"
+    }
+  ]
+}

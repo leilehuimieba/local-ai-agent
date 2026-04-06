@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774964708090-1",
+  "compressed_summary": "第1轮 用户：cmd: bad-command-for-error-check | 智能体：命令执行失败。\n工作区：D:/newwork/本地智能体\n命令：bad-command-for-error-check\n错误摘要：bad-command-for-error-check : 无法将“bad-command-for-error-check”项识别为 cmdlet、函数、脚本文件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试\n一次。\n所在位置 行:1 字符: 127\n+ ... Text.Encoding]::UTF8; chcp 6...",
+  "recent_turns": [
+    {
+      "user_input": "cmd: bad-command-for-error-check",
+      "final_answer": "命令执行失败。\n工作区：D:/newwork/本地智能体\n命令：bad-command-for-error-check\n错误摘要：bad-command-for-error-check : 无法将“bad-command-for-error-check”项识别为 cmdlet、函数、脚本文件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试\n一次。\n所在位置 行:1 字符: 127\n+ ... Text.Encoding]::UTF8; chcp 65001 > $null; bad-command-for-error-check\n+                      ...",
+      "summary": "命令执行失败，错误摘要：bad-command-for-error-check : 无法将“bad-command-for-error-check”项识别为 cmdlet、函数、脚本文件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试\n一次。\n所在位置 行:1 字符: 127\n+ ... Text.Encoding]::UTF8; chcp 65001 > $null; bad-command-for-error-check\n+                      ...",
+      "timestamp": "1774964708338"
+    }
+  ]
+}

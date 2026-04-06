@@ -1,0 +1,18 @@
+{
+  "session_id": "session-1775029895717-1",
+  "compressed_summary": "第1轮 用户：list: | 智能体：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp || 第2轮 用户：hi | 智能体：当前会话已延续到第 1 轮。\n最近压缩摘要：第1轮 用户：list: | 智能体：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp\n上一步结果摘要：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo...",
+  "recent_turns": [
+    {
+      "user_input": "list:",
+      "final_answer": "目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp",
+      "summary": "目录列举成功：.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp",
+      "timestamp": "1775029895778"
+    },
+    {
+      "user_input": "hi",
+      "final_answer": "当前会话已延续到第 1 轮。\n最近压缩摘要：第1轮 用户：list: | 智能体：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp\n上一步结果摘要：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp\n如果你要继续执行动作，可以直接继续发送自然语言，或使用 `cmd/read/write/delete/list/knowledge/remember/recall` 前缀。",
+      "summary": "已从最近 1 轮会话中提取压缩上下文。",
+      "timestamp": "1775029904347"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "session_id": "session-1774966001793-1",
+  "compressed_summary": "第1轮 用户：write: tmp/acceptance-core-file.txt\n首版文件修改验收\n2026-03-31T22:06:41.7891329+08:00 | 智能体：文件写入完成：D:\\newwork\\本地智能体\\tmp\\acceptance-core-file.txt\n写入字符数：42\n内容摘要：首版文件修改验收\n2026-03-31T22:06:41.7891329+08:00",
+  "recent_turns": [
+    {
+      "user_input": "write: tmp/acceptance-core-file.txt\n首版文件修改验收\n2026-03-31T22:06:41.7891329+08:00",
+      "final_answer": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\acceptance-core-file.txt\n写入字符数：42\n内容摘要：首版文件修改验收\n2026-03-31T22:06:41.7891329+08:00",
+      "summary": "文件写入成功，共写入 42 个字符。",
+      "timestamp": "1774966001796"
+    }
+  ]
+}

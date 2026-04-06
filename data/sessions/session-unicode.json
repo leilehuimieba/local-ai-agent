@@ -1,0 +1,12 @@
+{
+  "session_id": "session-unicode",
+  "compressed_summary": "第1轮 用户：list: | 智能体：目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp",
+  "recent_turns": [
+    {
+      "user_input": "list:",
+      "final_answer": "目录内容：D:\\newwork\\本地智能体\n.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp",
+      "summary": "目录列举成功：.gitignore, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, target, tmp",
+      "timestamp": "1775028863101"
+    }
+  ]
+}

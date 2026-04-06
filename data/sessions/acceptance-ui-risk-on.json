@@ -1,0 +1,13 @@
+{
+  "session_id": "acceptance-ui-risk-on",
+  "compressed_summary": "",
+  "short_term": {
+    "current_goal": "????????",
+    "current_plan": "等待人工确认后继续",
+    "open_issue": "",
+    "recent_observation": "当前输入未命中动作前缀，运行时将基于会话压缩摘要继续回答。 当前工作区为 `D:/newwork/本地智能体/docs`。 当前工作区不在 Git 仓库中，分析将仅依赖工作区路径与说明文件。 已命中高价值说明文件：README.md。",
+    "recent_tool_result": "",
+    "pending_confirmation": "首次接触目录：D:/newwork/本地智能体/docs"
+  },
+  "recent_turns": []
+}
