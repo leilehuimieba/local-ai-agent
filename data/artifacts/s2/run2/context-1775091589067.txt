@@ -1,1 +1,0 @@
-Parece que vocÃª estÃ¡ enfrentando alguns problemas de parsing, como erros de Unicode ou JSON. No entanto, sua mensagem estÃ¡ um pouco confusa. VocÃª poderia fornecer mais detalhes sobre o erro que estÃ¡ ocorrendo ou o cÃ³digo que estÃ¡ tentando executar? Assim, poderei ajudÃ¡-lo melhor.

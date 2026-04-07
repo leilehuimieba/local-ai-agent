@@ -20,6 +20,19 @@ tmp-*.png
 .env*
 .DS_Store
 
+# Binaries (do not commit built artifacts)
+gateway/**/*.exe
+gateway/**/*.pdb
+gateway/**/*.exe~
+
+# Runtime/user data (generated locally)
+data/
+!data/README.md
+!data/.gitkeep
+
+# Local config (may contain secrets)
+config/app.json
+
 # User Data (Usually excluded from git)
 data/cache/
 data/sessions/
