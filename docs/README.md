@@ -1,6 +1,6 @@
 # 本地智能体 Docs 导航
 
-更新时间：2026-04-01
+更新时间：2026-04-07
 
 状态：`docs 当前导航与状态索引`
 
@@ -18,8 +18,12 @@
 
 ### 当前产品主口径
 
-1. [V2产品需求文档](D:/newwork/本地智能体/docs/10-v2/V2产品需求文档.md)
-2. [V2实现附录](D:/newwork/本地智能体/docs/10-v2/V2实现附录.md)
+1. [需求冻结稿_V1](D:/newwork/本地智能体/docs/00-charter/需求冻结稿_V1.md)
+2. [产品边界与入口定义_V1](D:/newwork/本地智能体/docs/01-boundary/产品边界与入口定义_V1.md)
+3. [MVP功能清单_V1](D:/newwork/本地智能体/docs/01-boundary/MVP功能清单_V1.md)
+4. [需求口径升级变更记录_V1](D:/newwork/本地智能体/docs/00-charter/需求口径升级变更记录_V1.md)
+5. [V2产品需求文档](D:/newwork/本地智能体/docs/10-v2/V2产品需求文档.md)
+6. [V2实现附录](D:/newwork/本地智能体/docs/10-v2/V2实现附录.md)
 
 ### 当前前端主入口
 
@@ -50,9 +54,9 @@
 
 状态：
 
-1. `历史基线`
-2. `仍有效`
-3. `不作为当前前端/运行时直接执行入口`
+1. `当前最高优先级约束`
+2. `定义 V1 正式冻结边界`
+3. `所有后续文档冲突时以本目录冻结稿为准`
 
 ### `01-boundary`
 
@@ -136,28 +140,17 @@
 
 当前优先读：
 
-1. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
-2. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
-3. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
-4. [产品落地差距清单与收口顺序_V1](D:/newwork/本地智能体/docs/06-development/产品落地差距清单与收口顺序_V1.md)
-5. [SQLite 主存储收口方案_V1](D:/newwork/本地智能体/docs/06-development/SQLite 主存储收口方案_V1.md)
-6. [思源外挂知识库接入方案_V1](D:/newwork/本地智能体/docs/06-development/思源外挂知识库接入方案_V1.md)
-7. [SQLite 主存储开发任务书_V1](D:/newwork/本地智能体/docs/06-development/SQLite 主存储开发任务书_V1.md)
-8. [思源外挂知识库接入开发任务书_V1](D:/newwork/本地智能体/docs/06-development/思源外挂知识库接入开发任务书_V1.md)
-9. [工作区与授权策略产品化开发任务书_V1](D:/newwork/本地智能体/docs/06-development/工作区与授权策略产品化开发任务书_V1.md)
-10. [前端产品化收口开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端产品化收口开发任务书_V1.md)
-11. [前端重构开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端重构开发任务书_V1.md)
-12. [第一阶段状态模型落地任务拆解清单_V1](D:/newwork/本地智能体/docs/06-development/第一阶段状态模型落地任务拆解清单_V1.md)
-13. [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development/产品级冻结与下一阶段规划入口文档_V1.md)
-14. [第二阶段产品定位与开发重点清单_V1](D:/newwork/本地智能体/docs/06-development/第二阶段产品定位与开发重点清单_V1.md)
-15. [第二阶段短期可用能力开发任务书_V1](D:/newwork/本地智能体/docs/06-development/第二阶段短期可用能力开发任务书_V1.md)
-16. [第二阶段需求文档_V1](D:/newwork/本地智能体/docs/06-development/第二阶段需求文档_V1.md)
-17. [高模块化架构演进方案_V1](D:/newwork/本地智能体/docs/06-development/高模块化架构演进方案_V1.md)
+1. [开发文档收口导航_V1](D:/newwork/本地智能体/docs/06-development/开发文档收口导航_V1.md)
+2. [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development/产品级冻结与下一阶段规划入口文档_V1.md)
+3. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
+4. [第二阶段产品定位与开发重点清单_V1](D:/newwork/本地智能体/docs/06-development/第二阶段产品定位与开发重点清单_V1.md)
+5. [第二阶段短期可用能力开发任务书_V1](D:/newwork/本地智能体/docs/06-development/第二阶段短期可用能力开发任务书_V1.md)
+6. [第二阶段需求文档_V1](D:/newwork/本地智能体/docs/06-development/第二阶段需求文档_V1.md)
+7. [忠实用户转化导向开发任务书_V1](D:/newwork/本地智能体/docs/06-development/忠实用户转化导向开发任务书_V1.md)
 
 历史只读：
 
-1. [M1_仓库上下文基线开发任务书_V1](D:/newwork/本地智能体/docs/06-development/M1_仓库上下文基线开发任务书_V1.md)
-2. [下一步执行计划_V1](D:/newwork/本地智能体/docs/06-development/下一步执行计划_V1.md)
+1. 历史任务书与可删除候选，统一见 [开发文档收口导航_V1](D:/newwork/本地智能体/docs/06-development/开发文档收口导航_V1.md)
 
 ### `07-test`
 
@@ -174,15 +167,16 @@
 
 当前优先读：
 
-1. [本地记忆与知识沉淀验收文档_V1](D:/newwork/本地智能体/docs/07-test/本地记忆与知识沉淀验收文档_V1.md)
-2. [SQLite 主存储验收文档_V1](D:/newwork/本地智能体/docs/07-test/SQLite 主存储验收文档_V1.md)
-3. [思源外挂知识库接入验收文档_V1](D:/newwork/本地智能体/docs/07-test/思源外挂知识库接入验收文档_V1.md)
-4. [工作区与授权策略产品化验收文档_V1](D:/newwork/本地智能体/docs/07-test/工作区与授权策略产品化验收文档_V1.md)
-5. [前端产品化验收文档_V1](D:/newwork/本地智能体/docs/07-test/前端产品化验收文档_V1.md)
-6. [前端重构验收文档模板_V1](D:/newwork/本地智能体/docs/07-test/前端重构验收文档模板_V1.md)
-7. [产品级总体验收文档_V1](D:/newwork/本地智能体/docs/07-test/产品级总体验收文档_V1.md)
-8. [需求文档对照完成度清单_V1](D:/newwork/本地智能体/docs/07-test/需求文档对照完成度清单_V1.md)
-9. [第二阶段短期可用能力验收文档_V1](D:/newwork/本地智能体/docs/07-test/第二阶段短期可用能力验收文档_V1.md)
+1. [里程碑验收与首版候选汇总_V1](D:/newwork/本地智能体/docs/07-test/里程碑验收与首版候选汇总_V1.md)
+2. [本地记忆与知识沉淀验收文档_V1](D:/newwork/本地智能体/docs/07-test/本地记忆与知识沉淀验收文档_V1.md)
+3. [SQLite 主存储验收文档_V1](D:/newwork/本地智能体/docs/07-test/SQLite 主存储验收文档_V1.md)
+4. [思源外挂知识库接入验收文档_V1](D:/newwork/本地智能体/docs/07-test/思源外挂知识库接入验收文档_V1.md)
+5. [工作区与授权策略产品化验收文档_V1](D:/newwork/本地智能体/docs/07-test/工作区与授权策略产品化验收文档_V1.md)
+6. [前端产品化验收文档_V1](D:/newwork/本地智能体/docs/07-test/前端产品化验收文档_V1.md)
+7. [智能体框架主干总体验收文档_V1](D:/newwork/本地智能体/docs/07-test/智能体框架主干总体验收文档_V1.md)
+8. [产品级总体验收文档_V1](D:/newwork/本地智能体/docs/07-test/产品级总体验收文档_V1.md)
+9. [需求文档对照完成度清单_V1](D:/newwork/本地智能体/docs/07-test/需求文档对照完成度清单_V1.md)
+10. [第二阶段短期可用能力验收文档_V1](D:/newwork/本地智能体/docs/07-test/第二阶段短期可用能力验收文档_V1.md)
 
 ### `10-v2`
 
@@ -194,8 +188,9 @@
 
 状态：
 
-1. `当前最重要`
-2. `优先级最高`
+1. `当前前端主口径`
+2. `前端实现优先`
+3. `与冻结稿冲突时遵循冻结稿`
 
 ---
 
@@ -203,14 +198,10 @@
 
 ### P0 - 直接执行
 
-1. [V2前端当前执行入口_V1](D:/newwork/本地智能体/docs/10-v2/V2前端当前执行入口_V1.md)
-2. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
-3. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
-4. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
-5. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
-6. [前端产品化收口开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端产品化收口开发任务书_V1.md)
-7. [前端重构开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端重构开发任务书_V1.md)
-8. [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development/产品级冻结与下一阶段规划入口文档_V1.md)
+1. [需求冻结稿_V1](D:/newwork/本地智能体/docs/00-charter/需求冻结稿_V1.md)
+2. [产品边界与入口定义_V1](D:/newwork/本地智能体/docs/01-boundary/产品边界与入口定义_V1.md)
+3. [MVP功能清单_V1](D:/newwork/本地智能体/docs/01-boundary/MVP功能清单_V1.md)
+4. [验收标准_V1](D:/newwork/本地智能体/docs/07-test/验收标准_V1.md)
 
 ### P1 - 主依据
 
@@ -218,15 +209,21 @@
 2. [V2前端视觉与界面实现方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端视觉与界面实现方案_V1.md)
 3. [V2前端体验与架构优化方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端体验与架构优化方案_V1.md)
 4. [V2前端定制工作流_V1](D:/newwork/本地智能体/docs/10-v2/V2前端定制工作流_V1.md)
-5. [ClaudeCode本地智能体框架架构设计文档](D:/newwork/本地智能体/docs/ClaudeCode本地智能体框架架构设计文档.md)
-6. [Rust运行时设计草案_V1](D:/newwork/本地智能体/docs/03-runtime/Rust运行时设计草案_V1.md)
+5. [V2前端当前执行入口_V1](D:/newwork/本地智能体/docs/10-v2/V2前端当前执行入口_V1.md)
+6. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
+7. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
+8. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
+9. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
+10. [开发文档收口导航_V1](D:/newwork/本地智能体/docs/06-development/开发文档收口导航_V1.md)
+11. [前端重构开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端重构开发任务书_V1.md)
+12. [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development/产品级冻结与下一阶段规划入口文档_V1.md)
+13. [ClaudeCode本地智能体框架架构设计文档](D:/newwork/本地智能体/docs/ClaudeCode本地智能体框架架构设计文档.md)
+14. [Rust运行时设计草案_V1](D:/newwork/本地智能体/docs/03-runtime/Rust运行时设计草案_V1.md)
 
 ### P2 - 补充参考
 
-1. `00-charter/`
-2. `01-boundary/`
-3. `04-api/`
-4. `05-migration/`
+1. `04-api/`
+2. `05-migration/`
 
 ### P3 - 历史归档
 
@@ -241,24 +238,26 @@
 
 如果你是做前端：
 
-1. [V2前端当前执行入口_V1](D:/newwork/本地智能体/docs/10-v2/V2前端当前执行入口_V1.md)
-2. [V2前端体验与架构优化方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端体验与架构优化方案_V1.md)
-3. [V2前端定制工作流_V1](D:/newwork/本地智能体/docs/10-v2/V2前端定制工作流_V1.md)
-4. [前端状态与模块分层设计文档_V1](D:/newwork/本地智能体/docs/02-architecture/前端状态与模块分层设计文档_V1.md)
-5. [前端重构开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端重构开发任务书_V1.md)
-6. [第一阶段状态模型落地任务拆解清单_V1](D:/newwork/本地智能体/docs/06-development/第一阶段状态模型落地任务拆解清单_V1.md)
-7. [前端重构验收文档模板_V1](D:/newwork/本地智能体/docs/07-test/前端重构验收文档模板_V1.md)
-8. [V2前端视觉与界面实现方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端视觉与界面实现方案_V1.md)
+1. [需求冻结稿_V1](D:/newwork/本地智能体/docs/00-charter/需求冻结稿_V1.md)
+2. [V2前端当前执行入口_V1](D:/newwork/本地智能体/docs/10-v2/V2前端当前执行入口_V1.md)
+3. [V2前端体验与架构优化方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端体验与架构优化方案_V1.md)
+4. [V2前端定制工作流_V1](D:/newwork/本地智能体/docs/10-v2/V2前端定制工作流_V1.md)
+5. [前端状态与模块分层设计文档_V1](D:/newwork/本地智能体/docs/02-architecture/前端状态与模块分层设计文档_V1.md)
+6. [前端重构开发任务书_V1](D:/newwork/本地智能体/docs/06-development/前端重构开发任务书_V1.md)
+7. [第一阶段状态模型落地任务拆解清单_V1](D:/newwork/本地智能体/docs/06-development/第一阶段状态模型落地任务拆解清单_V1.md)
+8. [前端产品化验收文档_V1](D:/newwork/本地智能体/docs/07-test/前端产品化验收文档_V1.md)
+9. [V2前端视觉与界面实现方案_V1](D:/newwork/本地智能体/docs/10-v2/V2前端视觉与界面实现方案_V1.md)
 
 如果你是做运行时：
 
-1. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
-2. [当前项目本地化架构方案_V1](D:/newwork/本地智能体/docs/02-architecture/当前项目本地化架构方案_V1.md)
-3. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
-4. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
-5. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
-6. [ClaudeCode本地智能体框架架构设计文档](D:/newwork/本地智能体/docs/ClaudeCode本地智能体框架架构设计文档.md)
-7. [Rust运行时设计草案_V1](D:/newwork/本地智能体/docs/03-runtime/Rust运行时设计草案_V1.md)
+1. [需求冻结稿_V1](D:/newwork/本地智能体/docs/00-charter/需求冻结稿_V1.md)
+2. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
+3. [当前项目本地化架构方案_V1](D:/newwork/本地智能体/docs/02-architecture/当前项目本地化架构方案_V1.md)
+4. [智能体框架主干开发任务书_V1](D:/newwork/本地智能体/docs/06-development/智能体框架主干开发任务书_V1.md)
+5. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
+6. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
+7. [ClaudeCode本地智能体框架架构设计文档](D:/newwork/本地智能体/docs/ClaudeCode本地智能体框架架构设计文档.md)
+8. [Rust运行时设计草案_V1](D:/newwork/本地智能体/docs/03-runtime/Rust运行时设计草案_V1.md)
 
 如果你是做验收：
 

@@ -1,0 +1,13 @@
+﻿{
+    "sample":  "launch_local_program",
+    "status":  "passed",
+    "command":  "Start-Process powershell.exe -NoProfile -Command \"Start-Sleep -Seconds 60\"",
+    "started_at":  "2026-04-07T20:16:58.4469990+08:00",
+    "ended_at":  "2026-04-07T20:16:59.2760623+08:00",
+    "process_id":  37236,
+    "process_name":  "powershell",
+    "process_path":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "process_start_time":  "2026-04-07T20:16:58.4712186+08:00",
+    "stopped_after_check":  true,
+    "notes":  "以受控方式启动本地程序并完成进程存在性校验后主动结束。"
+}

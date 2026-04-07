@@ -13,7 +13,7 @@
 关联文档：
 
 1. [SQLite 主存储收口方案_V1](D:/newwork/本地智能体/docs/06-development/SQLite%20主存储收口方案_V1.md)
-2. [SQLite 主存储开发任务书_V1](D:/newwork/本地智能体/docs/06-development/SQLite%20主存储开发任务书_V1.md)
+2. [开发文档收口导航_V1](D:/newwork/本地智能体/docs/06-development/开发文档收口导航_V1.md)
 3. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
 
 ---

@@ -1,0 +1,30 @@
+﻿{
+    "sample":  "controlled_install_and_verify",
+    "status":  "passed",
+    "install_scope":  "isolated_venv",
+    "install_command":  "python -m pip install ruff==0.6.9",
+    "started_at":  "2026-04-07T20:18:22.2876357+08:00",
+    "ended_at":  "2026-04-07T20:18:33.5059052+08:00",
+    "package":  "ruff",
+    "package_version":  "Version: 0.6.9",
+    "package_location":  "Location: D:\\newwork\\����������\\tmp\\v1-capability-acceptance\\install-env\\Lib\\site-packages",
+    "executable_path":  "tmp\\v1-capability-acceptance\\install-env\\Scripts\\ruff.exe",
+    "executable_exists":  true,
+    "executable_version":  "ruff 0.6.9",
+    "pip_upgrade_tail":  [
+                             "Installing collected packages: pip",
+                             "  Attempting uninstall: pip",
+                             "    Found existing installation: pip 25.3",
+                             "    Uninstalling pip-25.3:",
+                             "      Successfully uninstalled pip-25.3",
+                             "Successfully installed pip-26.0.1"
+                         ],
+    "install_output_tail":  [
+                                "Collecting ruff==0.6.9",
+                                "  Using cached ruff-0.6.9-py3-none-win_amd64.whl.metadata (25 kB)",
+                                "Using cached ruff-0.6.9-py3-none-win_amd64.whl (9.4 MB)",
+                                "Installing collected packages: ruff",
+                                "Successfully installed ruff-0.6.9"
+                            ],
+    "notes":  "在隔离虚拟环境完成安装，已校验版本号与可执行文件路径。"
+}
