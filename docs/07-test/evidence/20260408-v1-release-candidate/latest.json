@@ -1,0 +1,186 @@
+﻿{
+    "checked_at":  "2026-04-08T21:53:01.1752725+08:00",
+    "overall_status":  "passed_with_warnings",
+    "result_count":  14,
+    "results":  [
+                    {
+                        "name":  "cargo_build",
+                        "status":  "passed",
+                        "detail":  "命令执行通过",
+                        "evidence":  {
+                                         "workdir":  "D:\\newwork\\本地智能体",
+                                         "command":  "cargo build",
+                                         "output_tail":  "Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s",
+                                         "exit_code":  0
+                                     }
+                    },
+                    {
+                        "name":  "go_build",
+                        "status":  "passed",
+                        "detail":  "命令执行通过",
+                        "evidence":  {
+                                         "workdir":  "D:\\newwork\\本地智能体\\gateway",
+                                         "command":  "go build ./...",
+                                         "output_tail":  "",
+                                         "exit_code":  0
+                                     }
+                    },
+                    {
+                        "name":  "frontend_build",
+                        "status":  "passed",
+                        "detail":  "命令执行通过",
+                        "evidence":  {
+                                         "workdir":  "D:\\newwork\\本地智能体\\frontend",
+                                         "command":  "cmd.exe /c npm run build",
+                                         "output_tail":  "\u003e local-agent-frontend@0.1.0 build\n\u003e tsc -b \u0026\u0026 vite build\n\n\u001b[36mvite v8.0.3 \u001b[32mbuilding client environment for production...\u001b[36m\u001b[39m\n\u001b[2K\ntransforming...✓ 62 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                   0.40 kB │ gzip:  0.29 kB\ndist/assets/index-CX6kOtPV.css   34.63 kB │ gzip:  7.17 kB\ndist/assets/index-5TyvVZQU.js   348.04 kB │ gzip: 98.98 kB\n\n\u001b[32m✓ built in 133ms\u001b[39m",
+                                         "exit_code":  0
+                                     }
+                    },
+                    {
+                        "name":  "sample_launch_local_program",
+                        "status":  "passed",
+                        "detail":  "样本状态正常：passed",
+                        "evidence":  {
+                                         "sample_status":  "passed",
+                                         "path":  "D:\\newwork\\本地智能体\\tmp\\v1-capability-acceptance\\launch-local-program-sample.json"
+                                     }
+                    },
+                    {
+                        "name":  "sample_controlled_install",
+                        "status":  "passed",
+                        "detail":  "样本状态正常：passed",
+                        "evidence":  {
+                                         "sample_status":  "passed",
+                                         "path":  "D:\\newwork\\本地智能体\\tmp\\v1-capability-acceptance\\controlled-install-verify-sample.json"
+                                     }
+                    },
+                    {
+                        "name":  "sample_winget_install",
+                        "status":  "passed",
+                        "detail":  "样本状态正常：passed",
+                        "evidence":  {
+                                         "sample_status":  "passed",
+                                         "path":  "D:\\newwork\\本地智能体\\tmp\\v1-capability-acceptance\\winget-system-install-verify-sample.json"
+                                     }
+                    },
+                    {
+                        "name":  "sample_choco_install",
+                        "status":  "warn",
+                        "detail":  "样本为非阻断告警：failed",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\tmp\\v1-capability-acceptance\\choco-system-install-verify-sample.json",
+                                         "sample_status":  "failed",
+                                         "notes":  "系统级包管理器样本：使用 choco 完成安装后，校验命令版本与可执行文件路径。"
+                                     }
+                    },
+                    {
+                        "name":  "doc_freeze_scope",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\docs\\00-charter\\需求冻结稿_V1.md",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    },
+                    {
+                        "name":  "doc_completion_status",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\docs\\07-test\\需求文档对照完成度清单_V1.md",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    },
+                    {
+                        "name":  "doc_product_acceptance",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\docs\\07-test\\产品级总体验收文档_V1.md",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    },
+                    {
+                        "name":  "runtime_memory_recalled_formalized",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\crates\\runtime-core\\src\\events.rs",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    },
+                    {
+                        "name":  "runtime_confirmation_sequence",
+                        "status":  "passed",
+                        "detail":  "确认链事件时序正确",
+                        "evidence":  {
+                                         "status":  "awaiting_confirmation",
+                                         "event_types":  [
+                                                             "plan_ready",
+                                                             "memory_recalled",
+                                                             "confirmation_required"
+                                                         ],
+                                         "confirmation_request":  true,
+                                         "events":  [
+                                                        {
+                                                            "sequence":  3,
+                                                            "event_type":  "plan_ready",
+                                                            "stage":  "Plan",
+                                                            "summary":  "å·²è¯å«éè¦ç¡®è®¤çå¨ä½",
+                                                            "memory_digest_present":  true,
+                                                            "memory_action":  null,
+                                                            "governance_status":  null
+                                                        },
+                                                        {
+                                                            "sequence":  4,
+                                                            "event_type":  "memory_recalled",
+                                                            "stage":  "Plan",
+                                                            "summary":  "å·²å®æè®°å¿å¬å",
+                                                            "memory_digest_present":  true,
+                                                            "memory_action":  "recall",
+                                                            "governance_status":  "recalled"
+                                                        },
+                                                        {
+                                                            "sequence":  5,
+                                                            "event_type":  "confirmation_required",
+                                                            "stage":  "PausedForConfirmation",
+                                                            "summary":  "éè¦äººå·¥ç¡®è®¤åæè½ç»§ç»­",
+                                                            "memory_digest_present":  false,
+                                                            "memory_action":  null,
+                                                            "governance_status":  null
+                                                        }
+                                                    ]
+                                     }
+                    },
+                    {
+                        "name":  "memory_governance_contract_go",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\gateway\\internal\\contracts\\contracts.go",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    },
+                    {
+                        "name":  "memory_governance_contract_ts",
+                        "status":  "passed",
+                        "detail":  "文档口径一致",
+                        "evidence":  {
+                                         "path":  "D:\\newwork\\本地智能体\\frontend\\src\\shared\\contracts.ts",
+                                         "missing_patterns":  [
+
+                                                              ]
+                                     }
+                    }
+                ]
+}

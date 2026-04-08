@@ -1,0 +1,15 @@
+{
+  "run_id": "run-1775617896513-3",
+  "confirmation_id": "confirm-risk-run-1775617896513-3",
+  "event_type": "memory_written",
+  "record_type": "lesson_learned",
+  "governance_version": "memory_audit_v1",
+  "governance_reason": "用户拒绝高风险动作后，已沉淀为正式失败教训。",
+  "governance_source": "gateway_confirmation_reject",
+  "memory_kind": "lesson_learned",
+  "stored_title": "失败教训：高风险动作被用户拒绝时应先缩小范围并提供更安全替代。",
+  "stored_governance_version": "memory_audit_v1",
+  "stored_governance_reason": "用户拒绝高风险动作后，已沉淀为正式失败教训。",
+  "stored_governance_source": "gateway_confirmation_reject",
+  "stored_source_event_type": "confirmation_rejected"
+}
