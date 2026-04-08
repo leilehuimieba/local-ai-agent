@@ -1,11 +1,13 @@
+use crate::capabilities::ToolExecutionTrace;
 use crate::text::summarize_text;
 use crate::tool_registry::ToolCall;
-use crate::tools::ToolExecutionTrace;
 
 #[derive(Clone, Debug)]
 pub(crate) struct VerificationOutcome {
     pub passed: bool,
     pub code: String,
+    pub policy: String,
+    pub evidence: Vec<String>,
     pub summary: String,
     pub next_step: String,
 }
@@ -19,21 +21,28 @@ pub(crate) fn verify_tool_execution(
     tool_call: &ToolCall,
     trace: &ToolExecutionTrace,
 ) -> VerificationReport {
+    let policy = verification_policy(tool_call);
+    let evidence = verification_evidence(trace);
     let outcome = if !trace.result.success {
-        failed_outcome(trace)
+        failed_outcome(trace, &policy, evidence)
     } else if used_recovery(trace) {
-        recovered_outcome(trace)
+        recovered_outcome(trace, &policy, evidence)
     } else {
-        passed_outcome(trace)
+        passed_outcome(trace, &policy, evidence)
     };
-    let _ = tool_call;
     VerificationReport { outcome }
 }
 
-fn passed_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
+fn passed_outcome(
+    trace: &ToolExecutionTrace,
+    policy: &str,
+    evidence: Vec<String>,
+) -> VerificationOutcome {
     VerificationOutcome {
         passed: true,
         code: "verified".to_string(),
+        policy: policy.to_string(),
+        evidence,
         summary: format!(
             "验证通过：{}；执行依据：{}",
             summarize_text(&trace.result.summary),
@@ -43,10 +52,16 @@ fn passed_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
     }
 }
 
-fn recovered_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
+fn recovered_outcome(
+    trace: &ToolExecutionTrace,
+    policy: &str,
+    evidence: Vec<String>,
+) -> VerificationOutcome {
     VerificationOutcome {
         passed: true,
         code: "verified_with_recovery".to_string(),
+        policy: policy.to_string(),
+        evidence,
         summary: format!(
             "验证通过（受控恢复）：{}；恢复依据：{}",
             summarize_text(&trace.result.summary),
@@ -56,10 +71,16 @@ fn recovered_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
     }
 }
 
-fn failed_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
+fn failed_outcome(
+    trace: &ToolExecutionTrace,
+    policy: &str,
+    evidence: Vec<String>,
+) -> VerificationOutcome {
     VerificationOutcome {
         passed: false,
         code: "verification_failed".to_string(),
+        policy: policy.to_string(),
+        evidence,
         summary: format!(
             "验证失败：{}；失败依据：{}",
             summarize_text(&trace.result.final_answer),
@@ -71,6 +92,32 @@ fn failed_outcome(trace: &ToolExecutionTrace) -> VerificationOutcome {
 
 fn used_recovery(trace: &ToolExecutionTrace) -> bool {
     trace.result.summary.contains("已执行单次恢复")
+}
+
+fn verification_policy(tool_call: &ToolCall) -> String {
+    match tool_call.spec.tool_name.as_str() {
+        "workspace_write" => "confirm_write_effect".to_string(),
+        "workspace_delete" => "confirm_delete_effect".to_string(),
+        "run_command" => "inspect_command_result".to_string(),
+        "memory_write" => "confirm_memory_persisted".to_string(),
+        "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" => {
+            "check_result_relevance".to_string()
+        }
+        _ => "check_result_summary".to_string(),
+    }
+}
+
+fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
+    let mut evidence = vec![format!("summary={}", summarize_text(&trace.result.summary))];
+    evidence.push(format!(
+        "reasoning={}",
+        summarize_text(&trace.result.reasoning_summary)
+    ));
+    if let Some(path) = trace.result.artifact_path.as_ref() {
+        evidence.push(format!("artifact={path}"));
+    }
+    evidence.push(format!("cache_status={}", trace.result.cache_status));
+    evidence
 }
 
 fn success_next_step(trace: &ToolExecutionTrace) -> String {

@@ -1,0 +1,9 @@
+pub(crate) mod agent_resolve;
+pub(crate) mod command;
+pub(crate) mod context;
+pub(crate) mod explain;
+pub(crate) mod knowledge;
+pub(crate) mod memory;
+pub(crate) mod project;
+pub(crate) mod siyuan;
+pub(crate) mod workspace;

@@ -24,6 +24,84 @@ export type ProviderRef = {
   models_path: string;
 };
 
+export type ProviderApplyStatus = "not_configured" | "saved_not_applied" | "applied";
+
+export type ProviderTestStatus = "idle" | "success" | "error";
+
+export type ProviderCredentialStatus = {
+  has_credential: boolean;
+  api_key_masked?: string;
+  updated_at?: string;
+  last_test_status?: ProviderTestStatus;
+  last_test_message?: string;
+  last_test_at?: string;
+  apply_status: ProviderApplyStatus;
+  applied_at?: string;
+  pending_reload: boolean;
+};
+
+export type ProviderSettingsItem = ProviderRef & {
+  credential_kind: string;
+  supports_test: boolean;
+  editable: boolean;
+  credential_status: ProviderCredentialStatus;
+};
+
+export type ProviderSettingsResponse = {
+  active_provider_id?: string;
+  providers: ProviderSettingsItem[];
+};
+
+export type ProviderTestRequest = {
+  provider_id: string;
+  base_url?: string;
+  api_key: string;
+};
+
+export type ProviderTestResponse = {
+  ok: boolean;
+  provider_id: string;
+  message: string;
+  checked_at?: string;
+  error_code?: string;
+};
+
+export type ProviderSaveRequest = {
+  provider_id: string;
+  api_key: string;
+};
+
+export type ProviderSaveResponse = {
+  ok: boolean;
+  provider_id: string;
+  message: string;
+  credential_status: ProviderCredentialStatus;
+};
+
+export type ProviderApplyRequest = {
+  provider_id: string;
+};
+
+export type ProviderApplyResponse = {
+  ok: boolean;
+  provider_id: string;
+  message: string;
+  apply_mode: string;
+  applied_at?: string;
+  restart_required: boolean;
+};
+
+export type ProviderRemoveRequest = {
+  provider_id: string;
+};
+
+export type ProviderRemoveResponse = {
+  ok: boolean;
+  provider_id: string;
+  message: string;
+  state_code?: string;
+};
+
 export type WorkspaceRef = {
   workspace_id: string;
   name: string;
@@ -51,6 +129,41 @@ export type WorkspaceDocSummary = {
   exists: boolean;
   summary: string;
   truncated: boolean;
+};
+
+export type CapabilitySpec = {
+  capability_id: string;
+  display_name: string;
+  domain: string;
+  risk_level: string;
+  input_schema: string;
+  output_kind: string;
+  side_effect_level: string;
+  supports_modes?: string[];
+  verification_policy: string;
+  connector_slot?: string;
+  source_kind: string;
+  requires_confirmation?: boolean;
+};
+
+export type CapabilityListResponse = {
+  items: CapabilitySpec[];
+};
+
+export type ConnectorSlotSpec = {
+  slot_id: string;
+  display_name: string;
+  priority: number;
+  status: string;
+  scope: string;
+  current_capabilities?: string[];
+  supported_actions?: string[];
+  boundary: string;
+  next_step: string;
+};
+
+export type ConnectorListResponse = {
+  items: ConnectorSlotSpec[];
 };
 
 export type RepoContextSnapshot = {
@@ -173,6 +286,7 @@ export type LogsResponse = {
 export type MemoryEntry = {
   id: string;
   kind: string;
+  memory_kind?: string;
   title: string;
   summary: string;
   content: string;
@@ -186,6 +300,13 @@ export type MemoryEntry = {
   source_title?: string;
   source_event_type?: string;
   source_artifact_path?: string;
+  governance_version?: string;
+  governance_reason?: string;
+  governance_source?: string;
+  governance_at?: string;
+  governance_status?: string;
+  memory_action?: string;
+  archive_reason?: string;
   verified: boolean;
   priority: number;
   archived: boolean;
@@ -251,6 +372,11 @@ export type RuntimeContextSnapshot = {
   reasoning_summary?: string;
   cache_status?: string;
   cache_reason?: string;
+  assembly_profile?: string;
+  includes_session?: boolean;
+  includes_memory?: boolean;
+  includes_knowledge?: boolean;
+  includes_tool_preview?: boolean;
   prompt_static?: string;
   prompt_project?: string;
   prompt_dynamic?: string;
@@ -270,6 +396,8 @@ export type VerificationSnapshot = {
   code?: string;
   summary?: string;
   passed?: boolean;
+  policy?: string;
+  evidence?: string[];
 };
 
 export type LogEntry = {

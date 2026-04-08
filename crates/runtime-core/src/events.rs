@@ -1,9 +1,52 @@
 use crate::contracts::{
-    ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, ToolCallSnapshot,
-    VerificationSnapshot,
+    ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse,
+    ToolCallSnapshot, VerificationSnapshot,
 };
+use crate::prompt::{
+    render_context_answer_prompt, render_project_answer_prompt,
+};
+use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub(crate) fn make_memory_recall_event(
+    request: &RunRequest,
+    sequence: u32,
+    metadata: &BTreeMap<String, String>,
+) -> Option<RunEvent> {
+    let digest = memory_digest(metadata);
+    (!digest.is_empty()).then(|| {
+        make_event(
+            request,
+            sequence,
+            "memory_recalled",
+            "Plan",
+            &memory_recall_title(&digest),
+            &digest,
+            memory_recall_metadata(metadata, &digest),
+        )
+    })
+}
+
+pub(crate) fn with_runtime_memory_recall_event(
+    request: &RunRequest,
+    mut response: RuntimeRunResponse,
+) -> RuntimeRunResponse {
+    if response
+        .events
+        .iter()
+        .any(|event| event.event_type == "memory_recalled")
+    {
+        return response;
+    }
+    if let Some((index, metadata)) = memory_recall_anchor(&response.events) {
+        if let Some(event) = make_memory_recall_event(request, 0, metadata) {
+            response.events.insert(index + 1, event);
+            resequence_events(&mut response.events);
+        }
+    }
+    response
+}
 
 pub(crate) fn make_confirmation_event(
     request: &RunRequest,
@@ -116,6 +159,59 @@ pub(crate) fn make_event(
     }
 }
 
+fn memory_digest(metadata: &BTreeMap<String, String>) -> String {
+    metadata.get("memory_digest").cloned().unwrap_or_default()
+}
+
+fn memory_recall_anchor(events: &[RunEvent]) -> Option<(usize, &BTreeMap<String, String>)> {
+    events.iter().enumerate().find_map(|(index, event)| {
+        (event.event_type == "plan_ready").then_some((index, &event.metadata))
+    })
+}
+
+fn memory_recall_metadata(
+    source: &BTreeMap<String, String>,
+    digest: &str,
+) -> BTreeMap<String, String> {
+    let mut metadata = source.clone();
+    metadata.insert("layer".to_string(), "long_term_memory".to_string());
+    metadata.insert("record_type".to_string(), "recall_digest".to_string());
+    metadata.insert("memory_kind".to_string(), "recall_digest".to_string());
+    metadata.insert("governance_status".to_string(), "recalled".to_string());
+    metadata.insert("memory_action".to_string(), "recall".to_string());
+    metadata.insert("governance_version".to_string(), MEMORY_GOVERNANCE_VERSION.to_string());
+    metadata.insert("governance_reason".to_string(), memory_recall_reason(digest));
+    metadata.insert("governance_source".to_string(), "runtime_memory_recall".to_string());
+    metadata.insert("governance_at".to_string(), timestamp_now());
+    metadata.insert("source_type".to_string(), "runtime".to_string());
+    metadata.insert(
+        "source_event_type".to_string(),
+        "memory_recalled".to_string(),
+    );
+    metadata.insert("source_artifact_path".to_string(), String::new());
+    metadata.insert("archive_reason".to_string(), String::new());
+    metadata.insert("title".to_string(), memory_recall_title(digest));
+    metadata.insert("reason".to_string(), memory_recall_reason(digest));
+    metadata.insert("result_summary".to_string(), digest.to_string());
+    metadata
+}
+
+fn memory_recall_title(digest: &str) -> String {
+    if digest == "当前没有命中相关长期记忆。" {
+        "未命中长期记忆".to_string()
+    } else {
+        "已完成记忆召回".to_string()
+    }
+}
+
+fn memory_recall_reason(digest: &str) -> String {
+    if digest == "当前没有命中相关长期记忆。" {
+        "当前查询未命中可复用长期记忆，已输出空召回结果。".to_string()
+    } else {
+        "已按当前输入完成长期记忆召回，并将摘要注入上下文。".to_string()
+    }
+}
+
 fn pick_verification_summary(
     metadata: &BTreeMap<String, String>,
     snapshot: Option<&VerificationSnapshot>,
@@ -128,28 +224,25 @@ fn pick_verification_summary(
 }
 
 fn context_snapshot(metadata: &BTreeMap<String, String>) -> Option<RuntimeContextSnapshot> {
+    let prompts = prompt_snapshot_parts(metadata);
     let snapshot = RuntimeContextSnapshot {
-        workspace_root: metadata
-            .get("context_workspace_root")
-            .cloned()
-            .unwrap_or_default(),
-        mode: metadata.get("context_mode").cloned().unwrap_or_default(),
-        session_summary: metadata.get("session_summary").cloned().unwrap_or_default(),
-        memory_digest: metadata.get("memory_digest").cloned().unwrap_or_default(),
-        knowledge_digest: metadata
-            .get("knowledge_digest")
-            .cloned()
-            .unwrap_or_default(),
-        tool_preview: metadata.get("tool_preview").cloned().unwrap_or_default(),
-        reasoning_summary: metadata
-            .get("reasoning_summary")
-            .cloned()
-            .unwrap_or_default(),
-        cache_status: metadata.get("cache_status").cloned().unwrap_or_default(),
-        cache_reason: metadata.get("cache_reason").cloned().unwrap_or_default(),
-        prompt_static: String::new(),
-        prompt_project: String::new(),
-        prompt_dynamic: String::new(),
+        workspace_root: metadata_value(metadata, "context_workspace_root"),
+        mode: metadata_value(metadata, "context_mode"),
+        session_summary: metadata_value(metadata, "session_summary"),
+        memory_digest: metadata_value(metadata, "memory_digest"),
+        knowledge_digest: metadata_value(metadata, "knowledge_digest"),
+        tool_preview: metadata_value(metadata, "tool_preview"),
+        reasoning_summary: metadata_value(metadata, "reasoning_summary"),
+        cache_status: metadata_value(metadata, "cache_status"),
+        cache_reason: metadata_value(metadata, "cache_reason"),
+        assembly_profile: metadata_value(metadata, "assembly_profile"),
+        includes_session: metadata_flag(metadata, "includes_session"),
+        includes_memory: metadata_flag(metadata, "includes_memory"),
+        includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
+        includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
+        prompt_static: prompts.0,
+        prompt_project: prompts.1,
+        prompt_dynamic: prompts.2,
     };
     has_context_snapshot(&snapshot).then_some(snapshot)
 }
@@ -164,6 +257,10 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.reasoning_summary.is_empty()
         || !snapshot.cache_status.is_empty()
         || !snapshot.cache_reason.is_empty()
+        || !snapshot.assembly_profile.is_empty()
+        || !snapshot.prompt_static.is_empty()
+        || !snapshot.prompt_project.is_empty()
+        || !snapshot.prompt_dynamic.is_empty()
 }
 
 fn tool_call_snapshot(metadata: &BTreeMap<String, String>) -> Option<ToolCallSnapshot> {
@@ -207,12 +304,131 @@ fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<Verifica
             .get("verification_passed")
             .map(|value| value == "true")
             .unwrap_or(false),
+        policy: metadata
+            .get("verification_policy")
+            .cloned()
+            .unwrap_or_default(),
+        evidence: metadata
+            .get("verification_evidence")
+            .map(|value| split_lines(value))
+            .unwrap_or_default(),
     };
     has_verification_snapshot(&snapshot).then_some(snapshot)
 }
 
 fn has_verification_snapshot(snapshot: &VerificationSnapshot) -> bool {
-    !snapshot.code.is_empty() || !snapshot.summary.is_empty() || snapshot.passed
+    !snapshot.code.is_empty()
+        || !snapshot.summary.is_empty()
+        || snapshot.passed
+        || !snapshot.policy.is_empty()
+        || !snapshot.evidence.is_empty()
+}
+
+fn split_lines(value: &str) -> Vec<String> {
+    value
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn prompt_snapshot_parts(metadata: &BTreeMap<String, String>) -> (String, String, String) {
+    let Some(envelope) = prompt_snapshot_envelope(metadata) else {
+        return (String::new(), String::new(), String::new());
+    };
+    let prompt = if metadata
+        .get("assembly_profile")
+        .is_some_and(|value| value == "context_answer")
+    {
+        render_context_answer_prompt(&envelope).full_prompt
+    } else {
+        render_project_answer_prompt(&envelope).full_prompt
+    };
+    split_prompt_sections(&prompt)
+}
+
+fn prompt_snapshot_envelope(
+    metadata: &BTreeMap<String, String>,
+) -> Option<crate::context_builder::RuntimeContextEnvelope> {
+    let workspace_root = metadata.get("context_workspace_root")?.clone();
+    let mode = metadata_value(metadata, "context_mode");
+    Some(crate::context_builder::RuntimeContextEnvelope {
+        user_input: prompt_user_input(metadata),
+        mode,
+        workspace_root,
+        static_block: prompt_static_block(),
+        project_block: prompt_project_block(metadata),
+        dynamic_block: prompt_dynamic_block(metadata),
+    })
+}
+
+fn split_prompt_sections(prompt: &str) -> (String, String, String) {
+    let mut parts = prompt.split("\n\n");
+    (
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+    )
+}
+
+fn metadata_value(metadata: &BTreeMap<String, String>, key: &str) -> String {
+    metadata.get(key).cloned().unwrap_or_default()
+}
+
+fn metadata_flag(metadata: &BTreeMap<String, String>, key: &str) -> bool {
+    metadata.get(key).is_some_and(|value| value == "true")
+}
+
+fn prompt_user_input(metadata: &BTreeMap<String, String>) -> String {
+    metadata
+        .get("task_title")
+        .cloned()
+        .or_else(|| metadata.get("final_answer").cloned())
+        .unwrap_or_default()
+}
+
+fn prompt_static_block() -> crate::context_builder::StaticPromptBlock {
+    crate::context_builder::StaticPromptBlock {
+        role_prompt: "你是本地智能体，负责在当前工作区内完成真实任务。".to_string(),
+        mode_prompt: String::new(),
+    }
+}
+
+fn prompt_project_block(
+    metadata: &BTreeMap<String, String>,
+) -> crate::context_builder::ProjectPromptBlock {
+    crate::context_builder::ProjectPromptBlock {
+        workspace_root: metadata_value(metadata, "context_workspace_root"),
+        repo_summary: String::new(),
+        doc_summary: String::new(),
+    }
+}
+
+fn prompt_dynamic_block(
+    metadata: &BTreeMap<String, String>,
+) -> crate::context_builder::DynamicPromptBlock {
+    crate::context_builder::DynamicPromptBlock {
+        user_input: prompt_user_input(metadata),
+        assembly_profile: metadata_value(metadata, "assembly_profile"),
+        includes_session: metadata_flag(metadata, "includes_session"),
+        includes_memory: metadata_flag(metadata, "includes_memory"),
+        includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
+        includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
+        session_summary: metadata_value(metadata, "session_summary"),
+        memory_digest: metadata_value(metadata, "memory_digest"),
+        knowledge_digest: metadata_value(metadata, "knowledge_digest"),
+        tool_preview: metadata_value(metadata, "tool_preview"),
+        reasoning_summary: metadata_value(metadata, "reasoning_summary"),
+        cache_status: metadata_value(metadata, "cache_status"),
+        cache_reason: metadata_value(metadata, "cache_reason"),
+    }
+}
+
+fn resequence_events(events: &mut [RunEvent]) {
+    for (index, event) in events.iter_mut().enumerate() {
+        event.sequence = index as u32 + 1;
+    }
 }
 
 pub(crate) fn timestamp_now() -> String {

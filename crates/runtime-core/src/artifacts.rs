@@ -28,6 +28,20 @@ pub(crate) fn externalize_text_artifact(
     create_artifact_record(request, kind, content, path).ok()
 }
 
+pub(crate) fn externalize_json_artifact<T>(
+    request: &RunRequest,
+    kind: &str,
+    value: &T,
+) -> Option<ArtifactRecord>
+where
+    T: Serialize,
+{
+    let content = serde_json::to_string_pretty(value).ok()?;
+    let file_name = format!("{}-{}.json", kind, timestamp_now());
+    let path = artifact_dir(request).join(PathBuf::from(file_name));
+    create_artifact_record(request, kind, &content, path).ok()
+}
+
 fn create_artifact_record(
     request: &RunRequest,
     kind: &str,

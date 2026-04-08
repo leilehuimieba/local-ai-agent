@@ -80,6 +80,52 @@ pub struct WorkspaceDocSummary {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CapabilitySpec {
+    pub capability_id: String,
+    pub display_name: String,
+    pub domain: String,
+    pub risk_level: String,
+    pub input_schema: String,
+    pub output_kind: String,
+    pub side_effect_level: String,
+    #[serde(default)]
+    pub supports_modes: Vec<String>,
+    pub verification_policy: String,
+    #[serde(default)]
+    pub connector_slot: String,
+    pub source_kind: String,
+    #[serde(default)]
+    pub requires_confirmation: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CapabilityListResponse {
+    #[serde(default)]
+    pub items: Vec<CapabilitySpec>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ConnectorSlotSpec {
+    pub slot_id: String,
+    pub display_name: String,
+    pub priority: u8,
+    pub status: String,
+    pub scope: String,
+    #[serde(default)]
+    pub current_capabilities: Vec<String>,
+    #[serde(default)]
+    pub supported_actions: Vec<String>,
+    pub boundary: String,
+    pub next_step: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ConnectorListResponse {
+    #[serde(default)]
+    pub items: Vec<ConnectorSlotSpec>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ConfirmationDecision {
     pub confirmation_id: String,
     pub run_id: String,
@@ -155,6 +201,16 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub cache_reason: String,
     #[serde(default)]
+    pub assembly_profile: String,
+    #[serde(default)]
+    pub includes_session: bool,
+    #[serde(default)]
+    pub includes_memory: bool,
+    #[serde(default)]
+    pub includes_knowledge: bool,
+    #[serde(default)]
+    pub includes_tool_preview: bool,
+    #[serde(default)]
     pub prompt_static: String,
     #[serde(default)]
     pub prompt_project: String,
@@ -188,6 +244,10 @@ pub struct VerificationSnapshot {
     pub summary: String,
     #[serde(default)]
     pub passed: bool,
+    #[serde(default)]
+    pub policy: String,
+    #[serde(default)]
+    pub evidence: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

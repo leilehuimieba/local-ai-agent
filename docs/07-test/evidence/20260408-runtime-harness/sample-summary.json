@@ -1,0 +1,52 @@
+﻿{
+    "generated_at":  "2026-04-08 19:19:48",
+    "frontend_build_log":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\frontend-build.log",
+    "samples":  {
+                    "project_answer":  {
+                                           "request":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\context-answer.request.json",
+                                           "response":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\context-answer.response.json",
+                                           "action_tool":  "project_answer",
+                                           "assembly_profile":  "project_answer",
+                                           "includes_session":  false,
+                                           "includes_memory":  false,
+                                           "includes_knowledge":  true,
+                                           "includes_tool_preview":  false
+                                       },
+                    "context_answer":  {
+                                           "request":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\context-answer-true.request.json",
+                                           "response":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\context-answer-true.response.json",
+                                           "action_tool":  "session_context",
+                                           "assembly_profile":  "context_answer",
+                                           "includes_session":  true,
+                                           "includes_memory":  false,
+                                           "includes_knowledge":  false,
+                                           "includes_tool_preview":  false
+                                       },
+                    "knowledge_search":  {
+                                             "request":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\knowledge-search.request.json",
+                                             "response":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\knowledge-search.response.json",
+                                             "action_tool":  "knowledge_search",
+                                             "assembly_profile":  "knowledge",
+                                             "includes_session":  false,
+                                             "includes_memory":  false,
+                                             "includes_knowledge":  true,
+                                             "includes_tool_preview":  false
+                                         },
+                    "workspace_write":  {
+                                            "request":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write.request.json",
+                                            "response":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write.response.json",
+                                            "action_tool":  "workspace_write",
+                                            "assembly_profile":  "workspace",
+                                            "artifact_path":  "D:\\newwork\\æ¬å°æºè½ä½\\data\\artifacts\\harness-write-session\\harness-write-run\\write-1775647188170.txt",
+                                            "verification_policy":  "confirm_write_effect",
+                                            "verification_evidence":  [
+                                                                          "summary=æä»¶åå\u0085¥æåï¼å\u0085±åå\u0085¥ 366 ä¸ªå­ç¬¦ã",
+                                                                          "reasoning=å\u0085æ ¡éªå·¥ä½åºè·¯å¾ï¼åç´æ¥åå\u0085¥ç®æ æä»¶å¹¶è¿åæè¦ã",
+                                                                          "artifact=D:\\newwork\\æ¬å°æºè½ä½\\data\\artifacts\\harness-write-session\\harness-write-run\\write-1775647188170.txt",
+                                                                          "cache_status=bypass"
+                                                                      ],
+                                            "handoff_artifact_path":  "D:\\newwork\\æ¬å°æºè½ä½\\data\\artifacts\\harness-write-session\\harness-write-run\\handoff-1775647188172.json",
+                                            "session_snapshot":  "D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write.session.json"
+                                        }
+                }
+}

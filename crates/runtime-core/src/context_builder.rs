@@ -1,10 +1,11 @@
+use crate::capabilities::ToolDefinition;
+use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
 use crate::memory_recall::recall_memory_digest;
-use crate::repo_context::{RepoContextLoadResult, repo_context_summary};
-use crate::session::{SessionMemory, session_prompt_summary};
+use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
+use crate::session::{session_prompt_summary, SessionMemory};
 use crate::text::summarize_text;
-use crate::tools::ToolDefinition;
 
 #[derive(Clone, Debug)]
 pub(crate) struct StaticPromptBlock {
@@ -22,6 +23,11 @@ pub(crate) struct ProjectPromptBlock {
 #[derive(Clone, Debug)]
 pub(crate) struct DynamicPromptBlock {
     pub user_input: String,
+    pub assembly_profile: String,
+    pub includes_session: bool,
+    pub includes_memory: bool,
+    pub includes_knowledge: bool,
+    pub includes_tool_preview: bool,
     pub session_summary: String,
     pub memory_digest: String,
     pub knowledge_digest: String,
@@ -46,6 +52,7 @@ pub(crate) fn build_runtime_context(
     session_context: &SessionMemory,
     repo_context: &RepoContextLoadResult,
     visible_tools: &[ToolDefinition],
+    policy: &ContextAssemblyPolicy,
     cache_status: &str,
     cache_reason: &str,
 ) -> RuntimeContextEnvelope {
@@ -59,6 +66,7 @@ pub(crate) fn build_runtime_context(
             request,
             session_context,
             visible_tools,
+            policy,
             cache_status,
             cache_reason,
         ),
@@ -105,18 +113,24 @@ fn dynamic_prompt_block(
     request: &RunRequest,
     session_context: &SessionMemory,
     visible_tools: &[ToolDefinition],
+    policy: &ContextAssemblyPolicy,
     cache_status: &str,
     cache_reason: &str,
 ) -> DynamicPromptBlock {
-    let session_summary = session_summary(session_context);
-    let memory_digest = recall_memory_digest(request, &request.user_input, 3).summary;
-    let knowledge_digest = knowledge_digest(request);
+    let session_summary = selected_session_summary(session_context, policy);
+    let memory_digest = selected_memory_digest(request, policy);
+    let knowledge_digest = selected_knowledge_digest(request, policy);
     DynamicPromptBlock {
         user_input: request.user_input.clone(),
+        assembly_profile: policy.profile.to_string(),
+        includes_session: policy.include_session,
+        includes_memory: policy.include_memory,
+        includes_knowledge: policy.include_knowledge,
+        includes_tool_preview: policy.include_tool_preview,
         session_summary: session_summary.clone(),
         memory_digest: memory_digest.clone(),
         knowledge_digest: knowledge_digest.clone(),
-        tool_preview: tool_preview(visible_tools),
+        tool_preview: selected_tool_preview(visible_tools, policy),
         reasoning_summary: reasoning_summary(&session_summary, &memory_digest, &knowledge_digest),
         cache_status: cache_status.to_string(),
         cache_reason: cache_reason.to_string(),
@@ -125,6 +139,33 @@ fn dynamic_prompt_block(
 
 fn session_summary(session_context: &SessionMemory) -> String {
     session_prompt_summary(session_context)
+}
+
+fn selected_session_summary(
+    session_context: &SessionMemory,
+    policy: &ContextAssemblyPolicy,
+) -> String {
+    if policy.include_session {
+        session_summary(session_context)
+    } else {
+        "当前阶段未注入会话摘要。".to_string()
+    }
+}
+
+fn selected_memory_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
+    if policy.include_memory {
+        recall_memory_digest(request, &request.user_input, 3).summary
+    } else {
+        "当前阶段未注入长期记忆摘要。".to_string()
+    }
+}
+
+fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
+    if policy.include_knowledge {
+        knowledge_digest(request)
+    } else {
+        "当前阶段未注入知识摘要。".to_string()
+    }
 }
 
 fn knowledge_digest(request: &RunRequest) -> String {
@@ -146,7 +187,18 @@ fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
     if !direct_hits.is_empty() {
         return direct_hits;
     }
-    search_knowledge(request, "项目 智能体 本地 主干 架构 运行时", 4)
+    Vec::new()
+}
+
+fn selected_tool_preview(
+    visible_tools: &[ToolDefinition],
+    policy: &ContextAssemblyPolicy,
+) -> String {
+    if policy.include_tool_preview {
+        tool_preview(visible_tools)
+    } else {
+        "当前阶段未注入工具预览。".to_string()
+    }
 }
 
 fn tool_preview(visible_tools: &[ToolDefinition]) -> String {

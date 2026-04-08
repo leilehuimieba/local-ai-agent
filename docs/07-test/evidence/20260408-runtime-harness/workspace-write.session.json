@@ -1,0 +1,20 @@
+{
+  "session_id": "harness-write-session",
+  "compressed_summary": "第1轮 用户：write:\ntmp/runtime-harness-acceptance/20260408-runtime-harness/workspace-write-target.txt\n这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_snapshot，而不是只保留 summary。\n3. hando... | 智能体：文件写入完成：D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write-target.txt\n写入字符数：366\n内容摘要：这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_s...",
+  "short_term": {
+    "current_goal": "write:\ntmp/runtime-harness-acceptance/20260408-runtime-harness/workspace-write-target.txt\n这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_snapshot，而不是只保留 summary。\n3. hando...",
+    "current_plan": "已生成长任务交接包",
+    "open_issue": "",
+    "recent_observation": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write-target.txt\n写入字符数：366\n内容摘要：这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_s...",
+    "recent_tool_result": "D:\\newwork\\本地智能体\\data\\artifacts\\harness-write-session\\harness-write-run\\handoff-1775647188172.json",
+    "pending_confirmation": ""
+  },
+  "recent_turns": [
+    {
+      "user_input": "write:\ntmp/runtime-harness-acceptance/20260408-runtime-harness/workspace-write-target.txt\n这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_snapshot，而不是只保留 summary。\n3. handoff 需要在 run_finished 前生成结构化 artifact，并把路径回写到会话短期状态。\n4. 本样本只覆盖上下文按需装配、Verify 独立化、artifact 默认分流、长任务交接四项，不扩多智能体、浏览器自动化、自动 fallback 或重型记忆评分。\n5. 当前仓库是脏工作区，所以这里只写入 tmp 目录，不接触其他未提交改动。\n6. 继续补足字符数，让 artifact 内容稳定超过阈值，便于默认分流留证。",
+      "final_answer": "文件写入完成：D:\\newwork\\本地智能体\\tmp\\runtime-harness-acceptance\\20260408-runtime-harness\\workspace-write-target.txt\n写入字符数：366\n内容摘要：这一段内容用于运行时 Harness 收口样本验证。\n1. 这里故意写成长正文，确保 action artifact 会被默认外置。\n2. Verify 需要把 policy 与 evidence 单独写回 verification_snapshot，而不是只保留 summary。\n3. handoff 需要在 run_finished 前生成结构化 artifact，并把路径回写到会话短期状态。\n4. 本样本只覆盖上下文按需装配、Verify 独立化、artifact 默认...",
+      "summary": "文件写入成功，共写入 366 个字符。",
+      "timestamp": "1775647188174"
+    }
+  ]
+}

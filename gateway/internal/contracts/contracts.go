@@ -45,6 +45,11 @@ type RuntimeContextSnapshot struct {
 	ReasoningSummary string `json:"reasoning_summary,omitempty"`
 	CacheStatus      string `json:"cache_status,omitempty"`
 	CacheReason      string `json:"cache_reason,omitempty"`
+	AssemblyProfile  string `json:"assembly_profile,omitempty"`
+	IncludesSession  bool   `json:"includes_session,omitempty"`
+	IncludesMemory   bool   `json:"includes_memory,omitempty"`
+	IncludesKnowledge bool  `json:"includes_knowledge,omitempty"`
+	IncludesToolPreview bool `json:"includes_tool_preview,omitempty"`
 	PromptStatic     string `json:"prompt_static,omitempty"`
 	PromptProject    string `json:"prompt_project,omitempty"`
 	PromptDynamic    string `json:"prompt_dynamic,omitempty"`
@@ -64,6 +69,8 @@ type VerificationSnapshot struct {
 	Code    string `json:"code,omitempty"`
 	Summary string `json:"summary,omitempty"`
 	Passed  bool   `json:"passed,omitempty"`
+	Policy  string `json:"policy,omitempty"`
+	Evidence []string `json:"evidence,omitempty"`
 }
 
 type RepoContextSnapshot struct {
@@ -96,6 +103,41 @@ type WorkspaceDocSummary struct {
 	Exists    bool   `json:"exists"`
 	Summary   string `json:"summary"`
 	Truncated bool   `json:"truncated"`
+}
+
+type CapabilitySpec struct {
+	CapabilityID         string   `json:"capability_id"`
+	DisplayName          string   `json:"display_name"`
+	Domain               string   `json:"domain"`
+	RiskLevel            string   `json:"risk_level"`
+	InputSchema          string   `json:"input_schema"`
+	OutputKind           string   `json:"output_kind"`
+	SideEffectLevel      string   `json:"side_effect_level"`
+	SupportsModes        []string `json:"supports_modes,omitempty"`
+	VerificationPolicy   string   `json:"verification_policy"`
+	ConnectorSlot        string   `json:"connector_slot,omitempty"`
+	SourceKind           string   `json:"source_kind"`
+	RequiresConfirmation bool     `json:"requires_confirmation,omitempty"`
+}
+
+type CapabilityListResponse struct {
+	Items []CapabilitySpec `json:"items"`
+}
+
+type ConnectorSlotSpec struct {
+	SlotID              string   `json:"slot_id"`
+	DisplayName         string   `json:"display_name"`
+	Priority            int      `json:"priority"`
+	Status              string   `json:"status"`
+	Scope               string   `json:"scope"`
+	CurrentCapabilities []string `json:"current_capabilities,omitempty"`
+	SupportedActions    []string `json:"supported_actions,omitempty"`
+	Boundary            string   `json:"boundary"`
+	NextStep            string   `json:"next_step"`
+}
+
+type ConnectorListResponse struct {
+	Items []ConnectorSlotSpec `json:"items"`
 }
 
 type RunResult struct {
@@ -214,6 +256,7 @@ type RuntimeRunResponse struct {
 type MemoryEntry struct {
 	ID                 string `json:"id"`
 	Kind               string `json:"kind"`
+	MemoryKind         string `json:"memory_kind,omitempty"`
 	Title              string `json:"title"`
 	Summary            string `json:"summary"`
 	Content            string `json:"content"`
@@ -227,6 +270,13 @@ type MemoryEntry struct {
 	SourceTitle        string `json:"source_title,omitempty"`
 	SourceEventType    string `json:"source_event_type,omitempty"`
 	SourceArtifactPath string `json:"source_artifact_path,omitempty"`
+	GovernanceVersion  string `json:"governance_version,omitempty"`
+	GovernanceReason   string `json:"governance_reason,omitempty"`
+	GovernanceSource   string `json:"governance_source,omitempty"`
+	GovernanceAt       string `json:"governance_at,omitempty"`
+	GovernanceStatus   string `json:"governance_status,omitempty"`
+	MemoryAction       string `json:"memory_action,omitempty"`
+	ArchiveReason      string `json:"archive_reason,omitempty"`
 	Verified           bool   `json:"verified"`
 	Priority           int    `json:"priority"`
 	Archived           bool   `json:"archived"`

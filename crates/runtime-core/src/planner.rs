@@ -129,8 +129,14 @@ pub(crate) fn plan_action_with_context(envelope: &RuntimeContextEnvelope) -> Pla
     if is_capability_question(trimmed) {
         return PlannedAction::Explain;
     }
-    // 其余不再尝试各种正则匹配和猜测，如果在 explicit_action 没有命中严格前缀，就丢给大模型处理
-    explicit_action(trimmed).unwrap_or(PlannedAction::AgentResolve)
+    if let Some(action) = explicit_action(trimmed) {
+        return action;
+    }
+    natural_language_action(
+        trimmed,
+        has_session_context(envelope),
+        has_project_context(envelope),
+    )
 }
 
 fn explicit_action(input: &str) -> Option<PlannedAction> {
@@ -228,6 +234,9 @@ fn natural_language_action(
     has_session_context: bool,
     has_project_material: bool,
 ) -> PlannedAction {
+    if let Some(action) = fuzzy_action(input) {
+        return action;
+    }
     if is_capability_question(input) {
         return PlannedAction::Explain;
     }
@@ -245,7 +254,46 @@ fn natural_language_action(
     } else if is_project_status_question(input) && has_project_material {
         PlannedAction::ProjectAnswer
     } else {
-        PlannedAction::Explain
+        PlannedAction::AgentResolve
+    }
+}
+
+fn fuzzy_action(input: &str) -> Option<PlannedAction> {
+    let lower = input.trim().to_lowercase();
+    if should_open_calculator(&lower) {
+        return Some(PlannedAction::RunCommand {
+            command: calculator_command(),
+        });
+    }
+    None
+}
+
+fn should_open_calculator(input: &str) -> bool {
+    let mentions_calc = mentions_any(
+        input,
+        &[
+            "计算器",
+            "calc",
+            "calculator",
+            "打开计算器",
+            "启动计算器",
+            "打开一下计算器",
+        ],
+    );
+    let mentions_open = mentions_any(
+        input,
+        &["打开", "启动", "运行", "帮我打开", "帮我启动", "帮我运行"],
+    );
+    mentions_calc && (mentions_open || input.trim() == "计算器" || input.trim() == "calc")
+}
+
+fn calculator_command() -> String {
+    if cfg!(target_os = "windows") {
+        "start calc".to_string()
+    } else if cfg!(target_os = "macos") {
+        "open -a Calculator".to_string()
+    } else {
+        "gnome-calculator".to_string()
     }
 }
 
@@ -271,24 +319,24 @@ fn is_project_question(input: &str) -> bool {
 }
 
 fn should_continue_session(input: &str, has_session_context: bool) -> bool {
-    has_session_context
-        && mentions_any(
-            &input.trim().to_lowercase(),
-            &[
-                "继续",
-                "刚才",
-                "上面",
-                "前面",
-                "那这个",
-                "然后",
-                "下一步",
-                "接着",
-                "延续",
-                "上次做到哪",
-                "还差什么",
-                "继续推进",
-            ],
-        )
+    let _ = has_session_context;
+    mentions_any(
+        &input.trim().to_lowercase(),
+        &[
+            "继续",
+            "刚才",
+            "上面",
+            "前面",
+            "那这个",
+            "然后",
+            "下一步",
+            "接着",
+            "延续",
+            "上次做到哪",
+            "还差什么",
+            "继续推进",
+        ],
+    )
 }
 
 fn should_answer_project(input: &str, has_project_material: bool) -> bool {
@@ -338,6 +386,137 @@ fn has_project_context(envelope: &RuntimeContextEnvelope) -> bool {
     let doc_summary = envelope.project_block.doc_summary.trim();
     !repo_summary.is_empty()
         || (!doc_summary.is_empty() && !doc_summary.starts_with("当前没有命中高价值说明文件"))
+}
+
+fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
+    envelope.dynamic_block.session_summary.trim() != "当前会话还没有可复用的压缩摘要。"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{plan_action_with_context, PlannedAction};
+    use crate::context_builder::{
+        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
+    };
+
+    fn static_block() -> StaticPromptBlock {
+        StaticPromptBlock {
+            role_prompt: String::new(),
+            mode_prompt: String::new(),
+        }
+    }
+
+    fn project_block(repo_summary: &str, doc_summary: &str) -> ProjectPromptBlock {
+        ProjectPromptBlock {
+            workspace_root: "D:/repo".to_string(),
+            repo_summary: repo_summary.to_string(),
+            doc_summary: doc_summary.to_string(),
+        }
+    }
+
+    fn dynamic_block(user_input: &str, session_summary: &str) -> DynamicPromptBlock {
+        DynamicPromptBlock {
+            user_input: user_input.to_string(),
+            assembly_profile: "test".to_string(),
+            includes_session: true,
+            includes_memory: false,
+            includes_knowledge: false,
+            includes_tool_preview: false,
+            session_summary: session_summary.to_string(),
+            memory_digest: String::new(),
+            knowledge_digest: String::new(),
+            tool_preview: String::new(),
+            reasoning_summary: String::new(),
+            cache_status: "cold".to_string(),
+            cache_reason: String::new(),
+        }
+    }
+
+    fn envelope(
+        user_input: &str,
+        session_summary: &str,
+        repo_summary: &str,
+        doc_summary: &str,
+    ) -> RuntimeContextEnvelope {
+        RuntimeContextEnvelope {
+            user_input: user_input.to_string(),
+            mode: "standard".to_string(),
+            workspace_root: "D:/repo".to_string(),
+            static_block: static_block(),
+            project_block: project_block(repo_summary, doc_summary),
+            dynamic_block: dynamic_block(user_input, session_summary),
+        }
+    }
+
+    #[test]
+    fn plans_explicit_action_over_natural_language() {
+        let env = envelope(
+            "read: README.md",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ReadFile { .. }
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_continue_words() {
+        let env = envelope(
+            "可以继续",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_project_answer_for_status_questions_with_material() {
+        let env = envelope(
+            "项目进度到哪了？",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ProjectAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_agent_resolve_for_other_questions_without_context() {
+        let env = envelope(
+            "你好，随便聊聊",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::AgentResolve
+        ));
+    }
+
+    #[test]
+    fn plans_open_calculator_from_natural_language() {
+        let env = envelope(
+            "帮我打开计算器",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::RunCommand { .. }
+        ));
+    }
 }
 
 fn mentions_any(input: &str, tokens: &[&str]) -> bool {

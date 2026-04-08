@@ -1,11 +1,19 @@
+mod action_decode;
+mod action_meta;
 mod answer_cache;
+mod answer_cache_helpers;
+mod answer_sanitize;
 mod artifacts;
+mod capabilities;
 mod compaction;
 mod completion;
 mod context_builder;
+mod context_policy;
 mod contracts;
 mod events;
 mod execution;
+mod executors;
+mod handoff;
 mod knowledge;
 mod knowledge_store;
 mod llm;
@@ -27,25 +35,44 @@ mod storage;
 mod storage_migration;
 mod text;
 mod tool_registry;
-mod tools;
+mod tool_trace;
+// tools 模块已收敛为 capabilities（能力注册与元信息单一事实源）
 mod verify;
 
 use crate::completion::decide_completion;
-use crate::events::{make_confirmation_event, make_event};
+use crate::events::{make_confirmation_event, make_event, with_runtime_memory_recall_event};
+use crate::handoff::persist_handoff_artifact;
 use crate::memory_router::evaluate_finish_memory_writes;
 use crate::planner::PlannedAction;
 use crate::query_engine::{bootstrap_run, execute_stage};
 use crate::repo_context::repo_context_metadata;
 use crate::risk::RiskOutcome;
-use crate::session::persist_session_outputs;
+use crate::session::{persist_handoff_path, persist_session_outputs};
 use crate::verify::verify_tool_execution;
 use std::collections::BTreeMap;
 
 pub use crate::contracts::{
-    ConfirmationDecision, ConfirmationRequest, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
-    RUNTIME_NAME, RUNTIME_VERSION, RepoContextSnapshot, RunEvent, RunRequest, RunResult,
-    RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef,
+    CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest,
+    ConnectorListResponse, ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
+    RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse, RuntimeSnapshot,
+    WorkspaceDocSummary, WorkspaceRef, RUNTIME_NAME, RUNTIME_VERSION,
 };
+
+pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
+    CapabilityListResponse {
+        items: tool_registry::runtime_tool_registry().capability_specs(mode),
+    }
+}
+
+pub fn connector_catalog() -> ConnectorListResponse {
+    ConnectorListResponse {
+        items: tool_registry::runtime_tool_registry().connector_slot_specs(),
+    }
+}
+
+pub fn simulate_run_with_runtime_events(request: &RunRequest) -> RuntimeRunResponse {
+    with_runtime_memory_recall_event(request, simulate_run(request))
+}
 
 pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     let mut state = bootstrap_run(request);
@@ -185,6 +212,10 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
             confirmation_plan_metadata.insert("task_title".to_string(), state.task_title.clone());
             confirmation_plan_metadata
                 .insert("next_step".to_string(), "等待用户确认后再继续".to_string());
+            append_context_metadata(
+                &mut confirmation_plan_metadata,
+                &state.envelope.context_envelope,
+            );
             confirmation_plan_metadata.extend(repo_context_metadata(&state.envelope.repo_context));
             events.push(make_event(
                 request,
@@ -232,6 +263,13 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     let verification_report = verify_tool_execution(&state.tool_call, action_result);
     let completion = decide_completion(&verification_report);
     state.verification_report = Some(verification_report.clone());
+    let handoff_path = persist_handoff_artifact(
+        request,
+        &state.task_title,
+        &state.action,
+        action_result,
+        &verification_report,
+    );
     let mut plan_metadata = BTreeMap::new();
     plan_metadata.insert("task_title".to_string(), state.task_title.clone());
     plan_metadata.insert(
@@ -452,6 +490,9 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
             "failed"
         },
     );
+    if let Some(path) = handoff_path.as_ref() {
+        persist_handoff_path(request, path);
+    }
     for outcome in evaluate_finish_memory_writes(request, action_result, &verification_report) {
         events.push(make_memory_event(
             request,
@@ -507,6 +548,9 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     if let Some(path) = action_result.result.artifact_path.clone() {
         finish_metadata.insert("artifact_path".to_string(), path);
     }
+    if let Some(path) = handoff_path {
+        finish_metadata.insert("handoff_artifact_path".to_string(), path);
+    }
     finish_metadata.insert("mode".to_string(), request.mode.clone());
     finish_metadata.insert("next_step".to_string(), "任务已结束".to_string());
     finish_metadata.insert("completion_status".to_string(), completion.status.clone());
@@ -553,39 +597,9 @@ fn append_context_metadata(
     metadata: &mut BTreeMap<String, String>,
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
-    metadata.insert("context_mode".to_string(), context.mode.clone());
-    metadata.insert(
-        "context_workspace_root".to_string(),
-        context.workspace_root.clone(),
-    );
-    metadata.insert(
-        "session_summary".to_string(),
-        context.dynamic_block.session_summary.clone(),
-    );
-    metadata.insert(
-        "memory_digest".to_string(),
-        context.dynamic_block.memory_digest.clone(),
-    );
-    metadata.insert(
-        "knowledge_digest".to_string(),
-        context.dynamic_block.knowledge_digest.clone(),
-    );
-    metadata.insert(
-        "tool_preview".to_string(),
-        context.dynamic_block.tool_preview.clone(),
-    );
-    metadata.insert(
-        "reasoning_summary".to_string(),
-        context.dynamic_block.reasoning_summary.clone(),
-    );
-    metadata.insert(
-        "cache_status".to_string(),
-        context.dynamic_block.cache_status.clone(),
-    );
-    metadata.insert(
-        "cache_reason".to_string(),
-        context.dynamic_block.cache_reason.clone(),
-    );
+    append_context_core_metadata(metadata, context);
+    append_context_dynamic_metadata(metadata, context);
+    append_context_policy_metadata(metadata, context);
 }
 
 fn append_tool_spec_metadata(
@@ -611,21 +625,71 @@ fn append_verification_metadata(
     report: &crate::verify::VerificationReport,
 ) {
     metadata.insert("verification_code".to_string(), report.outcome.code.clone());
+    metadata.insert("verification_passed".to_string(), bool_string(report.outcome.passed));
+    metadata.insert("verification_summary".to_string(), report.outcome.summary.clone());
+    metadata.insert("verification_next_step".to_string(), report.outcome.next_step.clone());
+    metadata.insert("verification_policy".to_string(), report.outcome.policy.clone());
+    metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
+}
+
+fn bool_string(value: bool) -> String {
+    if value {
+        "true".to_string()
+    } else {
+        "false".to_string()
+    }
+}
+
+fn append_context_core_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert("context_mode".to_string(), context.mode.clone());
+    metadata.insert("context_workspace_root".to_string(), context.workspace_root.clone());
+}
+
+fn append_context_dynamic_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert("session_summary".to_string(), context.dynamic_block.session_summary.clone());
+    metadata.insert("memory_digest".to_string(), context.dynamic_block.memory_digest.clone());
     metadata.insert(
-        "verification_passed".to_string(),
-        if report.outcome.passed {
-            "true".to_string()
-        } else {
-            "false".to_string()
-        },
+        "knowledge_digest".to_string(),
+        context.dynamic_block.knowledge_digest.clone(),
+    );
+    metadata.insert("tool_preview".to_string(), context.dynamic_block.tool_preview.clone());
+    metadata.insert(
+        "reasoning_summary".to_string(),
+        context.dynamic_block.reasoning_summary.clone(),
+    );
+    metadata.insert("cache_status".to_string(), context.dynamic_block.cache_status.clone());
+    metadata.insert("cache_reason".to_string(), context.dynamic_block.cache_reason.clone());
+}
+
+fn append_context_policy_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert(
+        "assembly_profile".to_string(),
+        context.dynamic_block.assembly_profile.clone(),
     );
     metadata.insert(
-        "verification_summary".to_string(),
-        report.outcome.summary.clone(),
+        "includes_session".to_string(),
+        bool_string(context.dynamic_block.includes_session),
     );
     metadata.insert(
-        "verification_next_step".to_string(),
-        report.outcome.next_step.clone(),
+        "includes_memory".to_string(),
+        bool_string(context.dynamic_block.includes_memory),
+    );
+    metadata.insert(
+        "includes_knowledge".to_string(),
+        bool_string(context.dynamic_block.includes_knowledge),
+    );
+    metadata.insert(
+        "includes_tool_preview".to_string(),
+        bool_string(context.dynamic_block.includes_tool_preview),
     );
 }
 
@@ -635,7 +699,7 @@ fn make_run_failed_event(
     summary: &str,
     detail: &str,
     error: &ErrorInfo,
-    tool_trace: Option<&crate::tools::ToolExecutionTrace>,
+    tool_trace: Option<&crate::capabilities::ToolExecutionTrace>,
     task_title: &str,
     repo_context: &crate::repo_context::RepoContextLoadResult,
 ) -> RunEvent {
@@ -670,7 +734,7 @@ fn append_error_metadata(metadata: &mut BTreeMap<String, String>, error: &ErrorI
 
 fn append_tool_failure_metadata(
     metadata: &mut BTreeMap<String, String>,
-    tool_trace: Option<&crate::tools::ToolExecutionTrace>,
+    tool_trace: Option<&crate::capabilities::ToolExecutionTrace>,
 ) {
     let Some(trace) = tool_trace else {
         return;
@@ -706,7 +770,7 @@ fn append_tool_failure_metadata(
 }
 
 fn failure_next_step(
-    tool_trace: Option<&crate::tools::ToolExecutionTrace>,
+    tool_trace: Option<&crate::capabilities::ToolExecutionTrace>,
     error: &ErrorInfo,
 ) -> String {
     if !error.retryable {
@@ -742,6 +806,7 @@ fn make_memory_event(
     if !outcome.source_type.is_empty() {
         metadata.insert("source_type".to_string(), outcome.source_type.clone());
     }
+    append_memory_governance_metadata(&mut metadata, outcome);
     metadata.insert("title".to_string(), outcome.title.clone());
     metadata.insert("reason".to_string(), outcome.reason.clone());
     make_event(
@@ -753,6 +818,22 @@ fn make_memory_event(
         &outcome.summary,
         metadata,
     )
+}
+
+fn append_memory_governance_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    outcome: &crate::memory_router::MemoryWriteOutcome,
+) {
+    metadata.insert("memory_kind".to_string(), outcome.record_type.clone());
+    metadata.insert("governance_status".to_string(), outcome.audit.governance_status.clone());
+    metadata.insert("memory_action".to_string(), outcome.audit.memory_action.clone());
+    metadata.insert("governance_version".to_string(), outcome.audit.governance_version.clone());
+    metadata.insert("governance_reason".to_string(), outcome.audit.governance_reason.clone());
+    metadata.insert("governance_source".to_string(), outcome.audit.governance_source.clone());
+    metadata.insert("governance_at".to_string(), outcome.audit.governance_at.clone());
+    metadata.insert("source_event_type".to_string(), outcome.audit.source_event_type.clone());
+    metadata.insert("source_artifact_path".to_string(), outcome.audit.source_artifact_path.clone());
+    metadata.insert("archive_reason".to_string(), outcome.audit.archive_reason.clone());
 }
 
 fn derive_task_title(action: &PlannedAction, user_input: &str) -> String {
@@ -788,6 +869,7 @@ fn derive_task_title(action: &PlannedAction, user_input: &str) -> String {
         }
         PlannedAction::ContextAnswer => "延续当前会话".to_string(),
         PlannedAction::Explain => format!("解释可用能力: {}", truncate_text(user_input, 42)),
+        PlannedAction::AgentResolve => format!("智能体执行: {}", truncate_text(user_input, 42)),
     }
 }
 

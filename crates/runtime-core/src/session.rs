@@ -71,6 +71,13 @@ pub(crate) fn persist_session_outputs(
     persist_daily_rollup(request, summary, status);
 }
 
+pub(crate) fn persist_handoff_path(request: &RunRequest, handoff_path: &str) {
+    let mut session = load_session_context(request);
+    session.short_term.current_plan = summarize_text("已生成长任务交接包");
+    session.short_term.recent_tool_result = summarize_text(handoff_path);
+    persist_session_file(request, &session);
+}
+
 pub(crate) fn record_planning_memory(
     request: &RunRequest,
     session: &mut SessionMemory,
