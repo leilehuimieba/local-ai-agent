@@ -1,0 +1,7 @@
+interface:
+  display_name: "本地智能体 Harness"
+  short_description: "面向本地智能体项目的运行时约束、评审与收口清单"
+  default_prompt: "Use $local-agent-harness to design or review a change against this repo's local runtime, context, verification, and permission constraints."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Harness Engineering"
+  short_description: "跨项目的运行时外壳设计、验证、交接与评审清单"
+  default_prompt: "Use $harness-engineering to design, review, or harden an AI agent workflow with better context, tools, verification, and handoff discipline."
+
+policy:
+  allow_implicit_invocation: true

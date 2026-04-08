@@ -1,0 +1,53 @@
+---
+name: harness-engineering
+description: 通用 Harness Engineering 技能，用于在不同项目中设计、评审或收紧 AI agent 的运行时外壳。适用于 agent loop、context engineering、tool contracts、permission gate、verification、artifact、memory routing、long-running task handoff 等相关任务；当模型表现不稳定、长任务跑偏、工具调用混乱、验证失真或上下文膨胀时优先使用。
+---
+
+# Harness Engineering
+
+## 概览
+
+把注意力从“模型这次怎么说”转到“系统默认怎么让它更稳”。
+先判断失败是哪个壳薄了，再决定要补提示词、补协议、补上下文还是补验证。
+
+## 何时使用
+
+出现下面任一信号时，优先用这份 skill：
+
+1. 模型能做对一部分，但整体不稳定。
+2. 长任务前半程正常，后半程开始跑偏、偷懒或草率收尾。
+3. 工具很多，但调用结果没有统一结构。
+4. 同一个 agent 既生成又自评，完成判断明显偏乐观。
+5. 上下文越塞越多，结果反而变差。
+6. 需要把 agent 工作流从 demo 变成可恢复、可验证、可审计的系统。
+
+## 使用流程
+
+1. 先读 `references/diagnostic-signals.md`，判断当前问题更像哪种壳失稳。
+2. 再读 `references/core-checklist.md`，按固定顺序补主循环、上下文、工具、权限、验证、artifact、记忆、交接。
+3. 需要做方案设计时，再读 `references/design-patterns.md`。
+4. 需要评审已有实现时，再读 `references/review-template.md`。
+
+## 默认原则
+
+1. 把模型视为系统组件，不把模型本身当成系统。
+2. 默认认为可靠性来自外壳设计，而不是单次提示词优化。
+3. 默认先补稳定的主循环和验证闭环，再补高级能力。
+4. 默认按需提供上下文，不做无差别堆料。
+5. 默认让工具输出结构化，减少模型靠猜。
+6. 默认让高风险动作进入确认主线。
+7. 默认让长任务支持 handoff artifact 和上下文重建。
+8. 默认让“完成”依赖证据，而不是依赖生成者自述。
+
+## 输出要求
+
+使用这个 skill 产出方案、评审或修复建议时，优先给出：
+
+1. `失稳层判断`
+   当前更像是哪一层 harness 失稳。
+
+2. `最小补强路径`
+   先补哪一层，哪些复杂度明确后置。
+
+3. `验证方式`
+   用什么证据证明这次补强真的有效。
