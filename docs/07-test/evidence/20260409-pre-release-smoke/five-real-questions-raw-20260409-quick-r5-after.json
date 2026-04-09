@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在算可以验收了吗？请给结论、依据、风险三段。",
+        "run_id":  "run-1775745139038-204",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "结论：当前可交验。依据：结果分层链路、真实样本与构建验证已闭合。风险：provider 外部波动仍会触发 recovery，需持续周更复测。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:32:25"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我今晚只剩20分钟，给我一个只做收口的三步计划。",
+        "run_id":  "run-1775745145723-207",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "20 分钟收口三步：1) 0-6 分钟确认本轮范围与未闭合项；2) 7-14 分钟跑最小构建和关键样本；3) 15-20 分钟写结论与风险并回写验收文档。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:32:30"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果出现429限流，我怎么判断是先等还是先走恢复路径？给我可执行判断。",
+        "run_id":  "run-1775745150892-210",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "429 的可执行判断：1) 连续两次 429 且间隔 \u003c 2 分钟，先走恢复路径；2) 单次 429 且重试后恢复，继续主回答；3) 若 5 分钟内持续 429，结束本轮并记录 run_id 与错误摘要。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (35) Recv failure: Connection was reset",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (35) Recv failure: Connection was reset；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:32:58"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个10分钟就能做完的知识沉淀最小清单。",
+        "run_id":  "run-1775745178899-213",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "10分钟知识沉淀最小清单：\n1. **一句话收获**：记录今天学到的最重要的一件事，一句话概括\n2. **一个问题**：记录一个你还没搞懂的问题，留着以后探索\n3. **一个链接**：保存一个今天看到的有用资源\n4. **一个教训**：记录今天犯的一个错误或踩的坑\n5. **下一步行动**：写下明天要继续做什么\n这5条，每条2分钟，一共10分钟。核心是**记录最关键的**，不要追求完美，先让知识流动起来。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:33:06"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我不懂技术，你直接告诉我下一步该做什么，最多三条。",
+        "run_id":  "run-1775745186191-216",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "你下一步直接做这三条：1) 先跑一遍 5 条真实问句快测并记下 run_id；2) 只改失败最多的 1-2 个问题；3) 复跑同样 5 条，确认通过率有没有上升。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:33:12"
+    }
+]

@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::memory_schema::{canonical_kind, StructuredMemoryEntry, MEMORY_GOVERNANCE_VERSION};
+use crate::memory_schema::{MEMORY_GOVERNANCE_VERSION, StructuredMemoryEntry, canonical_kind};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
 use crate::sqlite_store::{list_memory_entries_sqlite, write_memory_entry_sqlite};
 use crate::storage::{append_jsonl, read_jsonl};

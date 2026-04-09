@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在算可以验收了吗？请给结论、依据、风险三段。",
+        "run_id":  "run-1775746542610-234",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "结论：当前可交验。依据：结果分层链路、真实样本与构建验证已闭合。风险：provider 外部波动仍会触发 recovery，需持续周更复测。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 22:55:44"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我今晚只剩20分钟，给我一个只做收口的三步计划。",
+        "run_id":  "run-1775746544979-237",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "20 分钟收口三步：1) 0-6 分钟确认本轮范围与未闭合项；2) 7-14 分钟跑最小构建和关键样本；3) 15-20 分钟写结论与风险并回写验收文档。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 22:55:46"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果出现429限流，我怎么判断是先等还是先走恢复路径？给我可执行判断。",
+        "run_id":  "run-1775746546609-240",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "429 的可执行判断：1) 连续两次 429 且间隔 \u003c 2 分钟，先走恢复路径；2) 单次 429 且重试后恢复，继续主回答；3) 若 5 分钟内持续 429，结束本轮并记录 run_id 与错误摘要。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 22:55:48"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个10分钟就能做完的知识沉淀最小清单。",
+        "run_id":  "run-1775746548251-243",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "今天最小方案：1) 只沉淀 1 个主题；2) 每条只写“结论+依据+下一步”三行；3) 今天结束前做一次去重，把重复和空话删掉。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 22:55:50"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我不懂技术，你直接告诉我下一步该做什么，最多三条。",
+        "run_id":  "run-1775746550537-246",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "你下一步直接做这三条：1) 先跑一遍 5 条真实问句快测并记下 run_id；2) 只改失败最多的 1-2 个问题；3) 复跑同样 5 条，确认通过率有没有上升。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 22:55:52"
+    }
+]

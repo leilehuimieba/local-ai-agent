@@ -2,10 +2,10 @@ use crate::contracts::{
     ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse,
     ToolCallSnapshot, VerificationSnapshot,
 };
+use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::prompt::{
     render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt,
 };
-use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -179,9 +179,18 @@ fn memory_recall_metadata(
     metadata.insert("memory_kind".to_string(), "recall_digest".to_string());
     metadata.insert("governance_status".to_string(), "recalled".to_string());
     metadata.insert("memory_action".to_string(), "recall".to_string());
-    metadata.insert("governance_version".to_string(), MEMORY_GOVERNANCE_VERSION.to_string());
-    metadata.insert("governance_reason".to_string(), memory_recall_reason(digest));
-    metadata.insert("governance_source".to_string(), "runtime_memory_recall".to_string());
+    metadata.insert(
+        "governance_version".to_string(),
+        MEMORY_GOVERNANCE_VERSION.to_string(),
+    );
+    metadata.insert(
+        "governance_reason".to_string(),
+        memory_recall_reason(digest),
+    );
+    metadata.insert(
+        "governance_source".to_string(),
+        "runtime_memory_recall".to_string(),
+    );
     metadata.insert("governance_at".to_string(), timestamp_now());
     metadata.insert("source_type".to_string(), "runtime".to_string());
     metadata.insert(

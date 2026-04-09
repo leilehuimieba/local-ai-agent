@@ -54,8 +54,8 @@ use std::collections::BTreeMap;
 pub use crate::contracts::{
     CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest,
     ConnectorListResponse, ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
-    RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse, RuntimeSnapshot,
-    WorkspaceDocSummary, WorkspaceRef, RUNTIME_NAME, RUNTIME_VERSION,
+    RUNTIME_NAME, RUNTIME_VERSION, RepoContextSnapshot, RunEvent, RunRequest, RunResult,
+    RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef,
 };
 
 pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
@@ -645,14 +645,33 @@ fn append_verification_metadata(
     report: &crate::verify::VerificationReport,
 ) {
     metadata.insert("verification_code".to_string(), report.outcome.code.clone());
-    metadata.insert("verification_passed".to_string(), bool_string(report.outcome.passed));
-    metadata.insert("verification_summary".to_string(), report.outcome.summary.clone());
-    metadata.insert("verification_next_step".to_string(), report.outcome.next_step.clone());
-    metadata.insert("verification_policy".to_string(), report.outcome.policy.clone());
-    metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
+    metadata.insert(
+        "verification_passed".to_string(),
+        bool_string(report.outcome.passed),
+    );
+    metadata.insert(
+        "verification_summary".to_string(),
+        report.outcome.summary.clone(),
+    );
+    metadata.insert(
+        "verification_next_step".to_string(),
+        report.outcome.next_step.clone(),
+    );
+    metadata.insert(
+        "verification_policy".to_string(),
+        report.outcome.policy.clone(),
+    );
+    metadata.insert(
+        "verification_evidence".to_string(),
+        report.outcome.evidence.join("\n"),
+    );
 }
 
-fn read_result_mode(final_answer: &str, completion_status: &str, verification_code: &str) -> &'static str {
+fn read_result_mode(
+    final_answer: &str,
+    completion_status: &str,
+    verification_code: &str,
+) -> &'static str {
     if completion_status == "failed" {
         return "system";
     }
@@ -678,7 +697,10 @@ fn append_context_core_metadata(
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
     metadata.insert("context_mode".to_string(), context.mode.clone());
-    metadata.insert("context_workspace_root".to_string(), context.workspace_root.clone());
+    metadata.insert(
+        "context_workspace_root".to_string(),
+        context.workspace_root.clone(),
+    );
 }
 
 fn append_context_dynamic_metadata(
@@ -686,20 +708,38 @@ fn append_context_dynamic_metadata(
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
     metadata.insert("user_input".to_string(), context.user_input.clone());
-    metadata.insert("session_summary".to_string(), context.dynamic_block.session_summary.clone());
-    metadata.insert("memory_digest".to_string(), context.dynamic_block.memory_digest.clone());
+    metadata.insert(
+        "session_summary".to_string(),
+        context.dynamic_block.session_summary.clone(),
+    );
+    metadata.insert(
+        "memory_digest".to_string(),
+        context.dynamic_block.memory_digest.clone(),
+    );
     metadata.insert(
         "knowledge_digest".to_string(),
         context.dynamic_block.knowledge_digest.clone(),
     );
-    metadata.insert("tool_preview".to_string(), context.dynamic_block.tool_preview.clone());
-    metadata.insert("artifact_hint".to_string(), context.dynamic_block.artifact_hint.clone());
+    metadata.insert(
+        "tool_preview".to_string(),
+        context.dynamic_block.tool_preview.clone(),
+    );
+    metadata.insert(
+        "artifact_hint".to_string(),
+        context.dynamic_block.artifact_hint.clone(),
+    );
     metadata.insert(
         "reasoning_summary".to_string(),
         context.dynamic_block.reasoning_summary.clone(),
     );
-    metadata.insert("cache_status".to_string(), context.dynamic_block.cache_status.clone());
-    metadata.insert("cache_reason".to_string(), context.dynamic_block.cache_reason.clone());
+    metadata.insert(
+        "cache_status".to_string(),
+        context.dynamic_block.cache_status.clone(),
+    );
+    metadata.insert(
+        "cache_reason".to_string(),
+        context.dynamic_block.cache_reason.clone(),
+    );
 }
 
 fn append_context_policy_metadata(
@@ -726,7 +766,10 @@ fn append_context_policy_metadata(
         "includes_tool_preview".to_string(),
         bool_string(context.dynamic_block.includes_tool_preview),
     );
-    metadata.insert("phase_label".to_string(), context.dynamic_block.phase_label.clone());
+    metadata.insert(
+        "phase_label".to_string(),
+        context.dynamic_block.phase_label.clone(),
+    );
     metadata.insert(
         "selection_reason".to_string(),
         context.dynamic_block.selection_reason.clone(),
@@ -870,15 +913,42 @@ fn append_memory_governance_metadata(
     outcome: &crate::memory_router::MemoryWriteOutcome,
 ) {
     metadata.insert("memory_kind".to_string(), outcome.record_type.clone());
-    metadata.insert("governance_status".to_string(), outcome.audit.governance_status.clone());
-    metadata.insert("memory_action".to_string(), outcome.audit.memory_action.clone());
-    metadata.insert("governance_version".to_string(), outcome.audit.governance_version.clone());
-    metadata.insert("governance_reason".to_string(), outcome.audit.governance_reason.clone());
-    metadata.insert("governance_source".to_string(), outcome.audit.governance_source.clone());
-    metadata.insert("governance_at".to_string(), outcome.audit.governance_at.clone());
-    metadata.insert("source_event_type".to_string(), outcome.audit.source_event_type.clone());
-    metadata.insert("source_artifact_path".to_string(), outcome.audit.source_artifact_path.clone());
-    metadata.insert("archive_reason".to_string(), outcome.audit.archive_reason.clone());
+    metadata.insert(
+        "governance_status".to_string(),
+        outcome.audit.governance_status.clone(),
+    );
+    metadata.insert(
+        "memory_action".to_string(),
+        outcome.audit.memory_action.clone(),
+    );
+    metadata.insert(
+        "governance_version".to_string(),
+        outcome.audit.governance_version.clone(),
+    );
+    metadata.insert(
+        "governance_reason".to_string(),
+        outcome.audit.governance_reason.clone(),
+    );
+    metadata.insert(
+        "governance_source".to_string(),
+        outcome.audit.governance_source.clone(),
+    );
+    metadata.insert(
+        "governance_at".to_string(),
+        outcome.audit.governance_at.clone(),
+    );
+    metadata.insert(
+        "source_event_type".to_string(),
+        outcome.audit.source_event_type.clone(),
+    );
+    metadata.insert(
+        "source_artifact_path".to_string(),
+        outcome.audit.source_artifact_path.clone(),
+    );
+    metadata.insert(
+        "archive_reason".to_string(),
+        outcome.audit.archive_reason.clone(),
+    );
 }
 
 fn derive_task_title(action: &PlannedAction, user_input: &str) -> String {

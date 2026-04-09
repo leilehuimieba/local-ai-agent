@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-04-09 23:06:15",
+  "suite": "five_real_questions_quality_stability_r7",
+  "goal": "只优化回答质量稳定性，不扩功能",
+  "top_failure_categories_before": [
+    {
+      "category": "template_question_misrouted_to_agent_resolve",
+      "description": "复盘模板问句落入 agent_resolve，触发 system 失败路径。",
+      "count": 1
+    },
+    {
+      "category": "missing_stable_templates_for_non_technical_and_instability_questions",
+      "description": "模型不稳定判断/非技术第一步问句缺稳定模板，答复可执行性不足。",
+      "count": 2
+    }
+  ],
+  "metrics_compare": {
+    "before_agent_resolve_count": 1,
+    "after_agent_resolve_count": 0,
+    "before_system_count": 1,
+    "after_system_count": 0,
+    "before_generic_recovery_count": 1,
+    "after_generic_recovery_count": 1,
+    "before_stable_template_count": 0,
+    "after_stable_template_count": 3,
+    "before_run_failed_count": 0,
+    "after_run_failed_count": 0
+  },
+  "raw_files": {
+    "before": "five-real-questions-raw-20260409-quick-r7-before.json",
+    "after": "five-real-questions-raw-20260409-quick-r7-after.json"
+  },
+  "compare_file": "five-real-questions-quality-compare-20260409-r7.md",
+  "residual_risk": "Q1 在 provider 波动下回退到通用 recovery 兜底，建议下一轮补“提测结论+两条理由”稳定模板。"
+}

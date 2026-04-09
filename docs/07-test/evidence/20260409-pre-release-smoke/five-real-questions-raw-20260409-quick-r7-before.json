@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "现在这个项目可以提测了吗？给我一句结论和两条理由。",
+        "run_id":  "run-1775746920115-249",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前仓库状态，我的结论是：**暂不建议提测**。\n理由如下：\n1. **存在未提交修改**：当前工作区有未提交的代码变更，这意味着开发工作尚未完成收尾，代码库状态不稳定。\n2. **刚完成验收和质量回归**：虽然最新提交包含\"收口验收与质量回归同步\"，但这通常意味着刚刚完成内部验收流程，提测前可能还需要根据验收结果进行修复和确认。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:02:08"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "如果今天就收口，我先做哪三件事？按优先级说。",
+        "run_id":  "run-1775746928241-252",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前上下文，我只能获取到以下信息：\n1. 项目当前在 `main` 分支，存在未提交修改\n2. 最近提交包含“收口验收与质量回归同步”\n3. 项目有 AGENTS.md 和 docs/README.md 说明文件\n但我没有足够的项目细节来给出具体的三件收口事项建议。如果你能告诉我当前项目的收口标准、待完成事项或具体目标，我可以基于这些信息帮你梳理优先级。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:02:16"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "模型不稳定时我该不该先停下来？给我一个可执行判断标准。",
+        "run_id":  "run-1775746936990-255",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:02:40"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个今晚就能执行的复盘模板，不超过五行。",
+        "run_id":  "run-1775746960831-258",
+        "finish_event":  "run_finished",
+        "completion_status":  "failed",
+        "result_mode":  "system",
+        "verification_code":  "verification_failed",
+        "plan_tool":  "agent_resolve",
+        "final_answer":  "达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：3 个，总失败 0 个，未识别 0 个。\n\n工具调用执行完成：3 个，总失败 0 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, skills, target, target-buildcheck, target-buildcheck-memory, tmp\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r7-before-q4\\run-1775746960831-258\\list-1775746962991.txt\n\n2. [成功] 写入文件 (workspace_write)\n动作：写入文件：D:\\newwork\\本地智能体\\今晚复盘模板.md\n摘要：文件写入成功，共写入 143 个字符。\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r7-before-q4\\run-1775746960831-258\\write-1775746966727.txt\n\n3. [成功] 读取文件 (workspace_read)\n动作：读取文件：D:\\newwork\\本地智能体\\今晚复盘模板.md\n摘要：文件读取成功，摘要：# 今晚复盘模板\n\n## 1. 今日目标\n- [ ] 列出3个最重要的目标\n\n## 2. 完成情况\n- [ ] 完成的：\n- [ ] 未完成的：\n\n## 3. 关键收获\n- \n- \n\n## 4. 问题与改进\n- 问题：\n- 改进：\n\n## 5. 明日计划\n- 优先级1：\n- 优先级2：\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r7-before-q4\\run-1775746960831-258\\read-1775746969379.txt",
+        "result_summary":  "达到最大执行轮次，任务仍未明确完成。",
+        "verification_summary":  "验证失败：达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：3 个，总失败 0 个，未识别 0 个。\n\n工具调用执行完成：3 个，总失败 0 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, d...；失败依据：模型虽然执行了部分工具，但还没有把原始任务真正做完。",
+        "timestamp":  "2026-04-09 23:02:51"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我啥都不懂，你就告诉我现在第一步怎么做。",
+        "run_id":  "run-1775746971210-261",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前工作区的情况，我需要先了解一下项目的基本信息，才能告诉你具体的第一步怎么做。让我先看看项目结构和说明文件。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:03:00"
+    }
+]

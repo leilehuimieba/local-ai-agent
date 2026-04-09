@@ -2,10 +2,12 @@ use crate::capabilities::ToolExecutionTrace;
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::knowledge_store::{
-    append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
-    should_skip_knowledge_record, KnowledgeRecord,
+    KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
+    should_skip_knowledge_record,
 };
-use crate::memory::{append_memory_entry, normalized_memory_entry, search_memory_entries, MemoryEntry};
+use crate::memory::{
+    MemoryEntry, append_memory_entry, normalized_memory_entry, search_memory_entries,
+};
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::paths::{
     knowledge_base_file_path, long_term_memory_file_path, siyuan_auto_write_enabled,
@@ -88,11 +90,7 @@ fn write_long_term_memory(
     }
     let entry = auto_memory_entry(request, trace, report);
     if has_memory_duplicate(request, &entry) {
-        return skipped_memory_outcome(
-            "long_term_memory",
-            &entry,
-            "命中重复长期记忆，跳过写入。",
-        );
+        return skipped_memory_outcome("long_term_memory", &entry, "命中重复长期记忆，跳过写入。");
     }
     memory_write_result(request, &entry, append_memory_entry(request, &entry))
 }
@@ -519,7 +517,11 @@ fn looks_like_recursive_knowledge(record: &KnowledgeRecord) -> bool {
         || summary.contains("已基于项目文档片段完成一次项目说明回答：文件：run:")
 }
 
-fn skipped_record_outcome(layer: &'static str, record_type: &str, reason: &str) -> MemoryWriteOutcome {
+fn skipped_record_outcome(
+    layer: &'static str,
+    record_type: &str,
+    reason: &str,
+) -> MemoryWriteOutcome {
     MemoryWriteOutcome {
         event_type: skipped_event_type(layer),
         layer,
@@ -691,7 +693,11 @@ fn memory_write_result(
     }
 }
 
-fn skipped_memory_outcome(layer: &'static str, entry: &MemoryEntry, reason: &str) -> MemoryWriteOutcome {
+fn skipped_memory_outcome(
+    layer: &'static str,
+    entry: &MemoryEntry,
+    reason: &str,
+) -> MemoryWriteOutcome {
     let entry = normalized_memory_entry(entry);
     MemoryWriteOutcome {
         event_type: skipped_event_type(layer),

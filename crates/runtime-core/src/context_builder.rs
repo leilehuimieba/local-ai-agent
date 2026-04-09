@@ -3,8 +3,8 @@ use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
 use crate::memory_recall::recall_memory_digest;
-use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
-use crate::session::{session_prompt_summary, SessionMemory};
+use crate::repo_context::{RepoContextLoadResult, repo_context_summary};
+use crate::session::{SessionMemory, session_prompt_summary};
 use crate::text::summarize_text;
 
 #[derive(Clone, Debug)]
@@ -230,7 +230,8 @@ fn selected_artifact_hint(
     session_context: &SessionMemory,
     policy: &ContextAssemblyPolicy,
 ) -> String {
-    if policy.prefer_artifact_context && !session_context.short_term.handoff_artifact_path.is_empty()
+    if policy.prefer_artifact_context
+        && !session_context.short_term.handoff_artifact_path.is_empty()
     {
         return format!(
             "优先参考交接包：{}",

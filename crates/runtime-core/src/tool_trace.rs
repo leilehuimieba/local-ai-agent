@@ -1,6 +1,6 @@
 use crate::action_meta::{action_tag, default_error_code};
 use crate::artifacts::externalize_text_artifact;
-use crate::capabilities::{resolve_tool, ToolCallResult, ToolExecutionTrace};
+use crate::capabilities::{ToolCallResult, ToolExecutionTrace, resolve_tool};
 use crate::contracts::RunRequest;
 use crate::execution::execute_action;
 use crate::planner::PlannedAction;

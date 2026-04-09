@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在算可以验收了吗？请给结论、依据、风险三段。",
+        "run_id":  "run-1775744288436-159",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:18:14"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我今晚只剩20分钟，给我一个只做收口的三步计划。",
+        "run_id":  "run-1775744294868-162",
+        "finish_event":  "run_finished",
+        "completion_status":  "failed",
+        "result_mode":  "system",
+        "verification_code":  "verification_failed",
+        "plan_tool":  "agent_resolve",
+        "final_answer":  "达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：3 个，总失败 1 个，未识别 0 个。\n\n工具调用执行完成：3 个，总失败 1 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, skills, target, target-buildcheck, target-buildcheck-memory, tmp\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r4-before-q2\\run-1775744294868-162\\list-1775744301096.txt\n\n2. [成功] 读取文件 (workspace_read)\n动作：读取文件：D:\\newwork\\本地智能体\\AGENTS.md\n摘要：文件读取成功，摘要：# 项目规则\n\n## 作用域与优先级\n\n1. 系统消息、开发者消息、用户当轮指令，优先于本文件。\n2. 本文件作用于仓库根目录及所有子目录。\n3. 子目录中的 `AGENTS.md` 只在对应子树内生效，并作为补充规则使用。\n4. 同级规则冲突时，采用更具体、可验证、限制更强的规则。\n\n## P1 全局偏好\n\n1. 用中文回答。\n2. 不要在回答末尾总结你做了什么。\n\n## P2 通用实现规则\n\n1. 仅对新增或修改的函数生效：单个函数不得超过 30 行，按函数签名到结束右花...\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r4-before-q2\\run-1775744294868-162\\read-1775744303575.txt\n\n3. [失败] 执行命令 (run_command)\n动作：在工作区 `本地智能体` 中执行命令：cd D:/newwork/本地智能体 \u0026\u0026 git status\n摘要：命令执行失败，错误摘要：����λ�� ��:1 �ַ�: 193\n+ ... ation -LiteralPath \u0027D:/newwork/����������\u0027; cd D:/newwork/���������� \u0026\u0026 git sta ...\n+                                                                ~~\n��ǡ�\u0026\u0026�����Ǵ˰汾�е���Ч���ָ�����\n    + CategoryInfo          : ...\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-r4-before-q2\\run-1775744294868-162\\command-1775744307856.txt\n错误码：command_failed",
+        "result_summary":  "达到最大执行轮次，任务仍未明确完成。",
+        "verification_summary":  "验证失败：达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：3 个，总失败 1 个，未识别 0 个。\n\n工具调用执行完成：3 个，总失败 1 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, d...；失败依据：模型虽然执行了部分工具，但还没有把原始任务真正做完。",
+        "timestamp":  "2026-04-09 22:18:29"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果出现429限流，我怎么判断是先等还是先走恢复路径？给我可执行判断。",
+        "run_id":  "run-1775744309398-165",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:18:35"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个10分钟就能做完的知识沉淀最小清单。",
+        "run_id":  "run-1775744315074-168",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "10分钟知识沉淀最小清单：\n1. **1个核心知识点**：记录今天学到的最重要的一件事，一句话概括\n2. **1个问题-答案对**：记录今天解决的一个具体问题及解决方案\n3. **1个新概念**：记录一个之前不知道的名词或概念，附上自己的理解\n4. **1个操作技巧**：记录一个常用命令、快捷键或高效操作\n5. **1个坑**：记录一个踩过的错或需要注意的陷阱\n执行方式：每天挑其中1-2条花2分钟写，积少成多。关键是要快、准、狠，不追求完美，先记下来再说。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:18:43"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我不懂技术，你直接告诉我下一步该做什么，最多三条。",
+        "run_id":  "run-1775744323576-171",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前项目情况，我给你三条建议：\n1. **先提交当前修改**：你有一个未提交的修改，可以先提交保存当前进度，这样更安全。\n2. **查看知识助手任务书**：根据提交记录，下一阶段的任务书已经开启了，你可以看看具体要做什么新功能。\n3. **继续V1内测**：之前有V1真实内测的记录，可以继续收集反馈或处理发现的问题。\n你更关心哪方面？我可以帮你进一步操作。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:18:50"
+    }
+]

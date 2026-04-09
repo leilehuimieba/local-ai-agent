@@ -3,7 +3,7 @@ use crate::events::timestamp_now;
 use crate::execution::ActionExecution;
 use crate::knowledge::KnowledgeHit;
 use crate::knowledge_store::{
-    append_knowledge_record, find_reusable_siyuan_record, search_knowledge_records, KnowledgeRecord,
+    KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, search_knowledge_records,
 };
 use crate::paths::{
     siyuan_auto_write_enabled, siyuan_export_dir, siyuan_root_dir, siyuan_sync_enabled,

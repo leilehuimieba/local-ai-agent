@@ -43,11 +43,12 @@ fn handoff_artifact(
     }
 }
 
-fn current_plan(
-    action: &PlannedAction,
-    trace: &crate::capabilities::ToolExecutionTrace,
-) -> String {
-    format!("动作={}; 摘要={}", action_label(action), trace.action_summary)
+fn current_plan(action: &PlannedAction, trace: &crate::capabilities::ToolExecutionTrace) -> String {
+    format!(
+        "动作={}; 摘要={}",
+        action_label(action),
+        trace.action_summary
+    )
 }
 
 fn action_label(action: &PlannedAction) -> &'static str {

@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在能提测了吗？给我一句结论，再给两个理由。",
+        "run_id":  "run-1775748403640-342",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "结论：先不提测。理由：1) 先完成同题 5 条前后复跑并确认无 recovery 回退；2) 构建与证据文档回写都通过后再提测。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:26:44"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "如果今天就要收口，按优先级我先做哪3件事？",
+        "run_id":  "run-1775748405891-345",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前上下文，我了解到的信息是：\n1. 最近提交中包含“收口验收与质量回归同步”这一项，说明收口和验收相关工作是当前重点\n2. 存在未提交修改，需要先处理\n3. 知识助手下一阶段任务书已开启\n如果今天就要收口，按优先级我建议先做：\n1. **处理未提交修改** - 先把当前工作区的改动提交或整理好，这是收口的前提\n2. **完成收口验收与质量回归** - 这是最近提交中明确提到的收口核心事项，需要确保功能和质量达到验收标准\n3. **整理并归档本阶段文档** - 包括验收记录、测试报告等，为项目收口提供完整的过程文档支撑\n以上是基于当前仓库状态和最近提交内容的建议。如果需要更具体的任务清单，可能需要查看项目看板或任务列表来确认。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:26:52"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "模型老不稳定时，我应该暂停还是继续？给我可执行的判断线。",
+        "run_id":  "run-1775748414462-348",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前上下文，关于模型不稳定时的判断标准：\n**可执行的判断线：**\n1. **立即暂停的信号**\n- 输出出现连续性幻觉（事实性错误前后矛盾）\n- 响应延迟超过正常值的3倍且持续10分钟以上\n- 同一问题3次回答逻辑完全相反\n- 出现安全/合规风险输出\n2. **可以继续观察的情况**\n- 单次回答质量波动但能自我纠正\n- 偶发小错误（错别字、格式问题）不影响核心输出\n- 响应时间波动在可接受范围内（2倍以内）\n- 边缘case处理不佳但核心场景稳定\n3. **建议动作**\n- 优先检查：网络、API配额、上下文长度是否超限\n- 尝试：降低temperature、减少few-shot示例、简化prompt\n- 暂停阈值：连续5次明显异常或1次严重错误\n**核心原则：** 稳定性优先于能力上限。如果模型状态影响任务可交付性，宁可暂停调整也不要带病运行。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:27:07"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个今晚可直接执行的复盘模板，控制在五行内。",
+        "run_id":  "run-1775748428840-351",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "今晚复盘模板（5 行）：1) 今天完成了什么；2) 哪一步卡住了；3) 为什么会卡住；4) 明天第一步做什么；5) 需要谁或什么支持。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:27:09"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我完全小白，现在第一步到底该做啥？",
+        "run_id":  "run-1775748430983-354",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "让我先看看项目说明文件，了解这个项目的基本情况。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:27:17"
+    }
+]

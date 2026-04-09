@@ -1,9 +1,9 @@
 use crate::contracts::RunRequest;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::{normalized_memory_entry, MemoryEntry};
+use crate::memory::{MemoryEntry, normalized_memory_entry};
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use std::collections::BTreeSet;
 use std::fs;
 
@@ -413,11 +413,7 @@ fn decode_tags(value: String) -> Vec<String> {
 }
 
 fn bool_flag(value: bool) -> i32 {
-    if value {
-        1
-    } else {
-        0
-    }
+    if value { 1 } else { 0 }
 }
 
 fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {

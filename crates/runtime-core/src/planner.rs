@@ -280,8 +280,18 @@ fn should_default_to_context_answer(input: &str) -> bool {
             "请用",
             "清单",
             "方案",
+            "计划",
+            "步骤",
+            "三步",
+            "模板",
+            "复盘",
             "顺序",
             "建议",
+            "结论",
+            "依据",
+            "风险",
+            "判断",
+            "第一步",
         ],
     );
     let asks_execution = mentions_any(&lower, &["打开", "启动", "运行", "删除"]);
@@ -417,11 +427,26 @@ fn is_learning_continuation_question(input: &str) -> bool {
     let lower = input.trim().to_lowercase();
     let learning_words = mentions_any(
         &lower,
-        &["学习", "复习", "掌握", "巩固", "知识点", "学习建议", "待巩固"],
+        &[
+            "学习",
+            "复习",
+            "掌握",
+            "巩固",
+            "知识点",
+            "学习建议",
+            "待巩固",
+        ],
     );
     let continue_words = mentions_any(
         &lower,
-        &["上次做到哪", "还差什么", "下一步做什么", "下一步", "建议先做", "掌握到哪"],
+        &[
+            "上次做到哪",
+            "还差什么",
+            "下一步做什么",
+            "下一步",
+            "建议先做",
+            "掌握到哪",
+        ],
     );
     learning_words && continue_words
 }
@@ -439,7 +464,7 @@ fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_action_with_context, PlannedAction};
+    use super::{PlannedAction, plan_action_with_context};
     use crate::context_builder::{
         DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
     };
@@ -571,6 +596,34 @@ mod tests {
     fn plans_context_answer_for_question_without_context() {
         let env = envelope(
             "我只有30分钟，想做一轮上线前回归，你给我一个按分钟拆分的执行清单。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_plan_question_without_context() {
+        let env = envelope(
+            "我今晚只剩20分钟，给我一个只做收口的三步计划。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_template_question_without_context() {
+        let env = envelope(
+            "给我一个今晚就能执行的复盘模板，不超过五行。",
             "当前会话还没有可复用的压缩摘要。",
             "",
             "当前没有命中高价值说明文件。",

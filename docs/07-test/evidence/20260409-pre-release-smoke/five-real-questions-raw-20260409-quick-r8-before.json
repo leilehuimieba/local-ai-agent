@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "现在这个项目可以提测了吗？给我一句结论和两条理由。",
+        "run_id":  "run-1775747589673-282",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:13:13"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "如果今天就收口，我先做哪三件事？按优先级说。",
+        "run_id":  "run-1775747595595-285",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前上下文，我只能获取到以下信息：\n1. 项目当前在 `main` 分支，存在未提交修改\n2. 最近提交包含“收口验收与质量回归同步”\n3. 项目有 AGENTS.md 和 docs/README.md 说明文件\n但我没有足够的项目细节来给出具体的三件收口事项建议。如果你能告诉我当前项目的收口标准、待完成事项或具体目标，我可以基于这些信息帮你梳理优先级。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 23:13:22"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "模型不稳定时我该不该先停下来？给我一个可执行判断标准。",
+        "run_id":  "run-1775747603986-288",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "可执行判断标准：1) 连续两次请求失败且间隔 \u003c 2 分钟，先停 5 分钟再试；2) 若恢复后连续两次成功，继续执行；3) 若 10 分钟内仍反复失败，转恢复路径并记录 run_id。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:13:24"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个今晚就能执行的复盘模板，不超过五行。",
+        "run_id":  "run-1775747606135-291",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "今晚复盘模板（5 行）：1) 今天完成了什么；2) 哪一步卡住了；3) 为什么会卡住；4) 明天第一步做什么；5) 需要谁或什么支持。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:13:26"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我啥都不懂，你就告诉我现在第一步怎么做。",
+        "run_id":  "run-1775747608257-294",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "第一步只做这一件事：先跑一遍 5 条真实问句快测，并把每条的 run_id 记下来。这样你马上就知道当前系统哪里稳、哪里不稳。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:13:28"
+    }
+]

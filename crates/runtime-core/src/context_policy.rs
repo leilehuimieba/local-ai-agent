@@ -59,7 +59,8 @@ pub(crate) fn project_answer_policy() -> ContextAssemblyPolicy {
         include_knowledge: true,
         include_tool_preview: false,
         phase_label: "answer".to_string(),
-        selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。".to_string(),
+        selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。"
+            .to_string(),
         prefer_artifact_context: false,
     }
 }
@@ -85,7 +86,8 @@ fn agent_resolve_policy() -> ContextAssemblyPolicy {
         include_knowledge: true,
         include_tool_preview: true,
         phase_label: "execute".to_string(),
-        selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。".to_string(),
+        selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。"
+            .to_string(),
         prefer_artifact_context: false,
     }
 }
@@ -166,7 +168,8 @@ fn apply_handoff_override(policy: &mut ContextAssemblyPolicy) {
     policy.include_memory = true;
     policy.prefer_artifact_context = true;
     policy.phase_label = "handoff_resume".to_string();
-    policy.selection_reason = "当前存在长任务交接包，优先结合会话状态和交接 artifact 续跑。".to_string();
+    policy.selection_reason =
+        "当前存在长任务交接包，优先结合会话状态和交接 artifact 续跑。".to_string();
     mark_profile(policy, "handoff");
 }
 
@@ -175,7 +178,8 @@ fn apply_recovery_override(policy: &mut ContextAssemblyPolicy) {
     policy.include_memory = true;
     policy.prefer_artifact_context = true;
     policy.phase_label = "recovery".to_string();
-    policy.selection_reason = "当前存在失败或阻塞信号，优先加载短期状态、记忆和最近交接线索。".to_string();
+    policy.selection_reason =
+        "当前存在失败或阻塞信号，优先加载短期状态、记忆和最近交接线索。".to_string();
     mark_profile(policy, "recovery");
 }
 

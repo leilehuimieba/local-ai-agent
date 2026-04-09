@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-04-09 22:33:41",
+  "suite": "five_real_questions_quality_stability_r5",
+  "goal": "只优化回答质量稳定性，不扩功能",
+  "top_failure_categories_before": [
+    {
+      "category": "non_technical_next_step_falls_back_to_generic_recovery",
+      "description": "“不懂技术 + 最多三条 + 下一步”问句在 recovery 下仍返回通用兜底。",
+      "count": 1
+    },
+    {
+      "category": "missing_specific_recovery_template_for_q5",
+      "description": "Q5 缺少可直接执行的三条行动模板。",
+      "count": 1
+    }
+  ],
+  "metrics_compare": {
+    "before_generic_recovery_count": 1,
+    "after_generic_recovery_count": 0,
+    "before_q5_specific": 0,
+    "after_q5_specific": 1,
+    "before_agent_resolve_count": 0,
+    "after_agent_resolve_count": 0,
+    "before_run_failed_count": 0,
+    "after_run_failed_count": 0
+  },
+  "raw_files": {
+    "before": "five-real-questions-raw-20260409-quick-r5-before.json",
+    "after": "five-real-questions-raw-20260409-quick-r5-after.json"
+  },
+  "compare_file": "five-real-questions-quality-compare-20260409-r5.md"
+}

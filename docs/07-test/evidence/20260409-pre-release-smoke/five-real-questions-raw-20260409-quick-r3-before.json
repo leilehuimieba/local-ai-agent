@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "我现在这个项目到底进行到哪一步了？请用已完成、未完成、下一步三段说清楚。",
+        "run_id":  "run-1775743246082-114",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "主回答未成功，已切换到会话摘要恢复路径。\n先按三段给你最低可用版：已完成：结果分层链路和小回归包已在跑；未完成：回答质量稳定性仍有风险；下一步：先修默认直答与恢复模板，再复跑同一批真实问句。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:00:51"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我只有30分钟，想做一轮上线前回归，你给我一个按分钟拆分的执行清单。",
+        "run_id":  "run-1775743251701-117",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "主回答未成功，已切换到会话摘要恢复路径。\n先给你最低可用版：0-5 分钟确认构建通过；6-15 分钟跑学习混合路由+provider 波动；16-25 分钟抽检 answer/recovery/system 三态页面；26-30 分钟整理 run_id 和失败点。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:00:56"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果模型接口突然不稳定，我第一时间该看哪三个信号判断是不是系统问题？",
+        "run_id":  "run-1775743256642-120",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "当模型接口突然不稳定时，第一时间应该关注以下三个信号：\n1. **错误率是否飙升** - 看接口返回的失败请求比例是否明显增加，比如出现大量5xx错误、超时、连接拒绝等情况\n2. **响应延迟是否变大** - 观察接口的平均响应时间是否比平时高出很多，是否频繁出现超时\n3. **资源使用是否异常** - 检查服务器CPU、内存、GPU或网络带宽等资源是否接近瓶颈或突然飙升\n如果这三个信号同时出现两个以上，基本可以判断是系统层面的问题，而不是业务调用方的问题。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:01:04"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "我想继续做知识沉淀，但不想越做越乱。你给我一个今天就能执行的最小方案。",
+        "run_id":  "run-1775743264302-123",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前会话上下文，给你一个今天就能执行的最小方案：\n**核心原则：先固化结构，再填充内容**\n最小方案分三步：\n1. **定一个入口文件**\n在你的知识库根目录新建一个 `index.md`（或使用已有的入口文件），作为知识目录。只写两层：第一层是分类，第二层是分类下的关键主题。不求全，但求稳定。\n2. **每新增一条知识，必须走这个入口**\n无论是一段笔记、一个文档还是一条记录，先判断它属于哪个分类，然后只在对应分类下新增。不要在根目录直接堆内容。\n3. **每周一次整理**\n每天只管往里加，周末花15分钟把新增的内容过一遍：重命名、合并、或者标记为\"待整理\"。这样不会失控。\n这个方案的关键是**入口文件的稳定性**——宁可分类粗糙一点，也不要频繁调整结构。只要入口不动，内容怎么折腾都不会乱。\n如果你已经有现成的入口文件或分类结构，告诉我具体是什么，我可以帮你细化执行细节。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:01:15"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "假设我要把这个项目收口到可验收，请给我一个不扩功能的收口顺序。",
+        "run_id":  "run-1775743275454-126",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "主回答未成功，已切换到会话摘要恢复路径。\n不扩功能的收口顺序：1) 锁定范围和口径；2) 补真实样本与页面证据；3) 跑最小构建与关键用例；4) 把未闭合风险写清楚再交验。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:01:29"
+    }
+]

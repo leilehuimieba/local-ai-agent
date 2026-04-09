@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-04-09 23:20:00",
+  "suite": "five_real_questions_quality_stability_r8",
+  "goal": "只优化回答质量稳定性，不扩功能",
+  "top_failure_categories_before": [
+    {
+      "category": "release_check_question_falls_back_to_generic_recovery",
+      "description": "“提测结论+两条理由”问句在 provider 波动下回退到通用 recovery。",
+      "count": 1
+    },
+    {
+      "category": "closeout_priority_question_not_stable_enough",
+      "description": "“今天收口先做哪三件事”问句未稳定输出可执行优先级。",
+      "count": 1
+    }
+  ],
+  "metrics_compare": {
+    "before_agent_resolve_count": 0,
+    "after_agent_resolve_count": 0,
+    "before_system_count": 0,
+    "after_system_count": 0,
+    "before_generic_recovery_count": 1,
+    "after_generic_recovery_count": 0,
+    "before_stable_template_count": 3,
+    "after_stable_template_count": 5,
+    "before_run_failed_count": 0,
+    "after_run_failed_count": 0
+  },
+  "raw_files": {
+    "before": "five-real-questions-raw-20260409-quick-r8-before.json",
+    "after": "five-real-questions-raw-20260409-quick-r8-after.json"
+  },
+  "compare_file": "five-real-questions-quality-compare-20260409-r8.md",
+  "residual_risk": "当前主要剩余风险是稳定模板覆盖边界，后续需继续按真实问句小步补齐，不扩功能域。"
+}
+

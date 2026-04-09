@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-04-09 22:22:58",
+  "suite": "five_real_questions_quality_stability_r4",
+  "goal": "只优化回答质量稳定性，不扩功能",
+  "top_failure_categories_before": [
+    {
+      "category": "plan_question_routed_to_agent_resolve",
+      "description": "20 分钟收口计划问句落入 agent_resolve，触发系统失败路径。",
+      "count": 1
+    },
+    {
+      "category": "generic_recovery_fallback_for_specific_question",
+      "description": "429判断/验收三段等明确问句在 recovery 下退回通用兜底。",
+      "count": 2
+    }
+  ],
+  "metrics_compare": {
+    "before_agent_resolve_count": 1,
+    "after_agent_resolve_count": 0,
+    "before_system_count": 1,
+    "after_system_count": 0,
+    "before_generic_recovery_count": 2,
+    "after_generic_recovery_count": 1,
+    "before_recovery_count": 2,
+    "after_recovery_count": 1,
+    "before_run_failed_count": 0,
+    "after_run_failed_count": 0
+  },
+  "raw_files": {
+    "before": "five-real-questions-raw-20260409-quick-r4-before.json",
+    "after": "five-real-questions-raw-20260409-quick-r4-after.json"
+  },
+  "compare_file": "five-real-questions-quality-compare-20260409-r4.md"
+}

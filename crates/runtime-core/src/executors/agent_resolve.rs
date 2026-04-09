@@ -18,10 +18,7 @@ pub(crate) fn execute_agent_resolve(
     execute_agent_loop(request, session_context)
 }
 
-fn execute_agent_loop(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-) -> ActionExecution {
+fn execute_agent_loop(request: &RunRequest, session_context: &SessionMemory) -> ActionExecution {
     let mut traces = Vec::new();
     let mut skipped = Vec::new();
     let mut prompt = build_agent_resolve_prompt(request, session_context);
@@ -31,17 +28,24 @@ fn execute_agent_loop(
             Err(error) => return fail_agent_resolve(&error),
         };
         if let Some(calls) = response.tool_calls.filter(|calls| !calls.is_empty()) {
-            let (round_traces, round_skipped) = execute_tool_calls(request, session_context, &calls);
+            let (round_traces, round_skipped) =
+                execute_tool_calls(request, session_context, &calls);
             traces.extend(round_traces.clone());
             skipped.extend(round_skipped.clone());
-            if let Some(result) = maybe_recover_required_write(request, session_context, &traces, &skipped) {
+            if let Some(result) =
+                maybe_recover_required_write(request, session_context, &traces, &skipped)
+            {
                 return result;
             }
             if turn + 1 == MAX_AGENT_TURNS {
                 if can_finalize_from_traces(&request.user_input, &traces) {
                     return finalize_from_traces(request, &traces, &skipped);
                 }
-                return incomplete_agent_resolve(&traces, &skipped, "达到最大执行轮次，任务仍未明确完成。");
+                return incomplete_agent_resolve(
+                    &traces,
+                    &skipped,
+                    "达到最大执行轮次，任务仍未明确完成。",
+                );
             }
             prompt = build_followup_prompt(request, session_context, &traces, &skipped);
             continue;
@@ -70,7 +74,10 @@ fn finalize_agent_response(
         skipped.len(),
     );
     let result_summary = format!("{} 最终已形成中文结果。", header);
-    let reasoning = format!("模型通过多轮 tool_calls 推进任务，并在工具执行后形成最终答复。{}", header);
+    let reasoning = format!(
+        "模型通过多轮 tool_calls 推进任务，并在工具执行后形成最终答复。{}",
+        header
+    );
     ActionExecution::bypass(
         "大模型多轮工具执行并完成任务".to_string(),
         result_summary,
@@ -259,7 +266,9 @@ fn incomplete_reason(
         return None;
     }
     if requires_write(user_input) && !has_write_trace(traces) {
-        return Some("用户请求要求写回结果，但本次执行还没有成功调用 workspace_write。".to_string());
+        return Some(
+            "用户请求要求写回结果，但本次执行还没有成功调用 workspace_write。".to_string(),
+        );
     }
     if content.trim().is_empty() && !traces.is_empty() {
         return Some("运行时已执行工具，但模型没有给出明确完成信号。".to_string());
@@ -311,7 +320,10 @@ fn next_step_instruction(
             extract_write_target(user_input).unwrap_or_else(|| "用户指定的目标文件".to_string())
         );
     }
-    format!("原始目标仍然是“{}”。如果还没真正完成，请继续调用必要工具；只有全部完成后才输出最终中文结果。", user_input)
+    format!(
+        "原始目标仍然是“{}”。如果还没真正完成，请继续调用必要工具；只有全部完成后才输出最终中文结果。",
+        user_input
+    )
 }
 
 fn extract_write_target(user_input: &str) -> Option<String> {
@@ -342,10 +354,18 @@ fn maybe_recover_required_write(
     let content = generate_required_write_content(request)?;
     let trace = crate::tool_trace::execute_tool(
         request,
-        &PlannedAction::WriteFile { path: target_path.clone(), content },
+        &PlannedAction::WriteFile {
+            path: target_path.clone(),
+            content,
+        },
         session_context,
     );
-    Some(recovered_write_response(traces, skipped, &trace, &target_path))
+    Some(recovered_write_response(
+        traces,
+        skipped,
+        &trace,
+        &target_path,
+    ))
 }
 
 fn generate_required_write_content(request: &RunRequest) -> Option<String> {
@@ -373,7 +393,8 @@ fn extract_source_path(user_input: &str) -> Option<String> {
 }
 
 fn load_source_content(request: &RunRequest, source_path: &str) -> Result<String, ()> {
-    let path = resolve_workspace_path(&request.workspace_ref.root_path, source_path).map_err(|_| ())?;
+    let path =
+        resolve_workspace_path(&request.workspace_ref.root_path, source_path).map_err(|_| ())?;
     fs::read_to_string(path).map_err(|_| ())
 }
 
@@ -392,13 +413,20 @@ fn recovered_write_response(
 ) -> ActionExecution {
     let mut final_traces = traces.to_vec();
     final_traces.push(write_trace.clone());
-    let failed = final_traces.iter().filter(|trace| !trace.result.success).count();
+    let failed = final_traces
+        .iter()
+        .filter(|trace| !trace.result.success)
+        .count();
     let success = failed == 0 && skipped.is_empty();
     let header = tool_call_header(final_traces.len(), failed, skipped.len());
     let final_answer = if success {
         format!("已根据学习资料生成摘要，并写入 {}。", target_path)
     } else {
-        tool_call_final_answer(&header, &tool_call_detail(&final_traces), &render_skipped_tool_calls(skipped))
+        tool_call_final_answer(
+            &header,
+            &tool_call_detail(&final_traces),
+            &render_skipped_tool_calls(skipped),
+        )
     };
     ActionExecution::bypass(
         "运行时补全摘要写回".to_string(),

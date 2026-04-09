@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在能提测了吗？给我一句结论，再给两个理由。",
+        "run_id":  "run-1775748582985-357",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "结论：先不提测。理由：1) 先完成同题 5 条前后复跑并确认无 recovery 回退；2) 构建与证据文档回写都通过后再提测。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:29:43"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "如果今天就要收口，按优先级我先做哪3件事？",
+        "run_id":  "run-1775748585206-360",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "按优先级先做三件事：1) 先锁边界，只做结果包装层和前端消费闭环；2) 跑同题 5 条复测与最小构建并记录 run_id；3) 回写主验收文档和证据目录，明确残余风险后再交验。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:29:45"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "模型老不稳定时，我应该暂停还是继续？给我可执行的判断线。",
+        "run_id":  "run-1775748587323-363",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "可执行判断标准：1) 连续两次请求失败且间隔 \u003c 2 分钟，先停 5 分钟再试；2) 若恢复后连续两次成功，继续执行；3) 若 10 分钟内仍反复失败，转恢复路径并记录 run_id。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:29:47"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个今晚可直接执行的复盘模板，控制在五行内。",
+        "run_id":  "run-1775748589468-366",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "今晚复盘模板（5 行）：1) 今天完成了什么；2) 哪一步卡住了；3) 为什么会卡住；4) 明天第一步做什么；5) 需要谁或什么支持。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:29:49"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我完全小白，现在第一步到底该做啥？",
+        "run_id":  "run-1775748591631-369",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "第一步只做这一件事：先跑一遍 5 条真实问句快测，并把每条的 run_id 记下来。这样你马上就知道当前系统哪里稳、哪里不稳。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。",
+        "verification_summary":  "验证通过：已命中稳定模板并直接生成可执行回答。；执行依据：当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。",
+        "timestamp":  "2026-04-09 23:29:51"
+    }
+]

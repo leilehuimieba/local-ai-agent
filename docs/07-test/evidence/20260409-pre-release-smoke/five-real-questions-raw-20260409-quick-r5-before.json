@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "这个项目现在算可以验收了吗？请给结论、依据、风险三段。",
+        "run_id":  "run-1775745000532-189",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "结论：当前可交验。依据：结果分层链路、真实样本与构建验证已闭合。风险：provider 外部波动仍会触发 recovery，需持续周更复测。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:30:07"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我今晚只剩20分钟，给我一个只做收口的三步计划。",
+        "run_id":  "run-1775745007172-192",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "基于当前项目状态，给你一个20分钟收口三步计划：\n**第一步：提交当前修改（5分钟）**\n先把手头未提交的修改全部提交，确保本地状态干净，避免后续冲突。\n**第二步：快速验收自检（10分钟）**\n对照验收清单快速过一遍核心功能点，确认主要流程跑通、关键数据无误。如果有问题，记录下来后面处理。\n**第三步：收口确认（5分钟）**\n在群里或相关渠道知会一声\"收口完成\"，同步当前状态和待跟进事项，给团队一个明确信号。\n这样20分钟内既能保证代码不丢、状态清晰，又能让团队知道收口进展。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:30:15"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果出现429限流，我怎么判断是先等还是先走恢复路径？给我可执行判断。",
+        "run_id":  "run-1775745015158-195",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "429 的可执行判断：1) 连续两次 429 且间隔 \u003c 2 分钟，先走恢复路径；2) 单次 429 且重试后恢复，继续主回答；3) 若 5 分钟内持续 429，结束本轮并记录 run_id 与错误摘要。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:30:33"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "给我一个10分钟就能做完的知识沉淀最小清单。",
+        "run_id":  "run-1775745033426-198",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "session_context",
+        "final_answer":  "10分钟知识沉淀最小清单：\n1. **灵感记录**（2分钟）\n记录一个突然想到的想法、问题或感悟，一两句话即可，标注日期和来源场景。\n2. **问答沉淀**（3分钟）\n把今天被问到的一个有价值的问题，连同答案一起记下来，包括你当时的思考过程。\n3. **心得简记**（3分钟）\n记录一个小收获、小教训或小发现，用自己的话复述一遍，不用长，三五句就行。\n4. **行动标记**（2分钟）\n写下接下来要继续探究的方向，或者需要补齐的资料，形成一个下一步行动。\n核心原则：只记最触动自己的那一点，不追求完整，用最少的字守住最有价值的信息。10分钟的关键是“动笔”，不是“写好”。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。",
+        "verification_summary":  "验证通过：已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。；执行依据：先读取最近会话压缩摘要，再结合当前输入组织续答。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:30:42"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "我不懂技术，你直接告诉我下一步该做什么，最多三条。",
+        "run_id":  "run-1775745042010-201",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 22:30:47"
+    }
+]

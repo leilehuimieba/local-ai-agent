@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-04-09 22:06:27",
+  "suite": "five_real_questions_quality_stability_r3",
+  "goal": "只优化回答质量稳定性，不扩功能",
+  "top_failure_categories_before": [
+    {
+      "category": "recovery_answer_has_technical_prefix",
+      "description": "回答首行包含“主回答未成功，已切换到会话摘要恢复路径”。",
+      "count": 3
+    },
+    {
+      "category": "outdated_recovery_template_phrase",
+      "description": "项目状态模板包含过时口径“先修默认直答与恢复模板，再复跑同一批真实问句”。",
+      "count": 1
+    }
+  ],
+  "metrics_compare": {
+    "before_recovery_prefix_count": 3,
+    "after_recovery_prefix_count": 0,
+    "before_outdated_phrase_count": 1,
+    "after_outdated_phrase_count": 0,
+    "before_result_mode_recovery": 3,
+    "after_result_mode_recovery": 2,
+    "before_run_failed": 0,
+    "after_run_failed": 0
+  },
+  "raw_files": {
+    "before": "five-real-questions-raw-20260409-quick-r3-before.json",
+    "after": "five-real-questions-raw-20260409-quick-r3-after.json"
+  },
+  "compare_file": "five-real-questions-quality-compare-20260409-r3.md"
+}

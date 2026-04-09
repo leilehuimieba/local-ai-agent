@@ -1,14 +1,14 @@
 use crate::capabilities::{ToolDefinition, ToolExecutionTrace};
-use crate::context_builder::{build_runtime_context, RuntimeContextEnvelope};
+use crate::context_builder::{RuntimeContextEnvelope, build_runtime_context};
 use crate::context_policy::{action_context_policy, planning_context_policy};
 use crate::contracts::RunRequest;
-use crate::planner::{analysis_summary, PlannedAction};
-use crate::repo_context::{load_repo_context, RepoContextLoadResult};
-use crate::risk::{assess_risk, RiskOutcome};
+use crate::planner::{PlannedAction, analysis_summary};
+use crate::repo_context::{RepoContextLoadResult, load_repo_context};
+use crate::risk::{RiskOutcome, assess_risk};
 use crate::session::{
-    load_session_context, record_execution_memory, record_planning_memory, SessionMemory,
+    SessionMemory, load_session_context, record_execution_memory, record_planning_memory,
 };
-use crate::tool_registry::{runtime_tool_registry, ToolCall};
+use crate::tool_registry::{ToolCall, runtime_tool_registry};
 use crate::tool_trace::execute_tool;
 use crate::verify::VerificationReport;
 use std::path::PathBuf;
@@ -96,12 +96,16 @@ fn prepare_run_state(
     repo_context: &RepoContextLoadResult,
     visible_tools: &[ToolDefinition],
 ) -> PreparedRunState {
-    let context_envelope =
-        planning_context(request, session_context, repo_context, visible_tools);
+    let context_envelope = planning_context(request, session_context, repo_context, visible_tools);
     let tool_call = runtime_tool_registry().plan_tool_call(&context_envelope);
     let action = tool_call.action.clone();
-    let execute_context =
-        execution_context(request, session_context, repo_context, visible_tools, &action);
+    let execute_context = execution_context(
+        request,
+        session_context,
+        repo_context,
+        visible_tools,
+        &action,
+    );
     PreparedRunState {
         context_envelope: execute_context,
         task_title: crate::derive_task_title(&action, &request.user_input),
