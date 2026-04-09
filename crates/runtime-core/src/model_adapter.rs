@@ -63,20 +63,51 @@ impl ModelAdapter for OpenAiCompatibleAdapter {
         request: &ModelRequest<'_>,
         body_path: &PathBuf,
     ) -> Result<ModelResponse, ModelError> {
-        let uri = model_uri(&self.provider);
-        let output = run_curl_with_retry(&self.provider, body_path, &uri)?;
-        match parse_model_response(request, &output) {
-            Ok(response) => Ok(response),
-            Err(error) => retry_with_stream_if_needed(
-                &self.provider,
-                request,
-                body_path,
-                &uri,
-                error,
-                &output,
-            ),
+        complete_with_parse_retry(&self.provider, request, body_path)
+    }
+}
+
+fn complete_with_parse_retry(
+    provider: &ProviderConfig,
+    request: &ModelRequest<'_>,
+    body_path: &PathBuf,
+) -> Result<ModelResponse, ModelError> {
+    let uri = model_uri(provider);
+    let mut output = run_curl_with_retry(provider, body_path, &uri)?;
+    for attempt in 0..2 {
+        match parse_or_retry_stream(provider, request, body_path, &uri, &output) {
+            Ok(response) => return Ok(response),
+            Err(error) if should_retry_after_parse(&error) && attempt < 1 => {
+                sleep(retry_delay(attempt));
+                output = run_curl_with_retry(provider, body_path, &uri)?;
+            }
+            Err(error) => return Err(error),
         }
     }
+    Err(model_error("model_parse_failed", "模型解析失败", true))
+}
+
+fn parse_or_retry_stream(
+    provider: &ProviderConfig,
+    request: &ModelRequest<'_>,
+    body_path: &PathBuf,
+    uri: &str,
+    output: &[u8],
+) -> Result<ModelResponse, ModelError> {
+    match parse_model_response(request, output) {
+        Ok(response) => Ok(response),
+        Err(error) => retry_with_stream_if_needed(provider, request, body_path, uri, error, output),
+    }
+}
+
+fn should_retry_after_parse(error: &ModelError) -> bool {
+    if !error.retryable {
+        return false;
+    }
+    matches!(
+        error.code.as_str(),
+        "model_provider_error" | "llm_empty_response" | "model_parse_failed"
+    )
 }
 
 pub(crate) fn provider_config(provider: &ProviderRef) -> Result<ProviderConfig, ModelError> {

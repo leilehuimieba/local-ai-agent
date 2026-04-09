@@ -1,0 +1,47 @@
+﻿[
+    {
+        "idx":  1,
+        "run_id":  "run-1775751439845-402",
+        "event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "模型未下发工具调用，返回文本回答。"
+    },
+    {
+        "idx":  2,
+        "run_id":  "run-1775751447336-405",
+        "event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "模型未下发工具调用，返回文本回答。"
+    },
+    {
+        "idx":  3,
+        "run_id":  "run-1775751456877-408",
+        "event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "模型未下发工具调用，返回文本回答。"
+    },
+    {
+        "idx":  4,
+        "run_id":  "run-1775751462401-411",
+        "event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "模型未下发工具调用，返回文本回答。"
+    },
+    {
+        "idx":  5,
+        "run_id":  "run-1775751468055-414",
+        "event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "模型未下发工具调用，返回文本回答。"
+    }
+]
