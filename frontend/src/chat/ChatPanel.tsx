@@ -84,7 +84,7 @@ function TaskThread(props: { props: ChatPanelProps }) {
 
 function ThreadHeader(props: { props: ChatPanelProps }) {
   return (
-    <SectionHeader kicker="记录" className="stream-header" title="任务记录流" action={<StatusPill className={readThreadStatusClass(props.props.runState)} label={props.props.statusLine} />} />
+    <SectionHeader kicker="主线" className="stream-header" title="回答与状态" action={<StatusPill className={readThreadStatusClass(props.props.runState)} label={props.props.statusLine} />} />
   );
 }
 
@@ -95,15 +95,27 @@ function ThreadContent(props: { props: ChatPanelProps }) {
   if (shouldShowMessageFailure(props.props.runState, props.props.messages, props.props.submitError, props.props.latestFailureEvent)) {
     return <PrimaryErrorState latestFailureEvent={props.props.latestFailureEvent} submitError={props.props.submitError} />;
   }
+  if (shouldShowConfirmationRecord(props.props.runState, props.props.confirmation)) {
+    return <ConfirmationOnlyState props={props.props} />;
+  }
   if (props.props.messages.length === 0) {
     return <EmptyWorkbench settings={props.props.settings} />;
   }
   return <ThreadRecords props={props.props} />;
 }
 
+function ConfirmationOnlyState(props: { props: ChatPanelProps }) {
+  return (
+    <>
+      <EmptyWorkbench settings={props.props.settings} />
+      <ConfirmationRecord props={props.props} />
+    </>
+  );
+}
+
 function ThreadRecords(props: { props: ChatPanelProps }) {
   const tailRecord = readThreadTailRecord(props.props);
-  const toolEvents = getToolEvents(props.props.events);
+  const toolEvents = getToolFeedItems(props.props.events);
   return (
     <>
       {[...props.props.messages].reverse().map((message, index) => (
@@ -141,9 +153,9 @@ function AssistantRecord(props: { message: ChatMessage; index: number; runEvent?
   const isThinking = !props.runEvent;
   return (
     <article className="thread-record assistant">
-      <RecordHead index={props.index} role="执行结果" />
+      <RecordHead index={props.index} role={result.roleLabel} tag={result.statusTag} />
       <div className="thread-record-copy">
-        <ResultSummary summary={result.summary} />
+        <ResultSummary label={result.summaryLabel} summary={result.summary} />
         {result.sections.map((section, index) => <ResultBlock key={`${props.message.id}-${index}`} section={section} />)}
       </div>
       {isThinking ? <ThinkingDots /> : null}
@@ -151,19 +163,22 @@ function AssistantRecord(props: { message: ChatMessage; index: number; runEvent?
   );
 }
 
-function RecordHead(props: { role: string; index: number }) {
+function RecordHead(props: { role: string; index: number; tag?: string }) {
   return (
     <div className="thread-record-head">
-      <span className="thread-record-role">{props.role}</span>
+      <div className="thread-record-meta">
+        <span className="thread-record-role">{props.role}</span>
+        {props.tag ? <span className="thread-tag">{props.tag}</span> : null}
+      </div>
       <span className="bubble-index">{formatEntryIndex(props.index + 1)}</span>
     </div>
   );
 }
 
-function ResultSummary(props: { summary: string }) {
+function ResultSummary(props: { label: string; summary: string }) {
   return (
     <section className="result-block result-block-summary">
-      <strong>最终结论</strong>
+      <strong>{props.label}</strong>
       <p>{props.summary}</p>
     </section>
   );
@@ -179,12 +194,16 @@ function ResultBlock(props: { section: ResultSection }) {
 }
 
 function ToolEventFeed(props: { events: RunEvent[] }) {
+  if (props.events.length === 0) return null;
   return (
-    <div className="tool-event-feed">
+    <section className="tool-event-strip">
+      <strong>当前进度</strong>
+      <div className="tool-event-feed">
       {props.events.map((event) => (
         <ToolEventBadge key={event.event_id} event={event} />
       ))}
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -193,12 +212,12 @@ function ToolEventBadge(props: { event: RunEvent }) {
   const isCompleted = isToolCompletedEvent(props.event);
   if (!label) return null;
   if (isCompleted) {
-    return <div className="status-badge status-completed">✅ {label}</div>;
+    return <div className="status-badge status-completed">已完成 {label}</div>;
   }
   return (
     <div className="status-badge status-running">
       <span className="tool-event-spinner" aria-hidden="true" />
-      ⚙️ 正在{label}
+      正在处理 {label}
     </div>
   );
 }
@@ -215,7 +234,7 @@ function ThinkingDots() {
 
 function ConfirmationRecord(props: { props: ChatPanelProps }) {
   return (
-    <section className="thread-record confirmation">
+    <section id="task-confirmation-anchor" className="thread-record confirmation" tabIndex={-1}>
       <div className="thread-record-head">
         <span className="thread-record-role">待确认项</span>
         <span className="thread-tag">待确认</span>
@@ -352,6 +371,7 @@ function ComposerInput(props: {
 }) {
   return (
     <textarea
+      id="task-composer-input"
       className="composer-input"
       aria-label="任务输入"
       rows={4}
@@ -395,8 +415,24 @@ function findTerminalRunEvent(props: ChatPanelProps, runId?: string) {
   });
 }
 
-function getToolEvents(events: RunEvent[]) {
-  return events.filter((event) => isToolStartedEvent(event) || hasToolName(event));
+function getToolFeedItems(events: RunEvent[]) {
+  const ordered = [...events].reverse();
+  const current = ordered.find((event) => hasToolName(event) && !isToolCompletedEvent(event));
+  const completed = collectCompletedToolEvents(ordered, current?.event_id);
+  return current ? [current, ...completed] : completed;
+}
+
+function collectCompletedToolEvents(events: RunEvent[], currentEventId?: string) {
+  const labels = new Set<string>();
+  const items: RunEvent[] = [];
+  for (const event of events) {
+    const label = getToolEventLabel(event);
+    if (!label || !isToolCompletedEvent(event) || event.event_id === currentEventId || labels.has(label)) continue;
+    labels.add(label);
+    items.push(event);
+    if (items.length === 2) break;
+  }
+  return items;
 }
 
 function isToolStartedEvent(event: RunEvent) {
@@ -404,7 +440,7 @@ function isToolStartedEvent(event: RunEvent) {
 }
 
 function isToolCompletedEvent(event: RunEvent) {
-  return event.event_type === "tool_completed" || event.event_type === "tool_finished" || event.event_type === "action_completed";
+  return event.event_type === "tool_completed" || event.event_type === "tool_finished" || event.event_type === "action_completed" || event.event_type === "run_finished";
 }
 
 function hasToolName(event: RunEvent) {

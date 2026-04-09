@@ -1,8 +1,7 @@
 import { KeyboardEvent, useEffect, useMemo, useRef } from "react";
 
 import { RunEvent, RuntimeContextSnapshot } from "../shared/contracts";
-import { readReviewTypeLabel } from "../history/logType";
-import { readRunEventType } from "../history/logType";
+import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
 
 type EventTimelineProps = {
   autoFollow?: boolean;
@@ -138,7 +137,8 @@ function EventTagRow(props: { event: RunEvent }) {
       {props.event.tool_category ? <span>{props.event.tool_category}</span> : null}
       {readToolTag(props.event) ? <span>{readToolTag(props.event)}</span> : null}
       {props.event.risk_level ? <span>{props.event.risk_level}</span> : null}
-      {props.event.metadata?.memory_kind ? <span>{props.event.metadata.memory_kind}</span> : null}
+      {isMemoryEvent(props.event) ? <span>{readMemoryFacetLabel(eventLikeMemory(props.event))}</span> : null}
+      {isMemoryEvent(props.event) ? <span>{readMemoryGovernanceLabel(eventLikeMemory(props.event))}</span> : null}
     </div>
   );
 }
@@ -148,11 +148,13 @@ function buildEventDetails(event: RunEvent) {
   return compactDetails([
     { key: "detail", text: readPrimaryDetail(event) },
     { key: "action", text: readActionDetail(event) },
+    { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
+    { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
     { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
     { key: "workspace", text: details.workspace ? `工作区：${details.workspace}` : "" },
     { key: "verification", text: details.verification ? `验证：${details.verification}` : "" },
     { key: "next", text: event.metadata?.next_step ? `下一步：${event.metadata.next_step}` : "" },
-    { key: "completion", text: details.completion ? `完成判定：${details.completion}` : "" },
+    { key: "reason", text: readMemoryReason(event) },
   ]);
 }
 
@@ -177,6 +179,7 @@ function readPrimaryDetail(event: RunEvent) {
   if (event.event_type === "run_failed") return event.detail || event.metadata?.result_summary || "运行失败。";
   if (event.event_type === "confirmation_required") return event.detail || "当前动作需要确认后继续。";
   if (event.event_type === "memory_recalled") return event.result_summary || event.detail || "已召回相关记忆。";
+  if (event.event_type === "memory_write_skipped") return event.detail || event.summary || "本次记忆写入已跳过。";
   return event.result_summary || event.metadata?.result_summary || event.detail || "";
 }
 
@@ -223,6 +226,28 @@ function readEventTone(event: RunEvent) {
   if (eventType === "confirmation") return "warning";
   if (eventType === "memory" || eventType === "verification") return "calm";
   return "neutral";
+}
+
+function isMemoryEvent(event: RunEvent) {
+  return readRunEventType(event) === "memory";
+}
+
+function readMemoryReason(event: RunEvent) {
+  if (!isMemoryEvent(event)) return "";
+  return event.detail || event.summary ? `原因：${event.detail || event.summary}` : "";
+}
+
+function eventLikeMemory(event: RunEvent) {
+  return {
+    event_type: event.event_type,
+    kind: event.metadata?.memory_kind || event.record_type || event.output_kind,
+    metadata: event.metadata,
+    reason: event.detail || event.summary,
+    source_type: event.source_type,
+    summary: event.summary,
+    title: event.metadata?.task_title || event.summary,
+    verified: event.verification_snapshot?.passed,
+  };
 }
 
 function handleTimelineScroll(

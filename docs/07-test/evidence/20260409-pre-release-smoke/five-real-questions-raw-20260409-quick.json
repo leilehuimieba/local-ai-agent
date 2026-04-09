@@ -1,0 +1,72 @@
+﻿[
+    {
+        "sample_id":  "Q1",
+        "question":  "我现在这个项目到底进行到哪一步了？请用已完成、未完成、下一步三段说清楚。",
+        "run_id":  "run-1775741355130-84",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "主回答未成功，已切换到会话摘要恢复路径。\n当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 21:29:24"
+    },
+    {
+        "sample_id":  "Q2",
+        "question":  "我只有30分钟，想做一轮上线前回归，你给我一个按分钟拆分的执行清单。",
+        "run_id":  "run-1775741364093-87",
+        "finish_event":  "run_finished",
+        "completion_status":  "failed",
+        "result_mode":  "system",
+        "verification_code":  "verification_failed",
+        "plan_tool":  "agent_resolve",
+        "final_answer":  "达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, docs, frontend, gateway, logs, scripts, shared, skills, target, target-buildcheck, target-buildcheck-memory, tmp\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-q2\\run-1775741364093-87\\list-1775741366401.txt\n\n2. [成功] 读取文件 (workspace_read)\n动作：读取文件：D:\\newwork\\本地智能体\\AGENTS.md\n摘要：文件读取成功，摘要：# 项目规则\n\n## 作用域与优先级\n\n1. 系统消息、开发者消息、用户当轮指令，优先于本文件。\n2. 本文件作用于仓库根目录及所有子目录。\n3. 子目录中的 `AGENTS.md` 只在对应子树内生效，并作为补充规则使用。\n4. 同级规则冲突时，采用更具体、可验证、限制更强的规则。\n\n## P1 全局偏好\n\n1. 用中文回答。\n2. 不要在回答末尾总结你做了什么。\n\n## P2 通用实现规则\n\n1. 仅对新增或修改的函数生效：单个函数不得超过 30 行，按函数签名到结束右花...\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-q2\\run-1775741364093-87\\read-1775741368890.txt\n\n3. [成功] 读取文件 (workspace_read)\n动作：读取文件：D:\\newwork\\本地智能体\\AGENTS.md\n摘要：文件读取成功，摘要：# 项目规则\n\n## 作用域与优先级\n\n1. 系统消息、开发者消息、用户当轮指令，优先于本文件。\n2. 本文件作用于仓库根目录及所有子目录。\n3. 子目录中的 `AGENTS.md` 只在对应子树内生效，并作为补充规则使用。\n4. 同级规则冲突时，采用更具体、可验证、限制更强的规则。\n\n## P1 全局偏好\n\n1. 用中文回答。\n2. 不要在回答末尾总结你做了什么。\n\n## P2 通用实现规则\n\n1. 仅对新增或修改的函数生效：单个函数不得超过 30 行，按函数签名到结束右花...\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-q2\\run-1775741364093-87\\read-1775741372376.txt\n\n4. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\\config\n摘要：目录列举成功：app.json\n\n5. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\\scripts\n摘要：目录列举成功：run-mainline-acceptance.ps1, run-runtime-host-lock-check.ps1, run-v1-regression-check.ps1, start-dev.ps1\n产物：D:\\newwork\\本地智能体\\data\\artifacts\\session-5q-quality-20260409-q2\\run-1775741364093-87\\list-1775741372377.txt",
+        "result_summary":  "达到最大执行轮次，任务仍未明确完成。",
+        "verification_summary":  "验证失败：达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, d...；失败依据：模型虽然执行了部分工具，但还没有把原始任务真正做完。",
+        "timestamp":  "2026-04-09 21:29:34"
+    },
+    {
+        "sample_id":  "Q3",
+        "question":  "如果模型接口突然不稳定，我第一时间该看哪三个信号判断是不是系统问题？",
+        "run_id":  "run-1775741374348-90",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "plan_tool":  "agent_resolve",
+        "final_answer":  "根据对模型接口稳定性监控的实践经验，当模型接口突然不稳定时，**第一时间应该关注以下三个关键信号**来判断是否是系统问题：\n\n---\n\n## 三个核心判断信号\n\n### 1️⃣ 错误率/失败率\n- **看什么**：HTTP 错误码分布（4xx、5xx）、超时异常、业务层报错\n- **系统问题特征**：错误率突然从 \u003c1% 飙升到 10%+，且错误类型集中（如大量 503/504）\n- **排除非系统问题**：如果是用户输入问题，错误率通常平稳且分散\n\n### 2️⃣ 响应延迟/响应时间\n- **看什么**：P99/P95 延迟、平均响应时间、是否出现超时\n- **系统问题特征**：延迟突然从几百毫秒飙升到几十秒，或出现大量超时\n- **排除非系统问题**：如果只是某个模型变慢，延迟曲线会呈渐进式而非突变\n\n### 3️⃣ 服务可用性/健康状态\n- **看什么**：API 是否可访问、依赖服务（数据库/缓存/下游模型）状态、进程/容器存活\n- **系统问题特征**：服务完全不可用、或依赖的中间件/下游服务出现故障\n- **排除非系统问题**：如果只是特定请求失败，服务本身健康检查通常正常\n\n---\n\n## 快速排查建议\n\n| 优先级 | 检查项 | 工具/命令 |\n|--------|--------|-----------|\n| 1 | 查看错误日志 | `grep \"error\" logs/` |\n| 2 | 监控指标看板 | 错误率、延迟、QPS |\n| 3 | 检查下游依赖 | 数据库连接、Redis、第三方API |\n| 4 | 查看资源使用 | CPU、内存、GPU、磁盘IO |\n\n---\n\n**总结**：优先看 **错误率是否突变** → **延迟是否飙升** → **服务是否存活**，这三者能快速定位是系统问题还是个别请求问题。",
+        "result_summary":  "模型未下发工具调用，返回文本回答。",
+        "verification_summary":  "验证通过：模型未下发工具调用，返回文本回答。；执行依据：模型未选择工具，直接返回生成文本。",
+        "timestamp":  "2026-04-09 21:29:46"
+    },
+    {
+        "sample_id":  "Q4",
+        "question":  "我想继续做知识沉淀，但不想越做越乱。你给我一个今天就能执行的最小方案。",
+        "run_id":  "run-1775741386614-93",
+        "finish_event":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "plan_tool":  "session_context",
+        "final_answer":  "主回答未成功，已切换到会话摘要恢复路径。\n当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：模型输出不可用",
+        "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：模型输出不可用；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+        "timestamp":  "2026-04-09 21:29:50"
+    },
+    {
+        "sample_id":  "Q5",
+        "question":  "假设我要把这个项目收口到可验收，请给我一个不扩功能的收口顺序。",
+        "run_id":  "run-1775741390826-96",
+        "finish_event":  "run_failed",
+        "completion_status":  null,
+        "result_mode":  "system",
+        "verification_code":  "verification_failed",
+        "plan_tool":  "agent_resolve",
+        "final_answer":  null,
+        "result_summary":  "达到最大执行轮次，任务仍未明确完成。",
+        "verification_summary":  "验证失败：达到最大执行轮次，任务仍未明确完成。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n工具调用执行完成：5 个，总失败 0 个，未识别 0 个。\n\n1. [成功] 浏览目录 (workspace_list)\n动作：列出目录：D:\\newwork\\本地智能体\n摘要：目录列举成功：.git, .gitignore, .playwright-cli, AGENTS.md, Cargo.lock, Cargo.toml, config, crates, data, d...；失败依据：模型虽然执行了部分工具，但还没有把原始任务真正做完。",
+        "timestamp":  "2026-04-09 21:30:27"
+    }
+]

@@ -1,18 +1,32 @@
+use crate::capabilities::ToolExecutionTrace;
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::knowledge_store::{
-    KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
-    should_skip_knowledge_record,
+    append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
+    should_skip_knowledge_record, KnowledgeRecord,
 };
-use crate::memory::{MemoryEntry, append_memory_entry, search_memory_entries};
+use crate::memory::{append_memory_entry, normalized_memory_entry, search_memory_entries, MemoryEntry};
+use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::paths::{
     knowledge_base_file_path, long_term_memory_file_path, siyuan_auto_write_enabled,
     siyuan_export_dir, siyuan_sync_enabled, working_memory_dir,
 };
 use crate::text::summarize_text;
-use crate::tools::ToolExecutionTrace;
 use crate::verify::VerificationReport;
 use std::fs;
+
+#[derive(Clone, Debug)]
+pub(crate) struct MemoryAuditTrail {
+    pub governance_status: String,
+    pub memory_action: String,
+    pub governance_version: String,
+    pub governance_reason: String,
+    pub governance_source: String,
+    pub governance_at: String,
+    pub source_event_type: String,
+    pub source_artifact_path: String,
+    pub archive_reason: String,
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct MemoryWriteOutcome {
@@ -23,6 +37,7 @@ pub(crate) struct MemoryWriteOutcome {
     pub title: String,
     pub summary: String,
     pub reason: String,
+    pub audit: MemoryAuditTrail,
 }
 
 pub(crate) fn evaluate_finish_memory_writes(
@@ -55,6 +70,7 @@ fn working_memory_outcome(request: &RunRequest) -> MemoryWriteOutcome {
             working_memory_dir(request).display()
         ),
         reason: "当前任务主循环已完成短期状态更新。".to_string(),
+        audit: working_memory_audit(),
     }
 }
 
@@ -64,7 +80,7 @@ fn write_long_term_memory(
     report: &VerificationReport,
 ) -> MemoryWriteOutcome {
     if !report.outcome.passed {
-        return skipped_outcome(
+        return skipped_record_outcome(
             "long_term_memory",
             "lesson_learned",
             "验证未通过，跳过长期记忆写入。",
@@ -72,9 +88,9 @@ fn write_long_term_memory(
     }
     let entry = auto_memory_entry(request, trace, report);
     if has_memory_duplicate(request, &entry) {
-        return skipped_outcome(
+        return skipped_memory_outcome(
             "long_term_memory",
-            &entry.kind,
+            &entry,
             "命中重复长期记忆，跳过写入。",
         );
     }
@@ -87,32 +103,32 @@ fn write_knowledge_record(
     report: &VerificationReport,
 ) -> MemoryWriteOutcome {
     let Some(record) = build_knowledge_record(request, trace, report) else {
-        return skipped_outcome(
+        return skipped_record_outcome(
             "knowledge_base",
             "document_digest",
             "当前结果不满足知识沉淀条件，未进入知识层。",
         );
     };
     if has_knowledge_record(request, &record) {
-        return skipped_outcome(
+        return skipped_record_outcome(
             "knowledge_base",
             &record.knowledge_type,
             "命中重复知识条目，跳过写入。",
         );
     }
     if looks_like_recursive_knowledge(&record) {
-        return skipped_outcome(
+        return skipped_record_outcome(
             "knowledge_base",
             &record.knowledge_type,
             "检测到知识递归污染风险，跳过写入。",
         );
     }
     if let Some(skip) = should_skip_knowledge_record(&record) {
-        return skipped_outcome("knowledge_base", &record.knowledge_type, &skip.reason);
+        return skipped_record_outcome("knowledge_base", &record.knowledge_type, &skip.reason);
     }
     match append_knowledge_record(request, &record) {
         Ok(()) => knowledge_write_outcome(request, &record),
-        Err(error) => skipped_outcome("knowledge_base", &record.knowledge_type, &error),
+        Err(error) => skipped_record_outcome("knowledge_base", &record.knowledge_type, &error),
     }
 }
 
@@ -187,15 +203,15 @@ fn write_preference_memory(
     }
     let entry = preference_entry(request)?;
     if has_memory_duplicate(request, &entry) {
-        return Some(skipped_outcome(
+        return Some(skipped_memory_outcome(
             "long_term_memory",
-            &entry.kind,
+            &entry,
             "命中重复用户偏好，跳过写入。",
         ));
     }
     Some(match append_memory_entry(request, &entry) {
         Ok(()) => memory_written_outcome(request, &entry, "用户明确给出了可跨任务复用的长期偏好。"),
-        Err(error) => skipped_outcome("long_term_memory", &entry.kind, &error),
+        Err(error) => skipped_memory_outcome("long_term_memory", &entry, &error),
     })
 }
 
@@ -206,15 +222,15 @@ fn write_failure_lesson_memory(
 ) -> Option<MemoryWriteOutcome> {
     let entry = failure_lesson_entry(request, trace, report)?;
     if has_memory_duplicate(request, &entry) {
-        return Some(skipped_outcome(
+        return Some(skipped_memory_outcome(
             "long_term_memory",
-            &entry.kind,
+            &entry,
             "命中重复失败教训，跳过写入。",
         ));
     }
     Some(match append_memory_entry(request, &entry) {
         Ok(()) => memory_written_outcome(request, &entry, "失败复盘已形成可复用教训。"),
-        Err(error) => skipped_outcome("long_term_memory", &entry.kind, &error),
+        Err(error) => skipped_memory_outcome("long_term_memory", &entry, &error),
     })
 }
 
@@ -237,6 +253,11 @@ fn preference_entry(request: &RunRequest) -> Option<MemoryEntry> {
         source_title: summarize_text(&request.user_input),
         source_event_type: "run_finished".to_string(),
         source_artifact_path: String::new(),
+        governance_version: String::new(),
+        governance_reason: String::new(),
+        governance_source: String::new(),
+        governance_at: String::new(),
+        archive_reason: String::new(),
         verified: true,
         priority: 80,
         archived: false,
@@ -270,6 +291,11 @@ fn failure_lesson_entry(
         source_title: source.title,
         source_event_type: source.event_type,
         source_artifact_path: source.artifact_path,
+        governance_version: String::new(),
+        governance_reason: String::new(),
+        governance_source: String::new(),
+        governance_at: String::new(),
+        archive_reason: String::new(),
         verified: report.outcome.passed,
         priority: 60,
         archived: false,
@@ -302,6 +328,11 @@ fn auto_memory_entry(
         source_title: source.title,
         source_event_type: source.event_type,
         source_artifact_path: source.artifact_path,
+        governance_version: String::new(),
+        governance_reason: String::new(),
+        governance_source: String::new(),
+        governance_at: String::new(),
+        archive_reason: String::new(),
         verified: report.outcome.passed,
         priority: 0,
         archived: false,
@@ -458,6 +489,7 @@ fn memory_written_outcome(
     entry: &MemoryEntry,
     reason: &str,
 ) -> MemoryWriteOutcome {
+    let entry = normalized_memory_entry(entry);
     MemoryWriteOutcome {
         event_type: "memory_written",
         layer: "long_term_memory",
@@ -469,6 +501,7 @@ fn memory_written_outcome(
             long_term_memory_file_path(request).display()
         ),
         reason: reason.to_string(),
+        audit: written_audit(&entry),
     }
 }
 
@@ -486,7 +519,7 @@ fn looks_like_recursive_knowledge(record: &KnowledgeRecord) -> bool {
         || summary.contains("已基于项目文档片段完成一次项目说明回答：文件：run:")
 }
 
-fn skipped_outcome(layer: &'static str, record_type: &str, reason: &str) -> MemoryWriteOutcome {
+fn skipped_record_outcome(layer: &'static str, record_type: &str, reason: &str) -> MemoryWriteOutcome {
     MemoryWriteOutcome {
         event_type: skipped_event_type(layer),
         layer,
@@ -495,6 +528,7 @@ fn skipped_outcome(layer: &'static str, record_type: &str, reason: &str) -> Memo
         title: skipped_title(layer),
         summary: summarize_text(reason),
         reason: reason.to_string(),
+        audit: skipped_audit(skipped_event_type(layer), "runtime_skip_guard", reason),
     }
 }
 
@@ -534,6 +568,7 @@ fn knowledge_write_outcome(request: &RunRequest, record: &KnowledgeRecord) -> Me
         title: record.title.clone(),
         summary,
         reason,
+        audit: knowledge_audit(record),
     }
 }
 
@@ -650,7 +685,89 @@ fn memory_write_result(
                 long_term_memory_file_path(request).display()
             ),
             reason: "任务完成后形成了可复用摘要。".to_string(),
+            audit: written_audit(&normalized_memory_entry(entry)),
         },
-        Err(error) => skipped_outcome("long_term_memory", &entry.kind, &error),
+        Err(error) => skipped_memory_outcome("long_term_memory", entry, &error),
+    }
+}
+
+fn skipped_memory_outcome(layer: &'static str, entry: &MemoryEntry, reason: &str) -> MemoryWriteOutcome {
+    let entry = normalized_memory_entry(entry);
+    MemoryWriteOutcome {
+        event_type: skipped_event_type(layer),
+        layer,
+        record_type: entry.kind.clone(),
+        source_type: entry.source_type.clone(),
+        title: skipped_title(layer),
+        summary: summarize_text(reason),
+        reason: reason.to_string(),
+        audit: skipped_entry_audit(&entry, skipped_event_type(layer), reason),
+    }
+}
+
+fn working_memory_audit() -> MemoryAuditTrail {
+    MemoryAuditTrail {
+        governance_status: "written".to_string(),
+        memory_action: "write".to_string(),
+        governance_version: MEMORY_GOVERNANCE_VERSION.to_string(),
+        governance_reason: "短期工作记忆已按当前运行时状态同步落盘。".to_string(),
+        governance_source: "runtime_working_memory".to_string(),
+        governance_at: timestamp_now(),
+        source_event_type: "memory_written".to_string(),
+        source_artifact_path: String::new(),
+        archive_reason: String::new(),
+    }
+}
+
+fn written_audit(entry: &MemoryEntry) -> MemoryAuditTrail {
+    MemoryAuditTrail {
+        governance_status: "written".to_string(),
+        memory_action: "write".to_string(),
+        governance_version: entry.governance_version.clone(),
+        governance_reason: entry.governance_reason.clone(),
+        governance_source: entry.governance_source.clone(),
+        governance_at: entry.governance_at.clone(),
+        source_event_type: entry.source_event_type.clone(),
+        source_artifact_path: entry.source_artifact_path.clone(),
+        archive_reason: entry.archive_reason.clone(),
+    }
+}
+
+fn skipped_audit(event_type: &str, source: &str, reason: &str) -> MemoryAuditTrail {
+    MemoryAuditTrail {
+        governance_status: "skipped".to_string(),
+        memory_action: "skip".to_string(),
+        governance_version: MEMORY_GOVERNANCE_VERSION.to_string(),
+        governance_reason: summarize_text(reason),
+        governance_source: source.to_string(),
+        governance_at: timestamp_now(),
+        source_event_type: event_type.to_string(),
+        source_artifact_path: String::new(),
+        archive_reason: String::new(),
+    }
+}
+
+fn skipped_entry_audit(entry: &MemoryEntry, event_type: &str, reason: &str) -> MemoryAuditTrail {
+    let source = if entry.governance_source.is_empty() {
+        "runtime_skip_guard"
+    } else {
+        entry.governance_source.as_str()
+    };
+    let mut audit = skipped_audit(event_type, source, reason);
+    audit.source_artifact_path = entry.source_artifact_path.clone();
+    audit
+}
+
+fn knowledge_audit(record: &KnowledgeRecord) -> MemoryAuditTrail {
+    MemoryAuditTrail {
+        governance_status: "written".to_string(),
+        memory_action: "write".to_string(),
+        governance_version: MEMORY_GOVERNANCE_VERSION.to_string(),
+        governance_reason: "稳定知识摘要已进入知识层并保留来源信息。".to_string(),
+        governance_source: "knowledge_base_write".to_string(),
+        governance_at: record.updated_at.clone(),
+        source_event_type: "knowledge_written".to_string(),
+        source_artifact_path: String::new(),
+        archive_reason: String::new(),
     }
 }

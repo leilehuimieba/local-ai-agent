@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 
+import { countMemoryFacets, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceClass, readMemoryGovernanceLabel } from "../../history/logType";
 import { MemoryEntry, SettingsResponse } from "../../shared/contracts";
 import { EmptyStateBlock, MetaGrid, MetricChip, SectionHeader, StatusPill } from "../../ui/primitives";
 
-type MemoryFilter = "all" | "workspace" | "knowledge" | "runtime" | "verified";
-type MemoryGroupKey = "workspace" | "knowledge" | "runtime" | "other";
+type MemoryFilter = "all" | "preference" | "lesson" | "governance" | "archived" | "verified";
+type MemoryGroupKey = "preference" | "lesson" | "knowledge" | "runtime" | "other";
 type ResourceActionState = {
   tone: "running" | "failed" | "completed";
   message: string;
@@ -22,38 +23,37 @@ type MemoryResourcesSectionProps = {
   onRefresh: () => void;
 };
 
-const MEMORY_GROUP_ORDER: MemoryGroupKey[] = ["workspace", "knowledge", "runtime", "other"];
+const MEMORY_GROUP_ORDER: MemoryGroupKey[] = ["preference", "lesson", "knowledge", "runtime", "other"];
 
 export function MemoryResourcesSection(props: MemoryResourcesSectionProps) {
   const [filter, setFilter] = useState<MemoryFilter>("all");
   const [expandedId, setExpandedId] = useState("");
-  const model = useMemo(() => buildMemoryModel(props.memories, props.settings.workspace.workspace_id, filter), [filter, props.memories, props.settings.workspace.workspace_id]);
+  const model = useMemo(() => buildMemoryModel(props.memories, filter), [filter, props.memories]);
   return (
     <section className="settings-module">
-      <MemorySectionHeader enabled={props.settings.memory_policy.enabled} count={model.filtered.length} />
-      <div className="settings-control-grid">
-        <MemoryStatusCard enabled={props.settings.memory_policy.enabled} />
-        <MemoryStrategyCard title="召回策略" body={props.settings.memory_policy.recall_strategy} />
-        <MemoryStrategyCard title="写入策略" body={props.settings.memory_policy.write_strategy} />
-        <MemoryStrategyCard title="清理策略" body={props.settings.memory_policy.cleanup_strategy} />
-        <MemoryStats settings={props.settings} filteredCount={model.filtered.length} />
-        <MemoryPathCard settings={props.settings} />
-        <MemoryList
-          actionState={props.actionState}
-          deletingId={props.deletingId}
-          error={props.error}
-          expandedId={expandedId}
-          filter={filter}
-          groups={model.groups}
-          isRunning={props.isRunning}
-          isRefreshing={props.isRefreshing}
-          onDeleteMemory={props.onDeleteMemory}
-          onExpandedIdChange={setExpandedId}
-          onFilterChange={setFilter}
-          onRefresh={props.onRefresh}
-        />
-      </div>
+      <MemorySectionHeader count={model.filtered.length} enabled={props.settings.memory_policy.enabled} />
+      <MemoryOverviewGrid filteredCount={model.filtered.length} latestMemory={model.latestMemory} settings={props.settings} memories={props.memories} />
+      <MemoryList actionState={props.actionState} deletingId={props.deletingId} error={props.error} expandedId={expandedId} filter={filter} groups={model.groups} isRunning={props.isRunning} isRefreshing={props.isRefreshing} onDeleteMemory={props.onDeleteMemory} onExpandedIdChange={setExpandedId} onFilterChange={setFilter} onRefresh={props.onRefresh} />
     </section>
+  );
+}
+
+function MemoryOverviewGrid(props: {
+  filteredCount: number;
+  latestMemory?: MemoryEntry;
+  settings: SettingsResponse;
+  memories: MemoryEntry[];
+}) {
+  return (
+    <div className="settings-control-grid">
+      <MemoryStatusCard enabled={props.settings.memory_policy.enabled} latestMemory={props.latestMemory} />
+      <MemoryGovernanceCard memories={props.memories} />
+      <MemoryStrategyCard body={props.settings.memory_policy.recall_strategy} title="召回策略" />
+      <MemoryStrategyCard body={props.settings.memory_policy.write_strategy} title="写入策略" />
+      <MemoryStrategyCard body={props.settings.memory_policy.cleanup_strategy} title="清理策略" />
+      <MemoryStats filteredCount={props.filteredCount} settings={props.settings} />
+      <MemoryPathCard settings={props.settings} />
+    </div>
   );
 }
 
@@ -61,11 +61,23 @@ function MemorySectionHeader(props: { enabled: boolean; count: number }) {
   return <SectionHeader title="Memory Policy" action={<div className="page-header-meta"><MetricChip label="结果" value={`${props.count} 条`} /><StatusPill label={props.enabled ? "已启用" : "未启用"} /></div>} />;
 }
 
-function MemoryStatusCard(props: { enabled: boolean }) {
+function MemoryStatusCard(props: { enabled: boolean; latestMemory?: MemoryEntry }) {
   return (
     <div className="detail-card">
-      <strong>记忆状态</strong>
-      <p>{props.enabled ? "当前工作区已启用记忆召回与沉淀。" : "当前工作区未启用记忆链路。"}</p>
+      <strong>记忆现场</strong>
+      <p>{props.enabled ? "当前工作区会继续召回、沉淀和筛选记忆。" : "当前工作区未启用记忆链路。"}</p>
+      <p>{props.latestMemory ? `最近动作：${readMemoryActivityLabel(props.latestMemory)} / ${readMemoryFacetLabel(props.latestMemory)}` : "最近还没有新的记忆动作。"}</p>
+      <p>{props.latestMemory ? `治理状态：${readMemoryGovernanceLabel(props.latestMemory)}` : "治理状态会随召回、写入和归档变化。"}</p>
+      <p>{props.latestMemory ? `治理版本：${memoryGovernanceVersion(props.latestMemory)}` : "治理版本会随记忆治理策略更新。"}</p>
+    </div>
+  );
+}
+
+function MemoryGovernanceCard(props: { memories: MemoryEntry[] }) {
+  return (
+    <div className="detail-card muted-card">
+      <strong>治理摘要</strong>
+      <MetaGrid items={buildGovernanceRows(props.memories)} />
     </div>
   );
 }
@@ -150,7 +162,7 @@ function MemoryErrorCard(props: { message: string }) {
 }
 
 function EmptyMemoryCard() {
-  return <EmptyStateBlock compact title="没有匹配记忆" text="调整筛选条件后，这里会显示可管理的记忆条目。" />;
+  return <EmptyStateBlock compact title="没有匹配记忆" text="调整筛选条件后，这里会显示偏好、失败教训和治理状态。" />;
 }
 
 function MemoryFilterSelect(props: { filter: MemoryFilter; onChange: (filter: MemoryFilter) => void }) {
@@ -158,11 +170,12 @@ function MemoryFilterSelect(props: { filter: MemoryFilter; onChange: (filter: Me
     <label className="filter-select">
       <span>筛选</span>
       <select value={props.filter} onChange={(event) => props.onChange(event.target.value as MemoryFilter)}>
-        <option value="all">全部</option>
-        <option value="workspace">当前工作区</option>
-        <option value="knowledge">知识沉淀</option>
-        <option value="runtime">运行过程</option>
-        <option value="verified">仅已验证</option>
+        <option value="all">全部记忆</option>
+        <option value="preference">仅看偏好</option>
+        <option value="lesson">仅看失败教训</option>
+        <option value="governance">仅看待治理</option>
+        <option value="archived">仅看已归档</option>
+        <option value="verified">仅看已验证</option>
       </select>
     </label>
   );
@@ -177,8 +190,8 @@ function MemoryGroup(props: {
   onExpandedIdChange: (memoryId: string) => void;
 }) {
   return (
-    <div className="memory-group">
-      <div className="memory-group-head">
+    <div className="settings-subsection">
+      <div className="thread-record-head">
         <strong>{props.group.label}</strong>
         <span className="sidebar-chip-muted">{`${props.group.items.length} 条`}</span>
       </div>
@@ -202,15 +215,7 @@ function MemoryItem(props: {
           <strong>{props.memory.title || props.memory.summary}</strong>
           <p>{readMemoryLead(props.memory)}</p>
         </div>
-        <div className="timeline-chip-row">
-          <StatusPill className={props.memory.verified ? "status-completed" : "status-idle"} label={props.memory.verified ? "已验证" : "未验证"} />
-          <button type="button" className="secondary-button" onClick={() => props.onExpandedIdChange(props.expanded ? "" : props.memory.id)}>
-            {props.expanded ? "收起详情" : "查看详情"}
-          </button>
-          <button type="button" className="secondary-button" onClick={() => props.onDeleteMemory(props.memory.id)} disabled={props.isRunning || props.isDeleting}>
-            {props.isDeleting ? "删除中" : "删除记忆"}
-          </button>
-        </div>
+        <MemoryItemActions expanded={props.expanded} isDeleting={props.isDeleting} isRunning={props.isRunning} memory={props.memory} onDeleteMemory={props.onDeleteMemory} onExpandedIdChange={props.onExpandedIdChange} />
       </div>
       <MetaGrid items={buildMemoryRows(props.memory)} />
       {props.expanded ? <MemoryDetail memory={props.memory} /> : null}
@@ -218,62 +223,92 @@ function MemoryItem(props: {
   );
 }
 
+function MemoryItemActions(props: {
+  expanded: boolean;
+  isDeleting: boolean;
+  isRunning: boolean;
+  memory: MemoryEntry;
+  onDeleteMemory: (memoryId: string) => void;
+  onExpandedIdChange: (memoryId: string) => void;
+}) {
+  return (
+    <div className="timeline-chip-row">
+      <StatusPill className={readMemoryGovernanceClass(props.memory)} label={readMemoryGovernanceLabel(props.memory)} />
+      <StatusPill className="status-idle" label={readMemoryFacetLabel(props.memory)} />
+      <span className="sidebar-chip-muted">{readMemoryActivityLabel(props.memory)}</span>
+      <button type="button" className="secondary-button" onClick={() => props.onExpandedIdChange(props.expanded ? "" : props.memory.id)}>
+        {props.expanded ? "收起详情" : "查看详情"}
+      </button>
+      <button type="button" className="secondary-button" disabled={props.isRunning || props.isDeleting} onClick={() => props.onDeleteMemory(props.memory.id)}>
+        {props.isDeleting ? "删除中" : "删除记忆"}
+      </button>
+    </div>
+  );
+}
+
 function MemoryDetail(props: { memory: MemoryEntry }) {
   return (
     <div className="timeline-detail-group">
+      <p className="timeline-detail">{`治理状态：${readMemoryGovernanceLabel(props.memory)}`}</p>
+      <p className="timeline-detail">{`最近动作：${readMemoryActivityLabel(props.memory)}`}</p>
+      <p className="timeline-detail">{`治理版本：${memoryGovernanceVersion(props.memory)}`}</p>
+      <p className="timeline-detail">{`治理来源：${memoryGovernanceSource(props.memory)}`}</p>
+      <p className="timeline-detail">{`治理时间：${memoryGovernanceAt(props.memory)}`}</p>
       <p className="timeline-detail">{`存在原因：${memoryReason(props.memory)}`}</p>
       <p className="timeline-detail">{`作用范围：${memoryScope(props.memory)}`}</p>
       <p className="timeline-detail">{`来源：${memorySourceLabel(props.memory)}`}</p>
       {props.memory.source_title ? <p className="timeline-detail">{`来源标题：${props.memory.source_title}`}</p> : null}
-      {props.memory.source_event_type ? <p className="timeline-detail">{`来源事件类型：${props.memory.source_event_type}`}</p> : null}
-      {props.memory.source_artifact_path ? <p className="timeline-detail">{`证据/产物路径：${props.memory.source_artifact_path}`}</p> : null}
+      {props.memory.source_event_type ? <p className="timeline-detail">{`来源事件：${props.memory.source_event_type}`}</p> : null}
+      {props.memory.source_artifact_path ? <p className="timeline-detail">{`证据路径：${props.memory.source_artifact_path}`}</p> : null}
+      {props.memory.governance_reason ? <p className="timeline-detail">{`治理依据：${props.memory.governance_reason}`}</p> : null}
+      {props.memory.archive_reason ? <p className="timeline-detail">{`归档原因：${props.memory.archive_reason}`}</p> : null}
       <p className="timeline-detail">{`所属运行：${props.memory.source_run_id || "未记录"}`}</p>
       <p className="timeline-detail">{`所属会话：${props.memory.session_id || "未记录"}`}</p>
-      <p className="timeline-detail">{`归档状态：${memoryArchivedLabel(props.memory)}`}</p>
-      {props.memory.archived && props.memory.archived_at ? <p className="timeline-detail">{`归档时间：${props.memory.archived_at}`}</p> : null}
-      <p className="timeline-detail">{`创建时间：${memoryCreatedAt(props.memory)}`}</p>
-      <p className="timeline-detail">{`最近更新：${memoryUpdatedAt(props.memory)}`}</p>
       <p className="timeline-detail">{`原始内容：${props.memory.content || props.memory.summary}`}</p>
     </div>
   );
 }
 
-function buildMemoryModel(memories: MemoryEntry[], workspaceId: string, filter: MemoryFilter) {
-  const filtered = sortMemories(memories.filter((memory) => matchesMemoryFilter(memory, workspaceId, filter)));
+function buildMemoryModel(memories: MemoryEntry[], filter: MemoryFilter) {
+  const filtered = sortMemories(memories.filter((memory) => matchesMemoryFilter(memory, filter)));
   return {
     filtered,
-    groups: buildMemoryGroups(filtered, workspaceId),
+    groups: buildMemoryGroups(filtered),
+    latestMemory: filtered[0],
   };
 }
 
-function matchesMemoryFilter(memory: MemoryEntry, workspaceId: string, filter: MemoryFilter) {
-  if (filter === "workspace") return isWorkspaceMemory(memory, workspaceId);
-  if (filter === "knowledge") return isKnowledgeMemory(memory);
-  if (filter === "runtime") return isRuntimeMemory(memory);
+function matchesMemoryFilter(memory: MemoryEntry, filter: MemoryFilter) {
+  if (filter === "preference") return readMemoryFacetLabel(memory) === "用户偏好";
+  if (filter === "lesson") return readMemoryFacetLabel(memory) === "失败教训";
+  if (filter === "governance") return readMemoryGovernanceLabel(memory) === "待治理";
+  if (filter === "archived") return memory.archived;
   if (filter === "verified") return memory.verified;
   return true;
 }
 
-function buildMemoryGroups(memories: MemoryEntry[], workspaceId: string) {
+function buildMemoryGroups(memories: MemoryEntry[]) {
   const groups = new Map<MemoryGroupKey, MemoryEntry[]>();
-  memories.forEach((memory) => {
-    const key = readMemoryGroupKey(memory, workspaceId);
-    groups.set(key, [...(groups.get(key) || []), memory]);
-  });
-  return MEMORY_GROUP_ORDER
-    .filter((key) => groups.has(key))
-    .map((key) => ({ items: groups.get(key) || [], key, label: readMemoryGroupLabel(key) }));
+  memories.forEach((memory) => appendMemoryGroup(groups, memory));
+  return MEMORY_GROUP_ORDER.filter((key) => groups.has(key)).map((key) => ({ items: groups.get(key) || [], key, label: readMemoryGroupLabel(key) }));
 }
 
-function readMemoryGroupKey(memory: MemoryEntry, workspaceId: string): MemoryGroupKey {
-  if (isWorkspaceMemory(memory, workspaceId)) return "workspace";
-  if (isKnowledgeMemory(memory)) return "knowledge";
-  if (isRuntimeMemory(memory)) return "runtime";
+function appendMemoryGroup(groups: Map<MemoryGroupKey, MemoryEntry[]>, memory: MemoryEntry) {
+  const key = readMemoryGroupKey(memory);
+  groups.set(key, [...(groups.get(key) || []), memory]);
+}
+
+function readMemoryGroupKey(memory: MemoryEntry): MemoryGroupKey {
+  if (readMemoryFacetLabel(memory) === "用户偏好") return "preference";
+  if (readMemoryFacetLabel(memory) === "失败教训") return "lesson";
+  if (readMemoryFacetLabel(memory) === "知识沉淀") return "knowledge";
+  if ((memory.source || "runtime") === "runtime") return "runtime";
   return "other";
 }
 
 function readMemoryGroupLabel(key: MemoryGroupKey) {
-  if (key === "workspace") return "当前工作区";
+  if (key === "preference") return "用户偏好";
+  if (key === "lesson") return "失败教训";
   if (key === "knowledge") return "知识沉淀";
   if (key === "runtime") return "运行过程";
   return "其他记录";
@@ -281,22 +316,6 @@ function readMemoryGroupLabel(key: MemoryGroupKey) {
 
 function sortMemories(memories: MemoryEntry[]) {
   return [...memories].sort((left, right) => readMemoryTime(right) - readMemoryTime(left));
-}
-
-function isWorkspaceMemory(memory: MemoryEntry, workspaceId: string) {
-  return Boolean(memory.workspace_id && memory.workspace_id === workspaceId);
-}
-
-function isKnowledgeMemory(memory: MemoryEntry) {
-  return containsKeyword(memory.kind, "knowledge") || containsKeyword(memory.source_type, "knowledge");
-}
-
-function isRuntimeMemory(memory: MemoryEntry) {
-  return (memory.source || "runtime") === "runtime";
-}
-
-function containsKeyword(value: string, keyword: string) {
-  return value.toLowerCase().includes(keyword);
 }
 
 function readMemoryTime(memory: MemoryEntry) {
@@ -314,30 +333,43 @@ function buildMemoryStats(settings: SettingsResponse, filteredCount: number) {
   ];
 }
 
+function buildGovernanceRows(memories: MemoryEntry[]) {
+  const summary = countMemoryFacets(memories);
+  return [
+    { label: "偏好", value: `${summary.preferences} 条` },
+    { label: "失败教训", value: `${summary.lessons} 条` },
+    { label: "待治理", value: `${summary.pending} 条` },
+    { label: "已归档", value: `${summary.archived} 条` },
+    { label: "审计覆盖", value: `${countAuditedMemories(memories)} 条` },
+    { label: "治理版本", value: latestGovernanceVersion(memories) },
+  ];
+}
+
 function buildMemoryRows(memory: MemoryEntry) {
   return [
-    { label: "类型", value: memory.kind },
+    { label: "类型层", value: readMemoryFacetLabel(memory) },
+    { label: "治理状态", value: readMemoryGovernanceLabel(memory) },
+    { label: "最近动作", value: readMemoryActivityLabel(memory) },
     { label: "来源", value: memorySourceLabel(memory) },
-    { label: "来源类型", value: memory.source_type || "runtime" },
-    memory.source_title ? { label: "来源标题", value: memory.source_title } : null,
-    memory.source_event_type ? { label: "来源事件", value: memory.source_event_type } : null,
-    memory.source_artifact_path ? { label: "证据/产物路径", value: memory.source_artifact_path } : null,
+    { label: "来源事件", value: memory.source_event_type || "未记录" },
+    { label: "证据路径", value: memory.source_artifact_path || "未记录" },
+    { label: "治理版本", value: memoryGovernanceVersion(memory) },
+    { label: "治理来源", value: memoryGovernanceSource(memory) },
+    { label: "治理时间", value: memoryGovernanceAt(memory) },
     { label: "范围", value: memoryScope(memory) },
     { label: "运行", value: memory.source_run_id || "未记录" },
     { label: "会话", value: memory.session_id || "未记录" },
-    { label: "归档", value: memoryArchivedLabel(memory) },
-    memory.archived && memory.archived_at ? { label: "归档时间", value: memory.archived_at } : null,
     { label: "优先级", value: String(memory.priority) },
     { label: "更新时间", value: memoryUpdatedAt(memory) },
-  ].filter(Boolean) as Array<{ label: string; value: string }>;
+  ];
 }
 
 function readMemoryLead(memory: MemoryEntry) {
-  return `${memory.kind} / ${memorySourceLabel(memory)} / ${memoryScope(memory)}`;
+  return `${readMemoryFacetLabel(memory)} / ${readMemoryActivityLabel(memory)} / ${memoryScope(memory)}`;
 }
 
 function memoryReason(memory: MemoryEntry) {
-  return memory.reason || "按当前工作区持续复用";
+  return memory.reason || "当前记忆没有附带额外原因。";
 }
 
 function memoryScope(memory: MemoryEntry) {
@@ -349,14 +381,26 @@ function memorySourceLabel(memory: MemoryEntry) {
   return memory.source || memory.source_type || "runtime";
 }
 
-function memoryArchivedLabel(memory: MemoryEntry) {
-  return memory.archived ? "已归档" : "活跃";
-}
-
-function memoryCreatedAt(memory: MemoryEntry) {
-  return memory.created_at || memory.timestamp || "未记录";
-}
-
 function memoryUpdatedAt(memory: MemoryEntry) {
   return memory.updated_at || memory.timestamp || "未记录";
+}
+
+function countAuditedMemories(memories: MemoryEntry[]) {
+  return memories.filter((memory) => !!memory.governance_version).length;
+}
+
+function latestGovernanceVersion(memories: MemoryEntry[]) {
+  return memories.find((memory) => memory.governance_version)?.governance_version || "未记录";
+}
+
+function memoryGovernanceVersion(memory: MemoryEntry) {
+  return memory.governance_version || "未记录";
+}
+
+function memoryGovernanceSource(memory: MemoryEntry) {
+  return memory.governance_source || "未记录";
+}
+
+function memoryGovernanceAt(memory: MemoryEntry) {
+  return memory.governance_at || "未记录";
 }

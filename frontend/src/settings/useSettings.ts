@@ -3,12 +3,28 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import {
   DiagnosticsCheckResponse,
   ExternalConnectionActionResponse,
+  ProviderApplyResponse,
+  ProviderRemoveResponse,
+  ProviderSaveResponse,
+  ProviderSettingsResponse,
+  ProviderTestResponse,
   SettingsResponse,
 } from "../shared/contracts";
 import { useMemories } from "../resources/useMemories";
-import { checkDiagnostics, fetchSettings, runExternalConnectionAction, updateSettings } from "./api";
+import {
+  applyProviderCredential,
+  checkDiagnostics,
+  fetchProviderSettings,
+  fetchSettings,
+  removeProviderCredential,
+  runExternalConnectionAction,
+  saveProviderCredential,
+  testProviderConnection,
+  updateSettings,
+} from "./api";
 
 type PendingActions = Partial<Record<SettingsActionKind, true>>;
+type ProviderActions = Record<string, ProviderActionState>;
 
 export type SettingsActionKind =
   | "model"
@@ -24,6 +40,12 @@ export type SettingsActionFeedback = {
   action: SettingsActionKind;
   title: string;
   detail: string;
+};
+
+export type ProviderActionState = {
+  pending?: boolean;
+  success?: string;
+  error?: string;
 };
 
 type ActionRunner<T> = {
@@ -42,14 +64,21 @@ export function useSettings() {
   const state = useSettingsState();
   const feedback = useSettingsFeedback();
   const memoriesApi = useMemories((count) => syncMemoryCount(state.setSettings, count));
-  useSettingsBootstrap(state.setSettings, state.setBootstrapError);
+  useSettingsBootstrap(state);
   return buildSettingsApi(state, feedback, memoriesApi);
 }
 
 function useSettingsState() {
   const [settings, setSettings] = useState<SettingsResponse | null>(null);
+  const [providerSettings, setProviderSettings] = useState<ProviderSettingsResponse | null>(null);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
-  return { settings, setSettings, bootstrapError, setBootstrapError };
+  const [providerBootstrapError, setProviderBootstrapError] = useState<string | null>(null);
+  const [providerActions, setProviderActions] = useState<ProviderActions>({});
+  return {
+    settings, setSettings, providerSettings, setProviderSettings,
+    bootstrapError, setBootstrapError, providerBootstrapError, setProviderBootstrapError,
+    providerActions, setProviderActions,
+  };
 }
 
 function useSettingsFeedback() {
@@ -70,16 +99,12 @@ function useSettingsFeedback() {
 }
 
 function useSettingsBootstrap(
-  setSettings: Dispatch<SetStateAction<SettingsResponse | null>>,
-  setBootstrapError: Dispatch<SetStateAction<string | null>>,
+  state: ReturnType<typeof useSettingsState>,
 ) {
   useEffect(() => {
     const controller = new AbortController();
-    fetchSettings(controller.signal)
-      .then((data) => setSettings(data))
-      .catch((error: Error) => {
-        if (!controller.signal.aborted) setBootstrapError(error.message);
-      });
+    bootstrapSettings(state, controller.signal);
+    bootstrapProviderSettings(state, controller.signal);
     return () => controller.abort();
   }, []);
 }
@@ -90,28 +115,8 @@ function buildSettingsApi(
   memoriesApi: ReturnType<typeof useMemories>,
 ) {
   return {
-    settings: state.settings,
-    bootstrapError: state.bootstrapError,
-    pendingAction: feedback.pendingAction,
-    actionError: feedback.actionError,
-    lastSuccess: feedback.lastSuccess,
-    memories: memoriesApi.memories,
-    memoryError: memoriesApi.memoryError,
-    memoryPendingAction: memoriesApi.memoryPendingAction,
-    memoryActionError: memoriesApi.memoryActionError,
-    memoryActionSuccess: memoriesApi.memoryActionSuccess,
-    deletingMemoryId: memoriesApi.deletingId,
-    changeWorkspace: createWorkspaceChange(state, feedback, memoriesApi),
-    changeMode: createModeChange(state, feedback),
-    changeModel: createModelChange(state, feedback),
-    changeDirectoryPromptEnabled: createDirectoryPromptChange(state, feedback),
-    changeShowRiskLevel: createRiskLevelChange(state, feedback),
-    revokeDirectoryApproval: createApprovalRevoke(state, feedback),
-    runExternalConnectionAction: createExternalConnectionAction(state, feedback),
-    checkDiagnostics: createDiagnosticsCheck(state, feedback),
-    isActionPending: feedback.isActionPending,
-    refreshMemories: memoriesApi.refreshMemories,
-    removeMemory: memoriesApi.removeMemory,
+    ...buildSettingsSnapshot(state, feedback, memoriesApi),
+    ...buildSettingsActions(state, feedback, memoriesApi),
   };
 }
 
@@ -132,6 +137,125 @@ function syncMemoryCount(
     ...current,
     memory_policy: { ...current.memory_policy, long_term_memory_count: count },
   }) : current);
+}
+
+function buildSettingsSnapshot(
+  state: ReturnType<typeof useSettingsState>,
+  feedback: ReturnType<typeof useSettingsFeedback>,
+  memoriesApi: ReturnType<typeof useMemories>,
+) {
+  return {
+    settings: state.settings,
+    providerSettings: state.providerSettings,
+    bootstrapError: state.bootstrapError,
+    providerBootstrapError: state.providerBootstrapError,
+    providerActions: state.providerActions,
+    pendingAction: feedback.pendingAction,
+    actionError: feedback.actionError,
+    lastSuccess: feedback.lastSuccess,
+    memories: memoriesApi.memories,
+    memoryError: memoriesApi.memoryError,
+    memoryPendingAction: memoriesApi.memoryPendingAction,
+    memoryActionError: memoriesApi.memoryActionError,
+    memoryActionSuccess: memoriesApi.memoryActionSuccess,
+    deletingMemoryId: memoriesApi.deletingId,
+  };
+}
+
+function buildSettingsActions(
+  state: ReturnType<typeof useSettingsState>,
+  feedback: ReturnType<typeof useSettingsFeedback>,
+  memoriesApi: ReturnType<typeof useMemories>,
+) {
+  return {
+    changeWorkspace: createWorkspaceChange(state, feedback, memoriesApi),
+    changeMode: createModeChange(state, feedback),
+    changeModel: createModelChange(state, feedback),
+    changeDirectoryPromptEnabled: createDirectoryPromptChange(state, feedback),
+    changeShowRiskLevel: createRiskLevelChange(state, feedback),
+    revokeDirectoryApproval: createApprovalRevoke(state, feedback),
+    runExternalConnectionAction: createExternalConnectionAction(state, feedback),
+    checkDiagnostics: createDiagnosticsCheck(state, feedback),
+    refreshProviderSettings: createProviderRefresh(state),
+    testProvider: createProviderTest(state),
+    saveProvider: createProviderSave(state),
+    applyProvider: createProviderApply(state),
+    removeProvider: createProviderRemove(state),
+    isActionPending: feedback.isActionPending,
+    refreshMemories: memoriesApi.refreshMemories,
+    removeMemory: memoriesApi.removeMemory,
+  };
+}
+
+function bootstrapSettings(
+  state: ReturnType<typeof useSettingsState>,
+  signal: AbortSignal,
+) {
+  fetchSettings(signal)
+    .then((data) => state.setSettings(data))
+    .catch((error: Error) => {
+      if (!signal.aborted) state.setBootstrapError(error.message);
+    });
+}
+
+function bootstrapProviderSettings(
+  state: ReturnType<typeof useSettingsState>,
+  signal: AbortSignal,
+) {
+  fetchProviderSettings(signal)
+    .then((data) => state.setProviderSettings(data))
+    .catch((error: Error) => {
+      if (!signal.aborted) state.setProviderBootstrapError(error.message);
+    });
+}
+
+function createProviderRefresh(state: ReturnType<typeof useSettingsState>) {
+  return async () => {
+    const data = await fetchProviderSettings();
+    state.setProviderSettings(data);
+    state.setProviderBootstrapError(null);
+    return data;
+  };
+}
+
+function createProviderTest(state: ReturnType<typeof useSettingsState>) {
+  return async (providerId: string, apiKey: string, baseURL?: string) => {
+    return runProviderAction(state, providerId, async () => {
+      const result = await testProviderConnection({ provider_id: providerId, api_key: apiKey, base_url: baseURL });
+      if (!result.ok) throw new Error(result.message);
+      return result;
+    });
+  };
+}
+
+function createProviderSave(state: ReturnType<typeof useSettingsState>) {
+  return async (providerId: string, apiKey: string) => {
+    return runProviderAction(state, providerId, async () => {
+      const result = await saveProviderCredential({ provider_id: providerId, api_key: apiKey });
+      await createProviderRefresh(state)();
+      return result;
+    });
+  };
+}
+
+function createProviderApply(state: ReturnType<typeof useSettingsState>) {
+  return async (providerId: string) => {
+    return runProviderAction(state, providerId, async () => {
+      const result = await applyProviderCredential({ provider_id: providerId });
+      await createProviderRefresh(state)();
+      return result;
+    });
+  };
+}
+
+function createProviderRemove(state: ReturnType<typeof useSettingsState>) {
+  return async (providerId: string) => {
+    return runProviderAction(state, providerId, async () => {
+      const result = await removeProviderCredential({ provider_id: providerId });
+      await createProviderRefresh(state)();
+      return result;
+    });
+  };
 }
 
 function createWorkspaceChange(
@@ -392,4 +516,48 @@ function mergeDiagnostics(settings: SettingsResponse, result: DiagnosticsCheckRe
       errors: result.errors,
     },
   };
+}
+
+async function runProviderAction<T>(
+  state: ReturnType<typeof useSettingsState>,
+  providerId: string,
+  execute: () => Promise<T>,
+) {
+  setProviderActionPending(state.setProviderActions, providerId);
+  try {
+    const result = await execute();
+    setProviderActionSuccess(state.setProviderActions, providerId, readProviderSuccessMessage(result));
+    return result;
+  } catch (error) {
+    setProviderActionError(state.setProviderActions, providerId, readErrorMessage(error, "操作失败"));
+    throw error;
+  }
+}
+
+function setProviderActionPending(
+  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
+  providerId: string,
+) {
+  setProviderActions((current) => ({ ...current, [providerId]: { pending: true } }));
+}
+
+function setProviderActionSuccess(
+  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
+  providerId: string,
+  message: string,
+) {
+  setProviderActions((current) => ({ ...current, [providerId]: { success: message } }));
+}
+
+function setProviderActionError(
+  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
+  providerId: string,
+  message: string,
+) {
+  setProviderActions((current) => ({ ...current, [providerId]: { error: message } }));
+}
+
+function readProviderSuccessMessage(result: unknown) {
+  const data = result as ProviderTestResponse | ProviderSaveResponse | ProviderApplyResponse | ProviderRemoveResponse;
+  return data.message || "操作成功";
 }

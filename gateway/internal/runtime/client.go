@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"local-agent/gateway/internal/contracts"
@@ -53,4 +54,34 @@ func (c *Client) Run(ctx context.Context, request contracts.RunRequest) (contrac
 	}
 
 	return payload, nil
+}
+
+func (c *Client) Capabilities(ctx context.Context, mode string) (contracts.CapabilityListResponse, error) {
+	path := "/v1/runtime/capabilities"
+	if mode != "" {
+		path += "?mode=" + url.QueryEscape(mode)
+	}
+	return getJSON[contracts.CapabilityListResponse](ctx, c.httpClient, c.baseURL+path)
+}
+
+func (c *Client) Connectors(ctx context.Context) (contracts.ConnectorListResponse, error) {
+	return getJSON[contracts.ConnectorListResponse](ctx, c.httpClient, c.baseURL+"/v1/runtime/connectors")
+}
+
+func getJSON[T any](ctx context.Context, client *http.Client, target string) (T, error) {
+	var payload T
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return payload, fmt.Errorf("create runtime request: %w", err)
+	}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return payload, fmt.Errorf("call runtime: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return payload, fmt.Errorf("runtime returned %s", resp.Status)
+	}
+	err = json.NewDecoder(resp.Body).Decode(&payload)
+	return payload, err
 }

@@ -149,9 +149,10 @@ function clearMemoryAction(state: ReturnType<typeof useMemoryState>) {
 }
 
 function applyMemories(items: MemoryEntry[], state: MemoryStateSync) {
-  state.setMemories(items);
+  const normalized = normalizeMemories(items);
+  state.setMemories(normalized);
   state.setMemoryError(null);
-  state.syncMemoryCount?.(items.length);
+  state.syncMemoryCount?.(normalized.length);
 }
 
 function readMemoryError(error: unknown) {
@@ -175,4 +176,28 @@ function createMemoryFeedback(action: MemoryActionKind, message: string) {
 
 export function readMemoriesErrorMessage(error: unknown) {
   return readMemoryError(error);
+}
+
+function normalizeMemories(items: MemoryEntry[]) {
+  return [...items].map(normalizeMemory).sort(compareMemories);
+}
+
+function normalizeMemory(memory: MemoryEntry) {
+  return {
+    ...memory,
+    content: memory.content?.trim() || "",
+    reason: memory.reason?.trim() || "",
+    summary: memory.summary?.trim() || memory.title?.trim() || "未提供摘要",
+    title: memory.title?.trim() || memory.summary?.trim() || "未命名记忆",
+  };
+}
+
+function compareMemories(left: MemoryEntry, right: MemoryEntry) {
+  return readMemoryTime(right) - readMemoryTime(left);
+}
+
+function readMemoryTime(memory: MemoryEntry) {
+  const value = memory.updated_at || memory.timestamp || memory.created_at;
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? 0 : time;
 }

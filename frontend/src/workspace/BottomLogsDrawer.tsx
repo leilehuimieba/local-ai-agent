@@ -36,7 +36,7 @@ export function BottomLogsDrawer({ isOpen, events, onClose }: BottomLogsDrawerPr
 }
 
 function LogLine({ event }: { event: RunEvent }) {
-  const timestamp = event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : "";
+  const timestamp = safeTimeLabel(event.timestamp);
   const label = event.event_type;
   const detail = event.result_summary || event.summary || event.detail || "";
   
@@ -47,4 +47,20 @@ function LogLine({ event }: { event: RunEvent }) {
       <span>{detail}</span>
     </div>
   );
+}
+
+function safeTimeLabel(value?: string) {
+  if (!value) return "";
+  const date = parseTimestamp(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString();
+}
+
+function parseTimestamp(value: string) {
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const millis = Number(trimmed);
+    return new Date(millis);
+  }
+  return new Date(trimmed);
 }

@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::model_adapter::{ToolCall, ModelError};
+use crate::model_adapter::{ModelError, ToolCall};
 use crate::model_client::complete_with_model;
 
 #[derive(Clone, Debug)]

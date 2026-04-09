@@ -1,0 +1,6 @@
+检查时间：2026-04-09
+gateway health:
+{"app":"本地智能体","gateway":8897,"status":"ok"}
+
+runtime health:
+{"ok":true,"name":"runtime-host","version":"0.1.0"}

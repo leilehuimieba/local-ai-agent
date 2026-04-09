@@ -1,6 +1,6 @@
 use crate::contracts::{ConfirmationRequest, RunRequest};
 use crate::paths::resolve_workspace_path;
-use crate::planner::{PlannedAction, normalize_mode};
+use crate::planner::{normalize_mode, PlannedAction};
 
 #[derive(Clone, Debug)]
 pub(crate) enum RiskOutcome {

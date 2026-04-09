@@ -1,10 +1,17 @@
+use crate::capabilities::ToolDefinition;
 use crate::contracts::ProviderRef;
-use crate::tools::ToolDefinition;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::path::PathBuf;
 use std::process::Command;
 use std::thread::sleep;
 use std::time::Duration;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Clone, Debug)]
 pub(crate) struct ProviderConfig {
@@ -26,7 +33,7 @@ pub(crate) struct ModelResponse {
     // 当返回普通文本时使用
     pub content: String,
     // 当返回工具调用时使用
-    pub tool_calls: Option<Vec<ToolCall>>, 
+    pub tool_calls: Option<Vec<ToolCall>>,
 }
 
 #[derive(Clone, Debug)]
@@ -89,8 +96,15 @@ fn run_curl(
     body_path: &PathBuf,
     uri: &str,
 ) -> Result<Vec<u8>, ModelError> {
-    let output = Command::new("curl.exe")
+    let mut cmd = Command::new("curl.exe");
+    #[cfg(target_os = "windows")]
+    {
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    let output = cmd
         .arg("-k") // [新增] 跳过 SSL 证书校验，解决本机代理 (Clash/V2ray 等) 握手失败问题
+        .arg("--ssl-no-revoke")
+        .arg("--tlsv1.2")
         .arg("-s")
         .arg("-S")
         .arg("--connect-timeout")
@@ -132,7 +146,12 @@ fn run_curl_with_retry(
 
 fn validate_curl_output(output: std::process::Output) -> Result<Vec<u8>, ModelError> {
     if !output.status.success() {
-        let message = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let mut message = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if message.to_lowercase().contains("schannel") {
+            message.push_str(
+                "（Windows TLS 握手失败：建议检查代理/网络拦截，或改用可访问的 provider/base_url）",
+            );
+        }
         return Err(model_error("model_transport_failed", &message, true));
     }
     if output.stdout.is_empty() {
@@ -210,7 +229,28 @@ fn parse_model_response(
     _request: &ModelRequest<'_>,
     output: &[u8],
 ) -> Result<ModelResponse, ModelError> {
-    let parsed: ChatResponse = serde_json::from_slice(output)
+    let value = parse_response_value(output)?;
+    if let Some(error) = response_error(&value) {
+        return Err(error);
+    }
+    parse_chat_response(value)
+}
+
+fn model_error(code: &str, message: &str, retryable: bool) -> ModelError {
+    ModelError {
+        code: code.to_string(),
+        message: message.to_string(),
+        retryable,
+    }
+}
+
+fn parse_response_value(output: &[u8]) -> Result<Value, ModelError> {
+    serde_json::from_slice(output)
+        .map_err(|error| model_error("model_parse_failed", &error.to_string(), true))
+}
+
+fn parse_chat_response(value: Value) -> Result<ModelResponse, ModelError> {
+    let parsed: ChatResponse = serde_json::from_value(value)
         .map_err(|error| model_error("model_parse_failed", &error.to_string(), true))?;
     let message = parsed
         .choices
@@ -224,10 +264,56 @@ fn parse_model_response(
     })
 }
 
-fn model_error(code: &str, message: &str, retryable: bool) -> ModelError {
-    ModelError {
-        code: code.to_string(),
-        message: message.to_string(),
-        retryable,
+fn response_error(value: &Value) -> Option<ModelError> {
+    if value.get("choices").is_some() {
+        return None;
+    }
+    let nested = value.get("error").unwrap_or(value);
+    let code = json_text(nested, &["code", "type"]).unwrap_or("model_provider_error");
+    let message = json_text(nested, &["message", "detail", "msg"])
+        .or_else(|| json_text(value, &["message", "detail", "msg"]))
+        .unwrap_or("模型返回了非标准错误响应");
+    Some(model_error(
+        code,
+        &format!("provider 返回错误：{}", message),
+        is_retryable_error(code, &message),
+    ))
+}
+
+fn json_text<'a>(value: &'a Value, keys: &[&str]) -> Option<&'a str> {
+    keys.iter()
+        .find_map(|key| value.get(*key).and_then(|item| item.as_str()))
+}
+
+fn is_retryable_error(code: &str, message: &str) -> bool {
+    if transient_message(code) || transient_message(message) {
+        return true;
+    }
+    matches!(
+        code,
+        "rate_limit_exceeded" | "server_error" | "service_unavailable"
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_model_response, ModelRequest};
+
+    #[test]
+    fn parse_model_response_reads_provider_error() {
+        let request = ModelRequest { model: "m", prompt: "p", tools: None };
+        let body = br#"{"error":{"code":"invalid_api_key","message":"bad key"}}"#;
+        let error = parse_model_response(&request, body).expect_err("should fail");
+        assert_eq!(error.code, "invalid_api_key");
+        assert!(error.message.contains("bad key"));
+    }
+
+    #[test]
+    fn parse_model_response_reads_choices_payload() {
+        let request = ModelRequest { model: "m", prompt: "p", tools: None };
+        let body = br#"{"choices":[{"message":{"content":"ok","tool_calls":[]}}]}"#;
+        let response = parse_model_response(&request, body).expect("should parse");
+        assert_eq!(response.content, "ok");
+        assert!(response.tool_calls.as_ref().is_some_and(|calls| calls.is_empty()));
     }
 }

@@ -137,7 +137,7 @@ fn bootstrap_context(
         session_context,
         repo_context,
         visible_tools,
-        &planning_context_policy(&request.user_input),
+        &planning_context_policy(&request.user_input, session_context),
         "cold",
         "当前为主链路首轮规划，还未进入回答缓存探测。",
     )
@@ -154,7 +154,7 @@ fn planning_context(
         session_context,
         repo_context,
         visible_tools,
-        &planning_context_policy(&request.user_input),
+        &planning_context_policy(&request.user_input, session_context),
         "cold",
         "当前为工具规划阶段，还未进入回答缓存探测。",
     )
@@ -172,7 +172,7 @@ fn execution_context(
         session_context,
         repo_context,
         visible_tools,
-        &action_context_policy(action),
+        &action_context_policy(action, session_context),
         "cold",
         "当前为执行阶段上下文，已按动作类型收紧上下文装配。",
     )

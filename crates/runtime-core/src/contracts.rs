@@ -211,6 +211,14 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub includes_tool_preview: bool,
     #[serde(default)]
+    pub phase_label: String,
+    #[serde(default)]
+    pub selection_reason: String,
+    #[serde(default)]
+    pub prefers_artifact_context: bool,
+    #[serde(default)]
+    pub artifact_hint: String,
+    #[serde(default)]
     pub prompt_static: String,
     #[serde(default)]
     pub prompt_project: String,

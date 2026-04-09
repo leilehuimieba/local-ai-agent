@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-04-09 21:30:40",
+  "suite": "five_real_questions_quality_quickcheck",
+  "total_samples": 5,
+  "passed_samples": 1,
+  "failed_samples": 4,
+  "pass_rate": 0.2,
+  "highlights": [
+    "Q3 可直接回答，质量通过",
+    "Q2/Q5 出现最大执行轮次失败，未形成有效答复",
+    "Q1/Q4 在 recovery 路径下仅给恢复提示，回答价值不足"
+  ],
+  "sample_scores": [
+    { "sample_id": "Q1", "run_id": "run-1775741355130-84", "result_mode": "recovery", "score": 1, "verdict": "failed" },
+    { "sample_id": "Q2", "run_id": "run-1775741364093-87", "result_mode": "system", "score": 0, "verdict": "failed" },
+    { "sample_id": "Q3", "run_id": "run-1775741374348-90", "result_mode": "answer", "score": 2, "verdict": "passed" },
+    { "sample_id": "Q4", "run_id": "run-1775741386614-93", "result_mode": "recovery", "score": 1, "verdict": "failed" },
+    { "sample_id": "Q5", "run_id": "run-1775741390826-96", "result_mode": "system", "score": 0, "verdict": "failed" }
+  ],
+  "raw_file": "five-real-questions-raw-20260409-quick.json",
+  "report_file": "five-real-questions-quality-quickcheck-20260409.md"
+}

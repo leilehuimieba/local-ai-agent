@@ -1,0 +1,62 @@
+{
+    "checked_at":  "2026-04-09 21:21:07",
+    "suite":  "20260409 pre-release smoke",
+    "cases":  [
+                  {
+                      "run_id":  "run-1775740287676-72",
+                      "session_id":  "session-learning-routing-check-20260409",
+                      "user_input":  "继续复习 Rust 所有权和借用。我现在掌握到哪了，还差什么，下一步做什么？请用学习建议回答。",
+                      "task_title":  "延续当前会话",
+                      "plan_tool":  "session_context",
+                      "finish_tool":  "session_context",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "verification_summary":  "验证通过：已根据最近会话摘要整理上次进展与下一步建议。；执行依据：当前输入命中了续推类问题，优先使用短期状态和压缩摘要直接回答。",
+                      "result_summary":  "已根据最近会话摘要整理上次进展与下一步建议。",
+                      "next_step":  "任务已结束"
+                  },
+                  {
+                      "run_id":  "run-1775740313939-75",
+                      "session_id":  "session-project-routing-check-20260409",
+                      "user_input":  "这个项目现在做到什么程度了？",
+                      "task_title":  "项目问答: 这个项目现在做到什么程度了？",
+                      "plan_tool":  "project_answer",
+                      "finish_tool":  "project_answer",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "verification_summary":  "验证通过（受控恢复）：项目说明主回答失败，已执行单次恢复：429: provider 返回错误：Request Rate Reaches Maximum Limit；恢复依据：模型回答不可用，已降级为项目文档恢复路径。当前未命中 `project_answer` 本地缓存，本轮将生成新回答并回写缓存。",
+                      "result_summary":  "项目说明主回答失败，已执行单次恢复：429: provider 返回错误：Request Rate Reaches Maximum Limit",
+                      "next_step":  "任务已结束"
+                  },
+                  {
+                      "run_id":  "run-1775740796749-78",
+                      "session_id":  "session-ui-layer-check-20260409",
+                      "user_input":  null,
+                      "task_title":  "执行命令: start calc",
+                      "plan_tool":  null,
+                      "finish_tool":  null,
+                      "completion_status":  null,
+                      "result_mode":  "system",
+                      "verification_code":  null,
+                      "verification_summary":  null,
+                      "result_summary":  null,
+                      "next_step":  "任务已结束"
+                  },
+                  {
+                      "run_id":  "run-1775740821016-81",
+                      "session_id":  "session-provider-flap-check-20260409",
+                      "user_input":  "继续复习 Rust 所有权和借用，请按已掌握、待巩固、建议先做三点给我学习建议。",
+                      "task_title":  "延续当前会话",
+                      "plan_tool":  "session_context",
+                      "finish_tool":  "session_context",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "verification_summary":  "验证通过（受控恢复）：模型主回答失败，已执行单次恢复：model_transport_failed: curl: (7) Failed to connect to 127.0.0.1 port 39081 after 2015 ms: Could not connect to server；恢复依据：模型回答不可用，已降级为会话摘要恢复路径。当前会话摘要为空，直接走模型回答路径。",
+                      "result_summary":  "模型主回答失败，已执行单次恢复：model_transport_failed: curl: (7) Failed to connect to 127.0.0.1 port 39081 after 2015 ms: Could not connect to server",
+                      "next_step":  "任务已结束"
+                  }
+              ]
+}

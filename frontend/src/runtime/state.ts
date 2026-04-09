@@ -234,15 +234,22 @@ function getSubmitError(event: RunEvent, nextState: RunState, current: string | 
 
 function appendAssistantMessage(messages: ChatMessage[], event: RunEvent, nextState: RunState) {
   if (nextState !== "completed" && nextState !== "failed") return messages;
+  if (!shouldAppendAssistantMessage(event, nextState)) return messages;
   const answer = getAssistantAnswer(event);
   return hasAssistantMessage(messages, event.run_id) ? messages : [...messages, createAssistantMessage(answer, event.run_id)];
+}
+
+function shouldAppendAssistantMessage(event: RunEvent, nextState: RunState) {
+  if (nextState === "completed") return true;
+  return Boolean(event.final_answer || event.metadata?.final_answer);
 }
 
 function getAssistantAnswer(event: RunEvent) {
   return (
     event.final_answer ||
     event.metadata?.final_answer ||
-    event.detail ||
+    event.result_summary ||
+    event.summary ||
     "任务已结束，但当前事件没有携带最终答复。"
   );
 }

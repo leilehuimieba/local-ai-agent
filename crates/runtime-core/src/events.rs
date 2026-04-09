@@ -3,7 +3,7 @@ use crate::contracts::{
     ToolCallSnapshot, VerificationSnapshot,
 };
 use crate::prompt::{
-    render_context_answer_prompt, render_project_answer_prompt,
+    render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt,
 };
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use std::collections::BTreeMap;
@@ -240,6 +240,10 @@ fn context_snapshot(metadata: &BTreeMap<String, String>) -> Option<RuntimeContex
         includes_memory: metadata_flag(metadata, "includes_memory"),
         includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
         includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
+        phase_label: metadata_value(metadata, "phase_label"),
+        selection_reason: metadata_value(metadata, "selection_reason"),
+        prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),
+        artifact_hint: metadata_value(metadata, "artifact_hint"),
         prompt_static: prompts.0,
         prompt_project: prompts.1,
         prompt_dynamic: prompts.2,
@@ -258,6 +262,9 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.cache_status.is_empty()
         || !snapshot.cache_reason.is_empty()
         || !snapshot.assembly_profile.is_empty()
+        || !snapshot.phase_label.is_empty()
+        || !snapshot.selection_reason.is_empty()
+        || !snapshot.artifact_hint.is_empty()
         || !snapshot.prompt_static.is_empty()
         || !snapshot.prompt_project.is_empty()
         || !snapshot.prompt_dynamic.is_empty()
@@ -334,13 +341,20 @@ fn split_lines(value: &str) -> Vec<String> {
 }
 
 fn prompt_snapshot_parts(metadata: &BTreeMap<String, String>) -> (String, String, String) {
+    let profile = metadata
+        .get("assembly_profile")
+        .map(String::as_str)
+        .unwrap_or_default();
+    if profile.starts_with("agent_resolve") {
+        return split_prompt_sections(&render_agent_resolve_prompt(
+            &prompt_user_input(metadata),
+            &metadata_value(metadata, "session_summary"),
+        ));
+    }
     let Some(envelope) = prompt_snapshot_envelope(metadata) else {
         return (String::new(), String::new(), String::new());
     };
-    let prompt = if metadata
-        .get("assembly_profile")
-        .is_some_and(|value| value == "context_answer")
-    {
+    let prompt = if profile.starts_with("context_answer") {
         render_context_answer_prompt(&envelope).full_prompt
     } else {
         render_project_answer_prompt(&envelope).full_prompt
@@ -382,8 +396,9 @@ fn metadata_flag(metadata: &BTreeMap<String, String>, key: &str) -> bool {
 
 fn prompt_user_input(metadata: &BTreeMap<String, String>) -> String {
     metadata
-        .get("task_title")
+        .get("user_input")
         .cloned()
+        .or_else(|| metadata.get("task_title").cloned())
         .or_else(|| metadata.get("final_answer").cloned())
         .unwrap_or_default()
 }
@@ -415,10 +430,14 @@ fn prompt_dynamic_block(
         includes_memory: metadata_flag(metadata, "includes_memory"),
         includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
         includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
+        phase_label: metadata_value(metadata, "phase_label"),
+        selection_reason: metadata_value(metadata, "selection_reason"),
+        prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),
         session_summary: metadata_value(metadata, "session_summary"),
         memory_digest: metadata_value(metadata, "memory_digest"),
         knowledge_digest: metadata_value(metadata, "knowledge_digest"),
         tool_preview: metadata_value(metadata, "tool_preview"),
+        artifact_hint: metadata_value(metadata, "artifact_hint"),
         reasoning_summary: metadata_value(metadata, "reasoning_summary"),
         cache_status: metadata_value(metadata, "cache_status"),
         cache_reason: metadata_value(metadata, "cache_reason"),

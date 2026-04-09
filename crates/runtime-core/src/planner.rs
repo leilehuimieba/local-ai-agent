@@ -240,8 +240,14 @@ fn natural_language_action(
     if is_capability_question(input) {
         return PlannedAction::Explain;
     }
+    if is_learning_continuation_question(input) {
+        return PlannedAction::ContextAnswer;
+    }
     if has_project_material && is_project_status_question(input) {
         return PlannedAction::ProjectAnswer;
+    }
+    if should_default_to_context_answer(input) {
+        return PlannedAction::ContextAnswer;
     }
     if should_continue_session(input, has_session_context) {
         return PlannedAction::ContextAnswer;
@@ -256,6 +262,30 @@ fn natural_language_action(
     } else {
         PlannedAction::AgentResolve
     }
+}
+
+fn should_default_to_context_answer(input: &str) -> bool {
+    let lower = input.trim().to_lowercase();
+    let asks_question = mentions_any(
+        &lower,
+        &[
+            "？",
+            "?",
+            "怎么",
+            "如何",
+            "什么",
+            "哪",
+            "吗",
+            "请给我",
+            "请用",
+            "清单",
+            "方案",
+            "顺序",
+            "建议",
+        ],
+    );
+    let asks_execution = mentions_any(&lower, &["打开", "启动", "运行", "删除"]);
+    asks_question && !asks_execution
 }
 
 fn fuzzy_action(input: &str) -> Option<PlannedAction> {
@@ -340,7 +370,9 @@ fn should_continue_session(input: &str, has_session_context: bool) -> bool {
 }
 
 fn should_answer_project(input: &str, has_project_material: bool) -> bool {
-    has_project_material && (is_project_question(input) || is_project_status_question(input))
+    has_project_material
+        && !is_learning_continuation_question(input)
+        && (is_project_question(input) || is_project_status_question(input))
 }
 
 fn is_capability_question(input: &str) -> bool {
@@ -379,6 +411,19 @@ fn is_project_status_question(input: &str) -> bool {
             "继续推进",
         ],
     )
+}
+
+fn is_learning_continuation_question(input: &str) -> bool {
+    let lower = input.trim().to_lowercase();
+    let learning_words = mentions_any(
+        &lower,
+        &["学习", "复习", "掌握", "巩固", "知识点", "学习建议", "待巩固"],
+    );
+    let continue_words = mentions_any(
+        &lower,
+        &["上次做到哪", "还差什么", "下一步做什么", "下一步", "建议先做", "掌握到哪"],
+    );
+    learning_words && continue_words
 }
 
 fn has_project_context(envelope: &RuntimeContextEnvelope) -> bool {
@@ -422,10 +467,14 @@ mod tests {
             includes_memory: false,
             includes_knowledge: false,
             includes_tool_preview: false,
+            phase_label: "test".to_string(),
+            selection_reason: "test".to_string(),
+            prefers_artifact_context: false,
             session_summary: session_summary.to_string(),
             memory_digest: String::new(),
             knowledge_digest: String::new(),
             tool_preview: String::new(),
+            artifact_hint: String::new(),
             reasoning_summary: String::new(),
             cache_status: "cold".to_string(),
             cache_reason: String::new(),
@@ -491,6 +540,20 @@ mod tests {
     }
 
     #[test]
+    fn plans_context_answer_for_learning_status_questions() {
+        let env = envelope(
+            "继续复习 Rust 所有权和借用。我现在掌握到哪了，还差什么，下一步做什么？",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
     fn plans_agent_resolve_for_other_questions_without_context() {
         let env = envelope(
             "你好，随便聊聊",
@@ -501,6 +564,20 @@ mod tests {
         assert!(matches!(
             plan_action_with_context(&env),
             PlannedAction::AgentResolve
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_question_without_context() {
+        let env = envelope(
+            "我只有30分钟，想做一轮上线前回归，你给我一个按分钟拆分的执行清单。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
         ));
     }
 

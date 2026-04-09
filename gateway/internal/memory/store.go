@@ -28,6 +28,11 @@ type Entry struct {
 	SourceTitle        string `json:"source_title"`
 	SourceEventType    string `json:"source_event_type"`
 	SourceArtifactPath string `json:"source_artifact_path"`
+	GovernanceVersion  string `json:"governance_version"`
+	GovernanceReason   string `json:"governance_reason"`
+	GovernanceSource   string `json:"governance_source"`
+	GovernanceAt       string `json:"governance_at"`
+	ArchiveReason      string `json:"archive_reason"`
 	Verified           bool   `json:"verified"`
 	Priority           int    `json:"priority"`
 	Archived           bool   `json:"archived"`
@@ -37,6 +42,27 @@ type Entry struct {
 	Timestamp          string `json:"timestamp"`
 }
 
+func (item Entry) MemoryKind() string {
+	return item.Kind
+}
+
+func (item Entry) GovernanceStatus() string {
+	if item.Archived {
+		return "archived"
+	}
+	if item.Verified {
+		return "verified"
+	}
+	return "active"
+}
+
+func (item Entry) MemoryAction() string {
+	if item.Archived {
+		return "archive"
+	}
+	return "write"
+}
+
 type Store struct {
 	storageRoot string
 }
@@ -44,6 +70,8 @@ type Store struct {
 type tombstone struct {
 	MemoryID string `json:"memory_id"`
 }
+
+const MemoryGovernanceVersion = "memory_audit_v1"
 
 func NewStore(repoRoot string) *Store {
 	return &Store{storageRoot: filepath.Join(repoRoot, "data")}
@@ -103,6 +131,20 @@ func (s *Store) Delete(workspaceID string, memoryID string) error {
 	return s.appendTombstone(workspaceID, memoryID)
 }
 
+func (s *Store) Save(entry Entry) (bool, error) {
+	db, err := s.openDB()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+	item := normalizedEntry(entry)
+	duplicate, err := hasDuplicateMemory(db, item)
+	if err != nil || duplicate {
+		return false, err
+	}
+	return true, insertMemoryEntry(db, item)
+}
+
 func (s *Store) openDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", filepath.Join(s.storageRoot, "storage", "main.db"))
 	if err != nil {
@@ -130,6 +172,11 @@ func scanEntry(rows *sql.Rows) (Entry, error) {
 		&item.SourceTitle,
 		&item.SourceEventType,
 		&item.SourceArtifactPath,
+		&item.GovernanceVersion,
+		&item.GovernanceReason,
+		&item.GovernanceSource,
+		&item.GovernanceAt,
+		&item.ArchiveReason,
 		&verified,
 		&item.Priority,
 		&archived,
@@ -140,7 +187,8 @@ func scanEntry(rows *sql.Rows) (Entry, error) {
 	)
 	item.Verified = verified != 0
 	item.Archived = archived != 0
-	item.Reason = memoryReason(item)
+	item = normalizedEntry(item)
+	item.Reason = resolvedReason(item)
 	return item, err
 }
 
@@ -196,17 +244,83 @@ func safeName(input string) string {
 	return builder.String()
 }
 
+func resolvedReason(item Entry) string {
+	if strings.TrimSpace(item.GovernanceReason) != "" {
+		return item.GovernanceReason
+	}
+	return memoryReason(item)
+}
+
+func normalizedEntry(item Entry) Entry {
+	item.GovernanceVersion = firstText(item.GovernanceVersion, MemoryGovernanceVersion)
+	item.GovernanceSource = firstText(item.GovernanceSource, governanceSource(item))
+	item.GovernanceReason = firstText(item.GovernanceReason, memoryReason(item))
+	item.GovernanceAt = firstText(item.GovernanceAt, item.UpdatedAt, item.CreatedAt, item.Timestamp)
+	item.ArchiveReason = archiveReason(item)
+	return item
+}
+
 func memoryReason(item Entry) string {
 	if item.SourceType == "seed" {
-		return "基线记忆优先"
+		return "基线记忆已按当前治理版本固化。"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "memory_written" {
+		return "用户显式写入长期记忆。"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "run_failed" {
+		return "失败教训已纳入长期记忆治理。"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "run_finished" {
+		return "任务结果已按长期记忆治理规则沉淀。"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "verification_completed" {
+		return "验证通过后已沉淀长期记忆。"
 	}
 	if strings.Contains(item.Source, "README") || strings.Contains(item.Source, "docs/06-development") {
-		return "高价值文档命中"
+		return "高价值文档已按长期记忆治理规则保留。"
 	}
 	if item.SourceType == "runtime" {
-		return "运行时沉淀后持续复用"
+		return "记忆记录已按当前治理版本写入。"
 	}
-	return "按当前工作区持续复用"
+	return "按当前工作区治理规则持续复用。"
+}
+
+func governanceSource(item Entry) string {
+	if item.SourceType == "seed" {
+		return "seed_baseline"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "memory_written" {
+		return "runtime_manual_write"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "run_failed" {
+		return "runtime_failure_lesson"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "run_finished" {
+		return "runtime_finish_memory"
+	}
+	if item.SourceType == "runtime" && item.SourceEventType == "verification_completed" {
+		return "runtime_verified_memory"
+	}
+	if item.SourceType == "runtime" {
+		return "runtime_memory"
+	}
+	return "memory_append"
+}
+
+func archiveReason(item Entry) string {
+	if !item.Archived {
+		return ""
+	}
+	return firstText(item.ArchiveReason, "当前记录已标记为归档。")
+}
+
+func firstText(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func isMissingTable(err error) bool {
@@ -222,6 +336,42 @@ func ensureMemoryColumns(db *sql.DB) error {
 	return nil
 }
 
+func hasDuplicateMemory(db *sql.DB, item Entry) (bool, error) {
+	var count int
+	err := db.QueryRow(
+		duplicateMemorySQL,
+		item.WorkspaceID,
+		item.Kind,
+		item.Title,
+		item.Summary,
+	).Scan(&count)
+	return count > 0, err
+}
+
+func insertMemoryEntry(db *sql.DB, item Entry) error {
+	_, err := db.Exec(insertMemorySQL, memoryArgs(item)...)
+	return err
+}
+
+func memoryArgs(item Entry) []any {
+	return []any{
+		item.ID, item.WorkspaceID, item.Kind, item.Title, item.Summary, item.Content,
+		item.Source, item.SourceRunID, item.SourceType, item.SourceTitle,
+		item.SourceEventType, item.SourceArtifactPath, item.GovernanceVersion,
+		item.GovernanceReason, item.GovernanceSource, item.GovernanceAt,
+		item.ArchiveReason, boolFlag(item.Verified), item.Priority, boolFlag(item.Archived),
+		item.ArchivedAt, item.CreatedAt, item.UpdatedAt, item.Scope, item.SessionID,
+		item.Timestamp,
+	}
+}
+
+func boolFlag(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
 func isDuplicateColumn(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "duplicate column name")
 }
@@ -229,6 +379,7 @@ func isDuplicateColumn(err error) bool {
 const listMemorySQL = `
 select id, memory_type, title, summary, content, scope, workspace_id, session_id,
 source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
+governance_version, governance_reason, governance_source, governance_at, archive_reason,
 verified, priority, archived, archived_at, created_at, updated_at, timestamp
 from long_term_memory
 where workspace_id = ?
@@ -240,9 +391,29 @@ delete from long_term_memory
 where workspace_id = ? and id = ?
 `
 
+const duplicateMemorySQL = `
+select count(1)
+from long_term_memory
+where workspace_id = ? and memory_type = ? and title = ? and summary = ?
+`
+
+const insertMemorySQL = `
+insert into long_term_memory (
+id, workspace_id, memory_type, title, summary, content, source, source_run_id, source_type,
+source_title, source_event_type, source_artifact_path, governance_version, governance_reason,
+governance_source, governance_at, archive_reason, verified, priority, archived, archived_at,
+created_at, updated_at, scope, session_id, timestamp
+) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
 var memoryMigrationSQL = []string{
 	"alter table long_term_memory add column source_title text not null default ''",
 	"alter table long_term_memory add column source_event_type text not null default ''",
 	"alter table long_term_memory add column source_artifact_path text not null default ''",
+	"alter table long_term_memory add column governance_version text not null default ''",
+	"alter table long_term_memory add column governance_reason text not null default ''",
+	"alter table long_term_memory add column governance_source text not null default ''",
+	"alter table long_term_memory add column governance_at text not null default ''",
+	"alter table long_term_memory add column archive_reason text not null default ''",
 	"alter table long_term_memory add column archived_at text not null default ''",
 }

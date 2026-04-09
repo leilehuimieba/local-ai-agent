@@ -153,6 +153,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
                     let mut metadata = BTreeMap::from([
                         ("task_title".to_string(), state.task_title.clone()),
                         ("next_step".to_string(), "生成失败结果".to_string()),
+                        ("result_mode".to_string(), "system".to_string()),
                     ]);
                     metadata.extend(repo_context_metadata(&state.envelope.repo_context));
                     metadata
@@ -182,6 +183,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
                         ("task_title".to_string(), state.task_title.clone()),
                         ("next_step".to_string(), "任务已结束".to_string()),
                         ("final_answer".to_string(), message.clone()),
+                        ("result_mode".to_string(), "system".to_string()),
                     ]);
                     metadata.extend(repo_context_metadata(&state.envelope.repo_context));
                     metadata
@@ -443,6 +445,15 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     append_tool_spec_metadata(&mut verification_metadata, &state.tool_call);
     append_verification_metadata(&mut verification_metadata, &verification_report);
     verification_metadata.insert(
+        "result_mode".to_string(),
+        read_result_mode(
+            &action_result.result.final_answer,
+            &completion.status,
+            &verification_report.outcome.code,
+        )
+        .to_string(),
+    );
+    verification_metadata.insert(
         "final_answer".to_string(),
         action_result.result.final_answer.clone(),
     );
@@ -555,6 +566,15 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     finish_metadata.insert("next_step".to_string(), "任务已结束".to_string());
     finish_metadata.insert("completion_status".to_string(), completion.status.clone());
     finish_metadata.insert("completion_reason".to_string(), completion.reason.clone());
+    finish_metadata.insert(
+        "result_mode".to_string(),
+        read_result_mode(
+            &action_result.result.final_answer,
+            &completion.status,
+            &verification_report.outcome.code,
+        )
+        .to_string(),
+    );
     append_context_metadata(&mut finish_metadata, &state.envelope.context_envelope);
     append_tool_spec_metadata(&mut finish_metadata, &state.tool_call);
     append_verification_metadata(&mut finish_metadata, &verification_report);
@@ -632,6 +652,19 @@ fn append_verification_metadata(
     metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
 }
 
+fn read_result_mode(final_answer: &str, completion_status: &str, verification_code: &str) -> &'static str {
+    if completion_status == "failed" {
+        return "system";
+    }
+    if verification_code == "verified_with_recovery" {
+        return "recovery";
+    }
+    if final_answer.trim().is_empty() {
+        return "system";
+    }
+    "answer"
+}
+
 fn bool_string(value: bool) -> String {
     if value {
         "true".to_string()
@@ -652,6 +685,7 @@ fn append_context_dynamic_metadata(
     metadata: &mut BTreeMap<String, String>,
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
+    metadata.insert("user_input".to_string(), context.user_input.clone());
     metadata.insert("session_summary".to_string(), context.dynamic_block.session_summary.clone());
     metadata.insert("memory_digest".to_string(), context.dynamic_block.memory_digest.clone());
     metadata.insert(
@@ -659,6 +693,7 @@ fn append_context_dynamic_metadata(
         context.dynamic_block.knowledge_digest.clone(),
     );
     metadata.insert("tool_preview".to_string(), context.dynamic_block.tool_preview.clone());
+    metadata.insert("artifact_hint".to_string(), context.dynamic_block.artifact_hint.clone());
     metadata.insert(
         "reasoning_summary".to_string(),
         context.dynamic_block.reasoning_summary.clone(),
@@ -691,6 +726,15 @@ fn append_context_policy_metadata(
         "includes_tool_preview".to_string(),
         bool_string(context.dynamic_block.includes_tool_preview),
     );
+    metadata.insert("phase_label".to_string(), context.dynamic_block.phase_label.clone());
+    metadata.insert(
+        "selection_reason".to_string(),
+        context.dynamic_block.selection_reason.clone(),
+    );
+    metadata.insert(
+        "prefers_artifact_context".to_string(),
+        bool_string(context.dynamic_block.prefers_artifact_context),
+    );
 }
 
 fn make_run_failed_event(
@@ -705,6 +749,7 @@ fn make_run_failed_event(
 ) -> RunEvent {
     let mut metadata = repo_context_metadata(repo_context);
     metadata.insert("task_title".to_string(), task_title.to_string());
+    metadata.insert("result_mode".to_string(), "system".to_string());
     append_error_metadata(&mut metadata, error);
     append_tool_failure_metadata(&mut metadata, tool_trace);
     metadata.insert(

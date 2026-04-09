@@ -17,6 +17,7 @@ pub(crate) struct SessionTurn {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(default)]
 pub(crate) struct ShortTermMemory {
     pub current_goal: String,
     pub current_plan: String,
@@ -24,6 +25,9 @@ pub(crate) struct ShortTermMemory {
     pub recent_observation: String,
     pub recent_tool_result: String,
     pub pending_confirmation: String,
+    pub current_phase: String,
+    pub last_run_status: String,
+    pub handoff_artifact_path: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -75,6 +79,8 @@ pub(crate) fn persist_handoff_path(request: &RunRequest, handoff_path: &str) {
     let mut session = load_session_context(request);
     session.short_term.current_plan = summarize_text("已生成长任务交接包");
     session.short_term.recent_tool_result = summarize_text(handoff_path);
+    session.short_term.current_phase = "handoff".to_string();
+    session.short_term.handoff_artifact_path = handoff_path.to_string();
     persist_session_file(request, &session);
 }
 
@@ -90,6 +96,9 @@ pub(crate) fn record_planning_memory(
     session.short_term.current_plan = plan_label(task_title, risk_outcome);
     session.short_term.recent_observation = summarize_text(analysis_detail);
     session.short_term.recent_tool_result.clear();
+    session.short_term.current_phase = planning_phase(risk_outcome);
+    session.short_term.last_run_status = "planning".to_string();
+    session.short_term.handoff_artifact_path.clear();
     apply_risk_state(&mut session.short_term, risk_outcome);
     persist_session_file(request, session);
 }
@@ -106,6 +115,9 @@ pub(crate) fn record_execution_memory(
     session.short_term.recent_observation = summarize_text(final_answer);
     session.short_term.open_issue = failure_issue(final_answer, success);
     session.short_term.pending_confirmation.clear();
+    session.short_term.current_phase = "observe".to_string();
+    session.short_term.last_run_status = execution_status(success);
+    session.short_term.handoff_artifact_path.clear();
     persist_session_file(request, session);
 }
 
@@ -183,6 +195,14 @@ fn plan_label(task_title: &str, risk_outcome: &RiskOutcome) -> String {
     }
 }
 
+fn planning_phase(risk_outcome: &RiskOutcome) -> String {
+    match risk_outcome {
+        RiskOutcome::Blocked(_) => "blocked".to_string(),
+        RiskOutcome::RequireConfirmation(_) => "confirmation".to_string(),
+        RiskOutcome::Proceed => "plan".to_string(),
+    }
+}
+
 fn apply_risk_state(short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome) {
     match risk_outcome {
         RiskOutcome::Blocked(message) => {
@@ -208,6 +228,14 @@ fn execution_plan_label(success: bool) -> String {
     }
 }
 
+fn execution_status(success: bool) -> String {
+    if success {
+        "executed".to_string()
+    } else {
+        "failed".to_string()
+    }
+}
+
 fn failure_issue(final_answer: &str, success: bool) -> String {
     if success {
         String::new()
@@ -227,6 +255,8 @@ fn update_finish_memory(
     session.short_term.recent_observation = summarize_text(final_answer);
     session.short_term.open_issue = failure_issue(final_answer, status == "completed");
     session.short_term.pending_confirmation.clear();
+    session.short_term.current_phase = "finish".to_string();
+    session.short_term.last_run_status = status.to_string();
 }
 
 fn finish_plan_label(status: &str) -> String {
@@ -241,10 +271,13 @@ fn short_term_parts(short_term: &ShortTermMemory) -> Vec<String> {
     let mut parts = Vec::new();
     push_part(&mut parts, "当前目标", &short_term.current_goal);
     push_part(&mut parts, "当前计划", &short_term.current_plan);
+    push_part(&mut parts, "当前阶段", &short_term.current_phase);
+    push_part(&mut parts, "最近状态", &short_term.last_run_status);
     push_part(&mut parts, "阻塞问题", &short_term.open_issue);
     push_part(&mut parts, "最近观察", &short_term.recent_observation);
     push_part(&mut parts, "最近工具结果", &short_term.recent_tool_result);
     push_part(&mut parts, "待确认事项", &short_term.pending_confirmation);
+    push_part(&mut parts, "交接包", &short_term.handoff_artifact_path);
     parts
 }
 

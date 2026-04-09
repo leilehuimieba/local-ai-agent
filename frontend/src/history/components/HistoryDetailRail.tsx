@@ -1,9 +1,9 @@
 import { LogEntry } from "../../shared/contracts";
-import { buildLogResult, getFocusLogDetails, getHistoryNextSteps, getReplaySummary } from "../viewModel";
+import { buildLogResult, getFocusLogDetails, getHistoryNextSteps, getLearningContinuation, getReplaySummary } from "../viewModel";
 import { EmptyStateBlock, MetaGrid, SectionHeader } from "../../ui/primitives";
-import { readLogType, readReviewTypeLabel } from "../logType";
+import { readLogType, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel } from "../logType";
 
-const DETAIL_SECTION_ORDER = ["basic", "summary", "replay", "risk", "metadata", "context", "verification"] as const;
+const DETAIL_SECTION_ORDER = ["basic", "summary", "learning", "replay", "risk", "metadata", "context", "verification"] as const;
 
 export function HistoryDetailRail(props: { focusLog: LogEntry | null }) {
   return (
@@ -21,6 +21,7 @@ function buildDetailSections(focusLog: LogEntry | null) {
 function createDetailSection(key: typeof DETAIL_SECTION_ORDER[number], focusLog: LogEntry | null) {
   if (key === "basic") return { key, node: <BasicInfoSection key={key} focusLog={focusLog} /> };
   if (key === "summary") return { key, node: <SummarySection key={key} focusLog={focusLog} /> };
+  if (key === "learning") return { key, node: <LearningSection key={key} focusLog={focusLog} /> };
   if (key === "replay") return { key, node: <ReplaySection key={key} focusLog={focusLog} /> };
   if (key === "risk") return { key, node: <RiskSection key={key} focusLog={focusLog} /> };
   if (key === "metadata") return { key, node: <MetadataSection key={key} focusLog={focusLog} /> };
@@ -46,6 +47,23 @@ function SummarySection(props: { focusLog: LogEntry | null }) {
       <strong>{readSummaryTitle(props.focusLog)}</strong>
       <p>{result.summary}</p>
       {result.sections.map((item) => <p key={`${item.kind}-${item.text}`} className="timeline-detail">{`${item.title}：${item.text}`}</p>)}
+    </section>
+  );
+}
+
+function LearningSection(props: { focusLog: LogEntry | null }) {
+  if (!props.focusLog) return null;
+  const continuation = getLearningContinuation(props.focusLog);
+  if (!continuation) return null;
+  return (
+    <section className="detail-card learning-continuation-card">
+      <strong>学习续接</strong>
+      <div className="detail-list learning-continuation-list">
+        <LearningRow label="当前学习主题" value={continuation.topic} />
+        <LearningRow label="当前掌握情况" value={continuation.grasp} />
+        <LearningRow label="待巩固 / 待补" value={continuation.review} />
+        <LearningRow label="下一步学习建议" value={continuation.nextStep} />
+      </div>
     </section>
   );
 }
@@ -81,6 +99,7 @@ function MetadataSection(props: { focusLog: LogEntry | null }) {
     <section className="detail-card muted-card">
       <strong>关键 Metadata</strong>
       <MetaGrid items={buildMetadataRows(props.focusLog)} />
+      {buildMetadataParagraphs(props.focusLog).map((item) => <p key={item} className="timeline-detail">{item}</p>)}
     </section>
   );
 }
@@ -106,6 +125,15 @@ function VerificationSection(props: { focusLog: LogEntry | null }) {
       <MetaGrid items={buildVerificationRows(props.focusLog, details)} />
       <ul>{getHistoryNextSteps(props.focusLog).map((item) => <li key={item}>{item}</li>)}</ul>
     </section>
+  );
+}
+
+function LearningRow(props: { label: string; value: string }) {
+  return (
+    <div className="sidebar-row">
+      <strong>{props.label}</strong>
+      <span title={props.value}>{props.value}</span>
+    </div>
   );
 }
 
@@ -152,9 +180,24 @@ function buildMetadataRows(log: LogEntry) {
     { label: "Run ID", value: log.run_id },
     { label: "Session", value: log.session_id },
     { label: "分类", value: log.record_type || details.category },
+    { label: "记忆类型", value: readDetailMemoryFacet(log) },
+    { label: "治理状态", value: readDetailMemoryGovernance(log) },
+    { label: "最近动作", value: readDetailMemoryActivity(log) },
+    { label: "来源事件", value: log.event_type || "未附带" },
+    { label: "证据路径", value: log.artifact_path || "未附带" },
+    { label: "治理版本", value: readMetadataValue(log, "governance_version") },
+    { label: "治理来源", value: readMetadataValue(log, "governance_source") },
+    { label: "治理时间", value: readMetadataValue(log, "governance_at") },
     { label: "记录来源", value: readLogSource(log) },
     { label: "记录时间", value: log.timestamp },
   ];
+}
+
+function buildMetadataParagraphs(log: LogEntry) {
+  return [
+    readMetadataValue(log, "governance_reason", false),
+    readMetadataValue(log, "archive_reason", false),
+  ].filter(Boolean) as string[];
 }
 
 function buildContextMetaRows(details: ReturnType<typeof getFocusLogDetails>) {
@@ -170,6 +213,7 @@ function buildVerificationRows(log: LogEntry, details: ReturnType<typeof getFocu
     { label: "验证摘要", value: details.verification || "未附带" },
     { label: "完成状态", value: log.completion_status || "未附带" },
     { label: "完成判定", value: details.completion || "未附带" },
+    { label: "失败教训", value: readLessonHint(log) },
   ];
 }
 
@@ -181,6 +225,22 @@ function buildContextRows(details: ReturnType<typeof getFocusLogDetails>) {
   ].filter(Boolean) as string[];
 }
 
+function logLikeMemory(log: LogEntry) {
+  return {
+    archived: log.record_type === "archived_memory",
+    event_type: log.event_type,
+    governance_status: log.metadata?.governance_status,
+    kind: log.record_type || log.category,
+    memory_action: log.metadata?.memory_action,
+    metadata: log.metadata,
+    reason: log.metadata?.reason || log.detail || log.summary,
+    source_type: log.source_type,
+    summary: log.summary,
+    title: log.metadata?.task_title || log.summary,
+    verified: log.verification_snapshot?.passed,
+  };
+}
+
 function readToolName(log: LogEntry) {
   return log.tool_call_snapshot?.tool_name || log.tool_name || "无";
 }
@@ -190,9 +250,35 @@ function readSummaryTitle(log: LogEntry) {
   if (type === "result") return "结果摘要";
   if (type === "error") return "失败摘要";
   if (type === "confirmation") return "确认摘要";
+  if (type === "memory") return "记忆摘要";
   return "摘要与说明";
 }
 
 function readLogSource(log: LogEntry) {
   return log.source_type || log.metadata?.source_type || log.source || "runtime";
+}
+
+function readMetadataValue(log: LogEntry, key: string, withFallback = true) {
+  const value = log.metadata?.[key] || "";
+  return value || (withFallback ? "未附带" : "");
+}
+
+function readLessonHint(log: LogEntry) {
+  if (readDetailMemoryFacet(log) !== "失败教训") return "无";
+  return log.metadata?.reason || log.detail || log.summary;
+}
+
+function readDetailMemoryFacet(log: LogEntry) {
+  if (readLogType(log) !== "memory") return "无";
+  return readMemoryFacetLabel(logLikeMemory(log));
+}
+
+function readDetailMemoryGovernance(log: LogEntry) {
+  if (readLogType(log) !== "memory") return "无";
+  return readMemoryGovernanceLabel(logLikeMemory(log));
+}
+
+function readDetailMemoryActivity(log: LogEntry) {
+  if (readLogType(log) !== "memory") return "无";
+  return readMemoryActivityLabel(logLikeMemory(log));
 }

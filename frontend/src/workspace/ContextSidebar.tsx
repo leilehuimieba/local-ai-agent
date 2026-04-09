@@ -1,11 +1,13 @@
 import { cloneElement, ReactElement } from "react";
 import { readRunStateBody, readRunStateHeadline, readRunStateNextStep } from "../chat/chatResultModel";
+import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
 import { ConnectionState, RunState } from "../runtime/state";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
 
 type ContextSidebarProps = {
   settings: SettingsResponse | null;
   statusLine: string;
+  variant: "home" | "task";
   runState: RunState;
   connectionState: ConnectionState;
   connectionLabel: string;
@@ -15,8 +17,7 @@ type ContextSidebarProps = {
   confirmation: ConfirmationRequest | null;
   bootstrapError: string | null;
 };
-
-const INSPECTOR_SECTION_ORDER = ["task", "action", "repo", "risk"] as const;
+type InspectorSectionKey = "task" | "action" | "context" | "repo" | "risk";
 
 export function ContextSidebar(props: ContextSidebarProps) {
   const model = buildHubModel(props);
@@ -29,6 +30,7 @@ export function ContextSidebar(props: ContextSidebarProps) {
 
 function buildHubModel(props: ContextSidebarProps) {
   const latestEvent = props.events[props.events.length - 1];
+  const latestContextEvent = findLatest(props.events, hasContextSignal);
   const latestToolEvent = findLatest(props.events, hasToolSignal);
   const latestMemoryEvent = findLatest(props.events, isMemoryEvent);
   const latestRepoEvent = findLatest(props.events, hasRepoSignal);
@@ -36,6 +38,7 @@ function buildHubModel(props: ContextSidebarProps) {
     ...props,
     currentTask: latestEvent?.metadata?.task_title || latestEvent?.summary || "等待任务",
     docPaths: splitLines(latestRepoEvent?.metadata?.doc_paths),
+    latestContextEvent,
     latestEvent,
     latestMemoryEvent,
     latestRepoEvent,
@@ -56,18 +59,24 @@ function TaskGroup(props: { model: ReturnType<typeof buildHubModel> }) {
 }
 
 function buildInspectorSections(model: ReturnType<typeof buildHubModel>) {
-  return INSPECTOR_SECTION_ORDER.map((key) => createInspectorSection(key, model));
+  return readInspectorSectionOrder(model.variant).map((key) => createInspectorSection(key, model));
 }
 
 function renderInspectorSection(section: { key: string; node: ReactElement }) {
   return cloneElement(section.node, { key: section.key });
 }
 
-function createInspectorSection(key: typeof INSPECTOR_SECTION_ORDER[number], model: ReturnType<typeof buildHubModel>) {
+function createInspectorSection(key: InspectorSectionKey, model: ReturnType<typeof buildHubModel>) {
   if (key === "task") return { key, node: <TaskGroup model={model} /> };
   if (key === "action") return { key, node: <ActionGroup model={model} /> };
+  if (key === "context") return { key, node: <ContextGroup model={model} /> };
   if (key === "repo") return { key, node: <RepoGroup model={model} /> };
   return { key, node: <RiskGroup model={model} /> };
+}
+
+function readInspectorSectionOrder(variant: ContextSidebarProps["variant"]) {
+  if (variant === "home") return ["task", "context", "risk"] as InspectorSectionKey[];
+  return ["task", "action", "context", "risk"] as InspectorSectionKey[];
 }
 
 function ActionGroup(props: { model: ReturnType<typeof buildHubModel> }) {
@@ -75,6 +84,16 @@ function ActionGroup(props: { model: ReturnType<typeof buildHubModel> }) {
     <section className="sidebar-card inspector-card">
       <InspectorHeader title="下一步与最近动作" status={readActionStatus(props.model)} />
       <InfoRows rows={buildActionRows(props.model)} />
+      <ActionNotes model={props.model} />
+    </section>
+  );
+}
+
+function ContextGroup(props: { model: ReturnType<typeof buildHubModel> }) {
+  return (
+    <section className="sidebar-card inspector-card">
+      <InspectorHeader title="状态沉淀与续接依据" status={readContextStatus(props.model)} />
+      <InfoRows rows={buildContextRows(props.model)} />
     </section>
   );
 }
@@ -157,6 +176,34 @@ function InlineError(props: { title: string; body: string }) {
   );
 }
 
+function ActionNotes(props: { model: ReturnType<typeof buildHubModel> }) {
+  const evidence = readActionEvidence(props.model);
+  return (
+    <>
+      <InlineNote title="建议先接这里" text={props.model.nextAction} />
+      {evidence ? <InlineNote title="最近收口依据" text={evidence} /> : null}
+    </>
+  );
+}
+
+function ContextHighlights(props: { rows: Array<{ label: string; value: string }> }) {
+  if (props.rows.length === 0) return null;
+  return (
+    <div className="context-highlight-grid">
+      {props.rows.map((row) => <ContextHighlightCard key={row.label} row={row} />)}
+    </div>
+  );
+}
+
+function ContextHighlightCard(props: { row: { label: string; value: string } }) {
+  return (
+    <article className="detail-card context-highlight-card">
+      <strong>{props.row.label}</strong>
+      <p>{props.row.value}</p>
+    </article>
+  );
+}
+
 function buildTaskRows(model: ReturnType<typeof buildHubModel>) {
   return [
     { label: "运行", value: model.currentRunId || "尚未开始" },
@@ -168,12 +215,10 @@ function buildTaskRows(model: ReturnType<typeof buildHubModel>) {
 function buildActionRows(model: ReturnType<typeof buildHubModel>) {
   return [
     { label: "当前状态", value: readRunStateHeadline(model.runState, model.latestEvent) },
-    { label: "下一步", value: model.nextAction },
+    { label: "当前阶段", value: model.latestEvent?.stage || "等待事件" },
+    { label: "下一步线索", value: model.nextAction },
+    { label: "验证依据", value: readVerification(model) },
     { label: "当前动作", value: readCurrentAction(model) },
-    { label: "结果摘要", value: readRecentSummary(model) },
-    { label: "验证结果", value: readVerification(model) },
-    { label: "产物路径", value: readArtifactPath(model) },
-    { label: "阶段", value: model.latestEvent?.stage || "等待事件" },
   ];
 }
 
@@ -186,13 +231,24 @@ function buildRepoRows(model: ReturnType<typeof buildHubModel>) {
   ];
 }
 
-function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
+function buildContextRows(model: ReturnType<typeof buildHubModel>) {
+  const snapshot = model.latestContextEvent?.context_snapshot;
   return [
-    { label: "风险", value: model.confirmation?.action_summary || "当前没有待确认项" },
-    { label: "记忆摘要", value: readMemoryCopy(model) },
-    { label: "记忆状态", value: memoryStateLabel(model.latestMemoryEvent) },
-    { label: "系统", value: readSystemState(model) },
+    { label: "会话续接", value: snapshot?.session_summary || "当前没有会话摘要。" },
+    { label: "沉淀依据", value: readContextEvidence(snapshot) },
+    { label: "思考线索", value: snapshot?.reasoning_summary || snapshot?.assembly_profile || "当前没有额外思考线索。" },
   ];
+}
+
+function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
+  const rows = [
+    { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
+    { label: "系统", value: readSystemState(model) },
+    { label: "最近验证", value: readVerification(model) },
+  ];
+  return model.latestMemoryEvent
+    ? [...rows, { label: "最近记忆", value: readMemoryCopy(model) }]
+    : rows;
 }
 
 function findLatest(events: RunEvent[], predicate: (event: RunEvent) => boolean) {
@@ -205,6 +261,15 @@ function hasToolSignal(event: RunEvent) {
 
 function isMemoryEvent(event: RunEvent) {
   return event.event_type === "memory_written" || event.event_type === "memory_recalled" || event.event_type === "memory_write_skipped";
+}
+
+function hasContextSignal(event: RunEvent) {
+  return Boolean(
+    event.context_snapshot?.session_summary ||
+      event.context_snapshot?.memory_digest ||
+      event.context_snapshot?.knowledge_digest ||
+      event.context_snapshot?.reasoning_summary,
+  );
 }
 
 function hasRepoSignal(event: RunEvent) {
@@ -247,17 +312,26 @@ function readRepoStatus(model: ReturnType<typeof buildHubModel>) {
   return model.latestRepoEvent.metadata?.repo_context_status === "degraded" ? "降级" : "就绪";
 }
 
+function readContextStatus(model: ReturnType<typeof buildHubModel>) {
+  const snapshot = model.latestContextEvent?.context_snapshot;
+  if (!snapshot) return "空闲";
+  if (snapshot.knowledge_digest || snapshot.memory_digest) return "已沉淀";
+  if (snapshot.session_summary || snapshot.reasoning_summary) return "有上下文";
+  return "空闲";
+}
+
 function readWorkspaceRoot(model: ReturnType<typeof buildHubModel>) {
   return model.latestRepoEvent?.metadata?.workspace_root || model.settings?.workspace.root_path || "未加载";
 }
 
 function readRiskStatus(model: ReturnType<typeof buildHubModel>) {
   if (model.confirmation) return model.confirmation.risk_level;
-  return model.latestMemoryEvent ? "有记忆" : "稳定";
+  if (model.latestMemoryEvent) return readMemoryGovernance(model.latestMemoryEvent);
+  return "稳定";
 }
 
 function readMemoryCopy(model: ReturnType<typeof buildHubModel>) {
-  return model.latestMemoryEvent?.context_snapshot?.memory_digest || model.latestMemoryEvent?.detail || "当前没有新的记忆记录。";
+  return model.latestMemoryEvent?.detail || model.latestMemoryEvent?.summary || model.latestMemoryEvent?.context_snapshot?.memory_digest || "当前没有新的记忆记录。";
 }
 
 function readCurrentAction(model: ReturnType<typeof buildHubModel>) {
@@ -265,6 +339,11 @@ function readCurrentAction(model: ReturnType<typeof buildHubModel>) {
   if (!event) return "当前没有独立动作事件。";
   if (event.tool_display_name && event.tool_category) return `${event.tool_display_name} / ${event.tool_category}`;
   return event.tool_display_name || event.tool_name || event.tool_category || event.event_type || "当前没有独立动作事件。";
+}
+
+function readActionEvidence(model: ReturnType<typeof buildHubModel>) {
+  const parts = [readRecentSummary(model), readArtifactPath(model)].filter((item) => item && !item.startsWith("当前没有"));
+  return parts.join("；");
 }
 
 function readVerification(model: ReturnType<typeof buildHubModel>) {
@@ -275,9 +354,14 @@ function readArtifactPath(model: ReturnType<typeof buildHubModel>) {
   return model.latestToolEvent?.artifact_path || model.latestEvent?.artifact_path || "当前没有产物路径。";
 }
 
+function readContextEvidence(snapshot?: RunEvent["context_snapshot"]) {
+  const parts = [snapshot?.memory_digest, snapshot?.knowledge_digest].filter(Boolean);
+  return parts.length > 0 ? parts.join("；") : "当前没有记忆或知识沉淀。";
+}
+
 function readSystemState(model: ReturnType<typeof buildHubModel>) {
   if (model.bootstrapError) return "初始化异常";
-  if (model.settings && !model.settings.runtime_status.ok) return "Runtime 不可达";
+  if (model.settings && !model.settings.runtime_status.ok) return "运行时不可达";
   return model.connectionState === "connected" ? "连接正常" : model.connectionLabel;
 }
 
@@ -286,17 +370,39 @@ function getTreeState(event?: RunEvent) {
   return event.metadata?.git_dirty === "true" ? "有未提交修改" : "干净";
 }
 
-function memoryStateLabel(event?: RunEvent) {
-  if (!event) return "暂无痕迹";
-  if (event.event_type === "memory_recalled") return "已召回";
-  if (event.event_type === "memory_write_skipped") return "已跳过";
-  return "已记录";
+function readMemoryActivity(event?: RunEvent) {
+  if (!event) return "暂无动作";
+  return readMemoryActivityLabel(event);
+}
+
+function readMemoryFacet(event?: RunEvent) {
+  if (!event) return "无记忆";
+  return readMemoryFacetLabel(eventLikeMemory(event));
+}
+
+function readMemoryGovernance(event?: RunEvent) {
+  if (!event) return "暂无治理";
+  return readMemoryGovernanceLabel(eventLikeMemory(event));
+}
+
+function eventLikeMemory(event: RunEvent) {
+  return {
+    event_type: event.event_type,
+    kind: event.metadata?.memory_kind || event.record_type || event.output_kind,
+    metadata: event.metadata,
+    reason: event.detail || event.summary,
+    source_type: event.source_type,
+    summary: event.summary,
+    title: event.metadata?.task_title || event.summary,
+    verified: event.verification_snapshot?.passed,
+  };
 }
 
 function readInspectorStatusClass(status: string) {
   if (status === "失败" || status === "降级") return "status-failed";
   if (status === "待确认" || status === "high" || status === "medium") return "status-awaiting";
-  if (status === "已完成" || status === "就绪" || status === "稳定" || status === "有记忆") return "status-completed";
+  if (status === "已完成" || status === "就绪" || status === "稳定" || status === "已验证" || status === "已归档") return "status-completed";
+  if (status === "待治理" || status === "已跳过") return "status-awaiting";
   if (status === "等待任务") return "status-idle";
   if (status === "处理中") return "status-running";
   return "status-idle";

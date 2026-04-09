@@ -1,6 +1,6 @@
 use crate::contracts::RunRequest;
 use crate::model_adapter::{
-    ModelAdapter, ModelError, ModelRequest, ModelResponse, OpenAiCompatibleAdapter, provider_config,
+    provider_config, ModelAdapter, ModelError, ModelRequest, ModelResponse, OpenAiCompatibleAdapter,
 };
 use serde::Serialize;
 use std::fs;
@@ -40,10 +40,10 @@ pub(crate) fn complete_with_model(
 }
 
 fn write_body_file(request: &RunRequest, prompt: &str) -> Result<PathBuf, ModelError> {
-    let visible_tools = crate::tools::visible_tools("full_access");
+    let visible_tools = crate::capabilities::visible_tools("full_access");
     let mapped_tools: Vec<serde_json::Value> = visible_tools
         .iter()
-        .map(crate::tools::tool_definition_to_json_schema)
+        .map(crate::capabilities::tool_definition_to_json_schema)
         .collect();
     let tools = if mapped_tools.is_empty() {
         None

@@ -28,10 +28,14 @@ pub(crate) struct DynamicPromptBlock {
     pub includes_memory: bool,
     pub includes_knowledge: bool,
     pub includes_tool_preview: bool,
+    pub phase_label: String,
+    pub selection_reason: String,
+    pub prefers_artifact_context: bool,
     pub session_summary: String,
     pub memory_digest: String,
     pub knowledge_digest: String,
     pub tool_preview: String,
+    pub artifact_hint: String,
     pub reasoning_summary: String,
     pub cache_status: String,
     pub cache_reason: String,
@@ -120,18 +124,29 @@ fn dynamic_prompt_block(
     let session_summary = selected_session_summary(session_context, policy);
     let memory_digest = selected_memory_digest(request, policy);
     let knowledge_digest = selected_knowledge_digest(request, policy);
+    let artifact_hint = selected_artifact_hint(session_context, policy);
     DynamicPromptBlock {
         user_input: request.user_input.clone(),
-        assembly_profile: policy.profile.to_string(),
+        assembly_profile: policy.profile.clone(),
         includes_session: policy.include_session,
         includes_memory: policy.include_memory,
         includes_knowledge: policy.include_knowledge,
         includes_tool_preview: policy.include_tool_preview,
+        phase_label: policy.phase_label.clone(),
+        selection_reason: policy.selection_reason.clone(),
+        prefers_artifact_context: policy.prefer_artifact_context,
         session_summary: session_summary.clone(),
         memory_digest: memory_digest.clone(),
         knowledge_digest: knowledge_digest.clone(),
         tool_preview: selected_tool_preview(visible_tools, policy),
-        reasoning_summary: reasoning_summary(&session_summary, &memory_digest, &knowledge_digest),
+        artifact_hint: artifact_hint.clone(),
+        reasoning_summary: reasoning_summary(
+            &session_summary,
+            &memory_digest,
+            &knowledge_digest,
+            &policy.selection_reason,
+            &artifact_hint,
+        ),
         cache_status: cache_status.to_string(),
         cache_reason: cache_reason.to_string(),
     }
@@ -211,9 +226,29 @@ fn tool_preview(visible_tools: &[ToolDefinition]) -> String {
     )
 }
 
-fn reasoning_summary(session_summary: &str, memory_digest: &str, knowledge_digest: &str) -> String {
+fn selected_artifact_hint(
+    session_context: &SessionMemory,
+    policy: &ContextAssemblyPolicy,
+) -> String {
+    if policy.prefer_artifact_context && !session_context.short_term.handoff_artifact_path.is_empty()
+    {
+        return format!(
+            "优先参考交接包：{}",
+            session_context.short_term.handoff_artifact_path
+        );
+    }
+    "当前阶段未注入交接包提示。".to_string()
+}
+
+fn reasoning_summary(
+    session_summary: &str,
+    memory_digest: &str,
+    knowledge_digest: &str,
+    selection_reason: &str,
+    artifact_hint: &str,
+) -> String {
     summarize_text(&format!(
-        "先结合会话摘要判断当前意图，再参考长期记忆与本地知识命中结果组织回答。会话：{} || 记忆：{} || 知识：{}",
-        session_summary, memory_digest, knowledge_digest
+        "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆与本地知识命中结果组织回答。会话：{} || 记忆：{} || 知识：{} || Artifact：{}",
+        selection_reason, session_summary, memory_digest, knowledge_digest, artifact_hint
     ))
 }

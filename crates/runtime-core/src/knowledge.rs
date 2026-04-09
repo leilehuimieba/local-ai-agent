@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::knowledge_store::{KnowledgeRecord, search_knowledge_records};
+use crate::knowledge_store::{search_knowledge_records, KnowledgeRecord};
 use crate::paths::{repo_root, siyuan_root_dir, siyuan_sync_enabled};
 use crate::text::{extract_snippet, score_text};
 use std::collections::BTreeSet;

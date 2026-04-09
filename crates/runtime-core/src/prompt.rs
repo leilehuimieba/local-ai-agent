@@ -46,6 +46,25 @@ pub(crate) fn render_project_answer_prompt(
     )
 }
 
+pub(crate) fn render_agent_resolve_prompt(user_input: &str, session_summary: &str) -> String {
+    let summary = if session_summary.trim().is_empty() {
+        "当前会话还没有可复用的压缩摘要。"
+    } else {
+        session_summary
+    };
+    format!(
+        concat!(
+            "你是本地智能体，负责在当前工作区内完成真实任务。\n\n",
+            "会话摘要：{}\n\n",
+            "用户请求：{}\n",
+            "执行要求：可以分步调用工具，但不要只停在读取、检索或观察；",
+            "如果用户要求生成文件、写回结果或保存产物，完成前必须实际调用写入类工具；",
+            "只有在任务真正完成后，才输出最终中文结果，并尽量点明产物路径。"
+        ),
+        summary, user_input
+    )
+}
+
 fn project_task_hint(user_input: &str) -> String {
     if is_status_question(user_input) {
         "请直接说明当前项目已做到什么程度、为什么这样判断、下一步做什么，并尽量落到真实样本、验证路径或完成标准。".to_string()
@@ -102,13 +121,16 @@ fn render_dynamic_prompt(
     answer_style: &str,
 ) -> String {
     format!(
-        "任务意图：{}\n用户输入：{}\n会话摘要：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n回答要求：{}",
+        "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
         task_hint,
+        envelope.dynamic_block.phase_label,
+        envelope.dynamic_block.selection_reason,
         envelope.dynamic_block.user_input,
         envelope.dynamic_block.session_summary,
         envelope.dynamic_block.memory_digest,
         envelope.dynamic_block.knowledge_digest,
         envelope.dynamic_block.tool_preview,
+        envelope.dynamic_block.artifact_hint,
         answer_style
     )
 }

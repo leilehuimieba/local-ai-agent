@@ -147,14 +147,24 @@ type DiagnosticsCheckResponse struct {
 	Errors      []string          `json:"errors"`
 }
 
-func NewRouter(repoRoot string, cfg config.AppConfig, runtimeClient *runtimeclient.Client, eventBus *session.EventBus, settingsStore *state.SettingsStore, confirmationStore *state.ConfirmationStore) http.Handler {
+func NewRouter(
+	repoRoot string,
+	cfg config.AppConfig,
+	runtimeClient *runtimeclient.Client,
+	eventBus *session.EventBus,
+	settingsStore *state.SettingsStore,
+	confirmationStore *state.ConfirmationStore,
+	credentialStore *state.ProviderCredentialStore,
+	runtimeStore *state.RuntimeProviderStore,
+) http.Handler {
 	mux := http.NewServeMux()
-	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore)
+	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
 	memoryDeps := memoryRouteDeps{
 		store: memory.NewStore(repoRoot),
 		state: settingsStore,
 	}
 	registerCoreRoutes(mux, cfg)
+	registerProviderSettingsRoutes(mux, cfg, credentialStore, runtimeStore)
 	mux.HandleFunc("/api/v1/settings", settingsHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/settings/external-connections/action", externalConnectionActionHandler(repoRoot, cfg, settingsStore))

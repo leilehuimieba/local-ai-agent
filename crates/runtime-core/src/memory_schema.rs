@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub(crate) const MEMORY_GOVERNANCE_VERSION: &str = "memory_audit_v1";
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) enum MemoryKind {
     Preference,
@@ -37,6 +39,16 @@ pub(crate) struct StructuredMemoryEntry {
     pub source_event_type: String,
     #[serde(default)]
     pub source_artifact_path: String,
+    #[serde(default)]
+    pub governance_version: String,
+    #[serde(default, alias = "reason")]
+    pub governance_reason: String,
+    #[serde(default)]
+    pub governance_source: String,
+    #[serde(default)]
+    pub governance_at: String,
+    #[serde(default)]
+    pub archive_reason: String,
     #[serde(default)]
     pub verified: bool,
     #[serde(default)]

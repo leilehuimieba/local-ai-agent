@@ -33,18 +33,18 @@ function StatusContent(props: { settings: SettingsResponse }) {
   return (
     <>
       <div className="status-ribbon">
-        <RibbonItem label="Runtime" value={readRuntimeLabel(props.settings)} />
+        <RibbonItem label="运行时" value={readRuntimeLabel(props.settings)} />
         <RibbonItem label="模型" value={props.settings.model.display_name} />
         <RibbonItem label="模式" value={props.settings.mode} />
         <RibbonItem label="工作区" value={props.settings.workspace.name} />
       </div>
       <dl className="status-grid">
         <StatusItem label="应用" value={props.settings.app_name || "未提供"} />
-        <StatusItem label="Provider" value={props.settings.model.provider_id || "未提供"} />
+        <StatusItem label="服务方" value={props.settings.model.provider_id || "未提供"} />
         <StatusItem label="工作区根" value={props.settings.workspace.root_path || "未提供"} />
         <StatusItem label="已授权目录" value={`${props.settings.approved_directories.length} 个`} />
         <StatusItem label="记忆策略" value={props.settings.memory_policy.enabled ? "已启用" : "未启用"} />
-        <StatusItem label="Runtime 版本" value={props.settings.runtime_status.version || "未提供"} />
+        <StatusItem label="运行时版本" value={props.settings.runtime_status.version || "未提供"} />
       </dl>
     </>
   );
@@ -117,15 +117,15 @@ function readOverallStatusClass(props: StatusCardProps) {
 function readStatusError(settings: SettingsResponse | null, bootstrapError: string | null) {
   if (bootstrapError) {
     return {
-      advice: "检查 Runtime 与本地配置后重新进入设置页。",
+      advice: "检查运行时与本地配置后重新进入设置页。",
       body: bootstrapError,
       title: "设置加载失败",
     };
   }
   if (!settings || settings.runtime_status.ok) return null;
   return {
-    advice: "先恢复 Runtime，再执行模型切换、导出或诊断动作。",
-    body: "Runtime 当前不可达，依赖运行时的动作会失败。",
-    title: "Runtime 连接异常",
+    advice: "先恢复运行时，再执行模型切换、导出或诊断动作。",
+    body: "运行时当前不可达，依赖运行时的动作会失败。",
+    title: "运行时连接异常",
   };
 }

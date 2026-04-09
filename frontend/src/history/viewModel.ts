@@ -40,6 +40,19 @@ export type ReplaySummary = {
   nextStep: string;
 };
 
+export type LearningContinuation = {
+  topic: string;
+  grasp: string;
+  review: string;
+  nextStep: string;
+};
+
+const LEARNING_INTENT_RE = /(学习|复习|回顾|梳理|理解|掌握|巩固|练习|知识点|概念|章节|笔记)/;
+const LEARNING_GRASP_RE = /(已理解|已掌握|理解了|掌握了|学到|看懂|熟悉|已整理|已回顾|能解释|能说清)/;
+const LEARNING_REVIEW_RE = /(待巩固|待补|不稳|薄弱|疑问|没弄清|未掌握|还差|卡住|遗漏|易错|补看)/;
+const LEARNING_NEXT_RE = /(下一步|继续|先复习|先回顾|先练习|建议先|补一轮|再看|自测)/;
+const PROJECT_DOC_RE = /(项目说明|项目文档|需求文档|产品定义|工作区|构建|运行时|provider|settings|gateway|runtime)/;
+
 export function getFocusLogDetails(log: LogEntry): FocusLogDetails {
   return {
     category: readCategoryLabel(log),
@@ -89,6 +102,17 @@ export function getReplaySummary(log: LogEntry): ReplaySummary {
     evidence: getEvidenceValue(log, getFocusLogDetails(log)),
     verification: readVerificationSummary(log, getFocusLogDetails(log)),
     nextStep: getHistoryNextSteps(log)[0] || "补看相关运行记录确认上下文来源。",
+  };
+}
+
+export function getLearningContinuation(log: LogEntry): LearningContinuation | null {
+  if (!hasLearningContinuationSignal(log)) return null;
+  const review = readLearningReview(log);
+  return {
+    topic: compactReviewText(readLearningTopic(log), "当前记录还没有明确学习主题。"),
+    grasp: compactReviewText(readLearningGrasp(log), "当前记录还没有明确掌握情况。"),
+    review: compactReviewText(review, "当前记录还没有明确待巩固内容。"),
+    nextStep: compactReviewText(readLearningNextStep(log, review), "先回顾本轮学习记录，再决定下一步要继续哪一块。"),
   };
 }
 
@@ -230,4 +254,138 @@ function readSourceType(log: LogEntry) {
 
 function readVerification(log: LogEntry) {
   return log.verification_summary || log.verification_snapshot?.summary || log.metadata?.verification_summary;
+}
+
+function hasLearningContinuationSignal(log: LogEntry) {
+  return hasLearningIntent(log) && hasLearningEvidence(log) && !isProjectAnswerFalsePositive(log);
+}
+
+function readLearningTopic(log: LogEntry) {
+  return findLearningFragment(
+    [
+      log.metadata?.task_title,
+      log.summary,
+      log.detail,
+      log.final_answer,
+      log.result_summary,
+      log.context_snapshot?.session_summary,
+      log.context_snapshot?.knowledge_digest,
+    ],
+    [LEARNING_INTENT_RE],
+  );
+}
+
+function readLearningGrasp(log: LogEntry) {
+  return findLearningFragment(
+    [
+      log.verification_summary,
+      log.result_summary,
+      log.summary,
+      log.detail,
+      log.final_answer,
+      log.context_snapshot?.session_summary,
+    ],
+    [LEARNING_GRASP_RE, LEARNING_INTENT_RE],
+  );
+}
+
+function readLearningReview(log: LogEntry) {
+  const explicit = findLearningFragment(
+    [log.context_snapshot?.knowledge_digest, log.context_snapshot?.memory_digest, log.detail, log.verification_summary, log.context_snapshot?.session_summary],
+    [LEARNING_REVIEW_RE],
+  );
+  if (explicit) return explicit;
+  return findLearningFragment(
+    [log.context_snapshot?.knowledge_digest, log.context_snapshot?.memory_digest, log.detail],
+    [/概念|知识点|笔记|例题|重点|难点/],
+  );
+}
+
+function readLearningNextStep(log: LogEntry, review: string) {
+  const explicit = findLearningFragment(
+    [
+      log.metadata?.next_step,
+      log.metadata?.verification_next_step,
+      log.detail,
+      log.final_answer,
+      ...getHistoryNextSteps(log),
+    ],
+    [LEARNING_NEXT_RE, LEARNING_INTENT_RE, LEARNING_REVIEW_RE],
+  );
+  if (explicit) return explicit;
+  if (!review) return "";
+  return `先回到“${shortLearningText(review)}”再补一轮回顾或练习。`;
+}
+
+function compactReviewText(value: string | undefined, fallback: string) {
+  const normalized = cleanLearningFragment(value || "");
+  if (!normalized) return fallback;
+  return normalized.length > 140 ? `${normalized.slice(0, 137)}...` : normalized;
+}
+
+function hasLearningIntent(log: LogEntry) {
+  return LEARNING_INTENT_RE.test([
+    log.metadata?.task_title,
+    log.summary,
+    log.detail,
+    log.context_snapshot?.session_summary,
+  ].filter(Boolean).join(" "));
+}
+
+function hasLearningEvidence(log: LogEntry) {
+  return Boolean(findLearningFragment(
+    [
+      log.verification_summary,
+      log.result_summary,
+      log.detail,
+      log.final_answer,
+      log.context_snapshot?.knowledge_digest,
+      log.context_snapshot?.memory_digest,
+      log.metadata?.next_step,
+    ],
+    [LEARNING_GRASP_RE, LEARNING_REVIEW_RE, LEARNING_NEXT_RE],
+  ));
+}
+
+function isProjectAnswerFalsePositive(log: LogEntry) {
+  const toolName = log.tool_call_snapshot?.tool_name || log.tool_name || "";
+  const text = [log.metadata?.task_title, log.summary, log.result_summary, log.verification_summary].filter(Boolean).join(" ");
+  return toolName === "project_answer" && PROJECT_DOC_RE.test(text);
+}
+
+function findLearningFragment(sources: Array<string | undefined>, matchers: RegExp[]) {
+  for (const source of sources) {
+    for (const fragment of splitLearningFragments(source)) {
+      if (!matchers.some((matcher) => matcher.test(fragment))) continue;
+      if (!isUsableLearningFragment(fragment)) continue;
+      return fragment;
+    }
+  }
+  return "";
+}
+
+function splitLearningFragments(source?: string) {
+  return (source || "")
+    .split(/[\n。；]/)
+    .map((fragment) => cleanLearningFragment(fragment))
+    .filter(Boolean);
+}
+
+function cleanLearningFragment(fragment: string) {
+  return fragment
+    .replace(/\s+/g, " ")
+    .replace(/^(验证通过[:：]|已验证[:：]|结果[:：]|摘要[:：]|最近摘要[:：]|当前结论[:：]|上一步结果摘要[:：]|最近压缩摘要[:：])/, "")
+    .replace(/^(当前目标[:：]|当前计划[:：]|最近观察[:：]|文件[:：]|片段[:：])/, "")
+    .trim();
+}
+
+function isUsableLearningFragment(fragment: string) {
+  if (fragment.length < 6) return false;
+  if (/^[A-Z]:\\/.test(fragment)) return false;
+  if (fragment.includes("Docs 导航")) return false;
+  return !PROJECT_DOC_RE.test(fragment) || LEARNING_INTENT_RE.test(fragment);
+}
+
+function shortLearningText(value: string) {
+  return value.length > 18 ? `${value.slice(0, 18)}...` : value;
 }

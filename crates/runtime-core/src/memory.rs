@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::memory_schema::{StructuredMemoryEntry, canonical_kind};
+use crate::memory_schema::{canonical_kind, StructuredMemoryEntry, MEMORY_GOVERNANCE_VERSION};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
 use crate::sqlite_store::{list_memory_entries_sqlite, write_memory_entry_sqlite};
 use crate::storage::{append_jsonl, read_jsonl};
@@ -23,6 +23,11 @@ pub(crate) struct MemoryEntry {
     pub source_title: String,
     pub source_event_type: String,
     pub source_artifact_path: String,
+    pub governance_version: String,
+    pub governance_reason: String,
+    pub governance_source: String,
+    pub governance_at: String,
+    pub archive_reason: String,
     pub verified: bool,
     pub priority: i32,
     pub archived: bool,
@@ -41,8 +46,9 @@ pub(crate) fn append_memory_entry(request: &RunRequest, entry: &MemoryEntry) -> 
     if should_archive_memory_entry(entry) {
         return Err("命中低价值运行时记忆治理规则，跳过写入。".to_string());
     }
-    let record = structured_memory_entry(entry);
-    write_memory_entry_sqlite(request, entry)?;
+    let normalized = normalized_memory_entry(entry);
+    let record = structured_memory_entry(&normalized);
+    write_memory_entry_sqlite(request, &normalized)?;
     append_jsonl(memory_file_path(request), &record)?;
     append_jsonl(long_term_memory_file_path(request), &record)
 }
@@ -70,8 +76,13 @@ fn to_memory_entry(entry: StructuredMemoryEntry) -> MemoryEntry {
     let created_at = fallback_time(&entry.created_at, &entry.timestamp, &timestamp);
     let updated_at = fallback_time(&entry.updated_at, &created_at, &timestamp);
     let archived_at = archived_at(&entry);
+    let governance_version = entry.governance_version.clone();
+    let governance_reason = entry.governance_reason.clone();
+    let governance_source = entry.governance_source.clone();
+    let governance_at = entry.governance_at.clone();
+    let archive_reason = entry.archive_reason.clone();
     let source_run_id = entry.source_run_id.clone();
-    MemoryEntry {
+    normalized_memory_entry(&MemoryEntry {
         id: entry.id,
         kind: kind.clone(),
         title: fallback_text(&entry.title, &summary, &kind),
@@ -86,6 +97,11 @@ fn to_memory_entry(entry: StructuredMemoryEntry) -> MemoryEntry {
         source_title,
         source_event_type: entry.source_event_type,
         source_artifact_path: entry.source_artifact_path,
+        governance_version,
+        governance_reason,
+        governance_source,
+        governance_at,
+        archive_reason,
         verified: entry.verified,
         priority: entry.priority,
         archived: entry.archived,
@@ -93,7 +109,7 @@ fn to_memory_entry(entry: StructuredMemoryEntry) -> MemoryEntry {
         created_at,
         updated_at,
         timestamp,
-    }
+    })
 }
 
 fn structured_memory_entry(entry: &MemoryEntry) -> StructuredMemoryEntry {
@@ -110,6 +126,11 @@ fn structured_memory_entry(entry: &MemoryEntry) -> StructuredMemoryEntry {
         source_title: entry.source_title.clone(),
         source_event_type: entry.source_event_type.clone(),
         source_artifact_path: entry.source_artifact_path.clone(),
+        governance_version: entry.governance_version.clone(),
+        governance_reason: entry.governance_reason.clone(),
+        governance_source: entry.governance_source.clone(),
+        governance_at: entry.governance_at.clone(),
+        archive_reason: entry.archive_reason.clone(),
         verified: entry.verified,
         priority: entry.priority,
         archived: entry.archived,
@@ -260,7 +281,7 @@ fn build_seed_memory(
     summary: &str,
     content: &str,
 ) -> MemoryEntry {
-    MemoryEntry {
+    normalized_memory_entry(&MemoryEntry {
         id: format!("seed-{id_suffix}"),
         kind: kind.to_string(),
         title: title.to_string(),
@@ -275,6 +296,11 @@ fn build_seed_memory(
         source_title: title.to_string(),
         source_event_type: String::new(),
         source_artifact_path: "docs/README.md".to_string(),
+        governance_version: String::new(),
+        governance_reason: String::new(),
+        governance_source: String::new(),
+        governance_at: String::new(),
+        archive_reason: String::new(),
         verified: true,
         priority: 100,
         archived: false,
@@ -282,7 +308,80 @@ fn build_seed_memory(
         created_at: "9999990000000".to_string(),
         updated_at: "9999990000000".to_string(),
         timestamp: "9999990000000".to_string(),
+    })
+}
+
+pub(crate) fn normalized_memory_entry(entry: &MemoryEntry) -> MemoryEntry {
+    let mut item = entry.clone();
+    let source = derived_governance_source(&item);
+    let reason = derived_governance_reason(&item);
+    item.governance_version = choose_text(&[&item.governance_version, MEMORY_GOVERNANCE_VERSION]);
+    item.governance_source = choose_text(&[&item.governance_source, &source]);
+    item.governance_reason = choose_text(&[&item.governance_reason, &reason]);
+    item.governance_at = choose_text(&[
+        &item.governance_at,
+        &item.updated_at,
+        &item.created_at,
+        &item.timestamp,
+    ]);
+    item.archive_reason = normalize_archive_reason(&item);
+    item
+}
+
+fn derived_governance_source(entry: &MemoryEntry) -> String {
+    match entry.source_type.as_str() {
+        "seed" => "seed_baseline".to_string(),
+        "runtime" if entry.source_event_type == "memory_written" => {
+            "runtime_manual_write".to_string()
+        }
+        "runtime" if entry.source_event_type == "run_failed" => {
+            "runtime_failure_lesson".to_string()
+        }
+        "runtime" if entry.source_event_type == "run_finished" => {
+            "runtime_finish_memory".to_string()
+        }
+        "runtime" if entry.source_event_type == "verification_completed" => {
+            "runtime_verified_memory".to_string()
+        }
+        "runtime" => "runtime_memory".to_string(),
+        _ => "memory_append".to_string(),
     }
+}
+
+fn derived_governance_reason(entry: &MemoryEntry) -> String {
+    match entry.source_type.as_str() {
+        "seed" => "基线记忆已按当前治理版本固化。".to_string(),
+        "runtime" if entry.source_event_type == "memory_written" => {
+            "用户显式写入长期记忆。".to_string()
+        }
+        "runtime" if entry.source_event_type == "run_failed" => {
+            "失败教训已纳入长期记忆治理。".to_string()
+        }
+        "runtime" if entry.source_event_type == "run_finished" => {
+            "任务结果已按长期记忆治理规则沉淀。".to_string()
+        }
+        "runtime" if entry.source_event_type == "verification_completed" => {
+            "验证通过后已沉淀长期记忆。".to_string()
+        }
+        _ => "记忆记录已按当前治理版本写入。".to_string(),
+    }
+}
+
+fn normalize_archive_reason(entry: &MemoryEntry) -> String {
+    if !entry.archived {
+        return String::new();
+    }
+    choose_text(&[&entry.archive_reason, "当前记录已标记为归档。"])
+}
+
+fn choose_text(values: &[&str]) -> String {
+    values
+        .iter()
+        .find_map(|value| {
+            let text = value.trim();
+            (!text.is_empty()).then_some(text.to_string())
+        })
+        .unwrap_or_default()
 }
 
 fn should_skip_memory_entry(query_text: &str, entry: &MemoryEntry) -> bool {

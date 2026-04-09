@@ -29,8 +29,19 @@ func main() {
 	eventBus := session.NewEventBus(root)
 	settingsStore := state.NewSettingsStore(root, cfg)
 	confirmationStore := state.NewConfirmationStore()
+	credentialStore := state.NewProviderCredentialStore(root)
+	runtimeStore := state.NewRuntimeProviderStore(root)
 
-	if err := http.ListenAndServe(addr, api.NewRouter(root, cfg, runtimeClient, eventBus, settingsStore, confirmationStore)); err != nil {
+	if err := http.ListenAndServe(addr, api.NewRouter(
+		root,
+		cfg,
+		runtimeClient,
+		eventBus,
+		settingsStore,
+		confirmationStore,
+		credentialStore,
+		runtimeStore,
+	)); err != nil {
 		fmt.Fprintf(os.Stderr, "[local-agent] gateway stopped: %v\n", err)
 		os.Exit(1)
 	}

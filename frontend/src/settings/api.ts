@@ -3,6 +3,17 @@ import {
   ExternalConnectionActionRequest,
   ExternalConnectionActionResponse,
   ModelRef,
+  ProviderApplyRequest,
+  ProviderApplyResponse,
+  ProviderCredentialStatus,
+  ProviderRemoveRequest,
+  ProviderRemoveResponse,
+  ProviderSaveRequest,
+  ProviderSaveResponse,
+  ProviderSettingsItem,
+  ProviderSettingsResponse,
+  ProviderTestRequest,
+  ProviderTestResponse,
   SettingsResponse,
 } from "../shared/contracts";
 
@@ -37,6 +48,30 @@ export async function updateSettings(payload: UpdateSettingsPayload): Promise<Se
   }
 
   return normalizeSettingsResponse(await response.json());
+}
+
+export async function fetchProviderSettings(signal?: AbortSignal): Promise<ProviderSettingsResponse> {
+  const response = await fetch("/api/v1/settings/providers", { signal });
+  if (!response.ok) {
+    throw new Error(`加载模型服务设置失败: ${await readErrorText(response)}`);
+  }
+  return normalizeProviderSettings(await response.json());
+}
+
+export function testProviderConnection(payload: ProviderTestRequest) {
+  return postProviderAction<ProviderTestResponse>("/api/v1/settings/providers/test", payload);
+}
+
+export function saveProviderCredential(payload: ProviderSaveRequest) {
+  return postProviderAction<ProviderSaveResponse>("/api/v1/settings/providers/save", payload);
+}
+
+export function applyProviderCredential(payload: ProviderApplyRequest) {
+  return postProviderAction<ProviderApplyResponse>("/api/v1/settings/providers/apply", payload);
+}
+
+export function removeProviderCredential(payload: ProviderRemoveRequest) {
+  return postProviderAction<ProviderRemoveResponse>("/api/v1/settings/providers/remove", payload);
 }
 
 export async function exportSettingsSnapshot(settings: SettingsResponse) {
@@ -103,6 +138,18 @@ async function readErrorText(response: Response): Promise<string> {
   return text || String(response.status);
 }
 
+async function postProviderAction<T>(url: string, payload: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorText(response));
+  }
+  return response.json() as Promise<T>;
+}
+
 function normalizeSettingsResponse(payload: unknown): SettingsResponse {
   const data = payload as SettingsResponse;
   return {
@@ -112,5 +159,27 @@ function normalizeSettingsResponse(payload: unknown): SettingsResponse {
     available_workspaces: data.available_workspaces ?? [],
     external_connections: data.external_connections ?? [],
     providers: data.providers ?? [],
+  };
+}
+
+function normalizeProviderSettings(payload: unknown): ProviderSettingsResponse {
+  const data = payload as ProviderSettingsResponse;
+  return {
+    active_provider_id: data.active_provider_id,
+    providers: (data.providers ?? []).map(normalizeProviderItem),
+  };
+}
+
+function normalizeProviderItem(item: ProviderSettingsItem): ProviderSettingsItem {
+  return {
+    ...item,
+    credential_status: normalizeCredentialStatus(item.credential_status),
+  };
+}
+
+function normalizeCredentialStatus(status: ProviderCredentialStatus): ProviderCredentialStatus {
+  return {
+    ...status,
+    last_test_status: status.last_test_status ?? "idle",
   };
 }

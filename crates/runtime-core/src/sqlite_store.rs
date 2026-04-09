@@ -1,9 +1,9 @@
 use crate::contracts::RunRequest;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::MemoryEntry;
+use crate::memory::{normalized_memory_entry, MemoryEntry};
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use std::collections::BTreeSet;
 use std::fs;
 
@@ -45,32 +45,19 @@ where
 pub(crate) fn insert_memory_entry(conn: &Connection, entry: &MemoryEntry) -> Result<(), String> {
     conn.execute(
         "insert or ignore into long_term_memory (
-            id, workspace_id, memory_type, title, summary, content, source, source_run_id,
-            source_type, source_title, source_event_type, source_artifact_path, verified,
-            priority, archived, archived_at, created_at, updated_at, scope, session_id, timestamp
-        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)",
+            id, workspace_id, memory_type, title, summary, content, source, source_run_id, source_type,
+            source_title, source_event_type, source_artifact_path, governance_version, governance_reason,
+            governance_source, governance_at, archive_reason, verified, priority, archived, archived_at,
+            created_at, updated_at, scope, session_id, timestamp
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
         params![
-            entry.id,
-            entry.workspace_id,
-            entry.kind,
-            entry.title,
-            entry.summary,
-            entry.content,
-            entry.source,
-            entry.source_run_id,
-            entry.source_type,
-            entry.source_title,
-            entry.source_event_type,
-            entry.source_artifact_path,
-            bool_flag(entry.verified),
-            entry.priority,
-            bool_flag(entry.archived),
-            entry.archived_at,
-            entry.created_at,
-            entry.updated_at,
-            entry.scope,
-            entry.session_id,
-            entry.timestamp
+            entry.id, entry.workspace_id, entry.kind, entry.title, entry.summary, entry.content,
+            entry.source, entry.source_run_id, entry.source_type, entry.source_title,
+            entry.source_event_type, entry.source_artifact_path, entry.governance_version,
+            entry.governance_reason, entry.governance_source, entry.governance_at,
+            entry.archive_reason, bool_flag(entry.verified), entry.priority,
+            bool_flag(entry.archived), entry.archived_at, entry.created_at, entry.updated_at,
+            entry.scope, entry.session_id, entry.timestamp
         ],
     )
     .map(|_| ())
@@ -122,9 +109,9 @@ fn load_memory_entries(
     let mut statement = conn
         .prepare(
             "select id, memory_type, title, summary, content, scope, workspace_id, session_id,
-             source_run_id, source, source_type, source_title, source_event_type,
-             source_artifact_path, verified, priority, archived, archived_at,
-             created_at, updated_at, timestamp
+             source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
+             governance_version, governance_reason, governance_source, governance_at, archive_reason,
+             verified, priority, archived, archived_at, created_at, updated_at, timestamp
              from long_term_memory where workspace_id = ?1 order by priority desc, updated_at desc",
         )
         .map_err(|error| error.to_string())?;
@@ -169,7 +156,8 @@ fn init_schema(conn: &Connection) -> Result<(), String> {
         conn.execute(statement, [])
             .map_err(|error| error.to_string())?;
     }
-    run_memory_migrations(conn)
+    run_memory_migrations(conn)?;
+    backfill_memory_governance(conn)
 }
 
 fn cleanup_workspace_records(conn: &Connection, workspace_id: &str) -> Result<(), String> {
@@ -205,19 +193,34 @@ fn map_memory_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryEntry> {
         source_title: row.get(11)?,
         source_event_type: row.get(12)?,
         source_artifact_path: row.get(13)?,
-        verified: row.get::<_, i32>(14)? != 0,
-        priority: row.get(15)?,
-        archived: row.get::<_, i32>(16)? != 0,
-        archived_at: row.get(17)?,
-        created_at: row.get(18)?,
-        updated_at: row.get(19)?,
-        timestamp: row.get(20)?,
+        governance_version: row.get(14)?,
+        governance_reason: row.get(15)?,
+        governance_source: row.get(16)?,
+        governance_at: row.get(17)?,
+        archive_reason: row.get(18)?,
+        verified: row.get::<_, i32>(19)? != 0,
+        priority: row.get(20)?,
+        archived: row.get::<_, i32>(21)? != 0,
+        archived_at: row.get(22)?,
+        created_at: row.get(23)?,
+        updated_at: row.get(24)?,
+        timestamp: row.get(25)?,
     })
 }
 
 fn run_memory_migrations(conn: &Connection) -> Result<(), String> {
     for statement in MEMORY_MIGRATIONS {
         apply_memory_migration(conn, statement)?;
+    }
+    Ok(())
+}
+
+fn backfill_memory_governance(conn: &Connection) -> Result<(), String> {
+    for entry in pending_governance_entries(conn)? {
+        let normalized = normalized_memory_entry(&entry);
+        if governance_changed(&entry, &normalized) {
+            update_memory_governance(conn, &normalized)?;
+        }
     }
     Ok(())
 }
@@ -258,6 +261,22 @@ where
         items.push(row.map_err(|error| error.to_string())?);
     }
     Ok(items)
+}
+
+fn pending_governance_entries(conn: &Connection) -> Result<Vec<MemoryEntry>, String> {
+    let sql = "select id, memory_type, title, summary, content, scope, workspace_id, session_id,
+               source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
+               governance_version, governance_reason, governance_source, governance_at, archive_reason,
+               verified, priority, archived, archived_at, created_at, updated_at, timestamp
+               from long_term_memory
+               where trim(governance_version) = '' or trim(governance_reason) = ''
+               or trim(governance_source) = '' or trim(governance_at) = ''
+               or (archived != 0 and trim(archive_reason) = '')";
+    let mut statement = conn.prepare(sql).map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map([], map_memory_entry)
+        .map_err(|error| error.to_string())?;
+    collect_rows(rows)
 }
 
 fn load_memory_entries_for_workspace(
@@ -309,6 +328,14 @@ fn duplicate_memory_ids(items: Vec<MemoryEntry>) -> Vec<String> {
         .collect()
 }
 
+fn governance_changed(current: &MemoryEntry, normalized: &MemoryEntry) -> bool {
+    current.governance_version != normalized.governance_version
+        || current.governance_reason != normalized.governance_reason
+        || current.governance_source != normalized.governance_source
+        || current.governance_at != normalized.governance_at
+        || current.archive_reason != normalized.archive_reason
+}
+
 fn duplicate_knowledge_ids(items: Vec<KnowledgeRecord>) -> Vec<String> {
     let mut seen = BTreeSet::new();
     items
@@ -322,6 +349,25 @@ fn stale_knowledge_id(seen: &mut BTreeSet<String>, item: KnowledgeRecord) -> Opt
     let recursive = item.source.starts_with("run:")
         && (item.summary.contains("文件：run:") || item.content.contains("文件：run:"));
     (recursive || is_runtime_generated_knowledge(&item) || !seen.insert(key)).then_some(item.id)
+}
+
+fn update_memory_governance(conn: &Connection, entry: &MemoryEntry) -> Result<(), String> {
+    conn.execute(
+        "update long_term_memory
+         set governance_version = ?1, governance_reason = ?2, governance_source = ?3,
+             governance_at = ?4, archive_reason = ?5
+         where id = ?6",
+        params![
+            entry.governance_version,
+            entry.governance_reason,
+            entry.governance_source,
+            entry.governance_at,
+            entry.archive_reason,
+            entry.id
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
 }
 
 fn stale_memory_id(seen: &mut BTreeSet<String>, item: MemoryEntry) -> Option<String> {
@@ -367,7 +413,11 @@ fn decode_tags(value: String) -> Vec<String> {
 }
 
 fn bool_flag(value: bool) -> i32 {
-    if value { 1 } else { 0 }
+    if value {
+        1
+    } else {
+        0
+    }
 }
 
 fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
@@ -446,6 +496,11 @@ const SCHEMA_STATEMENTS: [&str; 8] = [
         source_title text not null default '',
         source_event_type text not null default '',
         source_artifact_path text not null default '',
+        governance_version text not null default '',
+        governance_reason text not null default '',
+        governance_source text not null default '',
+        governance_at text not null default '',
+        archive_reason text not null default '',
         verified integer not null default 0,
         priority integer not null default 0,
         archived integer not null default 0,
@@ -480,9 +535,14 @@ const SCHEMA_STATEMENTS: [&str; 8] = [
     "create index if not exists idx_knowledge_workspace_updated on knowledge_base (workspace_id, updated_at)",
 ];
 
-const MEMORY_MIGRATIONS: [&str; 4] = [
+const MEMORY_MIGRATIONS: [&str; 9] = [
     "alter table long_term_memory add column source_title text not null default ''",
     "alter table long_term_memory add column source_event_type text not null default ''",
     "alter table long_term_memory add column source_artifact_path text not null default ''",
+    "alter table long_term_memory add column governance_version text not null default ''",
+    "alter table long_term_memory add column governance_reason text not null default ''",
+    "alter table long_term_memory add column governance_source text not null default ''",
+    "alter table long_term_memory add column governance_at text not null default ''",
+    "alter table long_term_memory add column archive_reason text not null default ''",
     "alter table long_term_memory add column archived_at text not null default ''",
 ];

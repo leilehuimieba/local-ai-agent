@@ -1,4 +1,4 @@
-# 本地智能体 - MVP 功能清单 V1
+﻿# 本地智能体 - MVP 功能清单 V1
 
 更新时间：2026-03-31
 
@@ -547,7 +547,7 @@
 2. `docs/03-runtime/Rust运行时设计草案_V1.md`
 3. `docs/04-api/API与事件合同草案_V1.md`
 4. `docs/05-migration/源仓库迁移边界_V1.md`
-5. `docs/06-development/开发顺序与里程碑_V1.md`
+5. `docs/archive/06-development/开发顺序与里程碑_V1.md`
 6. `docs/07-test/验收标准_V1.md`
 
 ---

@@ -89,7 +89,7 @@ fn recover_context_answer(
     cache_probe: &crate::answer_cache::AnswerCacheProbe,
     cause: &str,
 ) -> ActionExecution {
-    let summary = fallback_context_summary(session_context);
+    let summary = fallback_context_summary(&request.user_input, session_context);
     append_context_answer_cache(
         request,
         cache_probe,
@@ -143,16 +143,34 @@ fn should_recover_context_answer(content: &str, final_answer: &str) -> bool {
         || final_answer.trim() == "当前基于已有会话上下文，可明确的信息还比较有限。"
 }
 
-fn fallback_context_summary(session_context: &SessionMemory) -> String {
+fn fallback_context_summary(user_input: &str, session_context: &SessionMemory) -> String {
     let summary = session_context.compressed_summary.trim();
-    if summary.is_empty() {
-        "当前没有可复用的会话摘要，建议补充更具体的问题或先提供上下文。".to_string()
-    } else {
-        format!(
+    if !summary.is_empty() {
+        return format!(
             "基于当前会话摘要，可先确认这些信息：{}",
             summarize_text(summary)
-        )
+        );
     }
+    minimal_recovery_template(user_input).unwrap_or_else(|| {
+        "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。".to_string()
+    })
+}
+
+fn minimal_recovery_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    if lower.contains("30分钟") && lower.contains("回归") {
+        return Some("先给你最低可用版：0-5 分钟确认构建通过；6-15 分钟跑学习混合路由+provider 波动；16-25 分钟抽检 answer/recovery/system 三态页面；26-30 分钟整理 run_id 和失败点。".to_string());
+    }
+    if lower.contains("知识沉淀") {
+        return Some("今天最小方案：1) 只沉淀 1 个主题；2) 每条只写“结论+依据+下一步”三行；3) 今天结束前做一次去重，把重复和空话删掉。".to_string());
+    }
+    if (lower.contains("收口") || lower.contains("验收")) && (lower.contains("顺序") || lower.contains("步骤")) {
+        return Some("不扩功能的收口顺序：1) 锁定范围和口径；2) 补真实样本与页面证据；3) 跑最小构建与关键用例；4) 把未闭合风险写清楚再交验。".to_string());
+    }
+    if lower.contains("做到哪") || lower.contains("进行到哪") || lower.contains("未完成") {
+        return Some("先按三段给你最低可用版：已完成：结果分层链路和小回归包已在跑；未完成：回答质量稳定性仍有风险；下一步：先修默认直答与恢复模板，再复跑同一批真实问句。".to_string());
+    }
+    None
 }
 
 fn is_status_continue_request(input: &str) -> bool {

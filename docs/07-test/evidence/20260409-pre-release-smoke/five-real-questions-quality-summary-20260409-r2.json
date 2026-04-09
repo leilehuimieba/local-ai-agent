@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-04-09 21:38:30",
+  "suite": "five_real_questions_quality_quickcheck_r2",
+  "total_samples": 5,
+  "passed_samples": 5,
+  "failed_samples": 0,
+  "pass_rate": 1.0,
+  "plan_tool_distribution": {
+    "session_context": 5,
+    "agent_resolve": 0
+  },
+  "highlights": [
+    "5 条问句全部命中 session_context",
+    "未出现最大执行轮次失败",
+    "recovery 场景已返回最低可用可执行答案"
+  ],
+  "sample_scores": [
+    { "sample_id": "Q1", "run_id": "run-1775741851736-99", "result_mode": "recovery", "score": 3, "verdict": "passed" },
+    { "sample_id": "Q2", "run_id": "run-1775741855378-102", "result_mode": "recovery", "score": 3, "verdict": "passed" },
+    { "sample_id": "Q3", "run_id": "run-1775741860307-105", "result_mode": "answer", "score": 3, "verdict": "passed" },
+    { "sample_id": "Q4", "run_id": "run-1775741868043-108", "result_mode": "recovery", "score": 3, "verdict": "passed" },
+    { "sample_id": "Q5", "run_id": "run-1775741873694-111", "result_mode": "recovery", "score": 3, "verdict": "passed" }
+  ],
+  "raw_file": "five-real-questions-raw-20260409-quick-r2.json",
+  "report_file": "five-real-questions-quality-quickcheck-20260409-r2.md",
+  "compare_file": "five-real-questions-quality-compare-20260409.md"
+}

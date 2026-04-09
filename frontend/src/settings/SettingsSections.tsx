@@ -1,12 +1,17 @@
 import { useState } from "react";
+import { countMemoryFacets, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
 import { ResourcesEntrySection } from "../resources/components";
-import { ExternalConnectionSlot, MemoryEntry, SettingsResponse } from "../shared/contracts";
+import { ExternalConnectionSlot, MemoryEntry, ProviderSettingsResponse, SettingsResponse } from "../shared/contracts";
 import { EmptyStateBlock, MetaGrid, SectionHeader, StatusPill } from "../ui/primitives";
 import { exportRunLogs, exportSettingsSnapshot, openDiagnosticsSnapshot } from "./api";
-import { SettingsActionFeedback, SettingsActionKind } from "./useSettings";
+import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
+import { ProviderActionState, SettingsActionFeedback, SettingsActionKind } from "./useSettings";
 
 type SettingsModulesProps = {
   settings: SettingsResponse;
+  providerSettings: ProviderSettingsResponse | null;
+  providerBootstrapError: string | null;
+  providerActions: Record<string, ProviderActionState>;
   isRunning: boolean;
   pendingAction: SettingsActionFeedback | null;
   actionError: SettingsActionFeedback | null;
@@ -25,12 +30,17 @@ type SettingsModulesProps = {
   onRevokeDirectoryApproval: (rootPath: string) => void;
   onRunExternalConnectionAction: (slotId: string, action: "validate" | "recheck") => void;
   onCheckDiagnostics: () => void;
+  onRefreshProviderSettings: () => Promise<unknown>;
+  onTestProvider: (providerId: string, apiKey: string, baseURL?: string) => Promise<unknown>;
+  onSaveProvider: (providerId: string, apiKey: string) => Promise<unknown>;
+  onApplyProvider: (providerId: string) => Promise<unknown>;
+  onRemoveProvider: (providerId: string) => Promise<unknown>;
   onDeleteMemory: (memoryId: string) => void;
   onRefreshMemories: () => void;
   isActionPending: (action: SettingsActionKind) => boolean;
 };
 
-const SETTINGS_MODULE_ORDER = ["runtime", "model", "workspace", "risk", "resources", "diagnostics"] as const;
+const SETTINGS_MODULE_ORDER = ["runtime", "model", "provider", "workspace", "risk", "resources", "diagnostics"] as const;
 type DiagnosticsActionKey = "logs" | "settings" | "snapshot";
 type DiagnosticsFeedback = { tone: "running" | "failed" | "completed"; detail: string };
 
@@ -49,16 +59,32 @@ function buildSettingsModules(props: SettingsModulesProps) {
 function createSettingsModule(key: typeof SETTINGS_MODULE_ORDER[number], props: SettingsModulesProps) {
   if (key === "runtime") return { key, node: <RuntimeModule key={key} settings={props.settings} /> };
   if (key === "model") return { key, node: <ModelModule key={key} props={props} /> };
+  if (key === "provider") return { key, node: <ProviderModule key={key} props={props} /> };
   if (key === "workspace") return { key, node: <WorkspaceModule key={key} props={props} /> };
   if (key === "risk") return { key, node: <RiskModule key={key} props={props} /> };
   if (key === "resources") return { key, node: <ResourcesModule key={key} props={props} /> };
   return { key, node: <DiagnosticsModule key={key} props={props} /> };
 }
 
+function ProviderModule(props: { props: SettingsModulesProps }) {
+  return (
+    <ProviderCredentialsSection
+      providerSettings={props.props.providerSettings}
+      providerBootstrapError={props.props.providerBootstrapError}
+      providerActions={props.props.providerActions}
+      onRefreshProviderSettings={props.props.onRefreshProviderSettings}
+      onTestProvider={props.props.onTestProvider}
+      onSaveProvider={props.props.onSaveProvider}
+      onApplyProvider={props.props.onApplyProvider}
+      onRemoveProvider={props.props.onRemoveProvider}
+    />
+  );
+}
+
 function RuntimeModule(props: { settings: SettingsResponse }) {
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Runtime Environment" badge={props.settings.runtime_status.ok ? "已完成" : "已断开"} />
+      <ModuleHeader title="运行环境" badge={props.settings.runtime_status.ok ? "已完成" : "已断开"} />
       <MetaGrid items={buildRuntimeRows(props.settings)} />
     </section>
   );
@@ -68,7 +94,7 @@ function ModelModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["model", "mode"]);
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Model Providers and Mode" badge={badge} />
+      <ModuleHeader title="模型与模式" badge={badge} />
       <ModelControls props={props.props} />
       <ActionHint props={props.props} actions={["model", "mode"]} />
       <ModelSummary settings={props.props.settings} />
@@ -103,7 +129,7 @@ function ModelSummary(props: { settings: SettingsResponse }) {
   return (
     <div className="settings-control-grid">
       <div className="detail-card">
-        <strong>当前 Provider</strong>
+        <strong>当前服务方</strong>
         <p>{props.settings.model.provider_id}</p>
       </div>
       <div className="detail-card muted-card">
@@ -118,7 +144,7 @@ function WorkspaceModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["workspace", "revokeApproval"]);
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Workspace and Approvals" badge={badge} />
+      <ModuleHeader title="工作区与授权" badge={badge} />
       <WorkspaceControlGrid props={props.props} />
       <ActionHint props={props.props} actions={["workspace", "revokeApproval"]} />
       <ApprovalList props={props.props} />
@@ -178,7 +204,7 @@ function RiskModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["directoryPrompt", "riskLevel"]);
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Risk and Permissions" badge={badge} />
+      <ModuleHeader title="风险与权限" badge={badge} />
       <div className="settings-control-grid">
         <ToggleTile title="新目录首次接触提醒" description="进入新目录时，先提示授权边界。" checked={props.props.settings.directory_prompt_enabled} isRunning={props.props.isActionPending("directoryPrompt")} onChange={props.props.onDirectoryPromptEnabledChange} />
         <ToggleTile title="显示风险等级" description="在确认流中展示风险等级。" checked={props.props.settings.show_risk_level} isRunning={props.props.isActionPending("riskLevel")} onChange={props.props.onShowRiskLevelChange} />
@@ -192,7 +218,8 @@ function ResourcesModule(props: { props: SettingsModulesProps }) {
   const actionState = readMemoryActionState(props.props);
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Memory and Resources" badge={props.props.settings.memory_policy.enabled ? "已启用" : "未启用"} />
+      <ModuleHeader title="记忆与资源" badge={props.props.settings.memory_policy.enabled ? "已启用" : "未启用"} />
+      <MemoryOverviewCards memories={props.props.memories} />
       <ResourcesEntrySection
         actionState={actionState}
         deletingId={props.props.deletingMemoryId}
@@ -206,6 +233,23 @@ function ResourcesModule(props: { props: SettingsModulesProps }) {
       />
       <ExternalConnectionsSection props={props.props} />
     </section>
+  );
+}
+
+function MemoryOverviewCards(props: { memories: MemoryEntry[] }) {
+  const latest = props.memories[0];
+  return (
+    <div className="settings-control-grid">
+      <div className="detail-card muted-card">
+        <strong>偏好与教训摘要</strong>
+        <MetaGrid items={buildMemoryOverviewRows(props.memories)} />
+      </div>
+      <div className="detail-card">
+        <strong>最近记忆动作</strong>
+        <p>{latest ? `${readMemoryActivityLabel(latest)} / ${readMemoryFacetLabel(latest)}` : "当前没有新的记忆动作。"}</p>
+        <p>{latest ? `治理状态：${readMemoryGovernanceLabel(latest)}` : "治理状态会在写入、召回和归档后更新。"}</p>
+      </div>
+    </div>
   );
 }
 
@@ -258,7 +302,7 @@ function ExternalConnectionItem(props: {
 function DiagnosticsModule(props: { props: SettingsModulesProps }) {
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="Diagnostics and Export" badge={readDiagnosticsBadge(props.props)} />
+      <ModuleHeader title="诊断与导出" badge={readDiagnosticsBadge(props.props)} />
       <DiagnosticsHealthSummary settings={props.props.settings} />
       <DiagnosticsActions props={props.props} />
       <MetaGrid items={buildDiagnosticsRows(props.props.settings)} />
@@ -428,20 +472,30 @@ function readRuntimeVersion(settings: SettingsResponse) {
 function buildRuntimeRows(settings: SettingsResponse) {
   return [
     { label: "应用", value: settings.app_name || "未提供" },
-    { label: "Runtime", value: readRuntimeLabel(settings) },
+    { label: "运行时", value: readRuntimeLabel(settings) },
     { label: "版本", value: readRuntimeVersion(settings) },
-    { label: "Gateway", value: String(settings.ports.gateway || 0) },
-    { label: "Runtime Port", value: String(settings.ports.runtime || 0) },
+    { label: "网关端口", value: String(settings.ports.gateway || 0) },
+    { label: "运行时端口", value: String(settings.ports.runtime || 0) },
     { label: "工作区", value: settings.workspace.name || "未提供" },
+  ];
+}
+
+function buildMemoryOverviewRows(memories: MemoryEntry[]) {
+  const summary = countMemoryFacets(memories);
+  return [
+    { label: "用户偏好", value: `${summary.preferences} 条` },
+    { label: "失败教训", value: `${summary.lessons} 条` },
+    { label: "待治理", value: `${summary.pending} 条` },
+    { label: "已归档", value: `${summary.archived} 条` },
   ];
 }
 
 function buildDiagnosticsRows(settings: SettingsResponse) {
   return [
     { label: "检测时间", value: settings.diagnostics.checked_at || "未提供" },
-    { label: "Runtime", value: settings.diagnostics.runtime_reachable ? "可达" : "不可达" },
+    { label: "运行时", value: settings.diagnostics.runtime_reachable ? "可达" : "不可达" },
     { label: "版本", value: settings.diagnostics.runtime_version || "未提供" },
-    { label: "Provider", value: `${settings.diagnostics.provider_count} 个` },
+    { label: "服务方", value: `${settings.diagnostics.provider_count} 个` },
     { label: "模型", value: `${settings.diagnostics.model_count} 个` },
     { label: "工作区", value: `${settings.diagnostics.workspace_count} 个` },
     { label: "授权目录", value: `${settings.diagnostics.approved_directory_count} 个` },
@@ -451,13 +505,13 @@ function buildDiagnosticsRows(settings: SettingsResponse) {
 }
 
 function readDiagnosticsRuntimeSummary(settings: SettingsResponse) {
-  const status = settings.diagnostics.runtime_reachable ? "Runtime 当前可达" : "Runtime 当前不可达";
+  const status = settings.diagnostics.runtime_reachable ? "运行时当前可达" : "运行时当前不可达";
   return `${status}，版本 ${settings.diagnostics.runtime_version || "未提供"}。`;
 }
 
 function readDiagnosticsInventorySummary(settings: SettingsResponse) {
   const diagnostics = settings.diagnostics;
-  return `已发现 ${diagnostics.provider_count} 个 Provider、${diagnostics.model_count} 个模型、${diagnostics.workspace_count} 个工作区。`;
+  return `已发现 ${diagnostics.provider_count} 个服务方、${diagnostics.model_count} 个模型、${diagnostics.workspace_count} 个工作区。`;
 }
 
 function readDiagnosticsCheckTime(settings: SettingsResponse) {

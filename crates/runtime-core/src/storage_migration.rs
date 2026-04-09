@@ -1,7 +1,7 @@
 use crate::contracts::RunRequest;
 use crate::knowledge::is_recursive_record;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::MemoryEntry;
+use crate::memory::{normalized_memory_entry, MemoryEntry};
 use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{
@@ -90,8 +90,17 @@ fn read_legacy_memory(path: std::path::PathBuf) -> Vec<MemoryEntry> {
 
 fn legacy_memory_entry(entry: crate::memory_schema::StructuredMemoryEntry) -> MemoryEntry {
     let source_title = default_text(&entry.source_title, &entry.title, &entry.summary);
+    let governance_version = entry.governance_version.clone();
+    let governance_reason = default_text(
+        &entry.governance_reason,
+        "",
+        "历史 JSONL 记忆已导入 SQLite 并补齐审计字段。",
+    );
+    let governance_source = default_text(&entry.governance_source, "", "storage_migration");
+    let governance_at = default_text(&entry.governance_at, &entry.updated_at, &entry.timestamp);
+    let archive_reason = archive_reason(&entry);
     let archived_at = archived_at(&entry);
-    MemoryEntry {
+    normalized_memory_entry(&MemoryEntry {
         id: entry.id,
         kind: canonical_kind_for_record(&entry.memory_type, &entry.title, &entry.summary),
         title: entry.title,
@@ -106,6 +115,11 @@ fn legacy_memory_entry(entry: crate::memory_schema::StructuredMemoryEntry) -> Me
         source_title,
         source_event_type: entry.source_event_type,
         source_artifact_path: entry.source_artifact_path,
+        governance_version,
+        governance_reason,
+        governance_source,
+        governance_at,
+        archive_reason,
         verified: entry.verified,
         priority: entry.priority,
         archived: entry.archived,
@@ -113,7 +127,7 @@ fn legacy_memory_entry(entry: crate::memory_schema::StructuredMemoryEntry) -> Me
         created_at: entry.created_at,
         updated_at: entry.updated_at,
         timestamp: entry.timestamp,
-    }
+    })
 }
 
 fn normalize_knowledge_record(record: KnowledgeRecord) -> KnowledgeRecord {
@@ -149,6 +163,17 @@ fn archived_at(entry: &crate::memory_schema::StructuredMemoryEntry) -> String {
         return default_text(&entry.archived_at, &entry.updated_at, &entry.timestamp);
     }
     String::new()
+}
+
+fn archive_reason(entry: &crate::memory_schema::StructuredMemoryEntry) -> String {
+    if !entry.archived {
+        return String::new();
+    }
+    default_text(
+        &entry.archive_reason,
+        &entry.governance_reason,
+        "历史记录在迁移前已标记归档。",
+    )
 }
 
 fn dedupe_knowledge() -> impl FnMut(&KnowledgeRecord) -> bool {

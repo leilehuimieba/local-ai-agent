@@ -1,0 +1,26 @@
+{
+  "run_id": "run-1775740313939-75",
+  "session_id": "session-project-routing-check-20260409",
+  "user_input": "这个项目现在做到什么程度了？",
+  "events": [
+    {
+      "event_type": "analysis_ready",
+      "summary": "已分析用户输入",
+      "task_title": "项目问答: 这个项目现在做到什么程度了？",
+      "detail": "当前输入更像项目说明类问题，运行时将基于本地文档生成项目回答。"
+    },
+    {
+      "event_type": "plan_ready",
+      "tool_name": "project_answer",
+      "summary": "已生成当前执行计划",
+      "detail": "基于本地项目文档生成项目说明。"
+    },
+    {
+      "event_type": "run_finished",
+      "tool_name": "project_answer",
+      "completion_status": "completed",
+      "result_mode": "recovery",
+      "summary": "任务已完成"
+    }
+  ]
+}

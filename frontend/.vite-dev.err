@@ -1,0 +1,36 @@
+[2m09:47:45[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/memories[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:47:45[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:48:20[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/logs[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:49:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/memories[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:49:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:49:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/memories[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:49:06[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:49:33[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/logs[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:52:18[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/memories[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:52:18[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:52:18[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/memories[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)
+[2m09:52:18[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/settings[39m
+Error: connect ECONNREFUSED 127.0.0.1:8897
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1645:16)

@@ -1,0 +1,32 @@
+﻿[
+    {
+        "file":  "result-mode-answer.response.json",
+        "run_id":  "result-mode-answer-run",
+        "result_status":  "failed",
+        "finish_result_mode":  null,
+        "verify_result_mode":  null,
+        "verify_code":  "verification_failed",
+        "finish_final_answer":  "å¤§æ¨¡åè°ç¨å¤±è´¥ï¼provider_not_configured: provider æªé\u0085ç½®",
+        "failed_result_mode":  null
+    },
+    {
+        "file":  "result-mode-recovery.response.json",
+        "run_id":  "harness-context-true-run",
+        "result_status":  "failed",
+        "finish_result_mode":  null,
+        "verify_result_mode":  null,
+        "verify_code":  "verification_failed",
+        "finish_final_answer":  "å¤§æ¨¡åè°ç¨å¤±è´¥ï¼provider_not_configured: provider æªé\u0085ç½®",
+        "failed_result_mode":  null
+    },
+    {
+        "file":  "result-mode-system.response.json",
+        "run_id":  "result-mode-system-run",
+        "result_status":  "failed",
+        "finish_result_mode":  null,
+        "verify_result_mode":  null,
+        "verify_code":  null,
+        "finish_final_answer":  "å½åå¤äºè§å¯æ¨¡å¼ï¼ç³»ç»ä¸ä¼æ§è¡ä¿®æ¹æ§å¨ä½ãè¯·åæ¢å°æ åæ¨¡å¼æå\u0085¨æéæ¨¡å¼åéè¯ã",
+        "failed_result_mode":  null
+    }
+]

@@ -6,6 +6,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 const DOC_READ_LIMIT: usize = 4096;
 const RECENT_COMMIT_LIMIT: usize = 5;
 
@@ -355,6 +361,10 @@ fn candidate_docs() -> Vec<(&'static str, &'static str)> {
 
 fn command_succeeds(current_dir: Option<&Path>, args: &[&str]) -> bool {
     let mut command = Command::new("git");
+    #[cfg(target_os = "windows")]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
     command.args(args);
     if let Some(dir) = current_dir {
         command.current_dir(dir);
@@ -368,6 +378,10 @@ fn command_succeeds(current_dir: Option<&Path>, args: &[&str]) -> bool {
 
 fn run_git(current_dir: Option<&Path>, args: &[&str]) -> Result<String, String> {
     let mut command = Command::new("git");
+    #[cfg(target_os = "windows")]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
     command.args(args);
     if let Some(dir) = current_dir {
         command.current_dir(dir);

@@ -1,12 +1,15 @@
-import { MemoryEntry, SettingsResponse } from "../shared/contracts";
+import { MemoryEntry, ProviderSettingsResponse, SettingsResponse } from "../shared/contracts";
 import { SectionHeader } from "../ui/primitives";
 import { SettingsEmptyState, SettingsModules } from "./SettingsSections";
 import { StatusCard } from "./StatusCard";
-import { SettingsActionFeedback, SettingsActionKind } from "./useSettings";
+import { ProviderActionState, SettingsActionFeedback, SettingsActionKind } from "./useSettings";
 
 type SettingsPanelProps = {
   settings: SettingsResponse | null;
+  providerSettings: ProviderSettingsResponse | null;
   bootstrapError: string | null;
+  providerBootstrapError: string | null;
+  providerActions: Record<string, ProviderActionState>;
   isRunning: boolean;
   pendingAction: SettingsActionFeedback | null;
   actionError: SettingsActionFeedback | null;
@@ -25,6 +28,11 @@ type SettingsPanelProps = {
   onRevokeDirectoryApproval: (rootPath: string) => void;
   onRunExternalConnectionAction: (slotId: string, action: "validate" | "recheck") => void;
   onCheckDiagnostics: () => void;
+  onRefreshProviderSettings: () => Promise<unknown>;
+  onTestProvider: (providerId: string, apiKey: string, baseURL?: string) => Promise<unknown>;
+  onSaveProvider: (providerId: string, apiKey: string) => Promise<unknown>;
+  onApplyProvider: (providerId: string) => Promise<unknown>;
+  onRemoveProvider: (providerId: string) => Promise<unknown>;
   onDeleteMemory: (memoryId: string) => void;
   onRefreshMemories: () => void;
   isActionPending: (action: SettingsActionKind) => boolean;

@@ -40,3 +40,11 @@ func (s *ConfirmationStore) Delete(confirmationID string) {
 	defer s.mu.Unlock()
 	delete(s.pending, confirmationID)
 }
+
+func (s *ConfirmationStore) Take(confirmationID string) (PendingConfirmation, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	item, ok := s.pending[confirmationID]
+	delete(s.pending, confirmationID)
+	return item, ok
+}

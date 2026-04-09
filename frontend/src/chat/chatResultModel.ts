@@ -7,6 +7,8 @@ export type ResultSection = {
   title: string;
 };
 
+export type AssistantResultMode = "answer" | "recovery" | "system";
+
 type ResultField = {
   kind: ResultSection["kind"];
   text?: string;
@@ -14,11 +16,16 @@ type ResultField = {
 };
 
 export const TASK_RESULT_SLOT_ORDER = ["summary", "action", "detail", "risk", "next"] as const;
+const RECOVERY_HINT_RE = /(恢复|降级|回退|切换到|主回答未成功|恢复路径|模型输出不可用|信息不足|失败后)/;
 
 export function buildAssistantResult(content: string, event?: RunEvent) {
   if (event) return buildAssistantEventResult(content, event);
   const paragraphs = readResultParagraphs(content);
   return {
+    mode: "answer" as AssistantResultMode,
+    roleLabel: "正式回答",
+    statusTag: "正式",
+    summaryLabel: "正式回答",
     sections: orderResultSections(paragraphs.slice(1).map(toResultSection)),
     summary: paragraphs[0] || "没有附带额外结果。",
   };
@@ -40,7 +47,7 @@ export function readFailureBody(event?: RunEvent, submitError?: string | null) {
 }
 
 export function readFailureAdvice(event?: RunEvent) {
-  return event?.metadata?.next_step || "检查 Runtime、模型配置或补充更具体的任务输入。";
+  return event?.metadata?.next_step || "检查运行时、模型配置或补充更具体的任务输入。";
 }
 
 export function readRunStateHeadline(runState: RunState | undefined, event?: RunEvent) {
@@ -174,16 +181,15 @@ function readResultParagraphs(content: string) {
 }
 
 function buildAssistantEventResult(content: string, event: RunEvent) {
-  const summary = event.final_answer || content || event.summary || "没有附带额外结果。";
-  return buildResultFromFields(summary, [
-    { kind: "action", title: "当前动作", text: readAssistantAction(event) },
-    { kind: "detail", title: "结果摘要", text: readAssistantSummary(event, summary) },
-    { kind: "detail", title: "验证结果", text: event.verification_snapshot?.summary },
-    { kind: "detail", title: "停在这里", text: event.completion_reason },
-    { kind: "detail", title: "处理依据", text: event.context_snapshot?.reasoning_summary },
-    { kind: "detail", title: "产物路径", text: event.artifact_path },
-    { kind: "next", title: "下一步", text: event.metadata?.next_step },
-  ]);
+  const mode = readAssistantMode(event);
+  const summary = readAssistantSummaryLine(event, content);
+  return {
+    ...buildResultFromFields(summary, buildAssistantSections(event, mode, summary)),
+    mode,
+    roleLabel: readAssistantRoleLabel(mode),
+    statusTag: readAssistantStatusTag(mode),
+    summaryLabel: readAssistantSummaryLabel(mode),
+  };
 }
 
 function readAssistantAction(event: RunEvent) {
@@ -191,9 +197,81 @@ function readAssistantAction(event: RunEvent) {
   return event.tool_display_name || event.tool_name || event.tool_category || "";
 }
 
+function readAssistantMode(event: RunEvent): AssistantResultMode {
+  const explicit = readExplicitResultMode(event);
+  if (explicit) return explicit;
+  if (event.verification_snapshot?.code === "verified_with_recovery") return "recovery";
+  if (event.completion_status === "failed") return "system";
+  if (hasRecoverySignal(event)) return "recovery";
+  if (event.final_answer || event.metadata?.final_answer) return "answer";
+  return "system";
+}
+
+function readExplicitResultMode(event: RunEvent) {
+  const mode = event.metadata?.result_mode;
+  if (mode === "answer" || mode === "recovery" || mode === "system") return mode;
+  return null;
+}
+
+function hasRecoverySignal(event: RunEvent) {
+  return RECOVERY_HINT_RE.test([
+    event.summary,
+    event.detail,
+    event.result_summary,
+    event.completion_reason,
+  ].filter(Boolean).join(" "));
+}
+
+function readAssistantSummaryLine(event: RunEvent, content: string) {
+  return event.final_answer || event.metadata?.final_answer || content || event.summary || "没有附带额外结果。";
+}
+
+function buildAssistantSections(event: RunEvent, mode: AssistantResultMode, summary: string) {
+  if (mode === "answer") return buildAnswerSections(event, summary);
+  return buildStatusSections(event, mode, summary);
+}
+
+function buildAnswerSections(event: RunEvent, summary: string) {
+  return [
+    { kind: "detail", title: "结果说明", text: readAssistantSummary(event, summary) },
+    { kind: "detail", title: "验证结果", text: event.verification_snapshot?.summary || event.verification_summary },
+    { kind: "next", title: "建议下一步", text: event.metadata?.next_step },
+  ] as ResultField[];
+}
+
+function buildStatusSections(event: RunEvent, mode: AssistantResultMode, summary: string) {
+  return [
+    { kind: mode === "recovery" ? "risk" : "detail", title: readAssistantStateTitle(mode), text: readAssistantSummary(event, summary) },
+    { kind: "detail", title: "当前动作", text: readAssistantAction(event) },
+    { kind: "next", title: "建议下一步", text: event.metadata?.next_step || event.completion_reason },
+  ] as ResultField[];
+}
+
 function readAssistantSummary(event: RunEvent, summary: string) {
   if (event.result_summary && event.result_summary !== summary) return event.result_summary;
   return event.summary !== summary ? event.summary : "";
+}
+
+function readAssistantRoleLabel(mode: AssistantResultMode) {
+  if (mode === "recovery") return "恢复结果";
+  if (mode === "system") return "系统说明";
+  return "正式回答";
+}
+
+function readAssistantStatusTag(mode: AssistantResultMode) {
+  if (mode === "recovery") return "恢复";
+  if (mode === "system") return "说明";
+  return "正式";
+}
+
+function readAssistantSummaryLabel(mode: AssistantResultMode) {
+  if (mode === "recovery") return "恢复结果";
+  if (mode === "system") return "当前状态";
+  return "正式回答";
+}
+
+function readAssistantStateTitle(mode: AssistantResultMode) {
+  return mode === "recovery" ? "恢复说明" : "状态说明";
 }
 
 function splitResultBlock(block: string) {
