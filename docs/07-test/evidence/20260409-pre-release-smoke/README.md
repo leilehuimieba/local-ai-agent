@@ -16,6 +16,37 @@
 5 条真实问句修补后复跑：`five-real-questions-quality-quickcheck-20260409-r2.md`
 5 条真实问句前后对比：`five-real-questions-quality-compare-20260409.md`
 5 条真实问句修补后汇总：`five-real-questions-quality-summary-20260409-r2.json`
+5 条真实问句 R3 修补前样本：`five-real-questions-raw-20260409-quick-r3-before.json`
+5 条真实问句 R3 修补后样本：`five-real-questions-raw-20260409-quick-r3-after.json`
+5 条真实问句 R3 前后对比：`five-real-questions-quality-compare-20260409-r3.md`
+5 条真实问句 R3 汇总：`five-real-questions-quality-summary-20260409-r3.json`
+5 条真实问句 R4 修补前样本：`five-real-questions-raw-20260409-quick-r4-before.json`
+5 条真实问句 R4 修补后样本：`five-real-questions-raw-20260409-quick-r4-after.json`
+5 条真实问句 R4 前后对比：`five-real-questions-quality-compare-20260409-r4.md`
+5 条真实问句 R4 汇总：`five-real-questions-quality-summary-20260409-r4.json`
+5 条真实问句 R5 修补前样本：`five-real-questions-raw-20260409-quick-r5-before.json`
+5 条真实问句 R5 修补后样本：`five-real-questions-raw-20260409-quick-r5-after.json`
+5 条真实问句 R5 前后对比：`five-real-questions-quality-compare-20260409-r5.md`
+5 条真实问句 R5 汇总：`five-real-questions-quality-summary-20260409-r5.json`
+5 条真实问句 R6 修补前样本：`five-real-questions-raw-20260409-quick-r6-before.json`
+5 条真实问句 R6 修补后样本：`five-real-questions-raw-20260409-quick-r6-after.json`
+5 条真实问句 R6 前后对比：`five-real-questions-quality-compare-20260409-r6.md`
+5 条真实问句 R6 汇总：`five-real-questions-quality-summary-20260409-r6.json`
+5 条真实问句 R7 修补前样本：`five-real-questions-raw-20260409-quick-r7-before.json`
+5 条真实问句 R7 修补后样本：`five-real-questions-raw-20260409-quick-r7-after.json`
+5 条真实问句 R7 前后对比：`five-real-questions-quality-compare-20260409-r7.md`
+5 条真实问句 R7 汇总：`five-real-questions-quality-summary-20260409-r7.json`
+5 条真实问句 R8 修补前样本：`five-real-questions-raw-20260409-quick-r8-before.json`
+5 条真实问句 R8 修补后样本：`five-real-questions-raw-20260409-quick-r8-after.json`
+5 条真实问句 R8 前后对比：`five-real-questions-quality-compare-20260409-r8.md`
+5 条真实问句 R8 汇总：`five-real-questions-quality-summary-20260409-r8.json`
+5 条真实问句 R9 修补前样本：`five-real-questions-raw-20260409-quick-r9-before.json`
+5 条真实问句 R9 修补后样本：`five-real-questions-raw-20260409-quick-r9-after.json`
+5 条真实问句 R9 前后对比：`five-real-questions-quality-compare-20260409-r9.md`
+5 条真实问句 R9 汇总：`five-real-questions-quality-summary-20260409-r9.json`
+5 条真实问句 R10（新 Provider）样本：`five-real-questions-raw-20260409-quick-r10-provider.json`
+5 条真实问句 R10（新 Provider）对比：`five-real-questions-quality-compare-20260409-r10-provider.md`
+5 条真实问句 R10（新 Provider）汇总：`five-real-questions-quality-summary-20260409-r10-provider.json`
 
 ## 1) 学习问句混合路由
 
