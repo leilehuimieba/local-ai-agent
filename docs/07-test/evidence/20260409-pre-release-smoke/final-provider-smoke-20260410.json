@@ -1,0 +1,10 @@
+﻿{
+    "run_id":  "run-1775750773618-396",
+    "event":  "run_finished",
+    "completion_status":  "completed",
+    "result_mode":  "answer",
+    "verification_code":  "verified",
+    "result_summary":  "模型未下发工具调用，返回文本回答。",
+    "final_answer":  "ok",
+    "timestamp":  "2026-04-10 00:06:18"
+}

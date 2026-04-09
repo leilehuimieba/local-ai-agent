@@ -47,6 +47,8 @@
 5 条真实问句 R10（新 Provider）样本：`five-real-questions-raw-20260409-quick-r10-provider.json`
 5 条真实问句 R10（新 Provider）对比：`five-real-questions-quality-compare-20260409-r10-provider.md`
 5 条真实问句 R10（新 Provider）汇总：`five-real-questions-quality-summary-20260409-r10-provider.json`
+新 Provider 最终冒烟：`final-provider-smoke-20260410.json`
+验收单页清单：`release-ready-checklist-20260410.md`
 
 ## 1) 学习问句混合路由
 
