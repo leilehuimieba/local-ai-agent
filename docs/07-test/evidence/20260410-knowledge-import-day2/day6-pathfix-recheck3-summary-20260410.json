@@ -1,0 +1,18 @@
+﻿[
+    {
+        "prefix":  "day6-pathfix-recheck3-failed",
+        "run_id":  "run-1775789042230-2",
+        "completion_status":  "failed",
+        "result_mode":  "system",
+        "verification_code":  "verification_failed",
+        "result_summary":  "目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。"
+    },
+    {
+        "prefix":  "day6-pathfix-recheck3-ok",
+        "run_id":  "run-1775789044217-5",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "result_summary":  "文件读取成功，摘要：﻿# 本地智能体 Docs 导航\n\n更新时间：2026-04-09\n\n状态：`docs 当前导航与状态索引`\n\n使用规则：\n\n1. 先看本文，再决定读哪份文档。\n2. 不要默认把所有文档都当成“当前执行入口”。\n3. 当前有效文档优先，历史文档按需参考。\n4. 本文只负责总导航，不替代具体执行文档。\n5. 除前端专项实现外，`V1` 当前唯一上层执行口径固定为 [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development..."
+    }
+]

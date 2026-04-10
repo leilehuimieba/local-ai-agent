@@ -87,6 +87,28 @@ Case B：
 2. 不可用：2 条（q3、q5）。
 3. 不可用主因：`agent_resolve` 路径在英文自然问句下出现最大执行轮次失败，返回系统失败日志而不是最终可用回答。
 
+### 5.1 Day4 同题复跑（路径修补后）
+
+原始样本：
+
+1. `day4-rerun-q1.run-accepted.json` / `day4-rerun-q1.run-events.json` / `day4-rerun-q1.run-finished.json`
+2. `day4-rerun-q2.run-accepted.json` / `day4-rerun-q2.run-events.json` / `day4-rerun-q2.run-finished.json`
+3. `day4-rerun-q3.run-accepted.json` / `day4-rerun-q3.run-events.json` / `day4-rerun-q3.run-finished.json`
+4. `day4-rerun-q4.run-accepted.json` / `day4-rerun-q4.run-events.json` / `day4-rerun-q4.run-finished.json`
+5. `day4-rerun-q5.run-accepted.json` / `day4-rerun-q5.run-events.json` / `day4-rerun-q5.run-finished.json`
+
+对比文件：
+
+1. `day4-answer-quality-rerun-after-pathfix-20260410.json`
+2. `day4-answer-quality-compare-after-pathfix-20260410.json`
+3. `day4-answer-quality-compare-after-pathfix-20260410.md`
+
+复核结论：
+
+1. 修补后可用：4 条（q1、q2、q4、q5）。
+2. 修补后不可用：1 条（q3，仍为 `agent_resolve` 超轮次）。
+3. 变化点：q5 从 `failed/system/verification_failed` 变为 `completed/answer/verified`。
+
 ## 6. Day5 学习记录回写与追溯检查
 
 写回样本：
@@ -128,3 +150,27 @@ Case B：
 1. 端到端主链路已跑通（读取 -> 写摘要 -> 写记录 -> 读回）。
 2. 暴露瓶颈：中文路径在显式 `read:` 指令链路里易被编码成问号，触发 `os error 123`。
 3. 最小修补建议：仅补“显式文件路径 UTF-8 归一化 + 非法字符拒绝提示”，不扩接口、不改共享合同、不改主循环。
+
+### 7.1 Day6 路径修补复检（新编译运行链路）
+
+样本文件：
+
+1. `day6-pathfix-recheck3-failed.run-accepted.json` / `day6-pathfix-recheck3-failed.run-events.json` / `day6-pathfix-recheck3-failed.run-finished.json`
+2. `day6-pathfix-recheck3-ok.run-accepted.json` / `day6-pathfix-recheck3-ok.run-events.json` / `day6-pathfix-recheck3-ok.run-finished.json`
+3. `day6-pathfix-recheck3-summary-20260410.json`
+
+复核结论：
+
+1. 失败样本 run=`run-1775789042230-2`：`failed + system + verification_failed`，`result_summary` 已变为“目标路径包含 `?`，疑似发生编码丢失...”，不再是系统 `os error 123` 原样透传。
+2. 成功样本 run=`run-1775789044217-5`：`completed + answer + verified`，正常读取 `docs/README.md`。
+3. 结论边界：本轮仅证明“显式路径非法字符提示”补丁已进入真实链路，不宣称已消除所有中文路径风险。
+
+## 8. Day7 阶段结论
+
+样本文件：
+
+1. `day7-stage-decision-20260410.md`
+
+复核结论：
+
+1. 阶段结论为“继续推进”，下一步先做路径最小修补再复跑。

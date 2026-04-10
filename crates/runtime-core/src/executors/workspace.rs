@@ -133,8 +133,34 @@ fn resolve_path(
     path: &str,
     cache_reason: &str,
 ) -> Result<std::path::PathBuf, ActionExecution> {
-    resolve_workspace_path(&request.workspace_ref.root_path, path)
-        .map_err(|_| invalid_path(action, path, "目标路径越界或解析失败", cache_reason))
+    let normalized = normalize_explicit_path(path);
+    if let Some(reason) = invalid_explicit_path_reason(&normalized) {
+        return Err(invalid_path(action, &normalized, reason, cache_reason));
+    }
+    resolve_workspace_path(&request.workspace_ref.root_path, &normalized)
+        .map_err(|_| invalid_path(action, &normalized, "目标路径越界或解析失败", cache_reason))
+}
+
+fn normalize_explicit_path(path: &str) -> String {
+    path.trim().replace('\\', "/")
+}
+
+fn invalid_explicit_path_reason(path: &str) -> Option<&'static str> {
+    if path.is_empty() {
+        return Some("目标路径为空，请提供可读取的文件路径。");
+    }
+    if has_encoding_placeholder(path) {
+        return Some("目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。");
+    }
+    let bad = ['*', '"', '<', '>', '|', '\0'];
+    path.chars().any(|ch| bad.contains(&ch)).then_some(
+        "目标路径包含非法字符；请使用标准文件路径（不要包含 * \" < > |）。",
+    )
+}
+
+fn has_encoding_placeholder(path: &str) -> bool {
+    path.chars()
+        .any(|ch| ch == '?' || ch == '？' || ch == '\u{FFFD}' || ch.is_control())
 }
 
 fn ok_file_read(resolved: &Path, content: &str) -> ActionExecution {
@@ -229,4 +255,27 @@ fn fail(
         reasoning_summary.to_string(),
         cache_reason,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{invalid_explicit_path_reason, normalize_explicit_path};
+
+    #[test]
+    fn normalizes_explicit_path_slashes_and_spaces() {
+        let value = normalize_explicit_path("  docs\\README.md  ");
+        assert_eq!(value, "docs/README.md");
+    }
+
+    #[test]
+    fn rejects_question_mark_path_hint() {
+        let reason = invalid_explicit_path_reason("docs/???.md");
+        assert!(reason.is_some());
+    }
+
+    #[test]
+    fn rejects_replacement_char_path_hint() {
+        let reason = invalid_explicit_path_reason("docs/\u{FFFD}\u{FFFD}.md");
+        assert!(reason.is_some());
+    }
 }
