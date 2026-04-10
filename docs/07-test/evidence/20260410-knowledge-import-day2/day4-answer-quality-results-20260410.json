@@ -1,0 +1,57 @@
+[
+  {
+    "id": "q1",
+    "query": "What are the top 3 concrete actions I should do next to continue the knowledge-assistant closure?",
+    "run_id": "run-1775782311598-453",
+    "tool_name": "session_context",
+    "completion_status": "completed",
+    "result_mode": "answer",
+    "verification_code": "verified",
+    "usable": "可用",
+    "review_reason": "回答给出三条可执行动作，可直接使用。"
+  },
+  {
+    "id": "q2",
+    "query": "Based on current evidence only, is this project ready to continue to the next day, and why?",
+    "run_id": "run-1775782338415-456",
+    "tool_name": "session_context",
+    "completion_status": "completed",
+    "result_mode": "answer",
+    "verification_code": "verified",
+    "usable": "可用",
+    "review_reason": "回答给出继续条件与理由，具备可执行判断价值。"
+  },
+  {
+    "id": "q3",
+    "query": "I only have 30 minutes. Give me a practical checklist I can execute now.",
+    "run_id": "run-1775782352221-459",
+    "tool_name": "agent_resolve",
+    "completion_status": "failed",
+    "result_mode": "system",
+    "verification_code": "verification_failed",
+    "usable": "不可用",
+    "review_reason": "输出为最大执行轮次失败日志，不是可直接执行的清单。"
+  },
+  {
+    "id": "q4",
+    "query": "If I pause now, what is the fastest-growing risk and how can I reduce it with one action?",
+    "run_id": "run-1775782373935-462",
+    "tool_name": "session_context",
+    "completion_status": "completed",
+    "result_mode": "answer",
+    "verification_code": "verified",
+    "usable": "可用",
+    "review_reason": "回答明确风险与单步缓解动作，可直接采用。"
+  },
+  {
+    "id": "q5",
+    "query": "Write one short kickoff message for tomorrow morning so I can restart quickly.",
+    "run_id": "run-1775782385818-465",
+    "tool_name": "agent_resolve",
+    "completion_status": "failed",
+    "result_mode": "system",
+    "verification_code": "verification_failed",
+    "usable": "不可用",
+    "review_reason": "输出为最大执行轮次失败日志，未返回可直接使用的启动语。"
+  }
+]

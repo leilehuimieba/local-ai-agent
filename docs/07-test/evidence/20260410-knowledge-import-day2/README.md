@@ -65,3 +65,66 @@ Case B：
 2. 部分命中：3 条（q1、q2、q4）。
 3. 未命中：0 条。
 4. 残余风险：检索链路可达，但中文摘要存在乱码/截断，影响 token 匹配与可读性。
+
+## 5. Day4 真实问句回答可用性快测（5 条）
+
+原始样本：
+
+1. `day4-q1.run-accepted.json` / `day4-q1.run-events.json` / `day4-q1.run-finished.json`
+2. `day4-q2.run-accepted.json` / `day4-q2.run-events.json` / `day4-q2.run-finished.json`
+3. `day4-q3.run-accepted.json` / `day4-q3.run-events.json` / `day4-q3.run-finished.json`
+4. `day4-q4.run-accepted.json` / `day4-q4.run-events.json` / `day4-q4.run-finished.json`
+5. `day4-q5.run-accepted.json` / `day4-q5.run-events.json` / `day4-q5.run-finished.json`
+
+判定文件：
+
+1. `day4-answer-quality-results-20260410.json`
+2. `day4-answer-quality-table-20260410.md`
+
+复核结论：
+
+1. 可用：3 条（q1、q2、q4）。
+2. 不可用：2 条（q3、q5）。
+3. 不可用主因：`agent_resolve` 路径在英文自然问句下出现最大执行轮次失败，返回系统失败日志而不是最终可用回答。
+
+## 6. Day5 学习记录回写与追溯检查
+
+写回样本：
+
+1. `day5-write.run-accepted.json` / `day5-write.run-events.json` / `day5-write.run-finished.json`
+2. `day5-readback.run-accepted.json` / `day5-readback.run-events.json` / `day5-readback.run-finished.json`
+
+汇总文件：
+
+1. `day5-learning-writeback-summary-20260410.json`
+2. `day5-learning-records.preview.md`
+
+复核结论：
+
+1. 写回 run：`run-1775782519902-468`，状态 `completed + answer + verified`。
+2. 读回 run：`run-1775782536288-471`，状态 `completed + answer + verified`。
+3. 目标记录文件：`tmp/knowledge-import-day2/20260410/day5-learning-records.md`。
+4. 追溯检查通过：记录内已保留 3 条来源 `source_run_id`（q1/q2/q4）。
+
+## 7. Day6 端到端演练（导入 -> 摘要 -> 回写）
+
+样本文件：
+
+1. `day6-source-read-failed.run-*.json`（中文路径读取失败样本）
+2. `day6-source-read.run-*.json`（ASCII 路径重试成功样本）
+3. `day6-summary-write.run-*.json`
+4. `day6-record-write.run-*.json`
+5. `day6-record-readback.run-*.json`
+
+汇总文件：
+
+1. `day6-e2e-summary-20260410.json`
+2. `day6-e2e-evaluation-20260410.json`
+3. `day6-summary.preview.md`
+4. `day6-learning-record.preview.md`
+
+复核结论：
+
+1. 端到端主链路已跑通（读取 -> 写摘要 -> 写记录 -> 读回）。
+2. 暴露瓶颈：中文路径在显式 `read:` 指令链路里易被编码成问号，触发 `os error 123`。
+3. 最小修补建议：仅补“显式文件路径 UTF-8 归一化 + 非法字符拒绝提示”，不扩接口、不改共享合同、不改主循环。
