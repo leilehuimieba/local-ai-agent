@@ -93,13 +93,13 @@ pub(crate) fn record_planning_memory(
 ) {
     session.session_id = request.session_id.clone();
     session.short_term.current_goal = summarize_text(&request.user_input);
-    session.short_term.current_plan = plan_label(task_title, risk_outcome);
+    session.short_term.current_plan = planning_plan(request, task_title, risk_outcome, session);
     session.short_term.recent_observation = summarize_text(analysis_detail);
-    session.short_term.recent_tool_result.clear();
-    session.short_term.current_phase = planning_phase(risk_outcome);
-    session.short_term.last_run_status = "planning".to_string();
+    session.short_term.recent_tool_result = planning_tool_result(request, session);
+    session.short_term.current_phase = planning_phase(request, risk_outcome, session);
+    session.short_term.last_run_status = planning_status(request, session);
     session.short_term.handoff_artifact_path.clear();
-    apply_risk_state(&mut session.short_term, risk_outcome);
+    apply_planning_risk_state(request, &mut session.short_term, risk_outcome);
     persist_session_file(request, session);
 }
 
@@ -195,12 +195,45 @@ fn plan_label(task_title: &str, risk_outcome: &RiskOutcome) -> String {
     }
 }
 
-fn planning_phase(risk_outcome: &RiskOutcome) -> String {
+fn planning_phase(
+    request: &RunRequest,
+    risk_outcome: &RiskOutcome,
+    session: &SessionMemory,
+) -> String {
+    if should_preserve_resume_state(request) {
+        return session.short_term.current_phase.clone();
+    }
     match risk_outcome {
         RiskOutcome::Blocked(_) => "blocked".to_string(),
         RiskOutcome::RequireConfirmation(_) => "confirmation".to_string(),
         RiskOutcome::Proceed => "plan".to_string(),
     }
+}
+
+fn planning_plan(
+    request: &RunRequest,
+    task_title: &str,
+    risk_outcome: &RiskOutcome,
+    session: &SessionMemory,
+) -> String {
+    if should_preserve_resume_state(request) {
+        return session.short_term.current_plan.clone();
+    }
+    plan_label(task_title, risk_outcome)
+}
+
+fn planning_tool_result(request: &RunRequest, session: &SessionMemory) -> String {
+    if should_preserve_resume_state(request) {
+        return session.short_term.recent_tool_result.clone();
+    }
+    String::new()
+}
+
+fn planning_status(request: &RunRequest, session: &SessionMemory) -> String {
+    if should_preserve_resume_state(request) {
+        return session.short_term.last_run_status.clone();
+    }
+    "planning".to_string()
 }
 
 fn apply_risk_state(short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome) {
@@ -218,6 +251,33 @@ fn apply_risk_state(short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome
             short_term.pending_confirmation.clear();
         }
     }
+}
+
+fn apply_planning_risk_state(
+    request: &RunRequest,
+    short_term: &mut ShortTermMemory,
+    risk_outcome: &RiskOutcome,
+) {
+    if should_keep_recovery_issue(request, short_term, risk_outcome) {
+        short_term.pending_confirmation.clear();
+        return;
+    }
+    apply_risk_state(short_term, risk_outcome);
+}
+
+fn should_keep_recovery_issue(
+    request: &RunRequest,
+    short_term: &ShortTermMemory,
+    risk_outcome: &RiskOutcome,
+) -> bool {
+    should_preserve_resume_state(request)
+        && short_term.current_phase == "recovery"
+        && matches!(risk_outcome, RiskOutcome::Proceed)
+}
+
+fn should_preserve_resume_state(request: &RunRequest) -> bool {
+    !request.resume_from_checkpoint_id.trim().is_empty()
+        && !request.resume_strategy.trim().is_empty()
 }
 
 fn execution_plan_label(success: bool) -> String {
@@ -284,5 +344,94 @@ fn short_term_parts(short_term: &ShortTermMemory) -> Vec<String> {
 fn push_part(parts: &mut Vec<String>, label: &str, value: &str) {
     if !value.is_empty() {
         parts.push(format!("{label}：{value}"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{SessionMemory, record_planning_memory};
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+    use crate::risk::RiskOutcome;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn preserves_confirmation_resume_state_during_planning_writeback() {
+        let request = sample_request("after_confirmation");
+        let mut session = sample_session("confirmation_resume", "awaiting_confirmation");
+        session.short_term.current_plan =
+            "从 checkpoint 恢复：confirmation_required -> PausedForConfirmation".to_string();
+        session.short_term.recent_tool_result = "等待确认后继续".to_string();
+        record_planning_memory(
+            &request,
+            &mut session,
+            "执行命令",
+            "分析结果",
+            &RiskOutcome::Proceed,
+        );
+        assert_eq!(session.short_term.current_phase, "confirmation_resume");
+        assert_eq!(session.short_term.last_run_status, "awaiting_confirmation");
+        assert_eq!(
+            session.short_term.current_plan,
+            "从 checkpoint 恢复：confirmation_required -> PausedForConfirmation"
+        );
+        assert_eq!(session.short_term.recent_tool_result, "等待确认后继续");
+    }
+
+    #[test]
+    fn preserves_recovery_issue_during_retry_planning_writeback() {
+        let request = sample_request("retry_failure");
+        let mut session = sample_session("recovery", "failed");
+        session.short_term.current_plan =
+            "从 checkpoint 恢复：retryable_failure -> Execute".to_string();
+        session.short_term.open_issue = "temporary failure".to_string();
+        session.short_term.recent_tool_result = "temporary failure".to_string();
+        record_planning_memory(
+            &request,
+            &mut session,
+            "执行命令",
+            "分析结果",
+            &RiskOutcome::Proceed,
+        );
+        assert_eq!(session.short_term.current_phase, "recovery");
+        assert_eq!(session.short_term.last_run_status, "failed");
+        assert_eq!(session.short_term.open_issue, "temporary failure");
+        assert_eq!(
+            session.short_term.current_plan,
+            "从 checkpoint 恢复：retryable_failure -> Execute"
+        );
+    }
+
+    fn sample_request(strategy: &str) -> RunRequest {
+        RunRequest {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            user_input: "cmd: echo test".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: "cp-1".to_string(),
+            resume_strategy: strategy.to_string(),
+            confirmation_decision: None,
+        }
+    }
+
+    fn sample_session(phase: &str, status: &str) -> SessionMemory {
+        let mut session = SessionMemory::default();
+        session.short_term.current_phase = phase.to_string();
+        session.short_term.last_run_status = status.to_string();
+        session
     }
 }

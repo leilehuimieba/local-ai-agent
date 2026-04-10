@@ -12,6 +12,8 @@
   - `gateway/internal/state/runtime_checkpoint_store_test.go`
   - `gateway/internal/api/chat_retry_test.go`
   - `crates/runtime-core/src/query_engine.rs`
+  - `crates/runtime-core/src/checkpoint.rs`
+  - `crates/runtime-core/src/session.rs`
   - `cargo test -p runtime-core`
   - `go test ./internal/api ./internal/state`
 - 日志或截图：
@@ -63,3 +65,19 @@
   - `关键事件链路完整可追溯`：当前已拿到两条接口级证据：
     `checkpoint_written -> checkpoint_resumed -> 后续执行事件 -> terminal event`
     两条样本均未出现 `checkpoint_resume_skipped`。
+
+## 当前结论
+
+- checkpoint 最小字段集合已通过单元测试固定：
+  `checkpoint_id / run_id / session_id / trace_id / workspace_id / status / final_stage / resumable / resume_reason / resume_stage / event_count / request / response`
+- `resume_matches` 当前已通过单元测试固定为：
+  `run_id + session_id + workspace_id` 同时一致才允许恢复；scope 不一致时退化为 `checkpoint_resume_skipped`
+- 恢复短期状态写回保护已通过单元测试固定：
+  - `after_confirmation` 命中恢复后，规划写回不会覆盖 `confirmation_resume`、`awaiting_confirmation` 和恢复计划
+  - `retryable_failure` 命中恢复后，规划写回不会清空失败摘要或把 `recovery` 刷回普通 planning 态
+- 当前证据已经足以证明：
+  - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
+  - 恢复后会重新回到统一主循环
+- 当前证据还不能证明：
+  - 运行时已经恢复到“中断前的精确动作边界”
+  - 已选动作、执行阶段中间态或验证前快照已经被完整复用
