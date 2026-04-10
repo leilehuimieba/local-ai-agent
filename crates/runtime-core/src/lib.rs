@@ -32,6 +32,7 @@ mod repo_context;
 mod risk;
 mod run_finish_events;
 mod run_metadata;
+mod run_state_builder;
 mod session;
 mod sqlite_store;
 mod storage;

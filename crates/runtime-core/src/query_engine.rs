@@ -1,13 +1,14 @@
 use crate::capabilities::{ToolDefinition, ToolExecutionTrace};
-use crate::context_builder::{RuntimeContextEnvelope, build_runtime_context};
-use crate::context_policy::{action_context_policy, planning_context_policy};
+use crate::checkpoint::{RunCheckpoint, load_matching_resume_checkpoint};
+use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::RunRequest;
-use crate::planner::{PlannedAction, analysis_summary};
+use crate::planner::PlannedAction;
 use crate::repo_context::{RepoContextLoadResult, load_repo_context};
-use crate::risk::{RiskOutcome, assess_risk};
-use crate::session::{
-    SessionMemory, load_session_context, record_execution_memory, record_planning_memory,
+use crate::risk::RiskOutcome;
+use crate::run_state_builder::{
+    PreparedRunState, bootstrap_context, prepare_run_state, record_bootstrap_memory,
 };
+use crate::session::{SessionMemory, load_session_context, record_execution_memory};
 use crate::tool_registry::{ToolCall, runtime_tool_registry};
 use crate::tool_trace::execute_tool;
 use crate::verify::VerificationReport;
@@ -38,7 +39,9 @@ pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
     let workspace_root = PathBuf::from(&request.workspace_ref.root_path);
     let repo_context = load_repo_context(&workspace_root);
     let visible_tools = runtime_tool_registry().visible_tools(&request.mode);
+    let resume_checkpoint = load_matching_resume_checkpoint(request);
     let mut session_context = load_session_context(request);
+    apply_resume_checkpoint(&mut session_context, resume_checkpoint.as_ref(), request);
     let prepared = prepare_run_state(request, &session_context, &repo_context, &visible_tools);
     record_bootstrap_memory(request, &mut session_context, &prepared);
     let context_envelope =
@@ -71,6 +74,153 @@ pub(crate) fn execute_stage(state: &mut RuntimeRunState) {
     }
 }
 
+fn apply_resume_checkpoint(
+    session: &mut SessionMemory,
+    checkpoint: Option<&RunCheckpoint>,
+    request: &RunRequest,
+) {
+    let Some(checkpoint) = checkpoint else {
+        return;
+    };
+    session.short_term.current_plan = resume_plan(checkpoint);
+    session.short_term.current_phase = resume_phase(checkpoint);
+    session.short_term.last_run_status = checkpoint.status.clone();
+    session.short_term.recent_observation = checkpoint.response.result.final_answer.clone();
+    session.short_term.recent_tool_result = checkpoint.response.result.summary.clone();
+    if checkpoint.resume_reason == "confirmation_required" {
+        session.short_term.pending_confirmation.clear();
+        session.short_term.open_issue.clear();
+    } else if request.resume_strategy == "retry_failure" {
+        session.short_term.pending_confirmation.clear();
+        session.short_term.open_issue = checkpoint.response.result.summary.clone();
+    }
+}
+
+fn resume_plan(checkpoint: &RunCheckpoint) -> String {
+    format!(
+        "从 checkpoint 恢复：{} -> {}",
+        checkpoint.resume_reason, checkpoint.resume_stage
+    )
+}
+
+fn resume_phase(checkpoint: &RunCheckpoint) -> String {
+    if checkpoint.resume_reason == "confirmation_required" {
+        "confirmation_resume".to_string()
+    } else {
+        "recovery".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply_resume_checkpoint;
+    use crate::checkpoint::RunCheckpoint;
+    use crate::contracts::{
+        ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
+    };
+    use crate::session::SessionMemory;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn clears_pending_confirmation_when_resuming_after_approval() {
+        let request = sample_request("after_confirmation");
+        let checkpoint = sample_checkpoint("confirmation_required");
+        let mut session = sample_session();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(session.short_term.pending_confirmation.is_empty());
+        assert_eq!(session.short_term.current_phase, "confirmation_resume");
+    }
+
+    #[test]
+    fn keeps_failure_context_when_resuming_retryable_failure() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint("retryable_failure");
+        let mut session = sample_session();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert_eq!(session.short_term.current_phase, "recovery");
+        assert_eq!(session.short_term.open_issue, "temporary failure");
+    }
+
+    fn sample_request(strategy: &str) -> RunRequest {
+        RunRequest {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            user_input: "retry task".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: "cp-1".to_string(),
+            resume_strategy: strategy.to_string(),
+            confirmation_decision: None,
+        }
+    }
+
+    fn sample_checkpoint(reason: &str) -> RunCheckpoint {
+        RunCheckpoint {
+            checkpoint_id: "cp-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+            status: "failed".to_string(),
+            final_stage: "Finish".to_string(),
+            resumable: true,
+            resume_reason: reason.to_string(),
+            resume_stage: "Execute".to_string(),
+            event_count: 2,
+            request: sample_request(reason),
+            response: sample_checkpoint_response(),
+            created_at: "1".to_string(),
+        }
+    }
+
+    fn sample_session() -> SessionMemory {
+        let mut session = SessionMemory::default();
+        session.short_term.pending_confirmation = "need approve".to_string();
+        session
+    }
+
+    fn sample_checkpoint_response() -> RuntimeRunResponse {
+        RuntimeRunResponse {
+            events: Vec::new(),
+            result: sample_checkpoint_result(),
+            confirmation_request: None,
+        }
+    }
+
+    fn sample_checkpoint_result() -> RunResult {
+        RunResult {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            kind: "run_result".to_string(),
+            source: "runtime".to_string(),
+            status: "failed".to_string(),
+            final_answer: "temporary failure".to_string(),
+            summary: "temporary failure".to_string(),
+            error: None,
+            memory_write_summary: None,
+            final_stage: "Finish".to_string(),
+            checkpoint_id: Some("cp-1".to_string()),
+            resumable: Some(true),
+        }
+    }
+}
+
 fn refresh_context_after_execution(
     envelope: &mut RuntimeContextEnvelope,
     trace: &ToolExecutionTrace,
@@ -78,108 +228,6 @@ fn refresh_context_after_execution(
     envelope.dynamic_block.reasoning_summary = trace.result.reasoning_summary.clone();
     envelope.dynamic_block.cache_status = trace.result.cache_status.clone();
     envelope.dynamic_block.cache_reason = trace.result.cache_reason.clone();
-}
-
-#[derive(Clone, Debug)]
-struct PreparedRunState {
-    action: PlannedAction,
-    tool_call: ToolCall,
-    context_envelope: RuntimeContextEnvelope,
-    task_title: String,
-    analysis_detail: String,
-    risk_outcome: RiskOutcome,
-}
-
-fn prepare_run_state(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-    repo_context: &RepoContextLoadResult,
-    visible_tools: &[ToolDefinition],
-) -> PreparedRunState {
-    let context_envelope = planning_context(request, session_context, repo_context, visible_tools);
-    let tool_call = runtime_tool_registry().plan_tool_call(&context_envelope);
-    let action = tool_call.action.clone();
-    let execute_context = execution_context(
-        request,
-        session_context,
-        repo_context,
-        visible_tools,
-        &action,
-    );
-    PreparedRunState {
-        context_envelope: execute_context,
-        task_title: crate::derive_task_title(&action, &request.user_input),
-        analysis_detail: analysis_summary(&action, session_context, &repo_context.snapshot),
-        risk_outcome: assess_risk(request, &action),
-        action,
-        tool_call,
-    }
-}
-
-fn record_bootstrap_memory(
-    request: &RunRequest,
-    session_context: &mut SessionMemory,
-    prepared: &PreparedRunState,
-) {
-    record_planning_memory(
-        request,
-        session_context,
-        &prepared.task_title,
-        &prepared.analysis_detail,
-        &prepared.risk_outcome,
-    );
-}
-
-fn bootstrap_context(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-    repo_context: &RepoContextLoadResult,
-    visible_tools: &[ToolDefinition],
-) -> RuntimeContextEnvelope {
-    build_runtime_context(
-        request,
-        session_context,
-        repo_context,
-        visible_tools,
-        &planning_context_policy(&request.user_input, session_context),
-        "cold",
-        "当前为主链路首轮规划，还未进入回答缓存探测。",
-    )
-}
-
-fn planning_context(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-    repo_context: &RepoContextLoadResult,
-    visible_tools: &[ToolDefinition],
-) -> RuntimeContextEnvelope {
-    build_runtime_context(
-        request,
-        session_context,
-        repo_context,
-        visible_tools,
-        &planning_context_policy(&request.user_input, session_context),
-        "cold",
-        "当前为工具规划阶段，还未进入回答缓存探测。",
-    )
-}
-
-fn execution_context(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-    repo_context: &RepoContextLoadResult,
-    visible_tools: &[ToolDefinition],
-    action: &PlannedAction,
-) -> RuntimeContextEnvelope {
-    build_runtime_context(
-        request,
-        session_context,
-        repo_context,
-        visible_tools,
-        &action_context_policy(action, session_context),
-        "cold",
-        "当前为执行阶段上下文，已按动作类型收紧上下文装配。",
-    )
 }
 
 fn assemble_runtime_state(
