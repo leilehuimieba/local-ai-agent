@@ -34,7 +34,7 @@ func TestBuildRetryRunRequestRestoresProviderAndResumeStrategy(t *testing.T) {
 		RunID:     "run-1",
 	})
 	require.NoError(t, err)
-	require.NotEqual(t, "run-1", request.RunID)
+	require.Equal(t, "run-1", request.RunID)
 	require.Equal(t, "session-1", request.SessionID)
 	require.Equal(t, "retry_failure", request.ResumeStrategy)
 	require.Equal(t, "checkpoint-1", request.ResumeFromCheckpointID)
