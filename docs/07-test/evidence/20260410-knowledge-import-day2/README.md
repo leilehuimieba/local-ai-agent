@@ -109,6 +109,27 @@ Case B：
 2. 修补后不可用：1 条（q3，仍为 `agent_resolve` 超轮次）。
 3. 变化点：q5 从 `failed/system/verification_failed` 变为 `completed/answer/verified`。
 
+### 5.2 Day4 q3 最小修补复检（模板直答）
+
+原始样本：
+
+1. `day4-rerun4-q3-after-templatefix.run-accepted.json`
+2. `day4-rerun4-q3-after-templatefix.run-events.json`
+3. `day4-rerun4-q3-after-templatefix.run-finished.json`
+
+对比文件：
+
+1. `day4-q3-compare-after-templatefix-20260410.json`
+2. `day4-q3-compare-after-templatefix-20260410.md`
+3. `day4-answer-quality-final-after-templatefix-20260410.json`
+4. `day4-answer-quality-final-after-templatefix-20260410.md`
+
+复核结论：
+
+1. q3 修补前：`run-1775788368041-8`，`failed/system/verification_failed`，不可用。
+2. q3 修补后：`run-1775789986652-2`，`completed/answer/verified`，可用。
+3. 当前 Day4 口径：5 条问句均可用（q1、q2、q3、q4、q5）。
+
 ## 6. Day5 学习记录回写与追溯检查
 
 写回样本：

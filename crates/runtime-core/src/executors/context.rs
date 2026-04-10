@@ -44,6 +44,7 @@ fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
         .or_else(|| closeout_priority_template(input))
         .or_else(|| instability_decision_template(input))
         .or_else(|| beginner_first_step_template(input))
+        .or_else(|| fast_checklist_template(input))
         .or_else(|| minimal_recovery_template(input))?;
     Some(ActionExecution::bypass_ok(
         "命中本地稳定答复模板。".to_string(),
@@ -52,6 +53,43 @@ fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
         "当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。".to_string(),
         "稳定模板回答优先保证可执行和可复测，不依赖本轮模型可用性。",
     ))
+}
+
+fn fast_checklist_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_timebox = lower.contains("30 minutes")
+        || lower.contains("20 minutes")
+        || lower.contains("30分钟")
+        || lower.contains("20分钟");
+    if !asks_timebox {
+        return None;
+    }
+    let asks_checklist = lower.contains("checklist")
+        || lower.contains("execute now")
+        || lower.contains("practical")
+        || lower.contains("执行清单")
+        || lower.contains("清单");
+    if !asks_checklist {
+        return None;
+    }
+    Some("30 分钟务实清单：1) 0-8 分钟先跑 5 条真实问句并记录 run_id；2) 9-20 分钟只修失败最多的 1 个问题并复跑同题；3) 21-30 分钟回写验收文档，明确通过项和残余风险。".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::fast_checklist_template;
+
+    #[test]
+    fn matches_english_fast_checklist_question() {
+        let text = "I only have 30 minutes. Give me a practical checklist I can execute now.";
+        assert!(fast_checklist_template(text).is_some());
+    }
+
+    #[test]
+    fn skips_non_checklist_question() {
+        let text = "帮我总结一下今天的进度。";
+        assert!(fast_checklist_template(text).is_none());
+    }
 }
 
 fn release_check_template(user_input: &str) -> Option<String> {

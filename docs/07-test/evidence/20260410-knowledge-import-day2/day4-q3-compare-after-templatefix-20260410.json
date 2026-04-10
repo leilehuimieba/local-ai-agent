@@ -1,0 +1,11 @@
+﻿{
+    "question_id":  "q3",
+    "question":  "I only have 30 minutes. Give me a practical checklist I can execute now.",
+    "before_run_id":  "run-1775788368041-8",
+    "before_status":  "failed/system/verification_failed",
+    "before_usable":  "不可用",
+    "after_run_id":  "run-1775789986652-2",
+    "after_status":  "completed/answer/verified",
+    "after_usable":  "可用",
+    "changed":  "yes"
+}

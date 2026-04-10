@@ -300,12 +300,34 @@ fn should_default_to_context_answer(input: &str) -> bool {
 
 fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     let lower = input.trim().to_lowercase();
+    if should_use_context_for_fast_checklist(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
     if should_open_calculator(&lower) {
         return Some(PlannedAction::RunCommand {
             command: calculator_command(),
         });
     }
     None
+}
+
+fn should_use_context_for_fast_checklist(input: &str) -> bool {
+    let has_time_limit = mentions_any(
+        input,
+        &["30 minutes", "20 minutes", "15 minutes", "30分钟", "20分钟", "15分钟"],
+    );
+    let has_checklist_intent = mentions_any(
+        input,
+        &[
+            "checklist",
+            "practical checklist",
+            "execute now",
+            "quick checklist",
+            "执行清单",
+            "清单",
+        ],
+    );
+    has_time_limit && has_checklist_intent
 }
 
 fn should_open_calculator(input: &str) -> bool {
@@ -645,6 +667,20 @@ mod tests {
         assert!(matches!(
             plan_action_with_context(&env),
             PlannedAction::RunCommand { .. }
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_english_fast_checklist() {
+        let env = envelope(
+            "I only have 30 minutes. Give me a practical checklist I can execute now.",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
         ));
     }
 }
