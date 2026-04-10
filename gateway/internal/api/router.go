@@ -173,6 +173,7 @@ func NewRouter(
 	mux.HandleFunc("/api/v1/memories", memoryDeps.handleMemories)
 	mux.HandleFunc("/api/v1/memories/delete", memoryDeps.handleMemoryDelete)
 	mux.HandleFunc("/api/v1/chat/run", chat.Run)
+	mux.HandleFunc("/api/v1/chat/retry", chat.Retry)
 	mux.HandleFunc("/api/v1/chat/confirm", chat.Confirm)
 	mux.HandleFunc("/api/v1/events/stream", chat.Stream)
 	mux.Handle("/", spaHandler(repoRoot))
@@ -330,7 +331,7 @@ func makeExternalConnection(slotID string, displayName string, priority int, sta
 		SlotID: slotID, DisplayName: displayName, Priority: priority, Status: status,
 		Scope: "external_connection", CurrentTools: currentTools,
 		SupportedActions: supportedExternalConnectionActions(slotID),
-		Boundary: boundary, NextStep: nextStep,
+		Boundary:         boundary, NextStep: nextStep,
 	}
 }
 

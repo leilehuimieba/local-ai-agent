@@ -1,0 +1,22 @@
+# Hermes Change 索引
+
+更新时间：2026-04-10
+
+这个文件用于标记当前执行主线下的活跃 change，避免多项变更并行时上下文漂移。
+
+## 当前活跃 change
+
+1. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)
+
+## 选择规则
+
+1. 继续任务时，优先读取“当前活跃 change”。
+2. 如果用户明确点名某个 change，以用户指定为准。
+3. 如果存在多个活跃项，优先选择与当前阶段一致且最近更新时间最新的 change。
+4. 如果 `INDEX.md` 与各 change 的 `status.md` 冲突，先指出冲突并暂停推进。
+
+## 维护规则
+
+1. 新建中等以上变更后，将其加入索引。
+2. 某个 change 进入主推进状态时，把它放到“当前活跃 change”第一位。
+3. 某个 change 完成或暂停后，及时更新索引说明。

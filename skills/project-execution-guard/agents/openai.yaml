@@ -1,0 +1,7 @@
+interface:
+  display_name: "项目推进 Guard"
+  short_description: "检查阶段状态、缺口和下一步的项目推进守门清单"
+  default_prompt: "Use $project-execution-guard to inspect the current project stage, active change workspace, missing inputs, and the smallest valid next step before implementation."
+
+policy:
+  allow_implicit_invocation: true

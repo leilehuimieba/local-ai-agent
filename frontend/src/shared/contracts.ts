@@ -327,6 +327,12 @@ export type ChatRunAccepted = {
   initial_status: string;
 };
 
+export type ChatRetryRequest = {
+  session_id: string;
+  run_id: string;
+  checkpoint_id?: string;
+};
+
 export type RuntimeRunRequest = {
   request_id: string;
   run_id: string;

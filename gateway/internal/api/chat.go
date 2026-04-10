@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync/atomic"
@@ -35,6 +36,12 @@ type ChatRunRequest struct {
 	Model        config.ModelRef     `json:"model"`
 	Workspace    config.WorkspaceRef `json:"workspace"`
 	ContextHints map[string]string   `json:"context_hints,omitempty"`
+}
+
+type ChatRetryRequest struct {
+	SessionID    string `json:"session_id"`
+	RunID        string `json:"run_id"`
+	CheckpointID string `json:"checkpoint_id,omitempty"`
 }
 
 type ChatRunAccepted struct {
@@ -113,18 +120,18 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		return contracts.RunRequest{}, err
 	}
 	return contracts.RunRequest{
-		RequestID:    newID("request"),
-		RunID:        newID("run"),
-		SessionID:    sessionID,
-		TraceID:      newID("trace"),
-		UserInput:    payload.UserInput,
-		Mode:         mode,
-		ModelRef:     model,
-		ProviderRef:  providerRef,
-		WorkspaceRef: workspace,
-		ContextHints: h.withKnowledgeHints(runContextHints(payload.ContextHints, h.repoRoot, firstSeen)),
+		RequestID:              newID("request"),
+		RunID:                  newID("run"),
+		SessionID:              sessionID,
+		TraceID:                newID("trace"),
+		UserInput:              payload.UserInput,
+		Mode:                   mode,
+		ModelRef:               model,
+		ProviderRef:            providerRef,
+		WorkspaceRef:           workspace,
+		ContextHints:           h.withKnowledgeHints(runContextHints(payload.ContextHints, h.repoRoot, firstSeen)),
 		ResumeFromCheckpointID: "",
-		ResumeStrategy:       "",
+		ResumeStrategy:         "",
 	}, nil
 }
 
@@ -246,9 +253,9 @@ func runtimeRecordRef(record state.RuntimeProviderRecord) contracts.ProviderRef 
 func credentialRecordRef(provider config.ProviderConfig, record state.ProviderCredentialRecord) contracts.ProviderRef {
 	return contracts.ProviderRef{
 		ProviderID: provider.ProviderID, DisplayName: firstNonEmptyValue(record.DisplayName, provider.DisplayName),
-		BaseURL: firstNonEmptyValue(record.BaseURL, provider.BaseURL),
+		BaseURL:             firstNonEmptyValue(record.BaseURL, provider.BaseURL),
 		ChatCompletionsPath: firstNonEmptyValue(record.ChatCompletionsPath, provider.ChatCompletionsPath),
-		ModelsPath: firstNonEmptyValue(record.ModelsPath, provider.ModelsPath), APIKey: record.APIKey,
+		ModelsPath:          firstNonEmptyValue(record.ModelsPath, provider.ModelsPath), APIKey: record.APIKey,
 	}
 }
 
@@ -281,6 +288,62 @@ func (h *ChatHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.closeConfirmation(w, decision, pending)
+}
+
+func (h *ChatHandler) Retry(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	payload, err := decodeRetryPayload(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	runRequest, err := h.buildRetryRunRequest(payload)
+	if err != nil {
+		writeRetryError(w, err)
+		return
+	}
+	go h.execute(runRequest)
+	writeJSON(w, http.StatusAccepted, ChatRunAccepted{
+		Accepted:      true,
+		SessionID:     runRequest.SessionID,
+		RunID:         runRequest.RunID,
+		InitialStatus: "accepted",
+	})
+}
+
+func decodeRetryPayload(r *http.Request) (ChatRetryRequest, error) {
+	var payload ChatRetryRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		return ChatRetryRequest{}, fmt.Errorf("invalid json body")
+	}
+	if payload.SessionID == "" || payload.RunID == "" {
+		return ChatRetryRequest{}, fmt.Errorf("session_id and run_id are required")
+	}
+	return payload, nil
+}
+
+func (h *ChatHandler) buildRetryRunRequest(payload ChatRetryRequest) (contracts.RunRequest, error) {
+	record, err := h.retryCheckpoint(payload)
+	if err != nil {
+		return contracts.RunRequest{}, err
+	}
+	request := record.Request
+	providerRef, err := h.resolveProviderRef(request.ModelRef.ProviderID)
+	if err != nil {
+		return contracts.RunRequest{}, err
+	}
+	request.RequestID = newID("request")
+	request.RunID = newID("run")
+	request.TraceID = newID("trace")
+	request.SessionID = payload.SessionID
+	request.ProviderRef = providerRef
+	request.ConfirmationDecision = nil
+	request.ContextHints = h.withKnowledgeHints(copyContextHints(request.ContextHints))
+	applyRetryCheckpointResume(&request, record.CheckpointID)
+	return request, nil
 }
 
 func decodeConfirmationDecision(r *http.Request) (contracts.ConfirmationDecision, error) {
@@ -353,6 +416,30 @@ func writeConfirmationResponse(
 		"confirmation_id": decision.ConfirmationID,
 		"decision":        decision.Decision,
 	})
+}
+
+func (h *ChatHandler) retryCheckpoint(
+	payload ChatRetryRequest,
+) (state.RuntimeCheckpointRecord, error) {
+	store := state.NewRuntimeCheckpointStore(h.repoRoot)
+	record, err := store.FindRetryable(payload.RunID, payload.SessionID, payload.CheckpointID)
+	if err != nil {
+		return state.RuntimeCheckpointRecord{}, err
+	}
+	return validateRetryCheckpoint(payload, record)
+}
+
+func validateRetryCheckpoint(
+	payload ChatRetryRequest,
+	record state.RuntimeCheckpointRecord,
+) (state.RuntimeCheckpointRecord, error) {
+	if record.SessionID != payload.SessionID || record.RunID != payload.RunID {
+		return state.RuntimeCheckpointRecord{}, fmt.Errorf("checkpoint 与当前会话或运行不匹配")
+	}
+	if !record.Resumable || record.ResumeReason != "retryable_failure" {
+		return state.RuntimeCheckpointRecord{}, fmt.Errorf("当前 checkpoint 不支持失败重试")
+	}
+	return record, nil
 }
 
 func (h *ChatHandler) publishConfirmationClosure(
@@ -599,15 +686,15 @@ func confirmationMemoryMetadata(
 		"confirmation_id": decision.ConfirmationID, "kind": pending.Confirmation.Kind,
 		"risk_level": pending.Confirmation.RiskLevel, "task_title": pending.Confirmation.ActionSummary,
 		"artifact_path": firstTargetPath(pending), "next_step": "任务已结束",
-		"governance_status": confirmationGovernanceStatus(entry),
-		"memory_action": confirmationMemoryAction(entry),
-		"governance_version": entry.GovernanceVersion,
-		"governance_reason": entry.GovernanceReason,
-		"governance_source": entry.GovernanceSource,
-		"governance_at": entry.GovernanceAt,
-		"source_event_type": entry.SourceEventType,
+		"governance_status":    confirmationGovernanceStatus(entry),
+		"memory_action":        confirmationMemoryAction(entry),
+		"governance_version":   entry.GovernanceVersion,
+		"governance_reason":    entry.GovernanceReason,
+		"governance_source":    entry.GovernanceSource,
+		"governance_at":        entry.GovernanceAt,
+		"source_event_type":    entry.SourceEventType,
 		"source_artifact_path": entry.SourceArtifactPath,
-		"archive_reason": entry.ArchiveReason,
+		"archive_reason":       entry.ArchiveReason,
 	}
 }
 
@@ -771,6 +858,33 @@ func applyCheckpointResume(request *contracts.RunRequest, checkpointID string) {
 	}
 	request.ResumeFromCheckpointID = checkpointID
 	request.ResumeStrategy = "after_confirmation"
+}
+
+func applyRetryCheckpointResume(request *contracts.RunRequest, checkpointID string) {
+	if checkpointID == "" {
+		return
+	}
+	request.ResumeFromCheckpointID = checkpointID
+	request.ResumeStrategy = "retry_failure"
+}
+
+func copyContextHints(source map[string]string) map[string]string {
+	if source == nil {
+		return map[string]string{}
+	}
+	target := make(map[string]string, len(source))
+	for key, value := range source {
+		target[key] = value
+	}
+	return target
+}
+
+func writeRetryError(w http.ResponseWriter, err error) {
+	if errors.Is(err, state.ErrRuntimeCheckpointNotFound()) {
+		http.Error(w, "未找到可重试 checkpoint", http.StatusNotFound)
+		return
+	}
+	http.Error(w, err.Error(), http.StatusBadRequest)
 }
 
 func stringValue(value *string) string {

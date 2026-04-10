@@ -557,6 +557,8 @@ const SCHEMA_STATEMENTS: [&str; 10] = [
         status text not null,
         final_stage text not null,
         resumable integer not null default 0,
+        resume_reason text not null default '',
+        resume_stage text not null default '',
         event_count integer not null default 0,
         request_payload text not null,
         response_payload text not null,
@@ -565,7 +567,7 @@ const SCHEMA_STATEMENTS: [&str; 10] = [
     "create index if not exists idx_checkpoint_run on runtime_checkpoints (run_id, created_at)",
 ];
 
-const MEMORY_MIGRATIONS: [&str; 9] = [
+const MEMORY_MIGRATIONS: [&str; 11] = [
     "alter table long_term_memory add column source_title text not null default ''",
     "alter table long_term_memory add column source_event_type text not null default ''",
     "alter table long_term_memory add column source_artifact_path text not null default ''",
@@ -575,6 +577,8 @@ const MEMORY_MIGRATIONS: [&str; 9] = [
     "alter table long_term_memory add column governance_at text not null default ''",
     "alter table long_term_memory add column archive_reason text not null default ''",
     "alter table long_term_memory add column archived_at text not null default ''",
+    "alter table runtime_checkpoints add column resume_reason text not null default ''",
+    "alter table runtime_checkpoints add column resume_stage text not null default ''",
 ];
 
 fn insert_runtime_checkpoint(
@@ -586,13 +590,13 @@ fn insert_runtime_checkpoint(
     conn.execute(
         "insert or replace into runtime_checkpoints (
             checkpoint_id, run_id, session_id, trace_id, workspace_id, status, final_stage,
-            resumable, event_count, request_payload, response_payload, created_at
-        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            resumable, resume_reason, resume_stage, event_count, request_payload, response_payload, created_at
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
             checkpoint.checkpoint_id, checkpoint.run_id, checkpoint.session_id, checkpoint.trace_id,
             checkpoint.workspace_id, checkpoint.status, checkpoint.final_stage,
-            bool_flag(checkpoint.resumable), checkpoint.event_count, request_payload,
-            response_payload, checkpoint.created_at
+            bool_flag(checkpoint.resumable), checkpoint.resume_reason, checkpoint.resume_stage,
+            checkpoint.event_count, request_payload, response_payload, checkpoint.created_at
         ],
     )
     .map(|_| ())
@@ -607,7 +611,7 @@ fn select_runtime_checkpoint(
     let mut statement = conn
         .prepare(
             "select checkpoint_id, run_id, session_id, trace_id, workspace_id, status, final_stage,
-             resumable, event_count, request_payload, response_payload, created_at
+             resumable, resume_reason, resume_stage, event_count, request_payload, response_payload, created_at
              from runtime_checkpoints where checkpoint_id = ?1",
         )
         .map_err(|error| error.to_string())?;
@@ -622,8 +626,8 @@ fn select_runtime_checkpoint(
 
 #[cfg_attr(not(test), allow(dead_code))]
 fn decode_runtime_checkpoint(row: &rusqlite::Row<'_>) -> Result<RunCheckpoint, String> {
-    let request_payload: String = row.get(9).map_err(|error| error.to_string())?;
-    let response_payload: String = row.get(10).map_err(|error| error.to_string())?;
+    let request_payload: String = row.get(11).map_err(|error| error.to_string())?;
+    let response_payload: String = row.get(12).map_err(|error| error.to_string())?;
     Ok(RunCheckpoint {
         checkpoint_id: row.get(0).map_err(|error| error.to_string())?,
         run_id: row.get(1).map_err(|error| error.to_string())?,
@@ -633,9 +637,11 @@ fn decode_runtime_checkpoint(row: &rusqlite::Row<'_>) -> Result<RunCheckpoint, S
         status: row.get(5).map_err(|error| error.to_string())?,
         final_stage: row.get(6).map_err(|error| error.to_string())?,
         resumable: row.get::<_, i32>(7).map_err(|error| error.to_string())? != 0,
-        event_count: row.get(8).map_err(|error| error.to_string())?,
+        resume_reason: row.get(8).map_err(|error| error.to_string())?,
+        resume_stage: row.get(9).map_err(|error| error.to_string())?,
+        event_count: row.get(10).map_err(|error| error.to_string())?,
         request: from_str(&request_payload).map_err(|error| error.to_string())?,
         response: from_str(&response_payload).map_err(|error| error.to_string())?,
-        created_at: row.get(11).map_err(|error| error.to_string())?,
+        created_at: row.get(13).map_err(|error| error.to_string())?,
     })
 }

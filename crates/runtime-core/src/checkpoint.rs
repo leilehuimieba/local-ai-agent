@@ -15,6 +15,8 @@ pub(crate) struct RunCheckpoint {
     pub status: String,
     pub final_stage: String,
     pub resumable: bool,
+    pub resume_reason: String,
+    pub resume_stage: String,
     pub event_count: u32,
     pub request: RunRequest,
     pub response: RuntimeRunResponse,
@@ -85,8 +87,9 @@ fn checkpoint_response(
     mut response: RuntimeRunResponse,
     checkpoint_id: &str,
 ) -> RuntimeRunResponse {
+    let resumable = checkpoint_resume_profile(&response).0;
     response.result.checkpoint_id = Some(checkpoint_id.to_string());
-    response.result.resumable = Some(is_resumable_status(&response.result.status));
+    response.result.resumable = Some(resumable);
     insert_checkpoint_event(request, &mut response.events, checkpoint_id, &response.result);
     response
 }
@@ -140,6 +143,7 @@ fn checkpoint_record(
     response: &RuntimeRunResponse,
     checkpoint_id: &str,
 ) -> RunCheckpoint {
+    let resume = checkpoint_resume_profile(response);
     RunCheckpoint {
         checkpoint_id: checkpoint_id.to_string(),
         run_id: request.run_id.clone(),
@@ -148,7 +152,9 @@ fn checkpoint_record(
         workspace_id: request.workspace_ref.workspace_id.clone(),
         status: response.result.status.clone(),
         final_stage: response.result.final_stage.clone(),
-        resumable: response.result.resumable.unwrap_or(false),
+        resumable: resume.0,
+        resume_reason: resume.1,
+        resume_stage: resume.2,
         event_count: checkpoint_event_count(&response.events),
         request: redacted_request(request),
         response: response.clone(),
@@ -168,7 +174,7 @@ fn resume_matches(request: &RunRequest, checkpoint: &RunCheckpoint) -> bool {
 
 fn checkpoint_ready_for_confirmation(request: &RunRequest, checkpoint: &RunCheckpoint) -> bool {
     checkpoint.resumable
-        && checkpoint.status == "awaiting_confirmation"
+        && checkpoint.resume_reason == "confirmation_required"
         && request
             .confirmation_decision
             .as_ref()
@@ -188,10 +194,15 @@ fn resumed_event(request: &RunRequest, checkpoint: &RunCheckpoint) -> RunEvent {
         request,
         0,
         "checkpoint_resumed",
-        &checkpoint.final_stage,
+        &checkpoint.resume_stage,
         "已从 checkpoint 恢复运行",
         &format!("已读取 checkpoint：{}，继续当前任务。", checkpoint.checkpoint_id),
-        resume_metadata(&checkpoint.checkpoint_id, "resumed", &checkpoint.final_stage),
+        resume_metadata(
+            &checkpoint.checkpoint_id,
+            "resumed",
+            &checkpoint.resume_stage,
+            &checkpoint.resume_reason,
+        ),
     )
 }
 
@@ -203,7 +214,7 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
         "Analyze",
         "checkpoint 恢复已跳过",
         reason,
-        resume_metadata(checkpoint_id, "skipped", "Analyze"),
+        resume_metadata(checkpoint_id, "skipped", "Analyze", "resume_skipped"),
     )
 }
 
@@ -211,12 +222,33 @@ fn resume_metadata(
     checkpoint_id: &str,
     status: &str,
     stage: &str,
+    reason: &str,
 ) -> BTreeMap<String, String> {
     let mut metadata = BTreeMap::new();
     metadata.insert("checkpoint_id".to_string(), checkpoint_id.to_string());
     metadata.insert("checkpoint_resume_status".to_string(), status.to_string());
     metadata.insert("checkpoint_stage".to_string(), stage.to_string());
+    metadata.insert("checkpoint_resume_reason".to_string(), reason.to_string());
     metadata
+}
+
+fn checkpoint_resume_profile(response: &RuntimeRunResponse) -> (bool, String, String) {
+    if response.result.status == "awaiting_confirmation" {
+        return (
+            true,
+            "confirmation_required".to_string(),
+            "PausedForConfirmation".to_string(),
+        );
+    }
+    let retryable = response
+        .result
+        .error
+        .as_ref()
+        .is_some_and(|error| error.retryable);
+    if retryable {
+        return (true, "retryable_failure".to_string(), "Execute".to_string());
+    }
+    (false, "none".to_string(), response.result.final_stage.clone())
 }
 
 fn redacted_request(request: &RunRequest) -> RunRequest {
@@ -247,10 +279,6 @@ fn is_terminal_event(event_type: &str) -> bool {
     event_type == "run_finished" || event_type == "run_failed"
 }
 
-fn is_resumable_status(status: &str) -> bool {
-    status == "awaiting_confirmation"
-}
-
 fn resequence_events(events: &mut [RunEvent]) {
     for (index, event) in events.iter_mut().enumerate() {
         event.sequence = index as u32 + 1;
@@ -279,7 +307,7 @@ mod tests {
         with_runtime_checkpoint,
     };
     use crate::contracts::{
-        ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
+        ErrorInfo, ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
     };
     use std::collections::BTreeMap;
     use std::fs;
@@ -310,6 +338,19 @@ mod tests {
         let event = checkpoint_resume_event(&resumed);
         let response = with_checkpoint_resume_event(sample_response(&resumed), event);
         assert!(response.events.iter().any(|item| item.event_type == "checkpoint_resumed"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn marks_retryable_failure_checkpoint_as_resumable() {
+        let root = test_root("marks_retryable_failure_checkpoint_as_resumable");
+        let request = sample_request(&root);
+        let response = with_runtime_checkpoint(&request, retryable_failure_response(&request));
+        let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
+        let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
+        assert!(loaded.as_ref().is_some_and(|item| item.resumable));
+        assert!(loaded.as_ref().is_some_and(|item| item.resume_reason == "retryable_failure"));
+        assert!(loaded.as_ref().is_some_and(|item| item.resume_stage == "Execute"));
         let _ = fs::remove_dir_all(root);
     }
 
@@ -396,6 +437,41 @@ mod tests {
             decision: "approve".to_string(),
             note: String::new(),
             remember: false,
+        }
+    }
+
+    fn retryable_failure_response(request: &RunRequest) -> RuntimeRunResponse {
+        RuntimeRunResponse {
+            events: vec![
+                sample_event(request, 1, "run_started", "Analyze"),
+                sample_event(request, 2, "run_failed", "Finish"),
+                sample_event(request, 3, "run_finished", "Finish"),
+            ],
+            result: RunResult {
+                request_id: request.request_id.clone(),
+                run_id: request.run_id.clone(),
+                session_id: request.session_id.clone(),
+                trace_id: request.trace_id.clone(),
+                kind: "run_result".to_string(),
+                source: "runtime".to_string(),
+                status: "failed".to_string(),
+                final_answer: "temporary failure".to_string(),
+                summary: "temporary failure".to_string(),
+                error: Some(ErrorInfo {
+                    error_code: "action_execution_failed".to_string(),
+                    message: "temporary failure".to_string(),
+                    summary: "temporary failure".to_string(),
+                    retryable: true,
+                    source: "runtime".to_string(),
+                    stage: "Finish".to_string(),
+                    metadata: BTreeMap::new(),
+                }),
+                memory_write_summary: None,
+                final_stage: "Finish".to_string(),
+                checkpoint_id: None,
+                resumable: None,
+            },
+            confirmation_request: None,
         }
     }
 

@@ -1,4 +1,4 @@
-import { ChatRunAccepted, ModelRef, WorkspaceRef } from "../shared/contracts";
+import { ChatRetryRequest, ChatRunAccepted, ModelRef, WorkspaceRef } from "../shared/contracts";
 
 type SubmitChatRunPayload = {
   sessionId: string;
@@ -25,6 +25,22 @@ export async function submitChatRun(payload: SubmitChatRunPayload): Promise<Chat
 
   if (!response.ok) {
     throw new Error(`提交任务失败: ${await readErrorText(response)}`);
+  }
+
+  return (await response.json()) as ChatRunAccepted;
+}
+
+export async function submitChatRetry(payload: ChatRetryRequest): Promise<ChatRunAccepted> {
+  const response = await fetch("/api/v1/chat/retry", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`提交重试失败: ${await readErrorText(response)}`);
   }
 
   return (await response.json()) as ChatRunAccepted;
