@@ -45,6 +45,7 @@ fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
         .or_else(|| instability_decision_template(input))
         .or_else(|| beginner_first_step_template(input))
         .or_else(|| fast_checklist_template(input))
+        .or_else(|| kickoff_message_template(input))
         .or_else(|| minimal_recovery_template(input))?;
     Some(ActionExecution::bypass_ok(
         "命中本地稳定答复模板。".to_string(),
@@ -75,9 +76,30 @@ fn fast_checklist_template(user_input: &str) -> Option<String> {
     Some("30 分钟务实清单：1) 0-8 分钟先跑 5 条真实问句并记录 run_id；2) 9-20 分钟只修失败最多的 1 个问题并复跑同题；3) 21-30 分钟回写验收文档，明确通过项和残余风险。".to_string())
 }
 
+fn kickoff_message_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_kickoff_intent = lower.contains("kickoff message")
+        || lower.contains("restart quickly")
+        || lower.contains("tomorrow morning")
+        || lower.contains("明早")
+        || lower.contains("启动语");
+    if !has_kickoff_intent {
+        return None;
+    }
+    let asks_short = lower.contains("one short")
+        || lower.contains("short message")
+        || lower.contains("一句")
+        || lower.contains("简短")
+        || lower.contains("不超过两句");
+    if !asks_short {
+        return None;
+    }
+    Some("明早先用 5 分钟看昨天未闭合项，再按优先级先做一件最小可交付任务，做完立即回写证据并继续下一项。".to_string())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::fast_checklist_template;
+    use super::{fast_checklist_template, kickoff_message_template};
 
     #[test]
     fn matches_english_fast_checklist_question() {
@@ -89,6 +111,12 @@ mod tests {
     fn skips_non_checklist_question() {
         let text = "帮我总结一下今天的进度。";
         assert!(fast_checklist_template(text).is_none());
+    }
+
+    #[test]
+    fn matches_kickoff_message_question() {
+        let text = "Write one short kickoff message for tomorrow morning so I can restart quickly.";
+        assert!(kickoff_message_template(text).is_some());
     }
 }
 

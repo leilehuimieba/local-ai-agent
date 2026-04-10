@@ -1,0 +1,42 @@
+﻿[
+    {
+        "id":  "day8-final-check-q3",
+        "run_id":  "run-1775790609002-5",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "status":  "completed/answer/verified",
+        "usable":  "可用",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。"
+    },
+    {
+        "id":  "day8-final-check-q5",
+        "run_id":  "run-1775791206692-20",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "status":  "completed/answer/verified",
+        "usable":  "可用",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。"
+    },
+    {
+        "id":  "day8-final-check-provider-1",
+        "run_id":  "run-1775790634333-11",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "status":  "completed/answer/verified",
+        "usable":  "可用",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。"
+    },
+    {
+        "id":  "day8-final-check-provider-2",
+        "run_id":  "run-1775790643720-14",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "status":  "completed/answer/verified",
+        "usable":  "可用",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。"
+    }
+]

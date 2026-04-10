@@ -195,3 +195,21 @@ Case B：
 复核结论：
 
 1. 阶段结论为“继续推进”，下一步先做路径最小修补再复跑。
+
+## 9. Day8 最终抽检（收口前）
+
+抽检样本：
+
+1. `day8-final-check-q3.run-accepted.json` / `day8-final-check-q3.run-events.json` / `day8-final-check-q3.run-finished.json`
+2. `day8-final-check-q5.run-accepted.json` / `day8-final-check-q5.run-events.json` / `day8-final-check-q5.run-finished.json`（首轮失败样本）
+3. `day8-final-check-q5-rerun2.run-accepted.json` / `day8-final-check-q5-rerun2.run-events.json` / `day8-final-check-q5-rerun2.run-finished.json`（最小修补后复跑成功样本）
+4. `day8-final-check-provider-1.run-accepted.json` / `day8-final-check-provider-1.run-events.json` / `day8-final-check-provider-1.run-finished.json`
+5. `day8-final-check-provider-2.run-accepted.json` / `day8-final-check-provider-2.run-events.json` / `day8-final-check-provider-2.run-finished.json`
+6. `day8-final-check-summary-20260410.json`
+7. `day8-final-check-summary-20260410.md`
+
+复核结论：
+
+1. 最终口径按复跑结果统计为 `4/4 completed`（q3、q5、provider-1、provider-2）。
+2. q5 失败根因是自然问句误入 `agent_resolve`，最小修补后已转为 `ContextAnswer` 稳定模板路径，`run_finished.metadata.result_mode=answer`。
+3. 收口边界保持不变：本轮只做最小路由+模板修补，不扩接口、不改共享合同、不改主循环。

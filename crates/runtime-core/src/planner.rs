@@ -303,6 +303,9 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     if should_use_context_for_fast_checklist(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
+    if should_use_context_for_kickoff_message(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
     if should_open_calculator(&lower) {
         return Some(PlannedAction::RunCommand {
             command: calculator_command(),
@@ -328,6 +331,25 @@ fn should_use_context_for_fast_checklist(input: &str) -> bool {
         ],
     );
     has_time_limit && has_checklist_intent
+}
+
+fn should_use_context_for_kickoff_message(input: &str) -> bool {
+    let has_kickoff_intent = mentions_any(
+        input,
+        &[
+            "kickoff message",
+            "restart quickly",
+            "tomorrow morning",
+            "明早",
+            "启动语",
+            "开场提醒",
+        ],
+    );
+    let asks_short_output = mentions_any(
+        input,
+        &["one short", "short message", "一句", "简短", "不超过两句"],
+    );
+    has_kickoff_intent && asks_short_output
 }
 
 fn should_open_calculator(input: &str) -> bool {
@@ -674,6 +696,20 @@ mod tests {
     fn plans_context_answer_for_english_fast_checklist() {
         let env = envelope(
             "I only have 30 minutes. Give me a practical checklist I can execute now.",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_english_kickoff_message() {
+        let env = envelope(
+            "Write one short kickoff message for tomorrow morning so I can restart quickly.",
             "当前会话还没有可复用的压缩摘要。",
             "",
             "当前没有命中高价值说明文件。",
