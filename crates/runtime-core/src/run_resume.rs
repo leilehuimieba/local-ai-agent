@@ -41,10 +41,16 @@ fn resume_plan(checkpoint: &RunCheckpoint) -> String {
         checkpoint.resume_reason, checkpoint.resume_stage
     );
     let action = resume_action_hint(checkpoint);
-    if action.is_empty() {
+    let hint = resume_recovery_hint(checkpoint);
+    let with_action = if action.is_empty() {
         base
     } else {
         format!("{base}；继续动作：{action}")
+    };
+    if hint.is_empty() {
+        with_action
+    } else {
+        format!("{with_action}；恢复提示：{hint}")
     }
 }
 
@@ -95,6 +101,27 @@ fn action_hint_from_event(event: &crate::contracts::RunEvent) -> Option<String> 
     None
 }
 
+fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
+    let failed = checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find(|event| event.event_type == "run_failed")
+        .and_then(|event| event.metadata.get("failure_recovery_hint").cloned());
+    if failed.is_some() {
+        return failed.unwrap_or_default();
+    }
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find(|event| event.event_type == "verification_completed")
+        .and_then(|event| event.metadata.get("verification_summary").cloned())
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::apply_resume_checkpoint;
@@ -132,6 +159,15 @@ mod tests {
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(session.short_term.current_plan.contains("继续动作：执行命令"));
         assert!(session.short_term.current_plan.contains("执行命令: Write-Error"));
+    }
+
+    #[test]
+    fn appends_recovery_hint_into_resume_plan() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(session.short_term.current_plan.contains("恢复提示：建议先检查命令语法"));
     }
 
     fn sample_request(strategy: &str) -> RunRequest {
@@ -210,6 +246,10 @@ mod tests {
         metadata.insert(
             "task_title".to_string(),
             "执行命令: Write-Error 'stage-b retry acceptance'; ex...".to_string(),
+        );
+        metadata.insert(
+            "failure_recovery_hint".to_string(),
+            "建议先检查命令语法、依赖和当前环境，再决定是否重试。".to_string(),
         );
         if !handoff_path.is_empty() {
             metadata.insert("handoff_artifact_path".to_string(), handoff_path.to_string());

@@ -83,6 +83,9 @@
   - `tool_call_snapshot.arguments_json` 已进入运行时事件合同
   - `bootstrap_run` 命中 checkpoint 时，会优先从最近一条 `tool_call_snapshot` 反解 `PlannedAction`
   - 当前已证明恢复后可以沿用最近一次已选动作，而不是必然重新规划
+- 恢复计划已新增一层失败提示接回：
+  - `retryable_failure` 命中恢复后，会优先从最近一条 `run_failed` 事件里读取 `failure_recovery_hint`
+  - 当前已证明恢复计划不仅知道“继续哪个动作”，也知道“建议如何继续”
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环
