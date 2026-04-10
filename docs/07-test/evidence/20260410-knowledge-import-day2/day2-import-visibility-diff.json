@@ -1,0 +1,20 @@
+﻿[
+    {
+        "case":  "A",
+        "source_file":  "docs/README.md",
+        "read_run_id":  "run-1775781795595-426",
+        "write_run_id":  "run-1775781821189-429",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-a-summary.md",
+        "target_exists_before_write":  false,
+        "target_exists_after_write":  true
+    },
+    {
+        "case":  "B",
+        "source_file":  "docs/07-test/evidence/20260409-pre-release-smoke/README.md",
+        "read_run_id":  "run-1775781832306-432",
+        "write_run_id":  "run-1775781844456-435",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-b-summary.md",
+        "target_exists_before_write":  false,
+        "target_exists_after_write":  true
+    }
+]

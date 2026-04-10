@@ -1,0 +1,54 @@
+﻿[
+    {
+        "case_key":  "case-a-read",
+        "run_id":  "run-1775781795595-426",
+        "session_id":  "day2-import-read-a-20260410",
+        "source_file":  "docs/README.md",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-a-summary.md",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "workspace_read",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day2-import-read-a-20260410\\run-1775781795595-426\\read-1775781795923.txt",
+        "target_exists_now":  true
+    },
+    {
+        "case_key":  "case-a-write",
+        "run_id":  "run-1775781821189-429",
+        "session_id":  "day2-import-write-a-20260410",
+        "source_file":  "docs/README.md",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-a-summary.md",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "workspace_write",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day2-import-write-a-20260410\\run-1775781821189-429\\write-1775781821531.txt",
+        "target_exists_now":  true
+    },
+    {
+        "case_key":  "case-b-read",
+        "run_id":  "run-1775781832306-432",
+        "session_id":  "day2-import-read-b-20260410",
+        "source_file":  "docs/07-test/evidence/20260409-pre-release-smoke/README.md",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-b-summary.md",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "workspace_read",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day2-import-read-b-20260410\\run-1775781832306-432\\read-1775781832639.txt",
+        "target_exists_now":  true
+    },
+    {
+        "case_key":  "case-b-write",
+        "run_id":  "run-1775781844456-435",
+        "session_id":  "day2-import-write-b-20260410",
+        "source_file":  "docs/07-test/evidence/20260409-pre-release-smoke/README.md",
+        "target_file":  "tmp/knowledge-import-day2/20260410/import-b-summary.md",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "workspace_write",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day2-import-write-b-20260410\\run-1775781844456-435\\write-1775781844801.txt",
+        "target_exists_now":  true
+    }
+]
