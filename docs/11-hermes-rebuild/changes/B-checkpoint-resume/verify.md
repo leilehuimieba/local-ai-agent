@@ -2,7 +2,7 @@
 
 ## 验证方式
 
-- 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复与失败重试两类短期状态恢复测试。
+- 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复，以及“从 checkpoint 事件快照恢复已选动作”测试。
 - 集成测试：已完成 `retryable_failure` 与 `after_confirmation` 两条恢复闭环样本。
 - 人工验证：已确认 retry 与 confirm 两条路径都不是单纯插入恢复事件，而是会继续进入统一主循环并产生后续执行事件。
 
@@ -79,9 +79,15 @@
 - 恢复输入已新增一层稳定接回：
   - `retryable_failure` 命中恢复后，会从 checkpoint 响应事件里回填上一轮失败运行的 `handoff_artifact_path`
   - 这让恢复主线不仅保留失败摘要，也保留最近一次执行产物引用，且在 planning 写回阶段不会被立即清空，便于后续继续往动作边界恢复收口
+- 已选动作恢复已通过单元测试固定：
+  - `tool_call_snapshot.arguments_json` 已进入运行时事件合同
+  - `bootstrap_run` 命中 checkpoint 时，会优先从最近一条 `tool_call_snapshot` 反解 `PlannedAction`
+  - 当前已证明恢复后可以沿用最近一次已选动作，而不是必然重新规划
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环
+- 当前证据已经足以证明：
+  - 运行时已具备“短期状态 + 最近已选动作”两层恢复能力
 - 当前证据还不能证明：
-  - 运行时已经恢复到“中断前的精确动作边界”
-  - 已选动作、执行阶段中间态或验证前快照已经被完整复用
+  - 运行时已经恢复到“工具执行中的精确中断边界”
+  - 执行阶段中间态或验证前快照已经被完整复用

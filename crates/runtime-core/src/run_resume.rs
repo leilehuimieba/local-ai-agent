@@ -36,10 +36,16 @@ fn clear_resume_confirmation_state(
 }
 
 fn resume_plan(checkpoint: &RunCheckpoint) -> String {
-    format!(
+    let base = format!(
         "从 checkpoint 恢复：{} -> {}",
         checkpoint.resume_reason, checkpoint.resume_stage
-    )
+    );
+    let action = resume_action_hint(checkpoint);
+    if action.is_empty() {
+        base
+    } else {
+        format!("{base}；继续动作：{action}")
+    }
 }
 
 fn resume_phase(checkpoint: &RunCheckpoint) -> String {
@@ -58,6 +64,35 @@ fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
         .rev()
         .find_map(|event| event.metadata.get("handoff_artifact_path").cloned())
         .unwrap_or_default()
+}
+
+fn resume_action_hint(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(action_hint_from_event)
+        .unwrap_or_default()
+}
+
+fn action_hint_from_event(event: &crate::contracts::RunEvent) -> Option<String> {
+    let tool = event.metadata.get("tool_display_name").cloned().unwrap_or_default();
+    let task = event.metadata.get("task_title").cloned().unwrap_or_default();
+    let name = event.metadata.get("tool_name").cloned().unwrap_or_default();
+    if !tool.is_empty() && !task.is_empty() {
+        return Some(format!("{tool} ({task})"));
+    }
+    if !tool.is_empty() {
+        return Some(tool);
+    }
+    if !task.is_empty() {
+        return Some(task);
+    }
+    if !name.is_empty() {
+        return Some(name);
+    }
+    None
 }
 
 #[cfg(test)]
@@ -87,6 +122,16 @@ mod tests {
         let mut session = SessionMemory::default();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(session.short_term.handoff_artifact_path.is_empty());
+    }
+
+    #[test]
+    fn appends_last_action_hint_into_resume_plan() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(session.short_term.current_plan.contains("继续动作：执行命令"));
+        assert!(session.short_term.current_plan.contains("执行命令: Write-Error"));
     }
 
     fn sample_request(strategy: &str) -> RunRequest {
@@ -160,6 +205,12 @@ mod tests {
 
     fn sample_event(handoff_path: &str) -> RunEvent {
         let mut metadata = BTreeMap::new();
+        metadata.insert("tool_name".to_string(), "run_command".to_string());
+        metadata.insert("tool_display_name".to_string(), "执行命令".to_string());
+        metadata.insert(
+            "task_title".to_string(),
+            "执行命令: Write-Error 'stage-b retry acceptance'; ex...".to_string(),
+        );
         if !handoff_path.is_empty() {
             metadata.insert("handoff_artifact_path".to_string(), handoff_path.to_string());
         }
