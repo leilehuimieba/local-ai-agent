@@ -327,6 +327,45 @@ export type ChatRunAccepted = {
   initial_status: string;
 };
 
+export type RuntimeRunRequest = {
+  request_id: string;
+  run_id: string;
+  session_id: string;
+  trace_id: string;
+  user_input: string;
+  mode: string;
+  model_ref: ModelRef;
+  provider_ref: ProviderRef;
+  workspace_ref: WorkspaceRef;
+  context_hints?: Record<string, string>;
+  resume_from_checkpoint_id?: string;
+  resume_strategy?: string;
+  confirmation_decision?: ConfirmationDecision;
+};
+
+export type RunResult = {
+  request_id?: string;
+  run_id: string;
+  session_id?: string;
+  trace_id?: string;
+  kind?: string;
+  source?: string;
+  status: string;
+  final_answer: string;
+  summary: string;
+  error?: ErrorInfo;
+  memory_write_summary?: string;
+  final_stage: string;
+  checkpoint_id?: string;
+  resumable?: boolean;
+};
+
+export type RuntimeRunResponse = {
+  events: RunEvent[];
+  result: RunResult;
+  confirmation_request?: ConfirmationRequest;
+};
+
 export type RunEvent = {
   event_id: string;
   kind?: string;
@@ -356,6 +395,7 @@ export type RunEvent = {
   completion_status?: string;
   completion_reason?: string;
   verification_summary?: string;
+  checkpoint_written?: boolean;
   context_snapshot?: RuntimeContextSnapshot;
   tool_call_snapshot?: ToolCallSnapshot;
   verification_snapshot?: VerificationSnapshot;
@@ -447,6 +487,14 @@ export type ConfirmationRequest = {
   hazards: string[];
   alternatives: string[];
   kind: string;
+};
+
+export type ConfirmationDecision = {
+  confirmation_id: string;
+  run_id: string;
+  decision: "approve" | "reject" | "cancel";
+  note?: string;
+  remember?: boolean;
 };
 
 export type ChatMessage = {

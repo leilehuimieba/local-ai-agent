@@ -1,0 +1,191 @@
+﻿name: 构建并发布全量产物
+
+on:
+  push:
+    tags:
+      - "v*"
+    paths:
+      - "frontend/**"
+      - "gateway/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/build-and-publish-frontend.yml"
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: "目标仓库（owner/repo），留空使用 DEPLOY_REPO"
+        required: false
+        type: string
+      target_branch:
+        description: "目标分支，留空使用 DEPLOY_BRANCH 或 gh-pages"
+        required: false
+        type: string
+      target_dir:
+        description: "目标目录，留空使用 DEPLOY_DIR 或仓库根目录"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-all-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取当前仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: gateway/go.mod
+
+      - name: 安装 Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 缓存 Rust 构建
+        uses: Swatinem/rust-cache@v2
+
+      - name: 构建前端
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: 构建 Go（gateway/server + launcher）
+        run: |
+          set -euo pipefail
+          mkdir -p build/gateway
+          cd gateway
+          GOOS=linux GOARCH=amd64 go build -o ../build/gateway/server-linux-amd64 ./cmd/server
+          GOOS=linux GOARCH=amd64 go build -o ../build/gateway/launcher-linux-amd64 ./cmd/launcher
+
+      - name: 构建 Rust（runtime-host）
+        run: |
+          set -euo pipefail
+          cargo build --release -p runtime-host
+          mkdir -p build/runtime
+          cp target/release/runtime-host build/runtime/runtime-host-linux-amd64
+
+      - name: 组装发布目录
+        env:
+          GIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p build/publish
+          cp -a frontend/dist/. build/publish/
+          mkdir -p build/publish/build/gateway
+          mkdir -p build/publish/build/runtime
+
+          cp -a build/gateway/. build/publish/build/gateway/
+          cp -a build/runtime/. build/publish/build/runtime/
+
+          cat > build/publish/build/BUILD_INFO.txt <<EOF
+          source_repo=${{ github.repository }}
+          source_ref=${{ github.ref }}
+          source_sha=${GIT_SHA}
+          workflow_run_id=${RUN_ID}
+          workflow_run_number=${RUN_NUMBER}
+          generated_at_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          EOF
+
+      - name: 上传构建产物（便于在 Actions 页面下载）
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-build-output
+          path: build/publish
+
+      - name: 解析发布目标
+        id: deploy_target
+        env:
+          INPUT_REPO: ${{ github.event.inputs.target_repo || '' }}
+          INPUT_BRANCH: ${{ github.event.inputs.target_branch || '' }}
+          INPUT_DIR: ${{ github.event.inputs.target_dir || '' }}
+          VAR_REPO: ${{ vars.DEPLOY_REPO || '' }}
+          VAR_BRANCH: ${{ vars.DEPLOY_BRANCH || '' }}
+          VAR_DIR: ${{ vars.DEPLOY_DIR || '' }}
+        run: |
+          set -euo pipefail
+
+          repo="${INPUT_REPO:-$VAR_REPO}"
+          branch="${INPUT_BRANCH:-$VAR_BRANCH}"
+          dir="${INPUT_DIR:-$VAR_DIR}"
+
+          if [ -z "$repo" ]; then
+            echo "未找到目标仓库。请配置 DEPLOY_REPO（owner/repo）或手动触发时传 target_repo。"
+            exit 1
+          fi
+
+          if [ -z "$branch" ]; then
+            branch="gh-pages"
+          fi
+
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: 推送产物到目标仓库
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          TARGET_REPO: ${{ steps.deploy_target.outputs.repo }}
+          TARGET_BRANCH: ${{ steps.deploy_target.outputs.branch }}
+          TARGET_DIR: ${{ steps.deploy_target.outputs.dir }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DEPLOY_TOKEN:-}" ]; then
+            echo "缺少 secrets.DEPLOY_TOKEN。"
+            exit 1
+          fi
+
+          repo_url="https://x-access-token:${DEPLOY_TOKEN}@github.com/${TARGET_REPO}.git"
+          publish_dir="$(mktemp -d)"
+
+          if git ls-remote --exit-code --heads "$repo_url" "$TARGET_BRANCH" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "$TARGET_BRANCH" "$repo_url" "$publish_dir"
+          else
+            git clone --depth 1 "$repo_url" "$publish_dir"
+            cd "$publish_dir"
+            git checkout --orphan "$TARGET_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+            cd - >/dev/null
+          fi
+
+          destination="$publish_dir"
+          if [ -n "$TARGET_DIR" ]; then
+            destination="$publish_dir/$TARGET_DIR"
+            mkdir -p "$destination"
+          fi
+
+          find "$destination" -mindepth 1 -maxdepth 1 ! -name ".git" ! -name "CNAME" -exec rm -rf {} +
+          cp -a build/publish/. "$destination/"
+
+          cd "$publish_dir"
+          touch .nojekyll
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "构建产物无变更，跳过推送。"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "发布构建产物 ${GITHUB_SHA::7}"
+          git push origin "HEAD:$TARGET_BRANCH"

@@ -134,13 +134,13 @@ $results += Test-TextPatterns "doc_freeze_scope" (Join-Path $root "docs\00-chart
   "5. 启动本地程序",
   "可控安装与验证能力"
 )
-$results += Test-TextPatterns "doc_completion_status" (Join-Path $root "docs\07-test\需求文档对照完成度清单_V1.md") @(
+$results += Test-TextPatterns "doc_completion_status" (Join-Path $root "docs\archive\completed-v1-20260410\需求文档对照完成度清单_V1.md") @(
   "第一版产品落地门槛：",
   '`V1` 冻结需求实现：',
   "6. 启动本地程序：",
   "7. 可控安装与验证能力："
 )
-$results += Test-TextPatterns "doc_product_acceptance" (Join-Path $root "docs\07-test\产品级总体验收文档_V1.md") @(
+$results += Test-TextPatterns "doc_product_acceptance" (Join-Path $root "docs\archive\completed-v1-20260410\产品级总体验收文档_V1.md") @(
   "### 3.2 当前正式结论",
   "### 4.13 启动本地程序",
   "### 4.14 可控安装与验证能力",
@@ -169,6 +169,24 @@ $results += Test-TextPatterns "memory_governance_contract_ts" (Join-Path $root "
   "memory_action",
   "source_event_type",
   "source_artifact_path"
+)
+$results += Test-TextPatterns "runtime_contract_resume_fields_rust" (Join-Path $root "crates\runtime-core\src\contracts.rs") @(
+  "resume_from_checkpoint_id",
+  "resume_strategy",
+  "checkpoint_id",
+  "resumable"
+)
+$results += Test-TextPatterns "runtime_contract_resume_fields_go" (Join-Path $root "gateway\internal\contracts\contracts.go") @(
+  "resume_from_checkpoint_id",
+  "resume_strategy",
+  "checkpoint_id",
+  "resumable"
+)
+$results += Test-TextPatterns "runtime_contract_resume_fields_ts" (Join-Path $root "frontend\src\shared\contracts.ts") @(
+  "resume_from_checkpoint_id",
+  "resume_strategy",
+  "checkpoint_id",
+  "resumable"
 )
 
 $report = [ordered]@{

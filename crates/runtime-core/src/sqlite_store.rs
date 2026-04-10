@@ -1,9 +1,11 @@
+use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::knowledge_store::KnowledgeRecord;
 use crate::memory::{MemoryEntry, normalized_memory_entry};
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
 use rusqlite::{Connection, params};
+use serde_json::{from_str, to_string};
 use std::collections::BTreeSet;
 use std::fs;
 
@@ -27,6 +29,21 @@ pub(crate) fn write_knowledge_record_sqlite(
 
 pub(crate) fn list_knowledge_records_sqlite(request: &RunRequest) -> Vec<KnowledgeRecord> {
     with_connection(request, |conn| load_knowledge_records(conn, request)).unwrap_or_default()
+}
+
+pub(crate) fn write_runtime_checkpoint_sqlite(
+    request: &RunRequest,
+    checkpoint: &RunCheckpoint,
+) -> Result<(), String> {
+    with_connection(request, |conn| insert_runtime_checkpoint(conn, checkpoint))
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn load_runtime_checkpoint_sqlite(
+    request: &RunRequest,
+    checkpoint_id: &str,
+) -> Result<Option<RunCheckpoint>, String> {
+    with_connection(request, |conn| select_runtime_checkpoint(conn, checkpoint_id))
 }
 
 pub(crate) fn with_connection<T, F>(request: &RunRequest, f: F) -> Result<T, String>
@@ -316,6 +333,8 @@ fn workspace_request(workspace_id: &str) -> RunRequest {
             is_active: true,
         },
         context_hints: Default::default(),
+        resume_from_checkpoint_id: String::new(),
+        resume_strategy: String::new(),
         confirmation_decision: None,
     }
 }
@@ -478,7 +497,7 @@ fn is_legacy_preference_noise(item: &MemoryEntry) -> bool {
     item.kind == "preference" && item.title.trim().is_empty() && !item.verified
 }
 
-const SCHEMA_STATEMENTS: [&str; 8] = [
+const SCHEMA_STATEMENTS: [&str; 10] = [
     "create table if not exists long_term_memory (
         id text primary key,
         workspace_id text not null,
@@ -529,6 +548,21 @@ const SCHEMA_STATEMENTS: [&str; 8] = [
     "create index if not exists idx_knowledge_workspace_type on knowledge_base (workspace_id, knowledge_type)",
     "create index if not exists idx_knowledge_workspace_source on knowledge_base (workspace_id, source_type)",
     "create index if not exists idx_knowledge_workspace_updated on knowledge_base (workspace_id, updated_at)",
+    "create table if not exists runtime_checkpoints (
+        checkpoint_id text primary key,
+        run_id text not null,
+        session_id text not null,
+        trace_id text not null,
+        workspace_id text not null,
+        status text not null,
+        final_stage text not null,
+        resumable integer not null default 0,
+        event_count integer not null default 0,
+        request_payload text not null,
+        response_payload text not null,
+        created_at text not null
+    )",
+    "create index if not exists idx_checkpoint_run on runtime_checkpoints (run_id, created_at)",
 ];
 
 const MEMORY_MIGRATIONS: [&str; 9] = [
@@ -542,3 +576,66 @@ const MEMORY_MIGRATIONS: [&str; 9] = [
     "alter table long_term_memory add column archive_reason text not null default ''",
     "alter table long_term_memory add column archived_at text not null default ''",
 ];
+
+fn insert_runtime_checkpoint(
+    conn: &Connection,
+    checkpoint: &RunCheckpoint,
+) -> Result<(), String> {
+    let request_payload = to_string(&checkpoint.request).map_err(|error| error.to_string())?;
+    let response_payload = to_string(&checkpoint.response).map_err(|error| error.to_string())?;
+    conn.execute(
+        "insert or replace into runtime_checkpoints (
+            checkpoint_id, run_id, session_id, trace_id, workspace_id, status, final_stage,
+            resumable, event_count, request_payload, response_payload, created_at
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+        params![
+            checkpoint.checkpoint_id, checkpoint.run_id, checkpoint.session_id, checkpoint.trace_id,
+            checkpoint.workspace_id, checkpoint.status, checkpoint.final_stage,
+            bool_flag(checkpoint.resumable), checkpoint.event_count, request_payload,
+            response_payload, checkpoint.created_at
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+fn select_runtime_checkpoint(
+    conn: &Connection,
+    checkpoint_id: &str,
+) -> Result<Option<RunCheckpoint>, String> {
+    let mut statement = conn
+        .prepare(
+            "select checkpoint_id, run_id, session_id, trace_id, workspace_id, status, final_stage,
+             resumable, event_count, request_payload, response_payload, created_at
+             from runtime_checkpoints where checkpoint_id = ?1",
+        )
+        .map_err(|error| error.to_string())?;
+    let mut rows = statement
+        .query(params![checkpoint_id])
+        .map_err(|error| error.to_string())?;
+    match rows.next().map_err(|error| error.to_string())? {
+        Some(row) => decode_runtime_checkpoint(row).map(Some),
+        None => Ok(None),
+    }
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+fn decode_runtime_checkpoint(row: &rusqlite::Row<'_>) -> Result<RunCheckpoint, String> {
+    let request_payload: String = row.get(9).map_err(|error| error.to_string())?;
+    let response_payload: String = row.get(10).map_err(|error| error.to_string())?;
+    Ok(RunCheckpoint {
+        checkpoint_id: row.get(0).map_err(|error| error.to_string())?,
+        run_id: row.get(1).map_err(|error| error.to_string())?,
+        session_id: row.get(2).map_err(|error| error.to_string())?,
+        trace_id: row.get(3).map_err(|error| error.to_string())?,
+        workspace_id: row.get(4).map_err(|error| error.to_string())?,
+        status: row.get(5).map_err(|error| error.to_string())?,
+        final_stage: row.get(6).map_err(|error| error.to_string())?,
+        resumable: row.get::<_, i32>(7).map_err(|error| error.to_string())? != 0,
+        event_count: row.get(8).map_err(|error| error.to_string())?,
+        request: from_str(&request_payload).map_err(|error| error.to_string())?,
+        response: from_str(&response_payload).map_err(|error| error.to_string())?,
+        created_at: row.get(11).map_err(|error| error.to_string())?,
+    })
+}

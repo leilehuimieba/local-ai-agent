@@ -123,6 +123,8 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		ProviderRef:  providerRef,
 		WorkspaceRef: workspace,
 		ContextHints: h.withKnowledgeHints(runContextHints(payload.ContextHints, h.repoRoot, firstSeen)),
+		ResumeFromCheckpointID: "",
+		ResumeStrategy:       "",
 	}, nil
 }
 
@@ -324,6 +326,7 @@ func (h *ChatHandler) approveConfirmation(
 	}
 	pending.Request.ContextHints["workspace_first_seen"] = "false"
 	pending.Request.ConfirmationDecision = &decision
+	applyCheckpointResume(&pending.Request, pending.CheckpointID)
 	go h.execute(pending.Request)
 	writeConfirmationResponse(w, http.StatusAccepted, decision)
 }
@@ -687,6 +690,7 @@ func (h *ChatHandler) execute(runRequest contracts.RunRequest) {
 		h.confirmationStore.Save(state.PendingConfirmation{
 			Request:      runRequest,
 			Confirmation: *response.ConfirmationRequest,
+			CheckpointID: stringValue(response.Result.CheckpointID),
 		})
 	}
 
@@ -759,6 +763,21 @@ func runtimeFailureFinishEvent(runRequest contracts.RunRequest, errorText string
 			"next_step":     "任务已结束",
 		},
 	}
+}
+
+func applyCheckpointResume(request *contracts.RunRequest, checkpointID string) {
+	if checkpointID == "" {
+		return
+	}
+	request.ResumeFromCheckpointID = checkpointID
+	request.ResumeStrategy = "after_confirmation"
+}
+
+func stringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func writeSSE(w http.ResponseWriter, item contracts.RunEvent) {

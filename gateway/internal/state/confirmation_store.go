@@ -9,6 +9,7 @@ import (
 type PendingConfirmation struct {
 	Request      contracts.RunRequest
 	Confirmation contracts.ConfirmationRequest
+	CheckpointID string
 }
 
 type ConfirmationStore struct {

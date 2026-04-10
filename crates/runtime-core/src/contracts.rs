@@ -177,6 +177,10 @@ pub struct RunRequest {
     pub workspace_ref: WorkspaceRef,
     #[serde(default)]
     pub context_hints: BTreeMap<String, String>,
+    #[serde(default)]
+    pub resume_from_checkpoint_id: String,
+    #[serde(default)]
+    pub resume_strategy: String,
     pub confirmation_decision: Option<ConfirmationDecision>,
 }
 
@@ -309,6 +313,8 @@ pub struct RunEvent {
     #[serde(default)]
     pub verification_summary: String,
     #[serde(default)]
+    pub checkpoint_written: bool,
+    #[serde(default)]
     pub context_snapshot: Option<RuntimeContextSnapshot>,
     #[serde(default)]
     pub tool_call_snapshot: Option<ToolCallSnapshot>,
@@ -337,6 +343,10 @@ pub struct RunResult {
     pub error: Option<ErrorInfo>,
     pub memory_write_summary: Option<String>,
     pub final_stage: String,
+    #[serde(default)]
+    pub checkpoint_id: Option<String>,
+    #[serde(default)]
+    pub resumable: Option<bool>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

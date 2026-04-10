@@ -12,10 +12,10 @@
 
 关联文档：
 
-1. [产品落地差距清单与收口顺序_V1](D:/newwork/本地智能体/docs/06-development/产品落地差距清单与收口顺序_V1.md)
+1. [产品落地差距清单与收口顺序_V1](D:/newwork/本地智能体/docs/archive/completed-v1-20260410/产品落地差距清单与收口顺序_V1.md)
 2. [本地记忆与知识沉淀需求文档_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀需求文档_V1.md)
 3. [本地记忆与知识沉淀开发任务书_V1](D:/newwork/本地智能体/docs/06-development/本地记忆与知识沉淀开发任务书_V1.md)
-4. [本地记忆与知识沉淀验收文档_V1](D:/newwork/本地智能体/docs/07-test/本地记忆与知识沉淀验收文档_V1.md)
+4. [本地记忆与知识沉淀验收文档_V1](D:/newwork/本地智能体/docs/archive/completed-v1-20260410/本地记忆与知识沉淀验收文档_V1.md)
 5. [本地适配架构原则_V1](D:/newwork/本地智能体/docs/02-architecture/本地适配架构原则_V1.md)
 
 ---

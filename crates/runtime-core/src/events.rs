@@ -152,6 +152,7 @@ pub(crate) fn make_event(
             .cloned()
             .unwrap_or_default(),
         verification_summary: pick_verification_summary(&metadata, verification_snapshot.as_ref()),
+        checkpoint_written: metadata_flag(&metadata, "checkpoint_written"),
         context_snapshot: context_snapshot(&metadata),
         tool_call_snapshot: tool_call_snapshot(&metadata),
         verification_snapshot,

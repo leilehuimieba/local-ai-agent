@@ -1,3 +1,4 @@
+mod checkpoint;
 mod action_decode;
 mod action_meta;
 mod answer_cache;
@@ -40,6 +41,9 @@ mod tool_trace;
 mod verify;
 
 use crate::completion::decide_completion;
+use crate::checkpoint::{
+    checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint,
+};
 use crate::events::{make_confirmation_event, make_event, with_runtime_memory_recall_event};
 use crate::handoff::persist_handoff_artifact;
 use crate::memory_router::evaluate_finish_memory_writes;
@@ -71,7 +75,11 @@ pub fn connector_catalog() -> ConnectorListResponse {
 }
 
 pub fn simulate_run_with_runtime_events(request: &RunRequest) -> RuntimeRunResponse {
-    with_runtime_memory_recall_event(request, simulate_run(request))
+    let resume_event = checkpoint_resume_event(request);
+    let response = simulate_run(request);
+    let response = with_runtime_memory_recall_event(request, response);
+    let response = with_checkpoint_resume_event(response, resume_event);
+    with_runtime_checkpoint(request, response)
 }
 
 pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
@@ -205,6 +213,8 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
                     error: Some(error),
                     memory_write_summary: None,
                     final_stage: "Finish".to_string(),
+                    checkpoint_id: None,
+                    resumable: None,
                 },
                 confirmation_request: None,
             };
@@ -253,6 +263,8 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
                     }),
                     memory_write_summary: None,
                     final_stage: "PausedForConfirmation".to_string(),
+                    checkpoint_id: None,
+                    resumable: Some(true),
                 },
                 confirmation_request: Some(confirmation.clone()),
             };
@@ -608,6 +620,8 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
             error: failure_error,
             memory_write_summary: action_result.result.memory_write_summary.clone(),
             final_stage: "Finish".to_string(),
+            checkpoint_id: None,
+            resumable: None,
         },
         confirmation_request: None,
     }

@@ -32,6 +32,8 @@ type RunRequest struct {
 	ProviderRef          ProviderRef           `json:"provider_ref"`
 	WorkspaceRef         config.WorkspaceRef   `json:"workspace_ref"`
 	ContextHints         map[string]string     `json:"context_hints,omitempty"`
+	ResumeFromCheckpointID string              `json:"resume_from_checkpoint_id,omitempty"`
+	ResumeStrategy       string                `json:"resume_strategy,omitempty"`
 	ConfirmationDecision *ConfirmationDecision `json:"confirmation_decision,omitempty"`
 }
 
@@ -153,6 +155,8 @@ type RunResult struct {
 	Error              *ErrorInfo `json:"error,omitempty"`
 	MemoryWriteSummary *string    `json:"memory_write_summary,omitempty"`
 	FinalStage         string     `json:"final_stage"`
+	CheckpointID       *string    `json:"checkpoint_id,omitempty"`
+	Resumable          *bool      `json:"resumable,omitempty"`
 }
 
 type RunEvent struct {
@@ -184,6 +188,7 @@ type RunEvent struct {
 	CompletionStatus     string                  `json:"completion_status,omitempty"`
 	CompletionReason     string                  `json:"completion_reason,omitempty"`
 	VerificationSummary  string                  `json:"verification_summary,omitempty"`
+	CheckpointWritten    bool                    `json:"checkpoint_written,omitempty"`
 	ContextSnapshot      *RuntimeContextSnapshot `json:"context_snapshot,omitempty"`
 	ToolCallSnapshot     *ToolCallSnapshot       `json:"tool_call_snapshot,omitempty"`
 	VerificationSnapshot *VerificationSnapshot   `json:"verification_snapshot,omitempty"`
