@@ -1,0 +1,33 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage B Day4 gap scan",
+    "total":  5,
+    "usable":  2,
+    "not_usable":  3,
+    "clusters":  [
+                     {
+                         "mode":  "recovery",
+                         "verification_code":  "verified_with_recovery",
+                         "count":  3,
+                         "qids":  [
+                                      "q1",
+                                      "q2",
+                                      "q4"
+                                  ]
+                     },
+                     {
+                         "mode":  "answer",
+                         "verification_code":  "verified",
+                         "count":  2,
+                         "qids":  [
+                                      "q3",
+                                      "q5"
+                                  ]
+                     }
+                 ],
+    "suggested_min_fixes":  [
+                                "为 q1/q2/q4 增加会话续推稳定模板，优先返回“当前判断+下一步动作”。",
+                                "在 session_context 路径上增加 parse 失败时的主题化恢复文案，避免统一兜底句。",
+                                "保持不扩能力域，只补模板与路由优先级。"
+                            ]
+}

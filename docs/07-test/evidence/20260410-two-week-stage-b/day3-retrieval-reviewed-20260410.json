@@ -1,0 +1,42 @@
+[
+  {
+    "qid": "q1",
+    "prompt": "read: tmp/knowledge-import-day2/20260410-two-week/import-a-summary.md",
+    "run_id": "run-1775805765214-137",
+    "tool": "workspace_read",
+    "manual_status": "命中",
+    "reason": "final_answer 和 result_summary 同时包含“导入样本 A”与“docs/README.md”。"
+  },
+  {
+    "qid": "q2",
+    "prompt": "read: tmp/knowledge-import-day2/20260410-two-week/import-b-summary.md",
+    "run_id": "run-1775805767513-140",
+    "tool": "workspace_read",
+    "manual_status": "命中",
+    "reason": "final_answer 和 result_summary 同时包含“导入样本 B”与“产品定义”。"
+  },
+  {
+    "qid": "q3",
+    "prompt": "list: tmp/knowledge-import-day2/20260410-two-week",
+    "run_id": "run-1775805769768-143",
+    "tool": "workspace_list",
+    "manual_status": "命中",
+    "reason": "目录结果包含 import-a-summary.md 与 import-b-summary.md。"
+  },
+  {
+    "qid": "q4",
+    "prompt": "read: docs/07-test/evidence/20260410-two-week-stage-b/day2-import-run-summary-20260410.json",
+    "run_id": "run-1775805771895-146",
+    "tool": "workspace_read",
+    "manual_status": "部分命中",
+    "reason": "摘要明确命中 a-read，但 b-write 仅出现在截断外，当前回答可定位文件但未完整覆盖两关键词。"
+  },
+  {
+    "qid": "q5",
+    "prompt": "read: docs/07-test/evidence/20260410-two-week-stage-b/day2-import-visibility-diff-20260410.json",
+    "run_id": "run-1775805774058-149",
+    "tool": "workspace_read",
+    "manual_status": "命中",
+    "reason": "摘要包含 target_exists_after_write=true 的可见性结论。"
+  }
+]

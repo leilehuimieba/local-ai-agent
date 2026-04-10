@@ -1,0 +1,50 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage C Day11 next-step template check rerun3",
+    "passed_count":  3,
+    "total_count":  3,
+    "pass_rate":  100,
+    "samples":  [
+                    {
+                        "sample":  "s1",
+                        "run_id":  "run-1775808276031-2",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "answer":  "当前判断：Stage C 已进入可复跑阶段，Day10 续推专项主链路已稳定。\n缺口：下一步建议格式一致性还不稳，容易在 provider 波动时回退。\n最该做的一步：先固定 Day11 的四段式建议模板并同题复跑 3 条样本。\n为什么是这一步：它能同时提升可读性和复跑一致性，且不扩能力域。"
+                    },
+                    {
+                        "sample":  "s2",
+                        "run_id":  "run-1775808386015-2",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "answer":  "下一步只做一件事：先补齐最新一轮任务的终态证据并写入 Day11 结果表。\n原因：先锁定可追溯证据再继续推进，能避免后续结论与样本脱节。"
+                    },
+                    {
+                        "sample":  "s3",
+                        "run_id":  "run-1775808291085-8",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "answer":  "当前判断：Stage C 已进入可复跑阶段，Day10 续推专项主链路已稳定。\n缺口：下一步建议格式一致性还不稳，容易在 provider 波动时回退。\n最该做的一步：先固定 Day11 的四段式建议模板并同题复跑 3 条样本。\n为什么是这一步：它能同时提升可读性和复跑一致性，且不扩能力域。"
+                    }
+                ],
+    "format_checks":  [
+                          {
+                              "sample":  "s1",
+                              "keyword_hits":  4,
+                              "format_pass":  true
+                          },
+                          {
+                              "sample":  "s2",
+                              "keyword_hits":  2,
+                              "format_pass":  true
+                          },
+                          {
+                              "sample":  "s3",
+                              "keyword_hits":  4,
+                              "format_pass":  true
+                          }
+                      ]
+}

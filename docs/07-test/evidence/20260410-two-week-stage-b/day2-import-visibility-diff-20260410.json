@@ -1,0 +1,14 @@
+﻿[
+    {
+        "case_id":  "a-write",
+        "target_file":  "tmp\\knowledge-import-day2\\20260410-two-week\\import-a-summary.md",
+        "target_exists_before_write":  false,
+        "target_exists_after_write":  true
+    },
+    {
+        "case_id":  "b-write",
+        "target_file":  "tmp\\knowledge-import-day2\\20260410-two-week\\import-b-summary.md",
+        "target_exists_before_write":  false,
+        "target_exists_after_write":  true
+    }
+]

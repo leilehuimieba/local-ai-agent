@@ -1,0 +1,81 @@
+﻿{
+    "date":  "2026-04-10",
+    "compare":  "Day4 first vs rerun1 vs rerun4",
+    "first":  {
+                  "usable_count":  0,
+                  "pass_rate":  0,
+                  "total_count":  5
+              },
+    "rerun1":  {
+                   "usable_count":  2,
+                   "pass_rate":  40,
+                   "total_count":  5
+               },
+    "rerun4":  {
+                   "usable_count":  5,
+                   "pass_rate":  100,
+                   "total_count":  5
+               },
+    "items":  [
+                  {
+                      "qid":  "q1",
+                      "first_mode":  "recovery",
+                      "first_verify":  "verified_with_recovery",
+                      "first_usable":  false,
+                      "rerun1_mode":  "recovery",
+                      "rerun1_verify":  "verified_with_recovery",
+                      "rerun1_usable":  false,
+                      "rerun4_mode":  "answer",
+                      "rerun4_verify":  "verified",
+                      "rerun4_usable":  true
+                  },
+                  {
+                      "qid":  "q2",
+                      "first_mode":  "recovery",
+                      "first_verify":  "verified_with_recovery",
+                      "first_usable":  false,
+                      "rerun1_mode":  "recovery",
+                      "rerun1_verify":  "verified_with_recovery",
+                      "rerun1_usable":  false,
+                      "rerun4_mode":  "answer",
+                      "rerun4_verify":  "verified",
+                      "rerun4_usable":  true
+                  },
+                  {
+                      "qid":  "q3",
+                      "first_mode":  "recovery",
+                      "first_verify":  "verified_with_recovery",
+                      "first_usable":  false,
+                      "rerun1_mode":  "answer",
+                      "rerun1_verify":  "verified",
+                      "rerun1_usable":  true,
+                      "rerun4_mode":  "answer",
+                      "rerun4_verify":  "verified",
+                      "rerun4_usable":  true
+                  },
+                  {
+                      "qid":  "q4",
+                      "first_mode":  "system",
+                      "first_verify":  "verification_failed",
+                      "first_usable":  false,
+                      "rerun1_mode":  "recovery",
+                      "rerun1_verify":  "verified_with_recovery",
+                      "rerun1_usable":  false,
+                      "rerun4_mode":  "answer",
+                      "rerun4_verify":  "verified",
+                      "rerun4_usable":  true
+                  },
+                  {
+                      "qid":  "q5",
+                      "first_mode":  "recovery",
+                      "first_verify":  "verified_with_recovery",
+                      "first_usable":  false,
+                      "rerun1_mode":  "answer",
+                      "rerun1_verify":  "verified",
+                      "rerun1_usable":  true,
+                      "rerun4_mode":  "answer",
+                      "rerun4_verify":  "verified",
+                      "rerun4_usable":  true
+                  }
+              ]
+}

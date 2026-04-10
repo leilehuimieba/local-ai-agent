@@ -1,0 +1,82 @@
+﻿[
+    {
+        "qid":  "q1",
+        "prompt":  "read: tmp/knowledge-import-day2/20260410-two-week/import-a-summary.md",
+        "run_id":  "run-1775805765214-137",
+        "event_type":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "auto_status":  "命中",
+        "expected_keywords":  [
+                                  "导入样本 A",
+                                  "docs/README.md"
+                              ]
+    },
+    {
+        "qid":  "q2",
+        "prompt":  "read: tmp/knowledge-import-day2/20260410-two-week/import-b-summary.md",
+        "run_id":  "run-1775805767513-140",
+        "event_type":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "auto_status":  "命中",
+        "expected_keywords":  [
+                                  "导入样本 B",
+                                  "产品定义"
+                              ]
+    },
+    {
+        "qid":  "q3",
+        "prompt":  "list: tmp/knowledge-import-day2/20260410-two-week",
+        "run_id":  "run-1775805769768-143",
+        "event_type":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "auto_status":  "命中",
+        "expected_keywords":  [
+                                  "import-a-summary.md",
+                                  "import-b-summary.md"
+                              ]
+    },
+    {
+        "qid":  "q4",
+        "prompt":  "read: docs/07-test/evidence/20260410-two-week-stage-b/day2-import-run-summary-20260410.json",
+        "run_id":  "run-1775805771895-146",
+        "event_type":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  1,
+        "expected_count":  2,
+        "auto_status":  "部分命中",
+        "expected_keywords":  [
+                                  "a-read",
+                                  "b-write"
+                              ]
+    },
+    {
+        "qid":  "q5",
+        "prompt":  "read: docs/07-test/evidence/20260410-two-week-stage-b/day2-import-visibility-diff-20260410.json",
+        "run_id":  "run-1775805774058-149",
+        "event_type":  "run_finished",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "auto_status":  "命中",
+        "expected_keywords":  [
+                                  "target_exists_after_write",
+                                  "true"
+                              ]
+    }
+]

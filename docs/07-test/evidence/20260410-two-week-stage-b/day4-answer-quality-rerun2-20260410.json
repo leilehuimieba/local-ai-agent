@@ -1,0 +1,65 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage B Day4 rerun2",
+    "usable_count":  0,
+    "total_count":  5,
+    "failed_count":  5,
+    "pass_rate":  0,
+    "items":  [
+                  {
+                      "qid":  "q1",
+                      "question":  "What are the top 3 concrete actions I should do next to continue the knowledge-assistant closure?",
+                      "run_id":  "run-1775806724006-182",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  null,
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  },
+                  {
+                      "qid":  "q2",
+                      "question":  "Based on current evidence only, is this project ready to continue to the next day, and why?",
+                      "run_id":  "run-1775806731731-185",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  null,
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  },
+                  {
+                      "qid":  "q3",
+                      "question":  "I only have 30 minutes. Give me a practical checklist I can execute now.",
+                      "run_id":  "run-1775806736796-188",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  null,
+                      "verification_code":  "verified",
+                      "usable":  false,
+                      "final_answer_preview":  "30 分钟务实清单：1) 0-8 分钟先跑 5 条真实问句并记录 run_id；2) 9-20 分钟只修失败最多的 1 个问题并复跑同题；3) 21-30 分钟回写验收文档，明确通过项和残余风险。"
+                  },
+                  {
+                      "qid":  "q4",
+                      "question":  "If I pause now, what is the fastest-growing risk and how can I reduce it with one action?",
+                      "run_id":  "run-1775806739099-191",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  null,
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  },
+                  {
+                      "qid":  "q5",
+                      "question":  "Write one short kickoff message for tomorrow morning so I can restart quickly.",
+                      "run_id":  "run-1775806756865-194",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  null,
+                      "verification_code":  "verified",
+                      "usable":  false,
+                      "final_answer_preview":  "明早先用 5 分钟看昨天未闭合项，再按优先级先做一件最小可交付任务，做完立即回写证据并继续下一项。"
+                  }
+              ]
+}

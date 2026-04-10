@@ -1,0 +1,65 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage B Day4",
+    "usable_count":  0,
+    "total_count":  5,
+    "failed_count":  5,
+    "pass_rate":  0,
+    "items":  [
+                  {
+                      "qid":  "q1",
+                      "question":  "基于我们两周执行清单，今天最优先做哪一件事？给一个动作和原因。",
+                      "run_id":  "run-1775805923966-152",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  },
+                  {
+                      "qid":  "q2",
+                      "question":  "我现在做到哪了？还差什么？请按当前证据目录回答。",
+                      "run_id":  "run-1775805929053-155",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "主回答未成功，已切换到项目文档恢复路径。\n当前项目是一个围绕运行时、网关和前端工作台组织能力的本地智能体系统，重点在让在线模型接入后的对话、执行和沉淀链路稳定可用。结合现有文档，当前阶段更偏向主链路收口，而不是继续扩展重型未来能力。"
+                  },
+                  {
+                      "qid":  "q3",
+                      "question":  "请给我一个 30 分钟内可执行的下一步计划，必须绑定具体文件路径。",
+                      "run_id":  "run-1775805934008-158",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  },
+                  {
+                      "qid":  "q4",
+                      "question":  "如果我现在暂停，最快增长的风险是什么？怎么用一个动作降风险？",
+                      "run_id":  "run-1775805938979-161",
+                      "event_type":  "run_finished",
+                      "completion_status":  "failed",
+                      "result_mode":  "system",
+                      "verification_code":  "verification_failed",
+                      "usable":  false,
+                      "final_answer_preview":  "当前无法生成能力说明：model_parse_failed: 未识别为标准 JSON 或 SSE 响应"
+                  },
+                  {
+                      "qid":  "q5",
+                      "question":  "请把 Day1 到 Day3 的关键结论压成三条学习记录，方便我回写。",
+                      "run_id":  "run-1775805943073-164",
+                      "event_type":  "run_finished",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "usable":  false,
+                      "final_answer_preview":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                  }
+              ]
+}

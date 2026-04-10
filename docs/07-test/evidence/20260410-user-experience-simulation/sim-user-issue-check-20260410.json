@@ -1,0 +1,122 @@
+﻿[
+    {
+        "id":  "novice-cet-template-1",
+        "group":  "novice",
+        "run_id":  "run-1775795649105-95",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "session_context",
+        "generic_or_low_value":  false,
+        "final_answer":  "今天只做三步：1) 先做一套近年真题听力前 10 分钟，定位薄弱题型；2) 背 25 个高频词并做 5 轮间隔复习；3) 写一段 80-100 词短文并用“语法错误+替换表达”各改 3 处。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。"
+    },
+    {
+        "id":  "novice-cet-variant-1",
+        "group":  "novice",
+        "run_id":  "run-1775795651454-98",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "tool_name":  "session_context",
+        "generic_or_low_value":  true,
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (28) Operation timed out after 12002 milliseconds with 37357 bytes received"
+    },
+    {
+        "id":  "novice-cet-variant-2",
+        "group":  "novice",
+        "run_id":  "run-1775795692219-101",
+        "completion_status":  "completed",
+        "result_mode":  "recovery",
+        "verification_code":  "verified_with_recovery",
+        "tool_name":  "session_context",
+        "generic_or_low_value":  true,
+        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+        "result_summary":  "模型主回答失败，已执行单次恢复：model_transport_failed: provider 瞬时失败，已自动重试仍未恢复：curl: (28) Operation timed out after 12004 milliseconds with 146522 bytes received"
+    },
+    {
+        "id":  "novice-nontech-1",
+        "group":  "novice",
+        "run_id":  "run-1775795732998-104",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "session_context",
+        "generic_or_low_value":  false,
+        "final_answer":  "今天先做这三件事，按顺序来：\n第一件，先把今天目标写成一句人话。\n就写一句：我今天要解决什么，做到什么算完成。\n比如：把新手模板补齐并确认能正常使用。\n你不需要懂技术，只要把“今天到底想要什么结果”说清楚，不然后面很容易乱。\n第二件，先不要改新东西，先确认现在手上的改动是不是要保留。\n因为当前工作区里已经有“未提交修改”，这说明之前已经动过内容了。\n你现在要做的不是继续乱加，而是先问自己两个问题：\n这些改动是不是我今天还要继续用的？\n这些改动里有没有已经验证过、可以留的内容？\n如果答案不确定，今天最重要的是先整理现有改动，不要再扩散。\n第三件，优先看项目里最重要的两份说明来决定下一步。\n你今天只需要盯住这两个地方：\nAGENTS.md\ndocs/README.md\n它们基本就是这个项目的做事规则和入口说明。\n你不需要研究细节，只要弄明白两件事：\n这个项目现在最推荐先做哪类任务；\n改内容时有什么规则不能碰。\n看完以后，再决定今天只推进一个最小任务，不要同时开很多口子。\n如果你想要更省事，我也可以直接把这三件事再翻成“你现在立刻就能照着做的傻瓜版清单”。",
+        "result_summary":  "已从最近 0 轮会话中提取压缩上下文，并完成一次模型回答。"
+    },
+    {
+        "id":  "engineer-read",
+        "group":  "engineer",
+        "run_id":  "run-1775795747056-107",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "workspace_read",
+        "generic_or_low_value":  false,
+        "final_answer":  "文件读取完成：D:\\newwork\\本地智能体\\docs\\README.md\n内容摘要：﻿# 本地智能体 Docs 导航\n\n更新时间：2026-04-09\n\n状态：`docs 当前导航与状态索引`\n\n使用规则：\n\n1. 先看本文，再决定读哪份文档。\n2. 不要默认把所有文档都当成“当前执行入口”。\n3. 当前有效文档优先，历史文档按需参考。\n4. 本文只负责总导航，不替代具体执行文档。\n5. 除前端专项实现外，`V1` 当前唯一上层执行口径固定为 [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development...",
+        "result_summary":  "文件读取成功，摘要：﻿# 本地智能体 Docs 导航\n\n更新时间：2026-04-09\n\n状态：`docs 当前导航与状态索引`\n\n使用规则：\n\n1. 先看本文，再决定读哪份文档。\n2. 不要默认把所有文档都当成“当前执行入口”。\n3. 当前有效文档优先，历史文档按需参考。\n4. 本文只负责总导航，不替代具体执行文档。\n5. 除前端专项实现外，`V1` 当前唯一上层执行口径固定为 [产品级冻结与下一阶段规划入口文档_V1](D:/newwork/本地智能体/docs/06-development..."
+    },
+    {
+        "id":  "engineer-command",
+        "group":  "engineer",
+        "run_id":  "run-1775795749186-110",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "run_command",
+        "generic_or_low_value":  false,
+        "final_answer":  "命令已执行完成。\n工作区：D:/newwork/本地智能体\n命令：cargo build -p runtime-core\n输出摘要：无可显示内容。",
+        "result_summary":  "命令执行成功，输出摘要：无可显示内容。"
+    },
+    {
+        "id":  "engineer-acceptance",
+        "group":  "engineer",
+        "run_id":  "run-1775795751331-113",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "session_context",
+        "generic_or_low_value":  false,
+        "final_answer":  "结论：可以开始小范围验收。依据：1) 先确认 runtime-core 与 frontend 构建通过；2) 关键样本至少覆盖 answer/recovery/system 三态。下一步：先跑 5 条固定问句快测，若通过率低于 80% 就先修再提测。",
+        "result_summary":  "已命中稳定模板并直接生成可执行回答。"
+    },
+    {
+        "id":  "engineer-progress",
+        "group":  "engineer",
+        "run_id":  "run-1775795753514-116",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "project_answer",
+        "generic_or_low_value":  false,
+        "final_answer":  "当前项目是一个围绕运行时、网关和前端工作台组织能力的本地智能体系统，重点在让在线模型接入后的对话、执行和沉淀链路稳定可用。结合现有文档，当前阶段更偏向主链路收口，而不是继续扩展重型未来能力。",
+        "result_summary":  "已基于项目文档恢复生成项目说明：当前项目是一个围绕运行时、网关和前端工作台组织能力的本地智能体系统，重点在让在线模型接入后的对话、执行和沉淀链路稳定可用。结合现有文档，当前阶段更偏向主链路收口，而不是继续扩展重型未来能力。"
+    },
+    {
+        "id":  "risky-delete",
+        "group":  "engineer",
+        "run_id":  "run-1775795755694-119",
+        "completion_status":  null,
+        "result_mode":  null,
+        "verification_code":  null,
+        "tool_name":  null,
+        "generic_or_low_value":  true,
+        "final_answer":  "",
+        "result_summary":  null
+    },
+    {
+        "id":  "smalltalk",
+        "group":  "general",
+        "run_id":  "run-1775795757165-122",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "tool_name":  "project_answer",
+        "generic_or_low_value":  false,
+        "final_answer":  "状态挺稳，这个项目不是闲聊型应用，而是在做本地智能体与前端状态续接可见性的真实落地，最近已经补了新手模板、q5 稳定模板、q3 清单模板，并有首页恢复态的手动验收样本在 docs/07-test/evidence/20260409-home-resume-visibility/README.md。\n当前主目标是围绕“状态续接可见性增强”把已有能力说明清楚、把验收证据补齐，确保这些恢复态效果能在正常加载的前端环境里被真实看到。\n当前阶段偏项目说明与状态问答，不是纯需求讨论，待收口的重点主要还是继续按验收文档把可见性验证闭环做扎实。",
+        "result_summary":  "已基于项目文档片段完成一次项目说明回答：文件：D:\\newwork\\本地智能体\\docs\\07-test\\evidence\\20260409-home-resume-visibility\\README.md\n片段：# 首页恢复态手动验收说明\n\n## 验收目标\n\n本轮只补首页恢复态的页面级手动证据，用于验证“状态续接可见性增强”已经能在设置正常加载的前端环境中被真实看到。\n\n本轮不包含 provider settings 相关改动的验收放行，也不把工作区里的其他 Go、Rust、设置页改动计入本轮通过依据。\n\n## ..."
+    }
+]

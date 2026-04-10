@@ -1,0 +1,50 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage C Day11 next-step template check",
+    "passed_count":  0,
+    "total_count":  3,
+    "pass_rate":  0,
+    "samples":  [
+                    {
+                        "prefix":  "day11-next-step-s1",
+                        "run_id":  "run-1775808104124-5",
+                        "completion_status":  "completed",
+                        "result_mode":  "recovery",
+                        "verification_code":  "verified_with_recovery",
+                        "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。"
+                    },
+                    {
+                        "prefix":  "day11-next-step-s2",
+                        "run_id":  "run-1775808144776-8",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "final_answer":  "先把当前未提交修改整理并提交一次。\n原因是现在仓库已明确存在未提交修改，而证据目录又处在持续补证和复检的节奏里；如果不先固定当前状态，后续无论继续补证、复检还是对照体验，都会增加证据与代码变更混杂的风险，影响后续判断哪一轮动作真正带来了结果。"
+                    },
+                    {
+                        "prefix":  "day11-next-step-s3",
+                        "run_id":  "run-1775808151920-11",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "final_answer":  "当前项目已经具备基础运行能力，正在继续收口项目说明、执行验证和长期沉淀这几条主链路。"
+                    }
+                ],
+    "format_checks":  [
+                          {
+                              "sample":  "day11-next-step-s1",
+                              "keyword_hits":  1,
+                              "format_pass":  false
+                          },
+                          {
+                              "sample":  "day11-next-step-s2",
+                              "keyword_hits":  1,
+                              "format_pass":  false
+                          },
+                          {
+                              "sample":  "day11-next-step-s3",
+                              "keyword_hits":  0,
+                              "format_pass":  false
+                          }
+                      ]
+}

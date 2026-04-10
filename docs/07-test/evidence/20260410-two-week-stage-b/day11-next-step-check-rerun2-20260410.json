@@ -1,0 +1,50 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage C Day11 next-step template check rerun2",
+    "passed_count":  2,
+    "total_count":  3,
+    "pass_rate":  66.67,
+    "samples":  [
+                    {
+                        "prefix":  "day11-rerun2-next-step-s1",
+                        "run_id":  "run-1775808276031-2",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "final_answer":  "当前判断：Stage C 已进入可复跑阶段，Day10 续推专项主链路已稳定。\n缺口：下一步建议格式一致性还不稳，容易在 provider 波动时回退。\n最该做的一步：先固定 Day11 的四段式建议模板并同题复跑 3 条样本。\n为什么是这一步：它能同时提升可读性和复跑一致性，且不扩能力域。"
+                    },
+                    {
+                        "prefix":  "day11-rerun2-next-step-s2",
+                        "run_id":  "run-1775808278137-5",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "final_answer":  "下一步只做一件事：先补齐最新一轮任务的终态证据。\n原因是从当前上下文看，最近几次提交都在围绕“模板补齐后回写 Day4、Day8 等证据”推进，说明现在最关键的是把证据链闭环；而仓库又存在未提交修改，最容易断档的就是最新一轮结果还没沉淀进证据目录。"
+                    },
+                    {
+                        "prefix":  "day11-rerun2-next-step-s3",
+                        "run_id":  "run-1775808291085-8",
+                        "completion_status":  "completed",
+                        "result_mode":  "answer",
+                        "verification_code":  "verified",
+                        "final_answer":  "当前判断：Stage C 已进入可复跑阶段，Day10 续推专项主链路已稳定。\n缺口：下一步建议格式一致性还不稳，容易在 provider 波动时回退。\n最该做的一步：先固定 Day11 的四段式建议模板并同题复跑 3 条样本。\n为什么是这一步：它能同时提升可读性和复跑一致性，且不扩能力域。"
+                    }
+                ],
+    "format_checks":  [
+                          {
+                              "sample":  "day11-rerun2-next-step-s1",
+                              "keyword_hits":  4,
+                              "format_pass":  true
+                          },
+                          {
+                              "sample":  "day11-rerun2-next-step-s2",
+                              "keyword_hits":  1,
+                              "format_pass":  false
+                          },
+                          {
+                              "sample":  "day11-rerun2-next-step-s3",
+                              "keyword_hits":  4,
+                              "format_pass":  true
+                          }
+                      ]
+}

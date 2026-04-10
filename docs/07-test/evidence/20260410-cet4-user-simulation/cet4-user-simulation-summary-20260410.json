@@ -1,0 +1,90 @@
+﻿{
+    "date":  "2026-04-10",
+    "scenario":  "CET4 user simulation",
+    "passed_steps":  4,
+    "total_steps":  9,
+    "all_passed":  false,
+    "steps":  [
+                  {
+                      "prefix":  "cet4-q1-plan",
+                      "run_id":  "run-1775811143266-227",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "final_answer":  "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+                      "input":  "我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：每周里程碑 + 每天 30 分钟安排。"
+                  },
+                  {
+                      "prefix":  "cet4-q2-method",
+                      "run_id":  "run-1775811183727-230",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "final_answer":  "基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：每周里程碑 + 每天 30 分钟安排。 | 智能体：当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。",
+                      "input":  "按听力、阅读、写作、翻译四块，给我每块最有效的训练方法和避坑。"
+                  },
+                  {
+                      "prefix":  "cet4-q3-today30",
+                      "run_id":  "run-1775811224403-233",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "final_answer":  "基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：每周里程碑 + 每天 30 分钟安排。 | 智能体：当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。 || 第2轮 用户：按听力、阅读、写作、翻译四块，给我每块最有效的训练方法和避坑。 | 智能体：基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：...",
+                      "input":  "请给我今天就能开始的 30 分钟训练清单，按分钟拆分。"
+                  },
+                  {
+                      "prefix":  "cet4-q4-tracking-template",
+                      "run_id":  "run-1775811265335-236",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "final_answer":  "基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：每周里程碑 + 每天 30 分钟安排。 | 智能体：当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。 || 第2轮 用户：按听力、阅读、写作、翻译四块，给我每块最有效的训练方法和避坑。 | 智能体：基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：...",
+                      "input":  "给我一个可执行的四级学习追踪模板：字段、频率、如何判断是否进步。"
+                  },
+                  {
+                      "prefix":  "cet4-q5-write-log",
+                      "run_id":  "run-1775811306443-239",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "final_answer":  "文件写入完成：D:\\newwork\\本地智能体\\tmp\\cet4\\20260410-study-log.md\n写入字符数：152\n内容摘要：# CET4 学习追踪（2026-04-10）\n\n- 今日完成：背词 80 个（新词 50，复习 30）\n- 听力：真题 1 套，正确率 62%\n- 阅读：仔细阅读 2 篇，正确率 58%\n- 写作：练 1 篇，语法错误较多\n- 反思：听力连读和阅读定位仍慢\n- 明日目标：听力连读专项 + 阅读定位训练",
+                      "input":  "write: tmp/cet4/20260410-study-log.md\n# CET4 学习追踪（2026-04-10）\n\n- 今日完成：背词 80 个（新词 50，复习 30）\n- 听力：真题 1 套，正确率 62%\n- 阅读：仔细阅读 2 篇，正确率 58%\n- 写作：练 1 篇，语法错误较多\n- 反思：听力连读和阅读定位仍慢\n- 明日目标：听力连读专项 + 阅读定位训练"
+                  },
+                  {
+                      "prefix":  "cet4-q6-read-log",
+                      "run_id":  "run-1775811308251-242",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "final_answer":  "文件读取完成：D:\\newwork\\本地智能体\\tmp\\cet4\\20260410-study-log.md\n内容摘要：# CET4 学习追踪（2026-04-10）\n\n- 今日完成：背词 80 个（新词 50，复习 30）\n- 听力：真题 1 套，正确率 62%\n- 阅读：仔细阅读 2 篇，正确率 58%\n- 写作：练 1 篇，语法错误较多\n- 反思：听力连读和阅读定位仍慢\n- 明日目标：听力连读专项 + 阅读定位训练",
+                      "input":  "read: tmp/cet4/20260410-study-log.md"
+                  },
+                  {
+                      "prefix":  "cet4-q7-adjust-next",
+                      "run_id":  "run-1775811309966-245",
+                      "completion_status":  "completed",
+                      "result_mode":  "recovery",
+                      "verification_code":  "verified_with_recovery",
+                      "final_answer":  "基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：每周里程碑 + 每天 30 分钟安排。 | 智能体：当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。 || 第2轮 用户：按听力、阅读、写作、翻译四块，给我每块最有效的训练方法和避坑。 | 智能体：基于当前会话摘要，可先确认这些信息：第1轮 用户：我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划：...",
+                      "input":  "我今天背词80个、听力正确率62%、阅读58%，你根据这个结果给我明天的学习安排。"
+                  },
+                  {
+                      "prefix":  "cet4-q8-browser-extension",
+                      "run_id":  "run-1775811350708-248",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "final_answer":  "先按三段给你最低可用版：已完成：结果分层链路、样本留证和小回归包已可稳定复跑；未完成：外部 provider 波动下主回答稳定性仍需持续观察；下一步：继续按同一批真实问句周更复测，并只修失败占比最高的两类问题。",
+                      "input":  "以我的四级学习场景，这个产品现在浏览器扩展相关能力做到哪，没做到哪？"
+                  },
+                  {
+                      "prefix":  "cet4-q9-next-line",
+                      "run_id":  "run-1775811352586-251",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "final_answer":  "明早先用 5 分钟看昨天未闭合项，再按优先级先做一件最小可交付任务，做完立即回写证据并继续下一项。",
+                      "input":  "给我一句明天早上可以直接执行的学习启动语。"
+                  }
+              ]
+}

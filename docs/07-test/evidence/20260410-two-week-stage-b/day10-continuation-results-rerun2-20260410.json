@@ -1,0 +1,72 @@
+﻿{
+    "date":  "2026-04-10",
+    "stage":  "Stage C Day10 continuation suite rerun2",
+    "usable_count":  6,
+    "total_count":  6,
+    "pass_rate":  100,
+    "failure_stats":  {
+
+                      },
+    "items":  [
+                  {
+                      "qid":  "q1",
+                      "question":  "我现在做到哪了？还差什么？请按当前证据目录回答。",
+                      "run_id":  "run-1775807847368-50",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  },
+                  {
+                      "qid":  "q2",
+                      "question":  "基于当前证据，今天最优先做哪一件事？给一个动作和原因。",
+                      "run_id":  "run-1775807849403-53",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  },
+                  {
+                      "qid":  "q3",
+                      "question":  "继续推进这个项目，下一步该做什么，按优先级给三件事。",
+                      "run_id":  "run-1775807851401-56",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  },
+                  {
+                      "qid":  "q4",
+                      "question":  "如果我现在暂停，最快增长的风险是什么？怎么用一个动作降风险？",
+                      "run_id":  "run-1775807853393-59",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  },
+                  {
+                      "qid":  "q5",
+                      "question":  "请给我一个 30 分钟内可执行的下一步计划。",
+                      "run_id":  "run-1775807983056-2",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  },
+                  {
+                      "qid":  "q6",
+                      "question":  "写一句明早可以直接执行的启动语。",
+                      "run_id":  "run-1775807897522-65",
+                      "completion_status":  "completed",
+                      "result_mode":  "answer",
+                      "verification_code":  "verified",
+                      "usable":  true,
+                      "failure_type":  "none"
+                  }
+              ]
+}
