@@ -98,7 +98,7 @@ pub(crate) fn record_planning_memory(
     session.short_term.recent_tool_result = planning_tool_result(request, session);
     session.short_term.current_phase = planning_phase(request, risk_outcome, session);
     session.short_term.last_run_status = planning_status(request, session);
-    session.short_term.handoff_artifact_path.clear();
+    session.short_term.handoff_artifact_path = planning_handoff_path(request, session);
     apply_planning_risk_state(request, &mut session.short_term, risk_outcome);
     persist_session_file(request, session);
 }
@@ -234,6 +234,13 @@ fn planning_status(request: &RunRequest, session: &SessionMemory) -> String {
         return session.short_term.last_run_status.clone();
     }
     "planning".to_string()
+}
+
+fn planning_handoff_path(request: &RunRequest, session: &SessionMemory) -> String {
+    if should_preserve_resume_state(request) {
+        return session.short_term.handoff_artifact_path.clone();
+    }
+    String::new()
 }
 
 fn apply_risk_state(short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome) {
@@ -399,6 +406,21 @@ mod tests {
             session.short_term.current_plan,
             "从 checkpoint 恢复：retryable_failure -> Execute"
         );
+    }
+
+    #[test]
+    fn preserves_handoff_path_during_retry_planning_writeback() {
+        let request = sample_request("retry_failure");
+        let mut session = sample_session("recovery", "failed");
+        session.short_term.handoff_artifact_path = "D:/repo/handoff.json".to_string();
+        record_planning_memory(
+            &request,
+            &mut session,
+            "执行命令",
+            "分析结果",
+            &RiskOutcome::Proceed,
+        );
+        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
     }
 
     fn sample_request(strategy: &str) -> RunRequest {
