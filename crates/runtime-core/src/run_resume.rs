@@ -15,6 +15,7 @@ pub(crate) fn apply_resume_checkpoint(
     session.short_term.last_run_status = checkpoint.status.clone();
     session.short_term.recent_observation = checkpoint.response.result.final_answer.clone();
     session.short_term.recent_tool_result = checkpoint.response.result.summary.clone();
+    session.short_term.handoff_artifact_path = resume_handoff_artifact_path(checkpoint);
     clear_resume_confirmation_state(session, checkpoint, request);
 }
 
@@ -46,5 +47,156 @@ fn resume_phase(checkpoint: &RunCheckpoint) -> String {
         "confirmation_resume".to_string()
     } else {
         "recovery".to_string()
+    }
+}
+
+fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(|event| event.metadata.get("handoff_artifact_path").cloned())
+        .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply_resume_checkpoint;
+    use crate::checkpoint::RunCheckpoint;
+    use crate::contracts::{
+        ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
+    };
+    use crate::session::SessionMemory;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn restores_handoff_artifact_path_for_retry_recovery() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert_eq!(session.short_term.current_phase, "recovery");
+        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
+    }
+
+    #[test]
+    fn leaves_handoff_artifact_path_empty_when_checkpoint_has_none() {
+        let request = sample_request("after_confirmation");
+        let checkpoint = sample_checkpoint("confirmation_required", "");
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(session.short_term.handoff_artifact_path.is_empty());
+    }
+
+    fn sample_request(strategy: &str) -> RunRequest {
+        RunRequest {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            user_input: "retry task".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: "cp-1".to_string(),
+            resume_strategy: strategy.to_string(),
+            confirmation_decision: None,
+        }
+    }
+
+    fn sample_checkpoint(reason: &str, handoff_path: &str) -> RunCheckpoint {
+        RunCheckpoint {
+            checkpoint_id: "cp-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+            status: "failed".to_string(),
+            final_stage: "Finish".to_string(),
+            resumable: true,
+            resume_reason: reason.to_string(),
+            resume_stage: "Execute".to_string(),
+            event_count: 2,
+            request: sample_request(reason),
+            response: sample_response(handoff_path),
+            created_at: "1".to_string(),
+        }
+    }
+
+    fn sample_response(handoff_path: &str) -> RuntimeRunResponse {
+        RuntimeRunResponse {
+            events: vec![sample_event(handoff_path)],
+            result: RunResult {
+                request_id: "request-1".to_string(),
+                run_id: "run-1".to_string(),
+                session_id: "session-1".to_string(),
+                trace_id: "trace-1".to_string(),
+                kind: "run_result".to_string(),
+                source: "runtime".to_string(),
+                status: "failed".to_string(),
+                final_answer: "temporary failure".to_string(),
+                summary: "temporary failure".to_string(),
+                error: None,
+                memory_write_summary: None,
+                final_stage: "Finish".to_string(),
+                checkpoint_id: Some("cp-1".to_string()),
+                resumable: Some(true),
+            },
+            confirmation_request: None,
+        }
+    }
+
+    fn sample_event(handoff_path: &str) -> RunEvent {
+        let mut metadata = BTreeMap::new();
+        if !handoff_path.is_empty() {
+            metadata.insert("handoff_artifact_path".to_string(), handoff_path.to_string());
+        }
+        RunEvent {
+            event_id: "event-1".to_string(),
+            kind: "run_event".to_string(),
+            source: "runtime".to_string(),
+            record_type: String::new(),
+            source_type: String::new(),
+            agent_id: "primary".to_string(),
+            agent_label: "主智能体".to_string(),
+            event_type: "run_failed".to_string(),
+            trace_id: "trace-1".to_string(),
+            session_id: "session-1".to_string(),
+            run_id: "run-1".to_string(),
+            sequence: 1,
+            timestamp: "1".to_string(),
+            stage: "Failed".to_string(),
+            summary: "failed".to_string(),
+            detail: String::new(),
+            tool_name: String::new(),
+            tool_display_name: String::new(),
+            tool_category: String::new(),
+            output_kind: String::new(),
+            result_summary: String::new(),
+            artifact_path: String::new(),
+            risk_level: String::new(),
+            confirmation_id: String::new(),
+            final_answer: String::new(),
+            completion_status: String::new(),
+            completion_reason: String::new(),
+            verification_summary: String::new(),
+            checkpoint_written: false,
+            context_snapshot: None,
+            tool_call_snapshot: None,
+            verification_snapshot: None,
+            metadata,
+        }
     }
 }

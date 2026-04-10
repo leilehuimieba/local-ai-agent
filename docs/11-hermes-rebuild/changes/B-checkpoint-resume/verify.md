@@ -13,6 +13,7 @@
   - `gateway/internal/api/chat_retry_test.go`
   - `crates/runtime-core/src/query_engine.rs`
   - `crates/runtime-core/src/checkpoint.rs`
+  - `crates/runtime-core/src/run_resume.rs`
   - `crates/runtime-core/src/session.rs`
   - `cargo test -p runtime-core`
   - `go test ./internal/api ./internal/state`
@@ -75,6 +76,9 @@
 - 恢复短期状态写回保护已通过单元测试固定：
   - `after_confirmation` 命中恢复后，规划写回不会覆盖 `confirmation_resume`、`awaiting_confirmation` 和恢复计划
   - `retryable_failure` 命中恢复后，规划写回不会清空失败摘要或把 `recovery` 刷回普通 planning 态
+- 恢复输入已新增一层稳定接回：
+  - `retryable_failure` 命中恢复后，会从 checkpoint 响应事件里回填上一轮失败运行的 `handoff_artifact_path`
+  - 这让恢复主线不仅保留失败摘要，也保留最近一次执行产物引用，便于后续继续往动作边界恢复收口
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环
