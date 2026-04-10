@@ -1,0 +1,42 @@
+[
+  {
+    "id": "q1",
+    "run_id": "run-1775782084822-438",
+    "query": "read: tmp/knowledge-import-day2/20260410/import-a-summary.md",
+    "tool_name": "workspace_read",
+    "retrieval_status": "部分命中",
+    "review_reason": "目标文件路径与来源路径命中；中文字段在摘要中出现乱码，未能稳定命中中文 token。"
+  },
+  {
+    "id": "q2",
+    "run_id": "run-1775782086808-441",
+    "query": "read: tmp/knowledge-import-day2/20260410/import-b-summary.md",
+    "tool_name": "workspace_read",
+    "retrieval_status": "部分命中",
+    "review_reason": "目标文件路径与来源路径命中；中文字段在摘要中出现乱码，未能稳定命中中文 token。"
+  },
+  {
+    "id": "q3",
+    "run_id": "run-1775782088799-444",
+    "query": "list: tmp/knowledge-import-day2/20260410",
+    "tool_name": "workspace_list",
+    "retrieval_status": "命中",
+    "review_reason": "目录列举同时命中 import-a-summary.md 与 import-b-summary.md。"
+  },
+  {
+    "id": "q4",
+    "run_id": "run-1775782090752-447",
+    "query": "read: docs/07-test/evidence/20260410-knowledge-import-day2/day2-import-visibility-diff.json",
+    "tool_name": "workspace_read",
+    "retrieval_status": "部分命中",
+    "review_reason": "可读到目标文件和关键 run_id，但摘要被截断，target_exists_after_write 字段未完整展开。"
+  },
+  {
+    "id": "q5",
+    "run_id": "run-1775782092721-450",
+    "query": "read: docs/07-test/evidence/20260410-knowledge-import-day2/day2-import-run-summary.json",
+    "tool_name": "workspace_read",
+    "retrieval_status": "命中",
+    "review_reason": "可读到 case-a-read 与 run-1775781795595-426 等关键字段。"
+  }
+]

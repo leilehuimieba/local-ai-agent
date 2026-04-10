@@ -1,0 +1,87 @@
+﻿[
+    {
+        "id":  "q1",
+        "query":  "read: tmp/knowledge-import-day2/20260410/import-a-summary.md",
+        "expected":  [
+                         "导入摘要 A",
+                         "来源: docs/README.md"
+                     ],
+        "run_id":  "run-1775782084822-438",
+        "tool_name":  "workspace_read",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  0,
+        "expected_count":  2,
+        "retrieval_status":  "未命中",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day3-retrieval-q1-20260410\\run-1775782084822-438\\read-1775782085161.txt"
+    },
+    {
+        "id":  "q2",
+        "query":  "read: tmp/knowledge-import-day2/20260410/import-b-summary.md",
+        "expected":  [
+                         "导入摘要 B",
+                         "来源: docs/07-test/evidence/20260409-pre-release-smoke/README.md"
+                     ],
+        "run_id":  "run-1775782086808-441",
+        "tool_name":  "workspace_read",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  0,
+        "expected_count":  2,
+        "retrieval_status":  "未命中",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day3-retrieval-q2-20260410\\run-1775782086808-441\\read-1775782087153.txt"
+    },
+    {
+        "id":  "q3",
+        "query":  "list: tmp/knowledge-import-day2/20260410",
+        "expected":  [
+                         "import-a-summary.md",
+                         "import-b-summary.md"
+                     ],
+        "run_id":  "run-1775782088799-444",
+        "tool_name":  "workspace_list",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "retrieval_status":  "命中",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day3-retrieval-q3-20260410\\run-1775782088799-444\\list-1775782089123.txt"
+    },
+    {
+        "id":  "q4",
+        "query":  "read: docs/07-test/evidence/20260410-knowledge-import-day2/day2-import-visibility-diff.json",
+        "expected":  [
+                         "target_exists_after_write",
+                         "true"
+                     ],
+        "run_id":  "run-1775782090752-447",
+        "tool_name":  "workspace_read",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  0,
+        "expected_count":  2,
+        "retrieval_status":  "未命中",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day3-retrieval-q4-20260410\\run-1775782090752-447\\read-1775782091079.txt"
+    },
+    {
+        "id":  "q5",
+        "query":  "read: docs/07-test/evidence/20260410-knowledge-import-day2/day2-import-run-summary.json",
+        "expected":  [
+                         "case-a-read",
+                         "run-1775781795595-426"
+                     ],
+        "run_id":  "run-1775782092721-450",
+        "tool_name":  "workspace_read",
+        "completion_status":  "completed",
+        "result_mode":  "answer",
+        "verification_code":  "verified",
+        "hit_count":  2,
+        "expected_count":  2,
+        "retrieval_status":  "命中",
+        "artifact_path":  "D:\\newwork\\本地智能体\\data\\artifacts\\day3-retrieval-q5-20260410\\run-1775782092721-450\\read-1775782093052.txt"
+    }
+]

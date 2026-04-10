@@ -43,3 +43,25 @@ Case B：
 1. 可见性：两条写入 run 后，两个目标文件均存在（`target_exists_after_write=true`）。
 2. 可追溯性：每个 case 都可由 `read run_id -> write run_id -> 目标文件` 串联，且 `run_finished` 均为 `completed + answer + verified`。
 3. 口径边界：本轮导入采用“读取一步 + 写入一步”的最小闭环，不宣称是单次 run 内自动完成的重型导入流程。
+
+## 4. Day3 检索问句快测（5 条）
+
+原始样本：
+
+1. `day3-q1.run-accepted.json` / `day3-q1.run-events.json` / `day3-q1.run-finished.json`
+2. `day3-q2.run-accepted.json` / `day3-q2.run-events.json` / `day3-q2.run-finished.json`
+3. `day3-q3.run-accepted.json` / `day3-q3.run-events.json` / `day3-q3.run-finished.json`
+4. `day3-q4.run-accepted.json` / `day3-q4.run-events.json` / `day3-q4.run-finished.json`
+5. `day3-q5.run-accepted.json` / `day3-q5.run-events.json` / `day3-q5.run-finished.json`
+
+判定文件：
+
+1. 自动判定：`day3-retrieval-results-20260410.json`、`day3-retrieval-table-20260410.md`
+2. 人工复核：`day3-retrieval-reviewed-20260410.json`、`day3-retrieval-reviewed-20260410.md`
+
+复核结论：
+
+1. 命中：2 条（q3、q5）。
+2. 部分命中：3 条（q1、q2、q4）。
+3. 未命中：0 条。
+4. 残余风险：检索链路可达，但中文摘要存在乱码/截断，影响 token 匹配与可读性。
