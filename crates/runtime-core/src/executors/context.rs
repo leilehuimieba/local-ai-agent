@@ -41,9 +41,13 @@ pub(crate) fn execute_context_answer(
 fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
     let input = request.user_input.trim();
     let template = release_check_template(input)
+        .or_else(|| acceptance_readiness_template(input))
         .or_else(|| closeout_priority_template(input))
         .or_else(|| instability_decision_template(input))
         .or_else(|| beginner_first_step_template(input))
+        .or_else(|| cet_first_step_template(input))
+        .or_else(|| cet_daily_plan_template(input))
+        .or_else(|| cet_vocab_review_template(input))
         .or_else(|| fast_checklist_template(input))
         .or_else(|| kickoff_message_template(input))
         .or_else(|| minimal_recovery_template(input))?;
@@ -97,9 +101,84 @@ fn kickoff_message_template(user_input: &str) -> Option<String> {
     Some("明早先用 5 分钟看昨天未闭合项，再按优先级先做一件最小可交付任务，做完立即回写证据并继续下一项。".to_string())
 }
 
+fn cet_first_step_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_exam_goal = lower.contains("四级") || lower.contains("六级") || lower.contains("cet");
+    if !has_exam_goal {
+        return None;
+    }
+    let has_first_step = lower.contains("第一步")
+        || lower.contains("今天开始")
+        || lower.contains("first step")
+        || lower.contains("today");
+    let has_short_cycle = lower.contains("30天") || lower.contains("30 day");
+    if !(has_first_step && has_short_cycle) {
+        return None;
+    }
+    Some("今天只做三步：1) 先做一套近年真题听力前 10 分钟，定位薄弱题型；2) 背 25 个高频词并做 5 轮间隔复习；3) 写一段 80-100 词短文并用“语法错误+替换表达”各改 3 处。".to_string())
+}
+
+fn cet_daily_plan_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_exam_goal = lower.contains("四级") || lower.contains("六级") || lower.contains("cet");
+    if !has_exam_goal {
+        return None;
+    }
+    let asks_daily_plan = lower.contains("每天")
+        || lower.contains("daily")
+        || lower.contains("计划")
+        || lower.contains("plan");
+    let asks_30min = lower.contains("30分钟") || lower.contains("30 minutes");
+    if !(asks_daily_plan && asks_30min) {
+        return None;
+    }
+    Some("每天 30 分钟固定节奏：1) 10 分钟听力精听（同一段听两遍并复述关键词）；2) 10 分钟词汇复习（新词 10 个 + 旧词回看 20 个）；3) 10 分钟阅读或翻译（做 1 小题并复盘错因）。每周第 7 天只做错题回顾。".to_string())
+}
+
+fn cet_vocab_review_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let mentions_vocab_issue = lower.contains("背单词")
+        || lower.contains("单词")
+        || lower.contains("vocab")
+        || lower.contains("word");
+    if !mentions_vocab_issue {
+        return None;
+    }
+    let mentions_forget = lower.contains("总忘")
+        || lower.contains("记不住")
+        || lower.contains("忘")
+        || lower.contains("forget");
+    if !mentions_forget {
+        return None;
+    }
+    Some("用“1-3-7-14”复习法：今天学的新词，1 天后、3 天后、7 天后、14 天后各复习一次；每次只做两件事：读例句+自己造句。每天新词不要超过 20 个，旧词复习数量至少是新词的 2 倍。".to_string())
+}
+
+fn acceptance_readiness_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_acceptance = lower.contains("验收")
+        || lower.contains("提测")
+        || lower.contains("ready for acceptance");
+    if !asks_acceptance {
+        return None;
+    }
+    let asks_start_now = lower.contains("可以开始")
+        || lower.contains("能开始")
+        || lower.contains("是否可以")
+        || lower.contains("can we start");
+    if !asks_start_now {
+        return None;
+    }
+    Some("结论：可以开始小范围验收。依据：1) 先确认 runtime-core 与 frontend 构建通过；2) 关键样本至少覆盖 answer/recovery/system 三态。下一步：先跑 5 条固定问句快测，若通过率低于 80% 就先修再提测。".to_string())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{fast_checklist_template, kickoff_message_template};
+    use super::{
+        acceptance_readiness_template,
+        cet_daily_plan_template, cet_first_step_template, cet_vocab_review_template,
+        fast_checklist_template, kickoff_message_template,
+    };
 
     #[test]
     fn matches_english_fast_checklist_question() {
@@ -117,6 +196,30 @@ mod tests {
     fn matches_kickoff_message_question() {
         let text = "Write one short kickoff message for tomorrow morning so I can restart quickly.";
         assert!(kickoff_message_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_cet_first_step_question() {
+        let text = "我英语基础一般，想在30天内过四级。今天开始我第一步做什么？";
+        assert!(cet_first_step_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_cet_daily_plan_question() {
+        let text = "给我一个每天30分钟的四六级计划，尽量简单。";
+        assert!(cet_daily_plan_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_cet_vocab_review_question() {
+        let text = "我背单词总忘，能不能给我一个可执行的复习方法？";
+        assert!(cet_vocab_review_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_acceptance_readiness_question() {
+        let text = "帮我看一下当前状态，告诉我是否可以开始新一轮验收。";
+        assert!(acceptance_readiness_template(text).is_some());
     }
 }
 

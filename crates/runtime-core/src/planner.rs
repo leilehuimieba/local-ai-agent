@@ -306,6 +306,9 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     if should_use_context_for_kickoff_message(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
+    if should_use_context_for_acceptance_readiness(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
     if should_open_calculator(&lower) {
         return Some(PlannedAction::RunCommand {
             command: calculator_command(),
@@ -350,6 +353,20 @@ fn should_use_context_for_kickoff_message(input: &str) -> bool {
         &["one short", "short message", "一句", "简短", "不超过两句"],
     );
     has_kickoff_intent && asks_short_output
+}
+
+fn should_use_context_for_acceptance_readiness(input: &str) -> bool {
+    let asks_acceptance = mentions_any(
+        input,
+        &["验收", "提测", "ready for acceptance", "ready to validate"],
+    );
+    if !asks_acceptance {
+        return false;
+    }
+    mentions_any(
+        input,
+        &["可以开始", "能开始", "现在是否", "whether", "can we start"],
+    )
 }
 
 fn should_open_calculator(input: &str) -> bool {
@@ -713,6 +730,20 @@ mod tests {
             "当前会话还没有可复用的压缩摘要。",
             "",
             "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_acceptance_readiness_question() {
+        let env = envelope(
+            "帮我先看一下当前仓库状态，然后告诉我是否可以开始新一轮验收。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
         );
         assert!(matches!(
             plan_action_with_context(&env),

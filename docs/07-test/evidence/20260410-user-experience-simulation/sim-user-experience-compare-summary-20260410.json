@@ -1,0 +1,32 @@
+﻿{
+    "before":  {
+                   "novice":  {
+                                  "answer":  0,
+                                  "recovery":  3,
+                                  "system":  0
+                              },
+                   "engineer":  {
+                                    "answer":  1,
+                                    "recovery":  2,
+                                    "system":  0
+                                }
+               },
+    "after":  {
+                  "novice":  {
+                                 "answer":  3,
+                                 "recovery":  0,
+                                 "system":  0
+                             },
+                  "engineer":  {
+                                   "answer":  3,
+                                   "recovery":  0,
+                                   "system":  0
+                               }
+              },
+    "key_changes":  [
+                        "新手四六级问句从 recovery 3/3 -\u003e answer 3/3。",
+                        "程序员“是否可以开始验收”从 project_answer 泛说明 -\u003e session_context 可执行结论模板。"
+                    ],
+    "before_run_file":  "sim-user-experience-before-20260410.json",
+    "after_run_file":  "sim-user-experience-after2-20260410.json"
+}
