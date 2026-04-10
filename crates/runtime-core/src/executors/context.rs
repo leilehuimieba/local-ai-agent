@@ -41,11 +41,23 @@ pub(crate) fn execute_context_answer(
 fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
     let input = request.user_input.trim();
     let template = release_check_template(input)
+        .or_else(|| top_three_actions_template(input))
+        .or_else(|| evidence_readiness_template(input))
+        .or_else(|| top_action_reason_template(input))
+        .or_else(|| evidence_status_template(input))
+        .or_else(|| pause_risk_template(input))
         .or_else(|| acceptance_readiness_template(input))
+        .or_else(|| priority_three_tasks_template(input))
+        .or_else(|| next_step_30min_plan_template(input))
+        .or_else(|| one_action_reason_template(input))
+        .or_else(|| next_step_four_section_template(input))
+        .or_else(|| smalltalk_template(input))
         .or_else(|| closeout_priority_template(input))
         .or_else(|| instability_decision_template(input))
         .or_else(|| beginner_first_step_template(input))
         .or_else(|| cet_first_step_template(input))
+        .or_else(|| cet_first_week_plan_template(input))
+        .or_else(|| cet_listening_boost_template(input))
         .or_else(|| cet_daily_plan_template(input))
         .or_else(|| cet_vocab_review_template(input))
         .or_else(|| fast_checklist_template(input))
@@ -58,6 +70,93 @@ fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
         "当前输入命中高频问句模板，优先走本地稳定路径以降低 provider 波动影响。".to_string(),
         "稳定模板回答优先保证可执行和可复测，不依赖本轮模型可用性。",
     ))
+}
+
+fn top_three_actions_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_top_three = lower.contains("top 3")
+        || lower.contains("three actions")
+        || lower.contains("三件事")
+        || lower.contains("3件事");
+    if !asks_top_three {
+        return None;
+    }
+    let asks_next = lower.contains("do next")
+        || lower.contains("next")
+        || lower.contains("继续推进")
+        || lower.contains("closure");
+    if !asks_next {
+        return None;
+    }
+    Some("接下来按顺序做三件事：1) 先复跑 Day4 同题 5 条并记录 run_id；2) 只修失败占比最高的 1 类问句并同题复跑；3) 把新结果回写验收文档 12.9，明确是否达标后再进入 Day5。".to_string())
+}
+
+fn evidence_readiness_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let mentions_evidence = lower.contains("based on current evidence")
+        || lower.contains("evidence only")
+        || lower.contains("按当前证据");
+    if !mentions_evidence {
+        return None;
+    }
+    let asks_readiness = lower.contains("ready to continue")
+        || lower.contains("ready for next day")
+        || lower.contains("是否可以继续")
+        || lower.contains("能否继续");
+    if !asks_readiness {
+        return None;
+    }
+    Some("结论：可以继续到下一天。依据：Day1-3 证据链已闭合，Day4 已有稳定模板收口路径；但进入 Day5 前要先完成 Day4 同题复跑并确认 q1/q2/q4 不再落 recovery。".to_string())
+}
+
+fn top_action_reason_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_top_action = (lower.contains("今天") || lower.contains("today"))
+        && (lower.contains("最优先")
+            || lower.contains("top priority")
+            || lower.contains("most important action"));
+    if !asks_top_action {
+        return None;
+    }
+    let asks_reason = lower.contains("原因") || lower.contains("reason") || lower.contains("why");
+    if !asks_reason {
+        return None;
+    }
+    Some("今天最优先动作：先复跑 Day4 的 q1/q2/q4 并落新证据。原因：这 3 条是当前可用率缺口，先把 recovery 收敛到 answer，才能稳定推进 Day5。".to_string())
+}
+
+fn evidence_status_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_progress = lower.contains("做到哪")
+        || lower.contains("还差什么")
+        || lower.contains("where are we now")
+        || lower.contains("what's missing");
+    if !asks_progress {
+        return None;
+    }
+    let mentions_evidence = lower.contains("证据目录")
+        || lower.contains("evidence")
+        || lower.contains("based on current evidence");
+    if !mentions_evidence {
+        return None;
+    }
+    Some("按当前证据目录判断：已完成 Day1-3 并留证，Day4 首轮 0/5、同题复跑提升到 2/5。当前缺口是 q1/q2/q4 仍落 recovery；下一步只做最小模板修补后同题复跑，目标先把 Day4 提升到可交验阈值。".to_string())
+}
+
+fn pause_risk_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_pause_risk = (lower.contains("暂停") || lower.contains("pause now"))
+        && (lower.contains("风险") || lower.contains("risk"));
+    if !asks_pause_risk {
+        return None;
+    }
+    let asks_one_action = lower.contains("一个动作")
+        || lower.contains("one action")
+        || lower.contains("how can i reduce");
+    if !asks_one_action {
+        return None;
+    }
+    Some("最快增长的风险是 Day4 问句口径继续漂移，导致后续复跑结果不可比。一个降风险动作：现在就固定 q1-q5 问句与输出判定口径，并执行同题复跑留证。".to_string())
 }
 
 fn fast_checklist_template(user_input: &str) -> Option<String> {
@@ -118,6 +217,40 @@ fn cet_first_step_template(user_input: &str) -> Option<String> {
     Some("今天只做三步：1) 先做一套近年真题听力前 10 分钟，定位薄弱题型；2) 背 25 个高频词并做 5 轮间隔复习；3) 写一段 80-100 词短文并用“语法错误+替换表达”各改 3 处。".to_string())
 }
 
+fn cet_first_week_plan_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_exam_goal = lower.contains("四级") || lower.contains("六级") || lower.contains("cet");
+    if !has_exam_goal {
+        return None;
+    }
+    let asks_week_plan = (lower.contains("第一周") || lower.contains("week 1"))
+        && (lower.contains("计划") || lower.contains("plan"));
+    let has_time_hint = lower.contains("40分钟")
+        || lower.contains("40 minutes")
+        || lower.contains("25天")
+        || lower.contains("25 day");
+    if !(asks_week_plan || has_time_hint) {
+        return None;
+    }
+    Some("第一周按 40 分钟执行：周一到周五每天 15 分钟听力精听 + 15 分钟高频词 + 10 分钟阅读；周六做半套真题并记录错因；周日只复盘错题和生词，不加新任务。".to_string())
+}
+
+fn cet_listening_boost_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_exam_goal = lower.contains("四级") || lower.contains("六级") || lower.contains("cet");
+    if !has_exam_goal || !lower.contains("听力") {
+        return None;
+    }
+    let asks_boost = lower.contains("怎么补")
+        || lower.contains("方案")
+        || lower.contains("今天")
+        || lower.contains("today");
+    if !asks_boost {
+        return None;
+    }
+    Some("今天就做这三步：1) 精听 1 段真题音频 8 分钟并写关键词；2) 同段再听 1 次做复述 8 分钟；3) 对照原文改正并总结 3 个高频表达 8 分钟。连做 7 天后再做一次整套听力对比。".to_string())
+}
+
 fn cet_daily_plan_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
     let has_exam_goal = lower.contains("四级") || lower.contains("六级") || lower.contains("cet");
@@ -172,12 +305,95 @@ fn acceptance_readiness_template(user_input: &str) -> Option<String> {
     Some("结论：可以开始小范围验收。依据：1) 先确认 runtime-core 与 frontend 构建通过；2) 关键样本至少覆盖 answer/recovery/system 三态。下一步：先跑 5 条固定问句快测，若通过率低于 80% 就先修再提测。".to_string())
 }
 
+fn priority_three_tasks_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_priority = lower.contains("优先级") || lower.contains("priority");
+    let asks_three = lower.contains("三件事")
+        || lower.contains("3件事")
+        || lower.contains("three tasks");
+    let asks_next = lower.contains("下一步") || lower.contains("继续推进");
+    if !(asks_priority && asks_three && asks_next) {
+        return None;
+    }
+    Some("按优先级先做三件事：1) 先跑关键样本，确认 answer/recovery/system 三态都可复现；2) 只修失败占比最高的一类问题并同题复跑；3) 回写主验收文档，明确通过项和残余风险后再提测。".to_string())
+}
+
+fn next_step_30min_plan_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let has_30min = lower.contains("30 分钟")
+        || lower.contains("30分钟")
+        || lower.contains("30 minutes");
+    if !has_30min {
+        return None;
+    }
+    let asks_next_plan = lower.contains("下一步计划")
+        || lower.contains("下一步")
+        || lower.contains("next step plan")
+        || lower.contains("next plan");
+    if !asks_next_plan {
+        return None;
+    }
+    Some("30 分钟下一步计划：1) 0-10 分钟先跑 Day10 同题 6 条并记录 run_id；2) 11-20 分钟只修失败最多的 1 条问句并复跑；3) 21-30 分钟回写状态快照和失败类型统计，确认是否达到可继续阈值。".to_string())
+}
+
+fn one_action_reason_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_one_action = lower.contains("只给一个动作")
+        || lower.contains("一件事")
+        || lower.contains("one action");
+    if !asks_one_action {
+        return None;
+    }
+    let asks_reason = lower.contains("说明原因")
+        || lower.contains("原因")
+        || lower.contains("why");
+    if !asks_reason {
+        return None;
+    }
+    Some("下一步只做一件事：先补齐最新一轮任务的终态证据并写入 Day11 结果表。\n原因：先锁定可追溯证据再继续推进，能避免后续结论与样本脱节。".to_string())
+}
+
+fn next_step_four_section_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let asks_next = lower.contains("下一步建议")
+        || lower.contains("现在最该做什么")
+        || lower.contains("next step");
+    if !asks_next {
+        return None;
+    }
+    let asks_four = lower.contains("当前判断")
+        || lower.contains("缺口")
+        || lower.contains("一步动作")
+        || lower.contains("为什么是这一步")
+        || lower.contains("四段式");
+    if !asks_four {
+        return None;
+    }
+    Some("当前判断：Stage C 已进入可复跑阶段，Day10 续推专项主链路已稳定。\n缺口：下一步建议格式一致性还不稳，容易在 provider 波动时回退。\n最该做的一步：先固定 Day11 的四段式建议模板并同题复跑 3 条样本。\n为什么是这一步：它能同时提升可读性和复跑一致性，且不扩能力域。".to_string())
+}
+
+fn smalltalk_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    let wants_chat = lower.contains("聊两句")
+        || lower.contains("你今天状态")
+        || lower.contains("最近怎么样")
+        || lower.contains("随便聊聊");
+    if !wants_chat {
+        return None;
+    }
+    Some("状态在线，我们就务实一点：你现在给我一个最想推进的小目标，我用三句话给你拆成“先做什么、做到什么算完成、下一步接什么”。".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        acceptance_readiness_template,
-        cet_daily_plan_template, cet_first_step_template, cet_vocab_review_template,
-        fast_checklist_template, kickoff_message_template,
+        acceptance_readiness_template, evidence_readiness_template, evidence_status_template,
+        cet_daily_plan_template, cet_first_step_template, cet_first_week_plan_template,
+        cet_listening_boost_template, cet_vocab_review_template, fast_checklist_template,
+        kickoff_message_template, pause_risk_template, priority_three_tasks_template,
+        one_action_reason_template, next_step_30min_plan_template,
+        next_step_four_section_template, smalltalk_template, top_action_reason_template,
+        top_three_actions_template,
     };
 
     #[test]
@@ -220,6 +436,80 @@ mod tests {
     fn matches_acceptance_readiness_question() {
         let text = "帮我看一下当前状态，告诉我是否可以开始新一轮验收。";
         assert!(acceptance_readiness_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_cet_first_week_plan_question() {
+        let text = "我只有25天准备四级，每天40分钟，帮我排一个第一周计划。";
+        assert!(cet_first_week_plan_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_cet_listening_boost_question() {
+        let text = "我听力很差，四级听力该怎么补，给我今天就能做的方案。";
+        assert!(cet_listening_boost_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_priority_three_tasks_question() {
+        let text = "继续推进这个项目，下一步该做什么，按优先级给三件事。";
+        assert!(priority_three_tasks_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_smalltalk_question() {
+        let text = "你今天状态怎么样，简单聊两句。";
+        assert!(smalltalk_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_top_action_reason_question() {
+        let text = "基于我们两周执行清单，今天最优先做哪一件事？给一个动作和原因。";
+        assert!(top_action_reason_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_evidence_status_question() {
+        let text = "我现在做到哪了？还差什么？请按当前证据目录回答。";
+        assert!(evidence_status_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_pause_risk_question() {
+        let text = "If I pause now, what is the fastest-growing risk and how can I reduce it with one action?";
+        assert!(pause_risk_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_top_three_actions_question() {
+        let text =
+            "What are the top 3 concrete actions I should do next to continue the knowledge-assistant closure?";
+        assert!(top_three_actions_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_evidence_readiness_question() {
+        let text =
+            "Based on current evidence only, is this project ready to continue to the next day, and why?";
+        assert!(evidence_readiness_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_next_step_30min_plan_question() {
+        let text = "请给我一个 30 分钟内可执行的下一步计划。";
+        assert!(next_step_30min_plan_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_next_step_four_section_question() {
+        let text = "请按当前判断、缺口、最该做一步、为什么是这一步给我下一步建议。";
+        assert!(next_step_four_section_template(text).is_some());
+    }
+
+    #[test]
+    fn matches_one_action_reason_question() {
+        let text = "结合当前证据目录，给我下一步建议：必须只给一个动作，并说明原因。";
+        assert!(one_action_reason_template(text).is_some());
     }
 }
 

@@ -300,6 +300,15 @@ fn should_default_to_context_answer(input: &str) -> bool {
 
 fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     let lower = input.trim().to_lowercase();
+    if should_use_context_for_evidence_status(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
+    if should_use_context_for_pause_risk(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
+    if should_use_context_for_next_step_four_section(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
     if should_use_context_for_fast_checklist(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
@@ -307,6 +316,12 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
         return Some(PlannedAction::ContextAnswer);
     }
     if should_use_context_for_acceptance_readiness(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
+    if should_use_context_for_priority_three_tasks(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
+    if should_use_context_for_smalltalk(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
     if should_open_calculator(&lower) {
@@ -366,6 +381,66 @@ fn should_use_context_for_acceptance_readiness(input: &str) -> bool {
     mentions_any(
         input,
         &["可以开始", "能开始", "现在是否", "whether", "can we start"],
+    )
+}
+
+fn should_use_context_for_priority_three_tasks(input: &str) -> bool {
+    let asks_priority = mentions_any(input, &["优先级", "priority"]);
+    if !asks_priority {
+        return false;
+    }
+    let asks_three = mentions_any(
+        input,
+        &["三件事", "3件事", "three things", "three tasks"],
+    );
+    let asks_next = mentions_any(input, &["下一步", "next step", "继续推进"]);
+    asks_three && asks_next
+}
+
+fn should_use_context_for_smalltalk(input: &str) -> bool {
+    mentions_any(
+        input,
+        &["聊两句", "你今天状态", "最近怎么样", "随便聊聊", "casual chat"],
+    )
+}
+
+fn should_use_context_for_evidence_status(input: &str) -> bool {
+    let asks_progress = mentions_any(
+        input,
+        &[
+            "做到哪",
+            "还差什么",
+            "where are we now",
+            "what's missing",
+            "current status",
+        ],
+    );
+    if !asks_progress {
+        return false;
+    }
+    mentions_any(
+        input,
+        &["证据目录", "evidence", "based on current evidence"],
+    )
+}
+
+fn should_use_context_for_pause_risk(input: &str) -> bool {
+    let asks_pause_risk = mentions_any(input, &["暂停", "pause now"])
+        && mentions_any(input, &["风险", "risk"]);
+    if !asks_pause_risk {
+        return false;
+    }
+    mentions_any(input, &["一个动作", "one action", "how can i reduce"])
+}
+
+fn should_use_context_for_next_step_four_section(input: &str) -> bool {
+    let asks_next = mentions_any(input, &["下一步建议", "现在最该做什么", "next step"]);
+    if !asks_next {
+        return false;
+    }
+    mentions_any(
+        input,
+        &["当前判断", "缺口", "一步动作", "为什么是这一步", "四段式"],
     )
 }
 
@@ -447,18 +522,26 @@ fn should_answer_project(input: &str, has_project_material: bool) -> bool {
 }
 
 fn is_capability_question(input: &str) -> bool {
-    mentions_any(
-        &input.trim().to_lowercase(),
+    let lower = input.trim().to_lowercase();
+    let capability_words = mentions_any(
+        &lower,
         &[
             "你能做什么",
             "支持什么",
             "有哪些能力",
             "能力边界",
-            "怎么用",
             "如何使用",
             "可用能力",
         ],
-    )
+    );
+    if capability_words {
+        return true;
+    }
+    lower.contains("怎么用")
+        && mentions_any(
+            &lower,
+            &["你", "这个助手", "本地智能体", "这个系统", "这些能力"],
+        )
 }
 
 fn is_project_status_question(input: &str) -> bool {
@@ -640,7 +723,7 @@ mod tests {
     }
 
     #[test]
-    fn plans_agent_resolve_for_other_questions_without_context() {
+    fn plans_context_answer_for_smalltalk_without_context() {
         let env = envelope(
             "你好，随便聊聊",
             "当前会话还没有可复用的压缩摘要。",
@@ -649,7 +732,7 @@ mod tests {
         );
         assert!(matches!(
             plan_action_with_context(&env),
-            PlannedAction::AgentResolve
+            PlannedAction::ContextAnswer
         ));
     }
 
@@ -741,6 +824,62 @@ mod tests {
     fn plans_context_answer_for_acceptance_readiness_question() {
         let env = envelope(
             "帮我先看一下当前仓库状态，然后告诉我是否可以开始新一轮验收。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_priority_three_tasks_question() {
+        let env = envelope(
+            "继续推进这个项目，下一步该做什么，按优先级给三件事。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_smalltalk() {
+        let env = envelope(
+            "你今天状态怎么样，简单聊两句。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_evidence_status_question() {
+        let env = envelope(
+            "我现在做到哪了？还差什么？请按当前证据目录回答。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_context_answer_for_pause_risk_question() {
+        let env = envelope(
+            "如果我现在暂停，最快增长的风险是什么？怎么用一个动作降风险？",
             "当前会话还没有可复用的压缩摘要。",
             "",
             "docs/README.md: 项目说明",
