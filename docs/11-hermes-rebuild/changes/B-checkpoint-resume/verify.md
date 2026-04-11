@@ -356,6 +356,29 @@
   - `checkpoint_id` 覆盖率统计字段回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`boundary_recovered=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-12 00:42（Asia/Shanghai）
+- 批量脚本：`powershell -ExecutionPolicy Bypass -File scripts/run-stage-b-acceptance-batch.ps1 -Rounds 5`
+- 报告：`tmp/stage-b-acceptance-batch/latest.json`
+- 关键事实：
+  - 批量统计报告为 `status=passed`，`rounds=5`。
+  - 通过率字段保持稳定：`confirm_pass_rate=1.0`、`retry_pass_rate=1.0`、`round_pass_rate=1.0`。
+  - `checkpoint_id` 覆盖率保持稳定：`confirm_checkpoint_id_rate=1.0`、`retry_checkpoint_id_rate=1.0`。
+  - 新增恢复质量覆盖率字段：`confirm_verification_empty_count=5`、`retry_verification_recovered_count=5`、`retry_artifact_recovered_count=5`，对应覆盖率 `confirm_verification_empty_rate=1.0`、`retry_verification_recovered_rate=1.0`、`retry_artifact_recovered_rate=1.0`。
+
+- 时间：2026-04-12 00:42（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775925740360`
+- run：`run-1775925752571-2`
+- 关键事实：
+  - 恢复质量统计字段回归后 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`verification_empty=true`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`。
+
+- 时间：2026-04-12 00:42（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775925760479`
+- run：`run-1775925772491-2`
+- 关键事实：
+  - 恢复质量统计字段回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`verification_recovered=true`、`artifact_recovered=true`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
