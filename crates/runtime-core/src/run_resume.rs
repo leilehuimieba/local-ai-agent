@@ -76,13 +76,7 @@ fn resume_phase(checkpoint: &RunCheckpoint) -> String {
 }
 
 fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| event.metadata.get("handoff_artifact_path").cloned())
-        .unwrap_or_default()
+    crate::run_resume_handoff::resume_handoff_artifact_path(checkpoint)
 }
 
 fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
