@@ -65,6 +65,7 @@ type ToolCallSnapshot struct {
 	InputSchema          string `json:"input_schema,omitempty"`
 	OutputKind           string `json:"output_kind,omitempty"`
 	RequiresConfirmation bool   `json:"requires_confirmation,omitempty"`
+	ArgumentsJSON        string `json:"arguments_json,omitempty"`
 }
 
 type VerificationSnapshot struct {

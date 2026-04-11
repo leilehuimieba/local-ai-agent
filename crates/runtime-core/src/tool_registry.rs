@@ -5,6 +5,7 @@ use crate::capabilities::{
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::{CapabilitySpec, ConnectorSlotSpec};
 use crate::planner::{PlannedAction, plan_action_with_context};
+use serde_json::json;
 
 #[derive(Clone, Debug)]
 pub(crate) struct ToolCall {
@@ -19,6 +20,41 @@ pub(crate) struct ToolRegistry;
 
 pub(crate) fn runtime_tool_registry() -> ToolRegistry {
     ToolRegistry
+}
+
+pub(crate) fn tool_call_arguments_json(tool_call: &ToolCall) -> String {
+    action_arguments_json(&tool_call.action)
+}
+
+fn action_arguments_json(action: &PlannedAction) -> String {
+    match action {
+        PlannedAction::RunCommand { command } => json!({ "command": command }).to_string(),
+        PlannedAction::ReadFile { path } => json!({ "path": path }).to_string(),
+        PlannedAction::WriteFile { path, content } => {
+            json!({ "path": path, "content": content }).to_string()
+        }
+        PlannedAction::DeletePath { path } => json!({ "path": path }).to_string(),
+        PlannedAction::ListFiles { path } => json!({ "path": path }).to_string(),
+        PlannedAction::WriteMemory {
+            kind,
+            summary,
+            content,
+        } => json!({
+            "kind": kind,
+            "summary": summary,
+            "content": content
+        })
+        .to_string(),
+        PlannedAction::RecallMemory { query } => json!({ "query": query }).to_string(),
+        PlannedAction::SearchKnowledge { query } => json!({ "query": query }).to_string(),
+        PlannedAction::SearchSiyuanNotes { query } => json!({ "query": query }).to_string(),
+        PlannedAction::ReadSiyuanNote { path } => json!({ "path": path }).to_string(),
+        PlannedAction::WriteSiyuanKnowledge
+        | PlannedAction::ProjectAnswer
+        | PlannedAction::ContextAnswer
+        | PlannedAction::Explain
+        | PlannedAction::AgentResolve => "{}".to_string(),
+    }
 }
 
 impl ToolRegistry {

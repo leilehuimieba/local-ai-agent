@@ -151,6 +151,29 @@
   - 单测后回归 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-11 22:36（Asia/Shanghai）
+- 构建与测试：
+  - `cargo test -p runtime-core`：`64 passed; 0 failed`
+  - `go test ./...`（gateway）：通过
+  - `npm run build`（frontend）：通过
+- 关键事实：
+  - 工具动作快照参数 `arguments_json` 已在 runtime/gateway/frontend 三端合同对齐，字段名保持一致：`ToolCallSnapshot.arguments_json`。
+  - `frontend/src/shared/contracts.ts` 已收敛为 barrel export，类型定义按 `base/settings/runtime/memory/chat` 拆分，构建通过且无类型回退告警。
+
+- 时间：2026-04-11 22:36（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775918153874`
+- run：`run-1775918170502-2`
+- 关键事实：
+  - 合同对齐后回归 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`checkpoint_id_matched=true`。
+
+- 时间：2026-04-11 22:36（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775918153867`
+- run：`run-1775918169753-2`
+- 关键事实：
+  - 合同对齐后回归 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
@@ -203,6 +226,9 @@
   - `checkpoint_resumed.metadata.checkpoint_resume_verification_summary` 记录恢复时可见验证摘要
   - `checkpoint_resumed.metadata.checkpoint_resume_artifact_path` 记录恢复时可见产物路径
   - retry acceptance 已切到结构化断言：`verification_recovered` 与 `artifact_recovered` 由上述字段是否为空判定
+- 工具动作快照参数合同已三端对齐：
+  - `runtime-core/contracts.rs`、`gateway/internal/contracts/contracts.go`、`frontend/src/shared/contracts/runtime.ts` 均包含 `ToolCallSnapshot.arguments_json`
+  - `runtime-core/events.rs` 已按 `tool_arguments_json -> arguments_json` 映射，恢复动作反解继续可用
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环

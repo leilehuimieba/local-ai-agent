@@ -246,6 +246,8 @@ pub struct ToolCallSnapshot {
     pub output_kind: String,
     #[serde(default)]
     pub requires_confirmation: bool,
+    #[serde(default)]
+    pub arguments_json: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

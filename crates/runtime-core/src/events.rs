@@ -295,6 +295,10 @@ fn tool_call_snapshot(metadata: &BTreeMap<String, String>) -> Option<ToolCallSna
             .get("requires_confirmation")
             .map(|value| value == "true")
             .unwrap_or(false),
+        arguments_json: metadata
+            .get("tool_arguments_json")
+            .cloned()
+            .unwrap_or_default(),
     };
     has_tool_call_snapshot(&snapshot).then_some(snapshot)
 }
@@ -305,6 +309,7 @@ fn has_tool_call_snapshot(snapshot: &ToolCallSnapshot) -> bool {
         || !snapshot.category.is_empty()
         || !snapshot.input_schema.is_empty()
         || !snapshot.output_kind.is_empty()
+        || !snapshot.arguments_json.is_empty()
 }
 
 fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<VerificationSnapshot> {
