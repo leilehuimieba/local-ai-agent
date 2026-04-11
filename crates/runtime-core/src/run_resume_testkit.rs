@@ -30,18 +30,19 @@ pub(crate) mod testkit {
     }
 
     pub(crate) fn sample_checkpoint(reason: &str, handoff_path: &str) -> RunCheckpoint {
-        let ids = sample_run_ids();
+        let ids = sample_checkpoint_ids();
+        let meta = sample_checkpoint_meta(reason);
         RunCheckpoint {
-            checkpoint_id: "cp-1".to_string(),
+            checkpoint_id: ids.0,
             run_id: ids.1,
             session_id: ids.2,
             trace_id: ids.3,
-            workspace_id: "workspace-1".to_string(),
-            status: "failed".to_string(),
-            final_stage: "Finish".to_string(),
-            resumable: true,
-            resume_reason: reason.to_string(),
-            resume_stage: "Execute".to_string(),
+            workspace_id: ids.4,
+            status: meta.0,
+            final_stage: meta.1,
+            resumable: meta.2,
+            resume_reason: meta.3,
+            resume_stage: meta.4,
             event_count: 2,
             request: sample_request(reason),
             response: sample_response(handoff_path),
@@ -135,6 +136,26 @@ pub(crate) mod testkit {
             "Finish".to_string(),
             "cp-1".to_string(),
             true,
+        )
+    }
+
+    fn sample_checkpoint_ids() -> (String, String, String, String, String) {
+        (
+            "cp-1".to_string(),
+            "run-1".to_string(),
+            "session-1".to_string(),
+            "trace-1".to_string(),
+            "workspace-1".to_string(),
+        )
+    }
+
+    fn sample_checkpoint_meta(reason: &str) -> (String, String, bool, String, String) {
+        (
+            "failed".to_string(),
+            "Finish".to_string(),
+            true,
+            reason.to_string(),
+            "Execute".to_string(),
         )
     }
 
