@@ -64,12 +64,10 @@ pub(crate) mod testkit {
     }
 
     pub(crate) fn sample_checkpoint_with_confirmation_boundary() -> RunCheckpoint {
-        let mut checkpoint = sample_checkpoint_without_events("confirmation_required", "");
-        checkpoint
-            .response
-            .events
-            .push(sample_confirmation_boundary_event());
-        checkpoint
+        sample_checkpoint_with_event(
+            sample_checkpoint_without_events("confirmation_required", ""),
+            sample_confirmation_boundary_event(),
+        )
     }
 
     fn sample_model_ref() -> ModelRef {
@@ -134,7 +132,13 @@ pub(crate) mod testkit {
     }
 
     fn sample_retry_checkpoint_with_event(event: RunEvent) -> RunCheckpoint {
-        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        sample_checkpoint_with_event(
+            sample_checkpoint("retryable_failure", "D:/repo/handoff.json"),
+            event,
+        )
+    }
+
+    fn sample_checkpoint_with_event(mut checkpoint: RunCheckpoint, event: RunEvent) -> RunCheckpoint {
         checkpoint.response.events.push(event);
         checkpoint
     }
