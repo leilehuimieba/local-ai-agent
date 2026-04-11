@@ -266,12 +266,34 @@
   - 批量脚本最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-12 00:09（Asia/Shanghai）
+- 批量脚本：`powershell -ExecutionPolicy Bypass -File scripts/run-stage-b-acceptance-batch.ps1 -Rounds 50`
+- 报告：`tmp/stage-b-acceptance-batch/latest.json`
+- 关键事实：
+  - 批量统计报告为 `status=passed`，`rounds=50`。
+  - 汇总字段：`confirm_pass_count=50`、`retry_pass_count=50`、`round_pass_count=50`。
+  - 通过率：`confirm_pass_rate=1.0`、`retry_pass_rate=1.0`、`round_pass_rate=1.0`。
+
+- 时间：2026-04-12 00:09（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775923757665`
+- run：`run-1775923769740-2`
+- 关键事实：
+  - 50 轮批量最后一轮 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_empty=true`。
+
+- 时间：2026-04-12 00:09（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775923777411`
+- run：`run-1775923789124-2`
+- 关键事实：
+  - 50 轮批量最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
 - 当前覆盖情况：
-  - `50 轮任务无致命崩溃`：当前没有直接证据。
-  - `中断恢复成功率 >= 95%`：当前已有 checkpoint 写入、retry 查询、retry request 重建、保留原 `run_id` 约束验证、短期状态恢复测试，以及 `retryable_failure`、`after_confirmation` 两条接口级闭环样本；仍缺批量成功率统计。
+  - `50 轮任务无致命崩溃`：已有直接证据，`tmp/stage-b-acceptance-batch/latest.json` 显示 `rounds=50` 且 `round_pass_count=50`。
+  - `中断恢复成功率 >= 95%`：已有直接证据，`tmp/stage-b-acceptance-batch/latest.json` 显示 `confirm_pass_rate=1.0`、`retry_pass_rate=1.0`、`round_pass_rate=1.0`。
   - `关键事件链路完整可追溯`：当前已拿到两条接口级证据：
     `checkpoint_written -> checkpoint_resumed -> 后续执行事件 -> terminal event`
     两条样本均未出现 `checkpoint_resume_skipped`。

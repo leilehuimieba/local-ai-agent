@@ -52,3 +52,5 @@
   完成判据：`scripts/run-stage-b-retry-acceptance.ps1` 输出并校验 `checkpoint_id_matched=true`，且 confirm/retry 双脚本复跑通过。
 - [x] 新增阶段 B 批量验收统计脚本
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 可批量编排 confirm/retry 验收并输出 `confirm/retry/round` 三类通过率统计报告。
+- [x] 完成阶段 B 50 轮批量验收统计
+  完成判据：批量报告 `tmp/stage-b-acceptance-batch/latest.json` 达到 `rounds=50`，且 `confirm_pass_rate/retry_pass_rate/round_pass_rate >= 0.95`。
