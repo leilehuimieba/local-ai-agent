@@ -65,6 +65,22 @@
   - 当前稳定样本命令为 `cmd: Remove-Item AGENTS.md -WhatIf`，既能稳定触发 `high_risk_action`，又不会真的改动工作区文件。
   - confirm 路径最终落到 `run_finished`，工具输出为 `WhatIf` 预演结果，说明当前样本可稳定复现“先确认、再恢复、再继续执行”的闭环。
 
+- 时间：2026-04-11 11:19（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775877548511`
+- 初始 run：`run-1775877564481-2`
+- 初始 checkpoint：`run-1775877564481-2-1775877564943`
+- 关键事实：
+  - 确认验收脚本已收敛为“confirmation 恢复事件定向筛选”：先按 `checkpoint_resume_reason=confirmation_required` 与 `checkpoint_stage=PausedForConfirmation` 过滤，再优先匹配初始 `checkpoint_id`。
+  - `tmp/stage-b-confirmation-acceptance/latest.json` 中 `after_confirmation.checkpoint_id_matched=true`，确认命中的是审批对应恢复事件，而不是后续失败重试恢复事件。
+  - 同一份证据里 `after_confirmation.reason_matched=true`、`stage_matched=true`、`verification_empty=true`，与 confirmation 路径口径一致。
+
+- 时间：2026-04-11 11:19（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775877548557`
+- run：`run-1775877564473-2`
+- 关键事实：
+  - retry 路径回归通过且未受 confirmation 脚本筛选调整影响。
+  - `tmp/stage-b-retry-acceptance/latest.json` 仍保持 `reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
