@@ -21,10 +21,17 @@ fn artifact_path_from_event(event: &RunEvent) -> Option<String> {
 }
 
 fn artifact_from_verification_snapshot(event: &RunEvent) -> Option<String> {
-    event.verification_snapshot.as_ref().and_then(|snapshot| {
-        snapshot
-            .evidence
-            .iter()
-            .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
-    })
+    event
+        .verification_snapshot
+        .as_ref()
+        .and_then(artifact_from_verification_evidence)
+}
+
+fn artifact_from_verification_evidence(
+    snapshot: &crate::contracts::VerificationSnapshot,
+) -> Option<String> {
+    snapshot
+        .evidence
+        .iter()
+        .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
 }
