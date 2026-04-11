@@ -59,6 +59,17 @@ pub(crate) mod testkit {
 
     fn sample_event_metadata(handoff_path: &str) -> BTreeMap<String, String> {
         let mut metadata = BTreeMap::new();
+        insert_default_event_metadata(&mut metadata);
+        if !handoff_path.is_empty() {
+            metadata.insert(
+                "handoff_artifact_path".to_string(),
+                handoff_path.to_string(),
+            );
+        }
+        metadata
+    }
+
+    fn insert_default_event_metadata(metadata: &mut BTreeMap<String, String>) {
         metadata.insert("tool_name".to_string(), "run_command".to_string());
         metadata.insert("tool_display_name".to_string(), "执行命令".to_string());
         metadata.insert(
@@ -69,13 +80,6 @@ pub(crate) mod testkit {
             "failure_recovery_hint".to_string(),
             "建议先检查命令语法、依赖和当前环境，再决定是否重试。".to_string(),
         );
-        if !handoff_path.is_empty() {
-            metadata.insert(
-                "handoff_artifact_path".to_string(),
-                handoff_path.to_string(),
-            );
-        }
-        metadata
     }
 
     fn sample_failed_event_with_metadata(metadata: BTreeMap<String, String>) -> RunEvent {
