@@ -13,8 +13,8 @@ pub(crate) fn apply_resume_checkpoint(
     session.short_term.current_plan = resume_plan(checkpoint);
     session.short_term.current_phase = resume_phase(checkpoint);
     session.short_term.last_run_status = checkpoint.status.clone();
-    session.short_term.recent_observation = checkpoint.response.result.final_answer.clone();
-    session.short_term.recent_tool_result = checkpoint.response.result.summary.clone();
+    session.short_term.recent_observation = resume_recent_observation(checkpoint);
+    session.short_term.recent_tool_result = resume_recent_tool_result(checkpoint);
     session.short_term.handoff_artifact_path = resume_handoff_artifact_path(checkpoint);
     clear_resume_confirmation_state(session, checkpoint, request);
 }
@@ -83,8 +83,16 @@ fn resume_action_hint(checkpoint: &RunCheckpoint) -> String {
 }
 
 fn action_hint_from_event(event: &crate::contracts::RunEvent) -> Option<String> {
-    let tool = event.metadata.get("tool_display_name").cloned().unwrap_or_default();
-    let task = event.metadata.get("task_title").cloned().unwrap_or_default();
+    let tool = event
+        .metadata
+        .get("tool_display_name")
+        .cloned()
+        .unwrap_or_default();
+    let task = event
+        .metadata
+        .get("task_title")
+        .cloned()
+        .unwrap_or_default();
     let name = event.metadata.get("tool_name").cloned().unwrap_or_default();
     if !tool.is_empty() && !task.is_empty() {
         return Some(format!("{tool} ({task})"));
@@ -122,12 +130,72 @@ fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
         .unwrap_or_default()
 }
 
+fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
+    let verification = resume_verification_summary(checkpoint);
+    if verification.is_empty() {
+        checkpoint.response.result.summary.clone()
+    } else {
+        format!("验证快照：{verification}")
+    }
+}
+
+fn resume_recent_observation(checkpoint: &RunCheckpoint) -> String {
+    let answer = checkpoint.response.result.final_answer.clone();
+    let artifact = resume_artifact_path(checkpoint);
+    if artifact.is_empty() {
+        return answer;
+    }
+    if answer.is_empty() {
+        return format!("恢复到产物：{artifact}");
+    }
+    format!("{answer}；产物：{artifact}")
+}
+
+fn resume_verification_summary(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(|event| event.verification_snapshot.as_ref())
+        .map(|snapshot| snapshot.summary.clone())
+        .filter(|summary| !summary.is_empty())
+        .unwrap_or_default()
+}
+
+fn resume_artifact_path(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(|event| {
+            event
+                .metadata
+                .get("artifact_path")
+                .cloned()
+                .filter(|path| !path.is_empty())
+                .or_else(|| artifact_from_verification_snapshot(event))
+        })
+        .unwrap_or_default()
+}
+
+fn artifact_from_verification_snapshot(event: &crate::contracts::RunEvent) -> Option<String> {
+    event.verification_snapshot.as_ref().and_then(|snapshot| {
+        snapshot
+            .evidence
+            .iter()
+            .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::apply_resume_checkpoint;
     use crate::checkpoint::RunCheckpoint;
     use crate::contracts::{
-        ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
+        ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse,
+        VerificationSnapshot, WorkspaceRef,
     };
     use crate::session::SessionMemory;
     use std::collections::BTreeMap;
@@ -139,7 +207,10 @@ mod tests {
         let mut session = SessionMemory::default();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert_eq!(session.short_term.current_phase, "recovery");
-        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
+        assert_eq!(
+            session.short_term.handoff_artifact_path,
+            "D:/repo/handoff.json"
+        );
     }
 
     #[test]
@@ -157,8 +228,18 @@ mod tests {
         let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
         let mut session = SessionMemory::default();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session.short_term.current_plan.contains("继续动作：执行命令"));
-        assert!(session.short_term.current_plan.contains("执行命令: Write-Error"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("继续动作：执行命令")
+        );
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("执行命令: Write-Error")
+        );
     }
 
     #[test]
@@ -167,7 +248,32 @@ mod tests {
         let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
         let mut session = SessionMemory::default();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session.short_term.current_plan.contains("恢复提示：建议先检查命令语法"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复提示：建议先检查命令语法")
+        );
+    }
+
+    #[test]
+    fn restores_verification_snapshot_into_short_term_memory() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint_with_verification_snapshot();
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(
+            session
+                .short_term
+                .recent_tool_result
+                .contains("验证快照：验证通过并产生产物")
+        );
+        assert!(
+            session
+                .short_term
+                .recent_observation
+                .contains("D:/repo/verify/report.txt")
+        );
     }
 
     fn sample_request(strategy: &str) -> RunRequest {
@@ -239,6 +345,12 @@ mod tests {
         }
     }
 
+    fn sample_checkpoint_with_verification_snapshot() -> RunCheckpoint {
+        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        checkpoint.response.events.push(sample_verification_event());
+        checkpoint
+    }
+
     fn sample_event(handoff_path: &str) -> RunEvent {
         let mut metadata = BTreeMap::new();
         metadata.insert("tool_name".to_string(), "run_command".to_string());
@@ -252,7 +364,10 @@ mod tests {
             "建议先检查命令语法、依赖和当前环境，再决定是否重试。".to_string(),
         );
         if !handoff_path.is_empty() {
-            metadata.insert("handoff_artifact_path".to_string(), handoff_path.to_string());
+            metadata.insert(
+                "handoff_artifact_path".to_string(),
+                handoff_path.to_string(),
+            );
         }
         RunEvent {
             event_id: "event-1".to_string(),
@@ -289,5 +404,28 @@ mod tests {
             verification_snapshot: None,
             metadata,
         }
+    }
+
+    fn sample_verification_event() -> RunEvent {
+        let mut event = sample_event("");
+        event.event_id = "event-2".to_string();
+        event.event_type = "verification_completed".to_string();
+        event.stage = "Verify".to_string();
+        event.summary = "verification passed".to_string();
+        event.metadata.insert(
+            "artifact_path".to_string(),
+            "D:/repo/verify/report.txt".to_string(),
+        );
+        event.verification_snapshot = Some(VerificationSnapshot {
+            code: "verified".to_string(),
+            summary: "验证通过并产生产物".to_string(),
+            passed: true,
+            policy: "inspect_command_result".to_string(),
+            evidence: vec![
+                "summary=ok".to_string(),
+                "artifact=D:/repo/verify/report.txt".to_string(),
+            ],
+        });
+        event
     }
 }

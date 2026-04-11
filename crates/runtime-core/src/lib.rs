@@ -33,6 +33,7 @@ mod risk;
 mod run_finish_events;
 mod run_metadata;
 mod run_resume;
+mod run_risk_flow;
 mod run_state_builder;
 mod session;
 mod sqlite_store;
@@ -49,7 +50,7 @@ use crate::checkpoint::{
     checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint,
 };
 use crate::completion::decide_completion;
-use crate::events::{make_confirmation_event, make_event, with_runtime_memory_recall_event};
+use crate::events::{make_event, with_runtime_memory_recall_event};
 use crate::handoff::persist_handoff_artifact;
 use crate::memory_router::evaluate_finish_memory_writes;
 use crate::query_engine::{bootstrap_run, execute_stage};
@@ -59,6 +60,7 @@ use crate::run_finish_events::{make_memory_event, make_run_failed_event, read_re
 use crate::run_metadata::{
     append_context_metadata, append_tool_spec_metadata, append_verification_metadata,
 };
+use crate::run_risk_flow::handle_risk_outcome;
 use crate::session::{persist_handoff_path, persist_session_outputs};
 use crate::task_title::derive_task_title;
 use crate::verify::verify_tool_execution;
@@ -148,137 +150,8 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     ));
     sequence += 1;
 
-    match &state.risk_outcome {
-        RiskOutcome::Blocked(message) => {
-            let error = ErrorInfo {
-                error_code: "blocked_by_mode".to_string(),
-                message: "当前动作被模式策略阻止".to_string(),
-                summary: "观察模式不会执行修改性动作。".to_string(),
-                retryable: true,
-                source: "runtime".to_string(),
-                stage: "Verify".to_string(),
-                metadata: BTreeMap::new(),
-            };
-            events.push(make_event(
-                request,
-                sequence,
-                "verification_completed",
-                "Verify",
-                "当前动作被模式策略阻止",
-                &message,
-                {
-                    let mut metadata = BTreeMap::from([
-                        ("task_title".to_string(), state.task_title.clone()),
-                        ("next_step".to_string(), "生成失败结果".to_string()),
-                        ("result_mode".to_string(), "system".to_string()),
-                    ]);
-                    metadata.extend(repo_context_metadata(&state.envelope.repo_context));
-                    metadata
-                },
-            ));
-            sequence += 1;
-            events.push(make_run_failed_event(
-                request,
-                sequence,
-                "当前动作被模式策略阻止",
-                &message,
-                &error,
-                None,
-                &state.task_title,
-                &state.envelope.repo_context,
-            ));
-            sequence += 1;
-            events.push(make_event(
-                request,
-                sequence,
-                "run_finished",
-                "Finish",
-                "任务未执行",
-                &message,
-                {
-                    let mut metadata = BTreeMap::from([
-                        ("task_title".to_string(), state.task_title.clone()),
-                        ("next_step".to_string(), "任务已结束".to_string()),
-                        ("final_answer".to_string(), message.clone()),
-                        ("result_mode".to_string(), "system".to_string()),
-                    ]);
-                    metadata.extend(repo_context_metadata(&state.envelope.repo_context));
-                    metadata
-                },
-            ));
-            persist_session_outputs(request, &message, &message, "failed");
-            return RuntimeRunResponse {
-                events,
-                result: RunResult {
-                    request_id: request.request_id.clone(),
-                    run_id: request.run_id.clone(),
-                    session_id: request.session_id.clone(),
-                    trace_id: request.trace_id.clone(),
-                    kind: "run_result".to_string(),
-                    source: "runtime".to_string(),
-                    status: "failed".to_string(),
-                    final_answer: message.clone(),
-                    summary: message.to_string(),
-                    error: Some(error),
-                    memory_write_summary: None,
-                    final_stage: "Finish".to_string(),
-                    checkpoint_id: None,
-                    resumable: None,
-                },
-                confirmation_request: None,
-            };
-        }
-        RiskOutcome::RequireConfirmation(confirmation) => {
-            let mut confirmation_plan_metadata = BTreeMap::new();
-            confirmation_plan_metadata.insert("task_title".to_string(), state.task_title.clone());
-            confirmation_plan_metadata
-                .insert("next_step".to_string(), "等待用户确认后再继续".to_string());
-            append_context_metadata(
-                &mut confirmation_plan_metadata,
-                &state.envelope.context_envelope,
-            );
-            confirmation_plan_metadata.extend(repo_context_metadata(&state.envelope.repo_context));
-            events.push(make_event(
-                request,
-                sequence,
-                "plan_ready",
-                "Plan",
-                "已识别需要确认的动作",
-                &confirmation.action_summary,
-                confirmation_plan_metadata,
-            ));
-            sequence += 1;
-            events.push(make_confirmation_event(request, sequence, &confirmation));
-            return RuntimeRunResponse {
-                events,
-                result: RunResult {
-                    request_id: request.request_id.clone(),
-                    run_id: request.run_id.clone(),
-                    session_id: request.session_id.clone(),
-                    trace_id: request.trace_id.clone(),
-                    kind: "run_result".to_string(),
-                    source: "runtime".to_string(),
-                    status: "awaiting_confirmation".to_string(),
-                    final_answer: String::new(),
-                    summary: confirmation.reason.clone(),
-                    error: Some(ErrorInfo {
-                        error_code: "risk_confirmation_required".to_string(),
-                        message: confirmation.reason.clone(),
-                        summary: "高风险动作需要人工确认。".to_string(),
-                        retryable: true,
-                        source: "runtime".to_string(),
-                        stage: "PausedForConfirmation".to_string(),
-                        metadata: BTreeMap::new(),
-                    }),
-                    memory_write_summary: None,
-                    final_stage: "PausedForConfirmation".to_string(),
-                    checkpoint_id: None,
-                    resumable: Some(true),
-                },
-                confirmation_request: Some(confirmation.clone()),
-            };
-        }
-        RiskOutcome::Proceed => {}
+    if let Some(response) = handle_risk_outcome(request, &state, &mut events, &mut sequence) {
+        return response;
     }
 
     execute_stage(&mut state);
