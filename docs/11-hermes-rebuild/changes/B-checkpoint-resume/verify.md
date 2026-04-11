@@ -2,7 +2,7 @@
 
 ## 验证方式
 
-- 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复、“从 checkpoint 事件快照恢复已选动作”，以及“从 verification_snapshot/artifact_path 恢复验证快照摘要”测试。
+- 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复、“从 checkpoint 事件快照恢复已选动作”、“从 verification_snapshot/artifact_path 恢复验证快照摘要”，以及“从最近执行事件恢复执行中间态摘要”测试。
 - 集成测试：已完成 `retryable_failure` 与 `after_confirmation` 两条恢复闭环样本。
 - 人工验证：已确认 retry 与 confirm 两条路径都不是单纯插入恢复事件，而是会继续进入统一主循环并产生后续执行事件。
 
@@ -90,11 +90,15 @@
   - 命中恢复后，会优先从最近一条带 `verification_snapshot` 的事件回填 `verification_snapshot.summary`
   - 若事件里存在 `artifact_path` 或 `verification_snapshot.evidence` 中的 `artifact=...`，会同步回填到短期观察，保留产物引用
   - 当前已证明恢复上下文不再只依赖失败摘要，还可带回最近一次验证结论与产物路径
+- 恢复计划已新增执行中间态摘要接回：
+  - 命中恢复后，会优先从最近执行相关事件（`action_requested/action_completed/verification_completed/run_failed`）提取 `stage/event_type/next_step`
+  - 恢复计划会追加“恢复边界：阶段=...，事件=...，下一步=...”摘要，减少恢复后阶段漂移
+  - 当前已证明恢复计划不再只有“恢复原因 + 目标阶段”，而是带回最近执行边界
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环
 - 当前证据已经足以证明：
-  - 运行时已具备“短期状态 + 最近已选动作 + 验证快照摘要”三层恢复能力
+  - 运行时已具备“短期状态 + 最近已选动作 + 验证快照摘要 + 执行中间态摘要”四层恢复能力
 - 当前证据还不能证明：
   - 运行时已经恢复到“工具执行中的精确中断边界”
   - 执行阶段中间态或验证前快照已经被完整复用

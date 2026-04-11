@@ -30,3 +30,5 @@
   完成判据：checkpoint 命中后可优先复用最近一条 `tool_call_snapshot` 反解出的动作，而不是只能重新规划。
 - [x] 补齐验证快照摘要恢复入口
   完成判据：checkpoint 命中后可优先回填 `verification_snapshot.summary` 与 `artifact_path` 到短期状态，形成验证前快照摘要。
+- [x] 补齐执行中间态摘要恢复入口
+  完成判据：checkpoint 命中后可从最近执行事件回填“阶段/事件/下一步”边界到恢复计划，形成最小执行中间态摘要。

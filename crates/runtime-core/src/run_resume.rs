@@ -41,16 +41,22 @@ fn resume_plan(checkpoint: &RunCheckpoint) -> String {
         checkpoint.resume_reason, checkpoint.resume_stage
     );
     let action = resume_action_hint(checkpoint);
+    let boundary = resume_execution_boundary(checkpoint);
     let hint = resume_recovery_hint(checkpoint);
     let with_action = if action.is_empty() {
         base
     } else {
         format!("{base}；继续动作：{action}")
     };
-    if hint.is_empty() {
+    let with_boundary = if boundary.is_empty() {
         with_action
     } else {
-        format!("{with_action}；恢复提示：{hint}")
+        format!("{with_action}；恢复边界：{boundary}")
+    };
+    if hint.is_empty() {
+        with_boundary
+    } else {
+        format!("{with_boundary}；恢复提示：{hint}")
     }
 }
 
@@ -107,6 +113,34 @@ fn action_hint_from_event(event: &crate::contracts::RunEvent) -> Option<String> 
         return Some(name);
     }
     None
+}
+
+fn resume_execution_boundary(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(execution_boundary_from_event)
+        .unwrap_or_default()
+}
+
+fn execution_boundary_from_event(event: &crate::contracts::RunEvent) -> Option<String> {
+    if !is_execution_boundary_event(event) {
+        return None;
+    }
+    let mut parts = vec![format!("阶段={}", event.stage), format!("事件={}", event.event_type)];
+    if let Some(step) = event.metadata.get("next_step").filter(|step| !step.is_empty()) {
+        parts.push(format!("下一步={step}"));
+    }
+    Some(parts.join("，"))
+}
+
+fn is_execution_boundary_event(event: &crate::contracts::RunEvent) -> bool {
+    matches!(
+        event.event_type.as_str(),
+        "action_requested" | "action_completed" | "verification_completed" | "run_failed"
+    )
 }
 
 fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
@@ -257,6 +291,20 @@ mod tests {
     }
 
     #[test]
+    fn appends_execution_boundary_into_resume_plan() {
+        let request = sample_request("retry_failure");
+        let checkpoint = sample_checkpoint_with_execution_boundary();
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复边界：阶段=Execute，事件=action_completed，下一步=进入验证阶段")
+        );
+    }
+
+    #[test]
     fn restores_verification_snapshot_into_short_term_memory() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint_with_verification_snapshot();
@@ -351,6 +399,12 @@ mod tests {
         checkpoint
     }
 
+    fn sample_checkpoint_with_execution_boundary() -> RunCheckpoint {
+        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        checkpoint.response.events.push(sample_execution_boundary_event());
+        checkpoint
+    }
+
     fn sample_event(handoff_path: &str) -> RunEvent {
         let mut metadata = BTreeMap::new();
         metadata.insert("tool_name".to_string(), "run_command".to_string());
@@ -426,6 +480,17 @@ mod tests {
                 "artifact=D:/repo/verify/report.txt".to_string(),
             ],
         });
+        event
+    }
+
+    fn sample_execution_boundary_event() -> RunEvent {
+        let mut event = sample_event("");
+        event.event_id = "event-3".to_string();
+        event.event_type = "action_completed".to_string();
+        event.stage = "Execute".to_string();
+        event
+            .metadata
+            .insert("next_step".to_string(), "进入验证阶段".to_string());
         event
     }
 }
