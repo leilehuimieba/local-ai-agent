@@ -195,6 +195,20 @@
   - 本轮继续执行恢复链路与测试样本收敛，新增覆盖 `run_resume_event_testkit.rs`、`run_resume_testkit.rs`、`run_resume_boundary.rs`。
   - 中途一次编译失败已定位并消除（失败事件样本构造字段完整性问题），后续各次回归均恢复为 `64 passed` 且无新增失败。
 
+- 时间：2026-04-11 23:10（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775920186891`
+- run：`run-1775920201813-2`
+- 关键事实：
+  - 复跑 `scripts/run-stage-b-confirmation-acceptance.ps1` 后，`tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_empty=true`、`checkpoint_id_matched=true`、`boundary_recovered=true`。
+
+- 时间：2026-04-11 23:10（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775920186874`
+- run：`run-1775920201813-2`
+- 关键事实：
+  - 复跑 `scripts/run-stage-b-retry-acceptance.ps1` 后，`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`、`boundary_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
