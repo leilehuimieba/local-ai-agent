@@ -11,11 +11,12 @@ pub(crate) mod testkit {
     use std::collections::BTreeMap;
 
     pub(crate) fn sample_request(strategy: &str) -> RunRequest {
+        let ids = sample_run_ids();
         RunRequest {
-            request_id: "request-1".to_string(),
-            run_id: "run-1".to_string(),
-            session_id: "session-1".to_string(),
-            trace_id: "trace-1".to_string(),
+            request_id: ids.0,
+            run_id: ids.1,
+            session_id: ids.2,
+            trace_id: ids.3,
             user_input: "retry task".to_string(),
             mode: "standard".to_string(),
             model_ref: sample_model_ref(),
@@ -29,11 +30,12 @@ pub(crate) mod testkit {
     }
 
     pub(crate) fn sample_checkpoint(reason: &str, handoff_path: &str) -> RunCheckpoint {
+        let ids = sample_run_ids();
         RunCheckpoint {
             checkpoint_id: "cp-1".to_string(),
-            run_id: "run-1".to_string(),
-            session_id: "session-1".to_string(),
-            trace_id: "trace-1".to_string(),
+            run_id: ids.1,
+            session_id: ids.2,
+            trace_id: ids.3,
             workspace_id: "workspace-1".to_string(),
             status: "failed".to_string(),
             final_stage: "Finish".to_string(),
@@ -141,6 +143,15 @@ pub(crate) mod testkit {
     fn sample_checkpoint_with_event(mut checkpoint: RunCheckpoint, event: RunEvent) -> RunCheckpoint {
         checkpoint.response.events.push(event);
         checkpoint
+    }
+
+    fn sample_run_ids() -> (String, String, String, String) {
+        (
+            "request-1".to_string(),
+            "run-1".to_string(),
+            "session-1".to_string(),
+            "trace-1".to_string(),
+        )
     }
 
 }
