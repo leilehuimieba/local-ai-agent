@@ -244,6 +244,28 @@
   - `scripts/run-stage-b-retry-acceptance.ps1` 已补齐并启用 `checkpoint_id_matched` 结构化断言；`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段为：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-11 23:33（Asia/Shanghai）
+- 批量脚本：`powershell -ExecutionPolicy Bypass -File scripts/run-stage-b-acceptance-batch.ps1 -Rounds 5`
+- 报告：`tmp/stage-b-acceptance-batch/latest.json`
+- 关键事实：
+  - 批量统计报告为 `status=passed`，`rounds=5`。
+  - 汇总字段：`confirm_pass_count=5`、`retry_pass_count=5`、`round_pass_count=5`。
+  - 通过率：`confirm_pass_rate=1.0`、`retry_pass_rate=1.0`、`round_pass_rate=1.0`。
+
+- 时间：2026-04-11 23:33（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775921573702`
+- run：`run-1775921585736-2`
+- 关键事实：
+  - 批量脚本最后一轮 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_empty=true`。
+
+- 时间：2026-04-11 23:33（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775921593784`
+- run：`run-1775921605909-2`
+- 关键事实：
+  - 批量脚本最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
