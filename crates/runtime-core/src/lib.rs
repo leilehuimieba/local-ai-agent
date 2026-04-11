@@ -48,6 +48,7 @@ mod run_resume_observation;
 mod run_resume_plan;
 mod run_resume_state;
 mod run_resume_testkit;
+mod run_resume_tests;
 mod run_resume_verification;
 mod run_risk_flow;
 mod run_runtime_state;
