@@ -4,7 +4,7 @@
 
 - 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复、“从 checkpoint 事件快照恢复已选动作”、“从 verification_snapshot/artifact_path 恢复验证快照摘要”，以及“从最近执行事件恢复执行中间态摘要”测试。
 - 集成测试：已完成 `retryable_failure` 与 `after_confirmation` 两条恢复闭环样本。
-- 人工验证：已确认 retry 与 confirm 两条路径都不是单纯插入恢复事件，而是会继续进入统一主循环并产生后续执行事件。
+- 人工验证：已确认 retry 与 confirm 两条路径都不是单纯插入恢复事件，而是会继续进入统一主循环并产生后续执行事件；并新增“恢复边界已回填”断言。
 
 ## 证据位置
 
@@ -26,6 +26,8 @@
   - `tmp/stage-b-retry-acceptance/logs/gateway.log`
   - `tmp/stage-b-confirmation-acceptance/logs/runtime.log`
   - `tmp/stage-b-confirmation-acceptance/logs/gateway.log`
+  - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.boundary_recovered=true`）
+  - `tmp/stage-b-confirmation-acceptance/latest.json`（`after_confirmation.boundary_recovered=true`）
 
 ## 联调样本
 
@@ -93,7 +95,8 @@
 - 恢复计划已新增执行中间态摘要接回：
   - 命中恢复后，会优先从最近执行相关事件（`action_requested/action_completed/verification_completed/run_failed`）提取 `stage/event_type/next_step`
   - 恢复计划会追加“恢复边界：阶段=...，事件=...，下一步=...”摘要，减少恢复后阶段漂移
-  - 当前已证明恢复计划不再只有“恢复原因 + 目标阶段”，而是带回最近执行边界
+  - 对 `after_confirmation` 场景，若 checkpoint 里尚无执行事件，则回退提取 `confirmation_required` 边界，确保恢复计划仍有边界信息
+  - 当前已证明恢复计划不再只有“恢复原因 + 目标阶段”，而是带回最近执行边界或确认边界
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环

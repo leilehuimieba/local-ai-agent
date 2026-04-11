@@ -122,6 +122,7 @@ fn resume_execution_boundary(checkpoint: &RunCheckpoint) -> String {
         .iter()
         .rev()
         .find_map(execution_boundary_from_event)
+        .or_else(|| confirmation_boundary_from_events(checkpoint))
         .unwrap_or_default()
 }
 
@@ -141,6 +142,23 @@ fn is_execution_boundary_event(event: &crate::contracts::RunEvent) -> bool {
         event.event_type.as_str(),
         "action_requested" | "action_completed" | "verification_completed" | "run_failed"
     )
+}
+
+fn confirmation_boundary_from_events(checkpoint: &RunCheckpoint) -> Option<String> {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find(|event| event.event_type == "confirmation_required")
+        .map(|event| {
+            let step = event
+                .metadata
+                .get("next_step")
+                .cloned()
+                .unwrap_or_else(|| "等待用户确认后再继续".to_string());
+            format!("阶段={}，事件={}，下一步={}", event.stage, event.event_type, step)
+        })
 }
 
 fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
@@ -324,6 +342,20 @@ mod tests {
         );
     }
 
+    #[test]
+    fn appends_confirmation_boundary_when_no_execution_event() {
+        let request = sample_request("after_confirmation");
+        let checkpoint = sample_checkpoint_with_confirmation_boundary();
+        let mut session = SessionMemory::default();
+        apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复边界：阶段=PausedForConfirmation，事件=confirmation_required")
+        );
+    }
+
     fn sample_request(strategy: &str) -> RunRequest {
         RunRequest {
             request_id: "request-1".to_string(),
@@ -402,6 +434,21 @@ mod tests {
     fn sample_checkpoint_with_execution_boundary() -> RunCheckpoint {
         let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
         checkpoint.response.events.push(sample_execution_boundary_event());
+        checkpoint
+    }
+
+    fn sample_checkpoint_with_confirmation_boundary() -> RunCheckpoint {
+        let mut checkpoint = sample_checkpoint_without_events("confirmation_required", "");
+        checkpoint
+            .response
+            .events
+            .push(sample_confirmation_boundary_event());
+        checkpoint
+    }
+
+    fn sample_checkpoint_without_events(reason: &str, handoff_path: &str) -> RunCheckpoint {
+        let mut checkpoint = sample_checkpoint(reason, handoff_path);
+        checkpoint.response.events.clear();
         checkpoint
     }
 
@@ -491,6 +538,17 @@ mod tests {
         event
             .metadata
             .insert("next_step".to_string(), "进入验证阶段".to_string());
+        event
+    }
+
+    fn sample_confirmation_boundary_event() -> RunEvent {
+        let mut event = sample_event("");
+        event.event_id = "event-4".to_string();
+        event.event_type = "confirmation_required".to_string();
+        event.stage = "PausedForConfirmation".to_string();
+        event
+            .metadata
+            .insert("next_step".to_string(), "等待用户确认后再继续".to_string());
         event
     }
 }

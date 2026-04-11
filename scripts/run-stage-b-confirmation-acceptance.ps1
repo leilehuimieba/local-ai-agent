@@ -331,8 +331,12 @@ try {
   $skipped = Last-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped"
   $postConfirmCheckpoint = Last-Event -Items $confirmLogs -EventType "checkpoint_written"
   $confirmTerminal = @($confirmLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
+  $boundaryRecovered = @($confirmLogs | Where-Object {
+      $_.context_snapshot -and $_.context_snapshot.session_summary -like "*恢复边界：*"
+    }).Count -gt 0
   $passed = (Has-Event -Items $confirmLogs -EventType "checkpoint_resumed") -and
     (-not (Has-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped")) -and
+    $boundaryRecovered -and
     (Has-Event -Items $confirmLogs -EventType "analysis_ready") -and
     (Has-Event -Items $confirmLogs -EventType "plan_ready") -and
     (Has-Event -Items $confirmLogs -EventType "action_requested") -and
@@ -365,6 +369,7 @@ try {
       event_types = @($confirmLogs | Select-Object -ExpandProperty event_type)
       resumed = $(Has-Event -Items $confirmLogs -EventType "checkpoint_resumed")
       skipped = $(Has-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped")
+      boundary_recovered = $boundaryRecovered
       checkpoint_id = $(if ($postConfirmCheckpoint.Count -gt 0) { $postConfirmCheckpoint[0].metadata.checkpoint_id } else { "" })
       terminal_event = $(if ($confirmTerminal.Count -gt 0) { $confirmTerminal[0] } else { $null })
     }
