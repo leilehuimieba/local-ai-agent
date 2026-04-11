@@ -262,6 +262,7 @@ try {
   if ($initialCheckpoint.Count -eq 0) {
     throw "initial run did not write checkpoint"
   }
+  $initialCheckpointId = [string]$initialCheckpoint[0].metadata.checkpoint_id
 
   $retryStartedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
   $retryAccepted = Invoke-JsonPost -Url $retryUrl -Body @{
@@ -276,12 +277,22 @@ try {
       $_.metadata.checkpoint_resume_reason -eq "retryable_failure" -and
       $_.metadata.checkpoint_stage -eq "Execute"
     })
-  $targetResumedCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq [string]$initialCheckpoint[0].metadata.checkpoint_id })
+  $targetResumedCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq $initialCheckpointId })
   if ($targetResumedCandidates.Count -eq 0) {
     $targetResumedCandidates = $resumedCandidates
   }
   $resumed = @($targetResumedCandidates | Select-Object -Last 1)
   $targetResumedUnique = $targetResumedCandidates.Count -eq 1
+  $checkpointMatched = $false
+  if (-not [string]::IsNullOrWhiteSpace($initialCheckpointId)) {
+    $checkpointCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq $initialCheckpointId })
+    if ($checkpointCandidates.Count -gt 0) {
+      $resumed = @($checkpointCandidates | Select-Object -Last 1)
+      $checkpointMatched = $true
+    } elseif ($resumed.Count -gt 0) {
+      $checkpointMatched = [string]$resumed[0].metadata.checkpoint_id -eq $initialCheckpointId
+    }
+  }
   $skipped = Last-Event -Items $retryLogs -EventType "checkpoint_resume_skipped"
   $retryCheckpoint = Last-Event -Items $retryLogs -EventType "checkpoint_written"
   $retryTerminal = @($retryLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
@@ -310,6 +321,7 @@ try {
     $artifactRecovered -and
     $eventTypeMatched -and
     $targetResumedUnique -and
+    $checkpointMatched -and
     (Has-Event -Items $retryLogs -EventType "checkpoint_written") -and
     $retryTerminal.Count -gt 0
 
@@ -325,7 +337,7 @@ try {
     command = $command
     initial_run = [ordered]@{
       run_id = $runAccepted.run_id
-      checkpoint_id = $initialCheckpoint[0].metadata.checkpoint_id
+      checkpoint_id = $initialCheckpointId
       event_types = @($initialLogs | Select-Object -ExpandProperty event_type)
       terminal_event = @($initialLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)[0]
     }
@@ -334,6 +346,7 @@ try {
       event_types = @($retryLogs | Select-Object -ExpandProperty event_type)
       resumed = $(Has-Event -Items $retryLogs -EventType "checkpoint_resumed")
       skipped = $(Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")
+      checkpoint_id_matched = $checkpointMatched
       target_resumed_unique = $targetResumedUnique
       target_resumed_count = $targetResumedCandidates.Count
       boundary_recovered = $boundaryRecovered

@@ -48,3 +48,5 @@
   完成判据：`run_resume_plan/hint/observation/action_hint/verification/handoff/boundary` 与测试辅助模块完成最小职责下沉，`cargo test -p runtime-core` 持续通过（`64 passed`）。
 - [x] 补齐 retry acceptance 的 reason/stage 结构化断言
   完成判据：`scripts/run-stage-b-retry-acceptance.ps1` 输出并校验 `reason_matched=true`、`stage_matched=true`，且 confirm/retry 双脚本复跑通过。
+- [x] 补齐 retry acceptance 的 checkpoint_id 精确匹配断言
+  完成判据：`scripts/run-stage-b-retry-acceptance.ps1` 输出并校验 `checkpoint_id_matched=true`，且 confirm/retry 双脚本复跑通过。
