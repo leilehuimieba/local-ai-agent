@@ -92,21 +92,22 @@ pub(crate) mod testkit {
     fn sample_result() -> RunResult {
         let ids = sample_result_ids();
         let payload = sample_result_payload();
+        let result_meta = sample_result_meta();
         RunResult {
             request_id: ids.0,
             run_id: ids.1,
             session_id: ids.2,
             trace_id: ids.3,
-            kind: "run_result".to_string(),
-            source: "runtime".to_string(),
+            kind: result_meta.0,
+            source: result_meta.1,
             status: payload.0,
             final_answer: payload.1,
             summary: payload.2,
             error: None,
             memory_write_summary: None,
-            final_stage: "Finish".to_string(),
-            checkpoint_id: Some("cp-1".to_string()),
-            resumable: Some(true),
+            final_stage: result_meta.2,
+            checkpoint_id: Some(result_meta.3),
+            resumable: Some(result_meta.4),
         }
     }
 
@@ -124,6 +125,16 @@ pub(crate) mod testkit {
             "failed".to_string(),
             "temporary failure".to_string(),
             "temporary failure".to_string(),
+        )
+    }
+
+    fn sample_result_meta() -> (String, String, String, String, bool) {
+        (
+            "run_result".to_string(),
+            "runtime".to_string(),
+            "Finish".to_string(),
+            "cp-1".to_string(),
+            true,
         )
     }
 
