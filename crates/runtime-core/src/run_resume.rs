@@ -1,9 +1,10 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
-use crate::run_resume_extract::{
-    resume_action_hint, resume_artifact_path, resume_execution_boundary, resume_recovery_hint,
-    resume_verification_summary,
-};
+use crate::run_resume_action_hint::resume_action_hint;
+use crate::run_resume_artifact::resume_artifact_path;
+use crate::run_resume_boundary::resume_execution_boundary;
+use crate::run_resume_hint::resume_recovery_hint;
+use crate::run_resume_verification::resume_verification_summary;
 use crate::session::SessionMemory;
 
 pub(crate) fn apply_resume_checkpoint(

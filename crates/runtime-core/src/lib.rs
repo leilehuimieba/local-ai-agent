@@ -41,7 +41,6 @@ mod run_resume;
 mod run_resume_action_hint;
 mod run_resume_artifact;
 mod run_resume_boundary;
-mod run_resume_extract;
 mod run_resume_hint;
 mod run_resume_testkit;
 mod run_resume_verification;
