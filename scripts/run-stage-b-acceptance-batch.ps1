@@ -28,6 +28,7 @@ for ($i = 1; $i -le $Rounds; $i++) {
   $confirmPassed = $confirm.status -eq "passed" -and
     $confirm.after_confirmation.target_resumed_unique -and
     $confirm.after_confirmation.checkpoint_id_matched -and
+    $confirm.after_confirmation.boundary_recovered -and
     $confirm.after_confirmation.event_type_matched -and
     $confirm.after_confirmation.reason_matched -and
     $confirm.after_confirmation.stage_matched -and
@@ -36,6 +37,7 @@ for ($i = 1; $i -le $Rounds; $i++) {
   $retryPassed = $retry.status -eq "passed" -and
     $retry.retry_run.target_resumed_unique -and
     $retry.retry_run.checkpoint_id_matched -and
+    $retry.retry_run.boundary_recovered -and
     $retry.retry_run.event_type_matched -and
     $retry.retry_run.reason_matched -and
     $retry.retry_run.stage_matched -and
@@ -50,6 +52,10 @@ for ($i = 1; $i -le $Rounds; $i++) {
     retry_session_id = $retry.session_id
     confirm_run_id = $confirm.after_confirmation.run_id
     retry_run_id = $retry.retry_run.run_id
+    confirm_boundary_recovered = $confirm.after_confirmation.boundary_recovered
+    retry_boundary_recovered = $retry.retry_run.boundary_recovered
+    confirm_event_type = $confirm.after_confirmation.checkpoint_resume_event_type
+    retry_event_type = $retry.retry_run.checkpoint_resume_event_type
     confirm_passed = $confirmPassed
     retry_passed = $retryPassed
     round_passed = ($confirmPassed -and $retryPassed)
@@ -59,6 +65,8 @@ for ($i = 1; $i -le $Rounds; $i++) {
 $confirmPassCount = @($roundsDetail | Where-Object { $_.confirm_passed }).Count
 $retryPassCount = @($roundsDetail | Where-Object { $_.retry_passed }).Count
 $roundPassCount = @($roundsDetail | Where-Object { $_.round_passed }).Count
+$confirmBoundaryCount = @($roundsDetail | Where-Object { $_.confirm_boundary_recovered }).Count
+$retryBoundaryCount = @($roundsDetail | Where-Object { $_.retry_boundary_recovered }).Count
 $summary = [ordered]@{
   confirm_pass_count = $confirmPassCount
   retry_pass_count = $retryPassCount
@@ -66,6 +74,10 @@ $summary = [ordered]@{
   confirm_pass_rate = [Math]::Round($confirmPassCount / $Rounds, 4)
   retry_pass_rate = [Math]::Round($retryPassCount / $Rounds, 4)
   round_pass_rate = [Math]::Round($roundPassCount / $Rounds, 4)
+  confirm_boundary_count = $confirmBoundaryCount
+  retry_boundary_count = $retryBoundaryCount
+  confirm_boundary_rate = [Math]::Round($confirmBoundaryCount / $Rounds, 4)
+  retry_boundary_rate = [Math]::Round($retryBoundaryCount / $Rounds, 4)
 }
 
 $report = [ordered]@{
