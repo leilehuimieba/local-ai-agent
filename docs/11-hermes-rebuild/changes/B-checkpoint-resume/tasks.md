@@ -64,3 +64,5 @@
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 统计 `confirm_verification_empty_count`、`retry_verification_recovered_count`、`retry_artifact_recovered_count` 与对应覆盖率字段，并在样本回归中达到可复核结果。
 - [x] 批量报告补齐 Gate-B 结构化判定字段
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 输出 `gate_b.required_rounds/required_rate/rounds_ok/*_rate_ok/ready`，并支持 `-RequireGateB` 强校验开关。
+- [x] 完成 Gate-B 强校验批量验收
+  完成判据：执行 `scripts/run-stage-b-acceptance-batch.ps1 -Rounds 50 -RequireGateB` 返回成功，且报告字段 `gate_b.ready=true`。
