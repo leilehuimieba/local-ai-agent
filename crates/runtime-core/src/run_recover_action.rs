@@ -55,11 +55,21 @@ fn prepared_with_action(
 }
 
 fn resumed_action(checkpoint: &RunCheckpoint) -> Option<PlannedAction> {
-    let snapshot = checkpoint
+    let snapshot = latest_tool_call_snapshot(checkpoint)?;
+    decode_snapshot_action(snapshot)
+}
+
+fn latest_tool_call_snapshot(
+    checkpoint: &RunCheckpoint,
+) -> Option<&crate::contracts::ToolCallSnapshot> {
+    checkpoint
         .response
         .events
         .iter()
         .rev()
-        .find_map(|event| event.tool_call_snapshot.as_ref())?;
+        .find_map(|event| event.tool_call_snapshot.as_ref())
+}
+
+fn decode_snapshot_action(snapshot: &crate::contracts::ToolCallSnapshot) -> Option<PlannedAction> {
     crate::action_decode::tool_call_to_action(&snapshot.tool_name, &snapshot.arguments_json)
 }
