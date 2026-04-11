@@ -28,6 +28,7 @@ mod paths;
 mod planner;
 mod prompt;
 mod query_engine;
+mod query_engine_testkit;
 mod repo_context;
 mod risk;
 mod run_failure_metadata;
