@@ -38,3 +38,5 @@
   完成判据：confirmation acceptance 断言 `checkpoint_resume_event_type=confirmation_required`，retry acceptance 断言 `checkpoint_resume_event_type=run_failed`，两条样本均为 `event_type_matched=true`。
 - [x] 补齐目标 resumed 事件唯一性断言
   完成判据：confirmation 与 retry acceptance 均输出 `target_resumed_unique=true` 且 `target_resumed_count=1`，避免多次 `checkpoint_resumed` 串扰误判。
+- [x] 补齐恢复筛选口径一致性最小单测
+  完成判据：`runtime-core/checkpoint.rs` 新增最小单测，验证按 `checkpoint_resume_reason + checkpoint_stage + checkpoint_id` 筛选后候选唯一，且 retry 场景边界为 `stage=Finish;event=run_failed`，与 acceptance 脚本断言口径一致。

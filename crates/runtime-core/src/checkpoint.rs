@@ -627,6 +627,33 @@ mod tests {
     }
 
     #[test]
+    fn emits_retry_resume_metadata_for_acceptance_filters() {
+        let root = test_root("emits_retry_resume_metadata_for_acceptance_filters");
+        let request = sample_request(&root);
+        let response = with_runtime_checkpoint(&request, retryable_failure_response(&request));
+        let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
+        let mut resumed = request.clone();
+        resumed.resume_from_checkpoint_id = checkpoint_id.clone();
+        resumed.resume_strategy = "retry_failure".to_string();
+        let event = checkpoint_resume_event(&resumed).expect("resume event");
+        let response = with_checkpoint_resume_event(sample_response(&resumed), Some(event));
+        let candidates: Vec<_> = response
+            .events
+            .iter()
+            .filter(|item| item.event_type == "checkpoint_resumed")
+            .filter(|item| item.metadata.get("checkpoint_resume_reason") == Some(&"retryable_failure".to_string()))
+            .filter(|item| item.metadata.get("checkpoint_stage") == Some(&"Execute".to_string()))
+            .filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id))
+            .collect();
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(
+            candidates[0].metadata.get("checkpoint_resume_boundary"),
+            Some(&"stage=Finish;event=run_failed".to_string())
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn persists_minimal_resume_fields_for_confirmation_scope() {
         let root = test_root("persists_minimal_resume_fields_for_confirmation_scope");
         let request = sample_request(&root);
