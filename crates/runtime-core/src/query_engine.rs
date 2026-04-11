@@ -240,6 +240,27 @@ mod tests {
 
     fn sample_tool_event(tool_name: &str, arguments_json: &str) -> RunEvent {
         RunEvent {
+            tool_name: tool_name.to_string(),
+            tool_call_snapshot: Some(sample_tool_snapshot(tool_name, arguments_json)),
+            ..sample_action_requested_event()
+        }
+    }
+
+    fn sample_tool_snapshot(tool_name: &str, arguments_json: &str) -> ToolCallSnapshot {
+        ToolCallSnapshot {
+            tool_name: tool_name.to_string(),
+            display_name: "执行命令".to_string(),
+            category: "system_command".to_string(),
+            risk_level: "high".to_string(),
+            input_schema: "command_text".to_string(),
+            output_kind: "text_preview".to_string(),
+            requires_confirmation: true,
+            arguments_json: arguments_json.to_string(),
+        }
+    }
+
+    fn sample_action_requested_event() -> RunEvent {
+        RunEvent {
             event_id: "run-1-1".to_string(),
             kind: "run_event".to_string(),
             source: "runtime".to_string(),
@@ -256,7 +277,7 @@ mod tests {
             stage: "Execute".to_string(),
             summary: "准备恢复动作".to_string(),
             detail: String::new(),
-            tool_name: tool_name.to_string(),
+            tool_name: String::new(),
             tool_display_name: "执行命令".to_string(),
             tool_category: "system_command".to_string(),
             output_kind: "text_preview".to_string(),
@@ -270,16 +291,7 @@ mod tests {
             verification_summary: String::new(),
             checkpoint_written: false,
             context_snapshot: None,
-            tool_call_snapshot: Some(ToolCallSnapshot {
-                tool_name: tool_name.to_string(),
-                display_name: "执行命令".to_string(),
-                category: "system_command".to_string(),
-                risk_level: "high".to_string(),
-                input_schema: "command_text".to_string(),
-                output_kind: "text_preview".to_string(),
-                requires_confirmation: true,
-                arguments_json: arguments_json.to_string(),
-            }),
+            tool_call_snapshot: None,
             verification_snapshot: None,
             metadata: BTreeMap::new(),
         }
