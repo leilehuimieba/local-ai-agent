@@ -209,6 +209,13 @@
   - 复跑 `scripts/run-stage-b-retry-acceptance.ps1` 后，`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`、`boundary_recovered=true`。
 
+- 时间：2026-04-11 23:17（Asia/Shanghai）
+- 构建与测试：
+  - `cargo test -p runtime-core`：`64 passed; 0 failed`
+- 关键事实：
+  - 本轮继续执行恢复链路小刀拆分，新增覆盖 `run_resume_testkit.rs`、`run_resume_observation.rs`。
+  - 上述改动均为无行为变更的职责下沉与样本字段收敛，提交前回归稳定，无新增失败测试。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
