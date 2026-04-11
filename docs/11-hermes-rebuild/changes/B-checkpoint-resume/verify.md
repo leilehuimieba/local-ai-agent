@@ -461,6 +461,29 @@
   - 边界精确匹配覆盖率统计回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`checkpoint_resume_boundary_stage=Failed`、`boundary_stage_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`。
 
+- 时间：2026-04-12 02:24（Asia/Shanghai）
+- 批量脚本：`powershell -ExecutionPolicy Bypass -File scripts/run-stage-b-acceptance-batch.ps1 -Rounds 50 -RequireGateB`
+- 报告：`tmp/stage-b-acceptance-batch/latest.json`
+- 关键事实：
+  - 命令返回成功（退出码 0），批量统计报告为 `status=passed`，`rounds=50`。
+  - 汇总字段：`confirm_pass_count=50`、`retry_pass_count=50`、`round_pass_count=50`；通过率均为 `1.0`。
+  - `gate_b` 字段全部达标：`rounds_ok=true`、`confirm_rate_ok=true`、`retry_rate_ok=true`、`round_rate_ok=true`、`ready=true`。
+  - 边界精确匹配覆盖率字段：`confirm_boundary_stage_rate=1.0`、`confirm_boundary_next_step_rate=1.0`、`retry_boundary_stage_rate=1.0`。
+
+- 时间：2026-04-12 02:24（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775931816841`
+- run：`run-1775931828879-2`
+- 关键事实：
+  - 强校验最后一轮 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`checkpoint_resume_boundary_stage=PausedForConfirmation`、`boundary_stage_matched=true`、`checkpoint_resume_boundary_next_step=等待用户确认后再继续`、`boundary_next_step_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`。
+
+- 时间：2026-04-12 02:24（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775931836665`
+- run：`run-1775931849069-2`
+- 关键事实：
+  - 强校验最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`checkpoint_resume_boundary_stage=Failed`、`boundary_stage_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B

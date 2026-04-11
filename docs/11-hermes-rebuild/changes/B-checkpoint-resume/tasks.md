@@ -70,3 +70,5 @@
   完成判据：confirmation/retry 验收脚本新增边界 stage 精确匹配断言，confirmation 额外断言 `next_step` 精确匹配；两条脚本复跑通过并产出结构化字段。
 - [x] 批量报告补齐边界精确匹配覆盖率统计
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 统计 `confirm_boundary_stage_count/confirm_boundary_next_step_count/retry_boundary_stage_count` 及对应覆盖率字段，并在样本回归中达到可复核结果。
+- [x] 完成边界精确口径下的 Gate-B 强校验
+  完成判据：执行 `scripts/run-stage-b-acceptance-batch.ps1 -Rounds 50 -RequireGateB` 返回成功，且报告显示 `gate_b.ready=true` 与边界精确匹配覆盖率 `*_rate=1.0`。
