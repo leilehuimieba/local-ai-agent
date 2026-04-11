@@ -32,6 +32,7 @@ mod repo_context;
 mod risk;
 mod run_failure_metadata;
 mod run_finish_events;
+mod run_context_metadata;
 mod run_memory_metadata;
 mod run_metadata;
 mod run_recover_action;
