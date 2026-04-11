@@ -9,9 +9,12 @@ pub(crate) mod testkit {
 
     pub(crate) fn sample_verification_event() -> RunEvent {
         let mut event = sample_event("");
-        event.event_id = "event-2".to_string();
-        event.event_type = "verification_completed".to_string();
-        event.stage = "Verify".to_string();
+        assign_event_marker(
+            &mut event,
+            "event-2",
+            "verification_completed",
+            "Verify",
+        );
         event.summary = "verification passed".to_string();
         event.metadata.insert(
             "artifact_path".to_string(),
@@ -41,13 +44,17 @@ pub(crate) mod testkit {
         next_step: &str,
     ) -> RunEvent {
         let mut event = sample_event("");
-        event.event_id = event_id.to_string();
-        event.event_type = event_type.to_string();
-        event.stage = stage.to_string();
+        assign_event_marker(&mut event, event_id, event_type, stage);
         event
             .metadata
             .insert("next_step".to_string(), next_step.to_string());
         event
+    }
+
+    fn assign_event_marker(event: &mut RunEvent, event_id: &str, event_type: &str, stage: &str) {
+        event.event_id = event_id.to_string();
+        event.event_type = event_type.to_string();
+        event.stage = stage.to_string();
     }
 
     fn sample_event_metadata(handoff_path: &str) -> BTreeMap<String, String> {
