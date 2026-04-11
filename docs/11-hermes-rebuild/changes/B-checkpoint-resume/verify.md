@@ -181,6 +181,13 @@
   - 本轮持续执行恢复链路小刀拆分，覆盖 `run_resume_tests.rs`、`run_resume_event_testkit.rs`、`run_resume_testkit.rs`、`run_resume_plan.rs`、`run_resume_observation.rs`、`run_resume_hint.rs`、`run_resume_action_hint.rs`、`run_resume_verification.rs`、`run_resume_handoff.rs`、`run_resume_boundary.rs`。
   - 每次代码提交前均执行 `cargo test -p runtime-core`，未引入回归失败，恢复相关测试与既有 64 条单测均保持通过。
 
+- 时间：2026-04-11 23:02（Asia/Shanghai）
+- 构建与测试：
+  - `cargo test -p runtime-core`：`64 passed; 0 failed`
+- 关键事实：
+  - 本轮继续执行恢复链路小刀拆分，新增覆盖 `run_resume_clear.rs`、`run_resume_state.rs`、`run_resume_artifact.rs`、`run_resume_testkit.rs`、`run_resume_event_testkit.rs`。
+  - 以上改动均为无行为变更的职责下沉与重复路径收敛，且每次提交前均完成同口径回归，未出现新增失败用例。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
