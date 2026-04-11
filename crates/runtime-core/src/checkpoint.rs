@@ -43,9 +43,32 @@ pub(crate) fn checkpoint_resume_event(request: &RunRequest) -> Option<RunEvent> 
         Ok(Some(checkpoint)) if resume_matches(request, &checkpoint) => {
             Some(resumed_event(request, &checkpoint))
         }
-        Ok(Some(_)) => Some(skipped_resume_event(request, checkpoint_id, "checkpoint 与当前恢复请求不匹配，已按普通重试继续。")),
-        Ok(None) => Some(skipped_resume_event(request, checkpoint_id, "未找到对应 checkpoint，已按普通重试继续。")),
-        Err(error) => Some(skipped_resume_event(request, checkpoint_id, &format!("读取 checkpoint 失败：{error}"))),
+        Ok(Some(_)) => Some(skipped_resume_event(
+            request,
+            checkpoint_id,
+            "checkpoint 与当前恢复请求不匹配，已按普通重试继续。",
+        )),
+        Ok(None) => Some(skipped_resume_event(
+            request,
+            checkpoint_id,
+            "未找到对应 checkpoint，已按普通重试继续。",
+        )),
+        Err(error) => Some(skipped_resume_event(
+            request,
+            checkpoint_id,
+            &format!("读取 checkpoint 失败：{error}"),
+        )),
+    }
+}
+
+pub(crate) fn load_matching_resume_checkpoint(request: &RunRequest) -> Option<RunCheckpoint> {
+    let checkpoint_id = request.resume_from_checkpoint_id.trim();
+    if checkpoint_id.is_empty() {
+        return None;
+    }
+    match load_runtime_checkpoint_sqlite(request, checkpoint_id) {
+        Ok(Some(checkpoint)) if resume_matches(request, &checkpoint) => Some(checkpoint),
+        _ => None,
     }
 }
 
@@ -90,7 +113,12 @@ fn checkpoint_response(
     let resumable = checkpoint_resume_profile(&response).0;
     response.result.checkpoint_id = Some(checkpoint_id.to_string());
     response.result.resumable = Some(resumable);
-    insert_checkpoint_event(request, &mut response.events, checkpoint_id, &response.result);
+    insert_checkpoint_event(
+        request,
+        &mut response.events,
+        checkpoint_id,
+        &response.result,
+    );
     response
 }
 
@@ -100,7 +128,12 @@ fn insert_checkpoint_event(
     checkpoint_id: &str,
     result: &crate::contracts::RunResult,
 ) {
-    let event = checkpoint_event(request, checkpoint_id, result, checkpoint_event_count(events));
+    let event = checkpoint_event(
+        request,
+        checkpoint_id,
+        result,
+        checkpoint_event_count(events),
+    );
     let index = terminal_event_index(events).unwrap_or(events.len());
     events.insert(index, event);
     resequence_events(events);
@@ -132,7 +165,10 @@ fn checkpoint_metadata(
     metadata.insert("checkpoint_id".to_string(), checkpoint_id.to_string());
     metadata.insert("checkpoint_status".to_string(), result.status.clone());
     metadata.insert("checkpoint_stage".to_string(), result.final_stage.clone());
-    metadata.insert("checkpoint_event_count".to_string(), event_count.to_string());
+    metadata.insert(
+        "checkpoint_event_count".to_string(),
+        event_count.to_string(),
+    );
     metadata.insert("checkpoint_written".to_string(), "true".to_string());
     metadata.insert("result_summary".to_string(), result.summary.clone());
     metadata
@@ -167,7 +203,9 @@ fn resume_matches(request: &RunRequest, checkpoint: &RunCheckpoint) -> bool {
         && checkpoint.session_id == request.session_id
         && checkpoint.workspace_id == request.workspace_ref.workspace_id;
     match resume_strategy(request).as_str() {
-        "after_confirmation" => same_scope && checkpoint_ready_for_confirmation(request, checkpoint),
+        "after_confirmation" => {
+            same_scope && checkpoint_ready_for_confirmation(request, checkpoint)
+        }
         _ => same_scope,
     }
 }
@@ -190,18 +228,23 @@ fn resume_strategy(request: &RunRequest) -> String {
 }
 
 fn resumed_event(request: &RunRequest, checkpoint: &RunCheckpoint) -> RunEvent {
+    let boundary = resumed_boundary(checkpoint);
     make_event(
         request,
         0,
         "checkpoint_resumed",
         &checkpoint.resume_stage,
         "已从 checkpoint 恢复运行",
-        &format!("已读取 checkpoint：{}，继续当前任务。", checkpoint.checkpoint_id),
+        &format!(
+            "已读取 checkpoint：{}，继续当前任务。",
+            checkpoint.checkpoint_id
+        ),
         resume_metadata(
             &checkpoint.checkpoint_id,
             "resumed",
             &checkpoint.resume_stage,
             &checkpoint.resume_reason,
+            &boundary,
         ),
     )
 }
@@ -214,7 +257,13 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
         "Analyze",
         "checkpoint 恢复已跳过",
         reason,
-        resume_metadata(checkpoint_id, "skipped", "Analyze", "resume_skipped"),
+        resume_metadata(
+            checkpoint_id,
+            "skipped",
+            "Analyze",
+            "resume_skipped",
+            "",
+        ),
     )
 }
 
@@ -223,13 +272,62 @@ fn resume_metadata(
     status: &str,
     stage: &str,
     reason: &str,
+    boundary: &str,
 ) -> BTreeMap<String, String> {
     let mut metadata = BTreeMap::new();
     metadata.insert("checkpoint_id".to_string(), checkpoint_id.to_string());
     metadata.insert("checkpoint_resume_status".to_string(), status.to_string());
     metadata.insert("checkpoint_stage".to_string(), stage.to_string());
     metadata.insert("checkpoint_resume_reason".to_string(), reason.to_string());
+    if !boundary.is_empty() {
+        metadata.insert("checkpoint_resume_boundary".to_string(), boundary.to_string());
+    }
     metadata
+}
+
+fn resumed_boundary(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(event_boundary)
+        .or_else(|| confirmation_boundary(checkpoint))
+        .unwrap_or_default()
+}
+
+fn event_boundary(event: &RunEvent) -> Option<String> {
+    if !matches!(
+        event.event_type.as_str(),
+        "action_requested" | "action_completed" | "verification_completed" | "run_failed"
+    ) {
+        return None;
+    }
+    let mut parts = vec![format!("stage={}", event.stage), format!("event={}", event.event_type)];
+    if let Some(step) = event.metadata.get("next_step").filter(|step| !step.is_empty()) {
+        parts.push(format!("next_step={step}"));
+    }
+    Some(parts.join(";"))
+}
+
+fn confirmation_boundary(checkpoint: &RunCheckpoint) -> Option<String> {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find(|event| event.event_type == "confirmation_required")
+        .map(|event| {
+            let step = event
+                .metadata
+                .get("next_step")
+                .cloned()
+                .unwrap_or_else(|| "等待用户确认后再继续".to_string());
+            format!(
+                "stage={};event={};next_step={step}",
+                event.stage, event.event_type
+            )
+        })
 }
 
 fn checkpoint_resume_profile(response: &RuntimeRunResponse) -> (bool, String, String) {
@@ -248,7 +346,11 @@ fn checkpoint_resume_profile(response: &RuntimeRunResponse) -> (bool, String, St
     if retryable {
         return (true, "retryable_failure".to_string(), "Execute".to_string());
     }
-    (false, "none".to_string(), response.result.final_stage.clone())
+    (
+        false,
+        "none".to_string(),
+        response.result.final_stage.clone(),
+    )
 }
 
 fn redacted_request(request: &RunRequest) -> RunRequest {
@@ -320,8 +422,16 @@ mod tests {
         let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
         let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
         assert!(!checkpoint_id.is_empty());
-        assert!(response.events.iter().any(|item| item.event_type == "checkpoint_written"));
-        assert_eq!(response.events.last().map(|item| item.event_type.as_str()), Some("run_finished"));
+        assert!(
+            response
+                .events
+                .iter()
+                .any(|item| item.event_type == "checkpoint_written")
+        );
+        assert_eq!(
+            response.events.last().map(|item| item.event_type.as_str()),
+            Some("run_finished")
+        );
         assert!(loaded.is_some());
         let _ = fs::remove_dir_all(root);
     }
@@ -337,7 +447,18 @@ mod tests {
         resumed.confirmation_decision = Some(approve_decision(&request.run_id));
         let event = checkpoint_resume_event(&resumed);
         let response = with_checkpoint_resume_event(sample_response(&resumed), event);
-        assert!(response.events.iter().any(|item| item.event_type == "checkpoint_resumed"));
+        let resumed_event = response
+            .events
+            .iter()
+            .find(|item| item.event_type == "checkpoint_resumed")
+            .expect("checkpoint_resumed");
+        assert_eq!(
+            resumed_event
+                .metadata
+                .get("checkpoint_resume_boundary")
+                .map(String::as_str),
+            Some("stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续")
+        );
         let _ = fs::remove_dir_all(root);
     }
 
@@ -349,8 +470,55 @@ mod tests {
         let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
         let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
         assert!(loaded.as_ref().is_some_and(|item| item.resumable));
-        assert!(loaded.as_ref().is_some_and(|item| item.resume_reason == "retryable_failure"));
-        assert!(loaded.as_ref().is_some_and(|item| item.resume_stage == "Execute"));
+        assert!(
+            loaded
+                .as_ref()
+                .is_some_and(|item| item.resume_reason == "retryable_failure")
+        );
+        assert!(
+            loaded
+                .as_ref()
+                .is_some_and(|item| item.resume_stage == "Execute")
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn persists_minimal_resume_fields_for_confirmation_scope() {
+        let root = test_root("persists_minimal_resume_fields_for_confirmation_scope");
+        let request = sample_request(&root);
+        let response = with_runtime_checkpoint(&request, awaiting_response(&request));
+        let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
+        let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
+        let checkpoint = loaded.expect("checkpoint");
+        assert_eq!(checkpoint.checkpoint_id, checkpoint_id);
+        assert_eq!(checkpoint.run_id, request.run_id);
+        assert_eq!(checkpoint.session_id, request.session_id);
+        assert_eq!(checkpoint.trace_id, request.trace_id);
+        assert_eq!(checkpoint.workspace_id, request.workspace_ref.workspace_id);
+        assert_eq!(checkpoint.status, "awaiting_confirmation");
+        assert_eq!(checkpoint.final_stage, "PausedForConfirmation");
+        assert!(checkpoint.resumable);
+        assert_eq!(checkpoint.resume_reason, "confirmation_required");
+        assert_eq!(checkpoint.resume_stage, "PausedForConfirmation");
+        assert_eq!(checkpoint.request.run_id, request.run_id);
+        assert_eq!(checkpoint.response.result.run_id, request.run_id);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn skips_resume_when_scope_keys_do_not_match() {
+        let root = test_root("skips_resume_when_scope_keys_do_not_match");
+        let request = sample_request(&root);
+        let response = with_runtime_checkpoint(&request, retryable_failure_response(&request));
+        let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
+        let mut mismatched = request.clone();
+        mismatched.resume_from_checkpoint_id = checkpoint_id;
+        mismatched.resume_strategy = "retry_failure".to_string();
+        mismatched.run_id = "run-2".to_string();
+        let event = checkpoint_resume_event(&mismatched).expect("resume event");
+        assert_eq!(event.event_type, "checkpoint_resume_skipped");
+        assert!(!event.metadata.contains_key("checkpoint_resume_boundary"));
         let _ = fs::remove_dir_all(root);
     }
 

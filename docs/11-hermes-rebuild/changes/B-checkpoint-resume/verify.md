@@ -97,6 +97,10 @@
   - 恢复计划会追加“恢复边界：阶段=...，事件=...，下一步=...”摘要，减少恢复后阶段漂移
   - 对 `after_confirmation` 场景，若 checkpoint 里尚无执行事件，则回退提取 `confirmation_required` 边界，确保恢复计划仍有边界信息
   - 当前已证明恢复计划不再只有“恢复原因 + 目标阶段”，而是带回最近执行边界或确认边界
+- 恢复事件已新增结构化边界字段：
+  - `checkpoint_resumed.metadata.checkpoint_resume_boundary` 已写入结构化边界（`stage=...;event=...;next_step=...`）
+  - `checkpoint_resume_skipped` 场景不写该字段，避免误判
+  - 当前已可直接按事件元数据检索“恢复边界”，不再依赖 `context_snapshot.session_summary` 文本匹配
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环
