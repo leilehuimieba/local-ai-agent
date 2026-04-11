@@ -56,3 +56,5 @@
   完成判据：批量报告 `tmp/stage-b-acceptance-batch/latest.json` 达到 `rounds=50`，且 `confirm_pass_rate/retry_pass_rate/round_pass_rate >= 0.95`。
 - [x] 批量报告补齐恢复边界覆盖率统计
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 统计 `confirm_boundary_count/retry_boundary_count` 与对应 `*_boundary_rate`，并在样本回归中达到可复核结果。
+- [x] 批量报告补齐事件类型匹配覆盖率统计
+  完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 统计 `confirm_event_type_count/retry_event_type_count` 与对应 `*_event_type_rate`，并在样本回归中达到可复核结果。
