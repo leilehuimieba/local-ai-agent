@@ -2,7 +2,7 @@
 pub(crate) mod testkit {
     use crate::checkpoint::RunCheckpoint;
     use crate::contracts::{
-        ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
+        ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
     };
     use crate::run_resume_event_testkit::testkit::{
         sample_confirmation_boundary_event, sample_event, sample_execution_boundary_event,
@@ -56,18 +56,11 @@ pub(crate) mod testkit {
     }
 
     pub(crate) fn sample_checkpoint_with_verification_snapshot() -> RunCheckpoint {
-        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        checkpoint.response.events.push(sample_verification_event());
-        checkpoint
+        sample_retry_checkpoint_with_event(sample_verification_event())
     }
 
     pub(crate) fn sample_checkpoint_with_execution_boundary() -> RunCheckpoint {
-        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        checkpoint
-            .response
-            .events
-            .push(sample_execution_boundary_event());
-        checkpoint
+        sample_retry_checkpoint_with_event(sample_execution_boundary_event())
     }
 
     pub(crate) fn sample_checkpoint_with_confirmation_boundary() -> RunCheckpoint {
@@ -137,6 +130,12 @@ pub(crate) mod testkit {
     fn sample_checkpoint_without_events(reason: &str, handoff_path: &str) -> RunCheckpoint {
         let mut checkpoint = sample_checkpoint(reason, handoff_path);
         checkpoint.response.events.clear();
+        checkpoint
+    }
+
+    fn sample_retry_checkpoint_with_event(event: RunEvent) -> RunCheckpoint {
+        let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        checkpoint.response.events.push(event);
         checkpoint
     }
 
