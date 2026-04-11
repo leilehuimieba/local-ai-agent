@@ -351,16 +351,22 @@ try {
   $resumeReason = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_reason } else { "" })
   $resumeStage = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_stage } else { "" })
   $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
+  $checkpoint_resume_event_type = ""
+  if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)event=([^;]+)') {
+    $checkpoint_resume_event_type = $Matches[2].Trim()
+  }
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
   $reasonMatched = $resumeReason -eq "confirmation_required"
   $stageMatched = $resumeStage -eq "PausedForConfirmation"
   $verificationEmpty = [string]::IsNullOrWhiteSpace($resumeVerificationCode)
+  $eventTypeMatched = $checkpoint_resume_event_type -eq "confirmation_required"
   $passed = $resumed.Count -gt 0 -and
     (-not (Has-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped")) -and
     $boundaryRecovered -and
     $reasonMatched -and
     $stageMatched -and
     $verificationEmpty -and
+    $eventTypeMatched -and
     (Has-Event -Items $confirmLogs -EventType "analysis_ready") -and
     (Has-Event -Items $confirmLogs -EventType "plan_ready") -and
     (Has-Event -Items $confirmLogs -EventType "action_requested") -and
@@ -396,6 +402,8 @@ try {
       checkpoint_id_matched = $checkpointMatched
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
+      checkpoint_resume_event_type = $checkpoint_resume_event_type
+      event_type_matched = $eventTypeMatched
       reason_matched = $reasonMatched
       checkpoint_resume_reason = $resumeReason
       stage_matched = $stageMatched

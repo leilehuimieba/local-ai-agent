@@ -279,14 +279,20 @@ try {
   $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
   $resumeVerificationSummary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_summary } else { "" })
   $resumeArtifactPath = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_artifact_path } else { "" })
+  $checkpoint_resume_event_type = ""
+  if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)event=([^;]+)') {
+    $checkpoint_resume_event_type = $Matches[2].Trim()
+  }
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
   $verificationRecovered = -not [string]::IsNullOrWhiteSpace($resumeVerificationCode)
   $artifactRecovered = -not [string]::IsNullOrWhiteSpace($resumeArtifactPath)
+  $eventTypeMatched = $checkpoint_resume_event_type -eq "run_failed"
   $passed = (Has-Event -Items $retryLogs -EventType "checkpoint_resumed") -and
     (-not (Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")) -and
     $boundaryRecovered -and
     $verificationRecovered -and
     $artifactRecovered -and
+    $eventTypeMatched -and
     (Has-Event -Items $retryLogs -EventType "checkpoint_written") -and
     $retryTerminal.Count -gt 0
 
@@ -313,6 +319,8 @@ try {
       skipped = $(Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
+      checkpoint_resume_event_type = $checkpoint_resume_event_type
+      event_type_matched = $eventTypeMatched
       verification_recovered = $verificationRecovered
       checkpoint_resume_verification_code = $resumeVerificationCode
       checkpoint_resume_verification_summary = $resumeVerificationSummary

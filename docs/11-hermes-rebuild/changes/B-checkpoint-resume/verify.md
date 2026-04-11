@@ -81,6 +81,20 @@
   - retry 路径回归通过且未受 confirmation 脚本筛选调整影响。
   - `tmp/stage-b-retry-acceptance/latest.json` 仍保持 `reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-11 21:50（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775915415863`
+- run：`run-1775915431616-2`
+- 关键事实：
+  - 复跑时先暴露 `event_type_matched=false` 回归，定位为 acceptance 脚本 `checkpoint_resume_boundary` 事件提取正则转义错误（`\s` 被写成 `\\s`），导致 `checkpoint_resume_event_type` 为空。
+  - 修复后，`tmp/stage-b-confirmation-acceptance/latest.json` 稳定为 `status=passed`，且 `after_confirmation.checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_empty=true`、`checkpoint_id_matched=true`。
+
+- 时间：2026-04-11 21:50（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775915415818`
+- run：`run-1775915431618-2`
+- 关键事实：
+  - 同轮复跑下，`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`，且 `retry_run.checkpoint_resume_event_type=run_failed`、`event_type_matched=true`。
+  - retry 原有结构化断言保持稳定：`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
@@ -124,6 +138,7 @@
   - `checkpoint_resume_skipped` 场景不写该字段，避免误判
   - 当前已可直接按事件元数据检索“恢复边界”，不再依赖 `context_snapshot.session_summary` 文本匹配
   - 两条 acceptance 脚本已切到结构化断言：`boundary_recovered` 由 `checkpoint_resume_boundary` 是否为空判定
+  - 本轮补齐“边界事件类型精确匹配”断言：`after_confirmation.checkpoint_resume_event_type=confirmation_required`、`retry_run.checkpoint_resume_event_type=run_failed`，两条样本均为 `event_type_matched=true`
 - 恢复事件已新增结构化验证字段：
   - `checkpoint_resumed.metadata.checkpoint_resume_verification_code` 记录恢复时可见验证状态
   - `checkpoint_resumed.metadata.checkpoint_resume_verification_summary` 记录恢复时可见验证摘要
