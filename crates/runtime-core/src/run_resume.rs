@@ -1,8 +1,5 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
-use crate::run_resume_action_hint::resume_action_hint;
-use crate::run_resume_boundary::resume_execution_boundary;
-use crate::run_resume_hint::resume_recovery_hint;
 use crate::session::SessionMemory;
 
 pub(crate) fn apply_resume_checkpoint(
@@ -18,8 +15,8 @@ pub(crate) fn apply_resume_checkpoint(
 }
 
 fn apply_resume_short_term_state(session: &mut SessionMemory, checkpoint: &RunCheckpoint) {
-    session.short_term.current_plan = resume_plan(checkpoint);
-    session.short_term.current_phase = resume_phase(checkpoint);
+    session.short_term.current_plan = crate::run_resume_plan::resume_plan(checkpoint);
+    session.short_term.current_phase = crate::run_resume_plan::resume_phase(checkpoint);
     session.short_term.last_run_status = checkpoint.status.clone();
     session.short_term.recent_observation = resume_recent_observation(checkpoint);
     session.short_term.recent_tool_result = resume_recent_tool_result(checkpoint);
@@ -39,39 +36,6 @@ fn clear_resume_confirmation_state(
     if request.resume_strategy == "retry_failure" {
         session.short_term.pending_confirmation.clear();
         session.short_term.open_issue = checkpoint.response.result.summary.clone();
-    }
-}
-
-fn resume_plan(checkpoint: &RunCheckpoint) -> String {
-    let base = format!(
-        "从 checkpoint 恢复：{} -> {}",
-        checkpoint.resume_reason, checkpoint.resume_stage
-    );
-    let action = resume_action_hint(checkpoint);
-    let boundary = resume_execution_boundary(checkpoint);
-    let hint = resume_recovery_hint(checkpoint);
-    let with_action = if action.is_empty() {
-        base
-    } else {
-        format!("{base}；继续动作：{action}")
-    };
-    let with_boundary = if boundary.is_empty() {
-        with_action
-    } else {
-        format!("{with_action}；恢复边界：{boundary}")
-    };
-    if hint.is_empty() {
-        with_boundary
-    } else {
-        format!("{with_boundary}；恢复提示：{hint}")
-    }
-}
-
-fn resume_phase(checkpoint: &RunCheckpoint) -> String {
-    if checkpoint.resume_reason == "confirmation_required" {
-        "confirmation_resume".to_string()
-    } else {
-        "recovery".to_string()
     }
 }
 
