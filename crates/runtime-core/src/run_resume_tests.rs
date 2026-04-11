@@ -12,7 +12,7 @@ mod tests {
     fn restores_handoff_artifact_path_for_retry_recovery() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert_eq!(session.short_term.current_phase, "recovery");
         assert_eq!(
@@ -25,7 +25,7 @@ mod tests {
     fn leaves_handoff_artifact_path_empty_when_checkpoint_has_none() {
         let request = sample_request("after_confirmation");
         let checkpoint = sample_checkpoint("confirmation_required", "");
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(session.short_term.handoff_artifact_path.is_empty());
     }
@@ -34,7 +34,7 @@ mod tests {
     fn appends_last_action_hint_into_resume_plan() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
             session
@@ -54,7 +54,7 @@ mod tests {
     fn appends_recovery_hint_into_resume_plan() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
             session
@@ -68,7 +68,7 @@ mod tests {
     fn appends_execution_boundary_into_resume_plan() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint_with_execution_boundary();
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
             session
@@ -82,7 +82,7 @@ mod tests {
     fn restores_verification_snapshot_into_short_term_memory() {
         let request = sample_request("retry_failure");
         let checkpoint = sample_checkpoint_with_verification_snapshot();
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
             session
@@ -102,7 +102,7 @@ mod tests {
     fn appends_confirmation_boundary_when_no_execution_event() {
         let request = sample_request("after_confirmation");
         let checkpoint = sample_checkpoint_with_confirmation_boundary();
-        let mut session = SessionMemory::default();
+        let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
             session
@@ -110,5 +110,9 @@ mod tests {
                 .current_plan
                 .contains("恢复边界：阶段=PausedForConfirmation，事件=confirmation_required")
         );
+    }
+
+    fn sample_session() -> SessionMemory {
+        SessionMemory::default()
     }
 }
