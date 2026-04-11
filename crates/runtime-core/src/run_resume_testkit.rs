@@ -155,6 +155,17 @@ pub(crate) mod testkit {
                 handoff_path.to_string(),
             );
         }
+        sample_failed_event_with_metadata(metadata)
+    }
+
+    fn sample_failed_event_with_metadata(metadata: BTreeMap<String, String>) -> RunEvent {
+        RunEvent {
+            metadata,
+            ..sample_failed_event_base()
+        }
+    }
+
+    fn sample_failed_event_base() -> RunEvent {
         RunEvent {
             event_id: "event-1".to_string(),
             kind: "run_event".to_string(),
@@ -188,7 +199,7 @@ pub(crate) mod testkit {
             context_snapshot: None,
             tool_call_snapshot: None,
             verification_snapshot: None,
-            metadata,
+            metadata: BTreeMap::new(),
         }
     }
 
