@@ -22,24 +22,31 @@ pub(crate) mod testkit {
     }
 
     pub(crate) fn sample_execution_boundary_event() -> RunEvent {
-        let mut event = sample_event("");
-        event.event_id = "event-3".to_string();
-        event.event_type = "action_completed".to_string();
-        event.stage = "Execute".to_string();
-        event
-            .metadata
-            .insert("next_step".to_string(), "进入验证阶段".to_string());
-        event
+        sample_boundary_event("event-3", "action_completed", "Execute", "进入验证阶段")
     }
 
     pub(crate) fn sample_confirmation_boundary_event() -> RunEvent {
+        sample_boundary_event(
+            "event-4",
+            "confirmation_required",
+            "PausedForConfirmation",
+            "等待用户确认后再继续",
+        )
+    }
+
+    fn sample_boundary_event(
+        event_id: &str,
+        event_type: &str,
+        stage: &str,
+        next_step: &str,
+    ) -> RunEvent {
         let mut event = sample_event("");
-        event.event_id = "event-4".to_string();
-        event.event_type = "confirmation_required".to_string();
-        event.stage = "PausedForConfirmation".to_string();
+        event.event_id = event_id.to_string();
+        event.event_type = event_type.to_string();
+        event.stage = stage.to_string();
         event
             .metadata
-            .insert("next_step".to_string(), "等待用户确认后再继续".to_string());
+            .insert("next_step".to_string(), next_step.to_string());
         event
     }
 
