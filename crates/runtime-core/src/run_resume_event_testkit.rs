@@ -115,6 +115,11 @@ pub(crate) mod testkit {
 
     fn sample_failed_event_empty_fields() -> RunEvent {
         let mut event = sample_failed_event_identity_placeholders();
+        assign_failed_event_runtime_defaults(&mut event);
+        event
+    }
+
+    fn assign_failed_event_runtime_defaults(event: &mut RunEvent) {
         event.detail = String::new();
         event.tool_name = String::new();
         event.tool_display_name = String::new();
@@ -128,7 +133,6 @@ pub(crate) mod testkit {
         event.completion_status = String::new();
         event.completion_reason = String::new();
         event.verification_summary = String::new();
-        event
     }
 
     fn sample_failed_event_identity_placeholders() -> RunEvent {
