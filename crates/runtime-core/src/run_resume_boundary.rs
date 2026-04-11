@@ -52,9 +52,13 @@ fn confirmation_boundary_from_events(checkpoint: &RunCheckpoint) -> Option<Strin
 
 fn format_confirmation_boundary(event: &RunEvent) -> String {
     let step = next_step_metadata(event).unwrap_or_else(default_confirmation_step);
+    format_boundary_parts(event.stage.as_str(), event.event_type.as_str(), step.as_str())
+}
+
+fn format_boundary_parts(stage: &str, event_type: &str, step: &str) -> String {
     format!(
         "阶段={}，事件={}，下一步={}",
-        event.stage, event.event_type, step
+        stage, event_type, step
     )
 }
 
