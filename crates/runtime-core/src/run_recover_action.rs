@@ -3,6 +3,7 @@ use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::planner::PlannedAction;
 use crate::repo_context::RepoContextLoadResult;
+use crate::run_snapshot_action::resumed_action_from_checkpoint;
 use crate::run_state_builder::PreparedRunState;
 use crate::session::SessionMemory;
 use crate::tool_registry::ToolCall;
@@ -20,7 +21,7 @@ pub(crate) fn resumed_prepared_state(
         repo_context,
         visible_tools,
     );
-    let action = resumed_action(checkpoint?)?;
+    let action = resumed_action_from_checkpoint(checkpoint?)?;
     Some(prepared_with_action(
         request,
         session_context,
@@ -52,24 +53,4 @@ fn prepared_with_action(
         action,
         ..prepared
     }
-}
-
-fn resumed_action(checkpoint: &RunCheckpoint) -> Option<PlannedAction> {
-    let snapshot = latest_tool_call_snapshot(checkpoint)?;
-    decode_snapshot_action(snapshot)
-}
-
-fn latest_tool_call_snapshot(
-    checkpoint: &RunCheckpoint,
-) -> Option<&crate::contracts::ToolCallSnapshot> {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| event.tool_call_snapshot.as_ref())
-}
-
-fn decode_snapshot_action(snapshot: &crate::contracts::ToolCallSnapshot) -> Option<PlannedAction> {
-    crate::action_decode::tool_call_to_action(&snapshot.tool_name, &snapshot.arguments_json)
 }

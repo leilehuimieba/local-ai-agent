@@ -42,6 +42,7 @@ mod run_resume_extract;
 mod run_resume_testkit;
 mod run_risk_flow;
 mod run_runtime_state;
+mod run_snapshot_action;
 mod run_state_builder;
 mod run_tool_metadata;
 mod run_verification_metadata;
