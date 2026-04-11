@@ -8,9 +8,9 @@ pub(crate) fn resume_plan(checkpoint: &RunCheckpoint) -> String {
     let action = crate::run_resume_action_hint::resume_action_hint(checkpoint);
     let boundary = crate::run_resume_boundary::resume_execution_boundary(checkpoint);
     let hint = crate::run_resume_hint::resume_recovery_hint(checkpoint);
-    let with_action = with_action(base, action);
-    let with_boundary = with_boundary(with_action, boundary);
-    with_hint(with_boundary, hint)
+    let with_action = append_plan_segment(base, "继续动作", action);
+    let with_boundary = append_plan_segment(with_action, "恢复边界", boundary);
+    append_plan_segment(with_boundary, "恢复提示", hint)
 }
 
 pub(crate) fn resume_phase(checkpoint: &RunCheckpoint) -> String {
@@ -21,26 +21,10 @@ pub(crate) fn resume_phase(checkpoint: &RunCheckpoint) -> String {
     }
 }
 
-fn with_action(base: String, action: String) -> String {
-    if action.is_empty() {
+fn append_plan_segment(base: String, label: &str, value: String) -> String {
+    if value.is_empty() {
         base
     } else {
-        format!("{base}；继续动作：{action}")
-    }
-}
-
-fn with_boundary(base: String, boundary: String) -> String {
-    if boundary.is_empty() {
-        base
-    } else {
-        format!("{base}；恢复边界：{boundary}")
-    }
-}
-
-fn with_hint(base: String, hint: String) -> String {
-    if hint.is_empty() {
-        base
-    } else {
-        format!("{base}；恢复提示：{hint}")
+        format!("{base}；{label}：{value}")
     }
 }
