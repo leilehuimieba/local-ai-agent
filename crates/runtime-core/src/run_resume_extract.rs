@@ -104,7 +104,11 @@ fn format_confirmation_boundary(event: &RunEvent) -> String {
 }
 
 pub(crate) fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
-    failed_recovery_hint(checkpoint).unwrap_or_else(|| verification_hint(checkpoint))
+    recovery_hint_candidates(checkpoint).unwrap_or_default()
+}
+
+fn recovery_hint_candidates(checkpoint: &RunCheckpoint) -> Option<String> {
+    failed_recovery_hint(checkpoint).or_else(|| verification_recovery_hint(checkpoint))
 }
 
 fn failed_recovery_hint(checkpoint: &RunCheckpoint) -> Option<String> {
@@ -117,7 +121,7 @@ fn failed_recovery_hint(checkpoint: &RunCheckpoint) -> Option<String> {
         .and_then(|event| event.metadata.get("failure_recovery_hint").cloned())
 }
 
-fn verification_hint(checkpoint: &RunCheckpoint) -> String {
+fn verification_recovery_hint(checkpoint: &RunCheckpoint) -> Option<String> {
     checkpoint
         .response
         .events
@@ -125,7 +129,6 @@ fn verification_hint(checkpoint: &RunCheckpoint) -> String {
         .rev()
         .find(|event| event.event_type == "verification_completed")
         .and_then(|event| event.metadata.get("verification_summary").cloned())
-        .unwrap_or_default()
 }
 
 pub(crate) fn resume_verification_summary(checkpoint: &RunCheckpoint) -> String {
