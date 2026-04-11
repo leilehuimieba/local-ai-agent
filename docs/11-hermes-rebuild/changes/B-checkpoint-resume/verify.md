@@ -379,6 +379,28 @@
   - 恢复质量统计字段回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`verification_recovered=true`、`artifact_recovered=true`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`。
 
+- 时间：2026-04-12 00:50（Asia/Shanghai）
+- 批量脚本：`powershell -ExecutionPolicy Bypass -File scripts/run-stage-b-acceptance-batch.ps1 -Rounds 5`
+- 报告：`tmp/stage-b-acceptance-batch/latest.json`
+- 关键事实：
+  - 批量统计报告为 `status=passed`，`rounds=5`。
+  - 新增 `gate_b` 判定字段：`required_rounds=50`、`required_rate=0.95`、`rounds_ok=false`、`confirm_rate_ok=true`、`retry_rate_ok=true`、`round_rate_ok=true`、`ready=false`。
+  - 在 5 轮样本下 `gate_b.ready=false` 与预期一致，避免把短样本误判为 Gate-B 达成。
+
+- 时间：2026-04-12 00:50（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775926208710`
+- run：`run-1775926220492-2`
+- 关键事实：
+  - Gate-B 判定字段回归后 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`checkpoint_id_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`verification_empty=true`。
+
+- 时间：2026-04-12 00:50（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775926228429`
+- run：`run-1775926240248-2`
+- 关键事实：
+  - Gate-B 判定字段回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B

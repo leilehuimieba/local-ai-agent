@@ -1,5 +1,6 @@
 param(
-  [int]$Rounds = 5
+  [int]$Rounds = 5,
+  [switch]$RequireGateB
 )
 
 $ErrorActionPreference = "Stop"
@@ -108,11 +109,28 @@ $summary = [ordered]@{
   retry_artifact_recovered_rate = [Math]::Round($retryArtifactRecoveredCount / $Rounds, 4)
 }
 
+$gateRequiredRounds = 50
+$gateRequiredRate = 0.95
+$gateRoundsOk = $Rounds -ge $gateRequiredRounds
+$gateConfirmRateOk = $summary.confirm_pass_rate -ge $gateRequiredRate
+$gateRetryRateOk = $summary.retry_pass_rate -ge $gateRequiredRate
+$gateRoundRateOk = $summary.round_pass_rate -ge $gateRequiredRate
+$gateReady = $gateRoundsOk -and $gateConfirmRateOk -and $gateRetryRateOk -and $gateRoundRateOk
+
 $report = [ordered]@{
   checked_at = (Get-Date).ToString("o")
   rounds = $Rounds
   status = $(if ($roundPassCount -eq $Rounds) { "passed" } else { "failed" })
   summary = $summary
+  gate_b = [ordered]@{
+    required_rounds = $gateRequiredRounds
+    required_rate = $gateRequiredRate
+    rounds_ok = $gateRoundsOk
+    confirm_rate_ok = $gateConfirmRateOk
+    retry_rate_ok = $gateRetryRateOk
+    round_rate_ok = $gateRoundRateOk
+    ready = $gateReady
+  }
   rounds_detail = $roundsDetail
   artifacts = [ordered]@{
     report = $outFile
@@ -125,4 +143,7 @@ $report | ConvertTo-Json -Depth 8 | Set-Content -Path $outFile -Encoding UTF8
 Write-Output $outFile
 if ($roundPassCount -ne $Rounds) {
   throw "批量验收存在失败轮次，见 $outFile"
+}
+if ($RequireGateB -and -not $gateReady) {
+  throw "Gate-B 判定未达标，见 $outFile"
 }
