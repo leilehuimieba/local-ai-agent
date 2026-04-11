@@ -10,8 +10,7 @@ mod tests {
 
     #[test]
     fn restores_handoff_artifact_path_for_retry_recovery() {
-        let request = sample_request("retry_failure");
-        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert_eq!(session.short_term.current_phase, "recovery");
@@ -23,8 +22,7 @@ mod tests {
 
     #[test]
     fn leaves_handoff_artifact_path_empty_when_checkpoint_has_none() {
-        let request = sample_request("after_confirmation");
-        let checkpoint = sample_checkpoint("confirmation_required", "");
+        let (request, checkpoint) = sample_confirmation_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(session.short_term.handoff_artifact_path.is_empty());
@@ -32,8 +30,7 @@ mod tests {
 
     #[test]
     fn appends_last_action_hint_into_resume_plan() {
-        let request = sample_request("retry_failure");
-        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
@@ -52,8 +49,7 @@ mod tests {
 
     #[test]
     fn appends_recovery_hint_into_resume_plan() {
-        let request = sample_request("retry_failure");
-        let checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
+        let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert!(
@@ -114,5 +110,20 @@ mod tests {
 
     fn sample_session() -> SessionMemory {
         SessionMemory::default()
+    }
+
+    fn sample_retry_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint) {
+        (
+            sample_request("retry_failure"),
+            sample_checkpoint("retryable_failure", "D:/repo/handoff.json"),
+        )
+    }
+
+    fn sample_confirmation_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint)
+    {
+        (
+            sample_request("after_confirmation"),
+            sample_checkpoint("confirmation_required", ""),
+        )
     }
 }
