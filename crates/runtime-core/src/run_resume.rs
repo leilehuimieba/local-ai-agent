@@ -1,5 +1,9 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
+use crate::run_resume_extract::{
+    resume_action_hint, resume_artifact_path, resume_execution_boundary, resume_recovery_hint,
+    resume_verification_summary,
+};
 use crate::session::SessionMemory;
 
 pub(crate) fn apply_resume_checkpoint(
@@ -78,110 +82,6 @@ fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
         .unwrap_or_default()
 }
 
-fn resume_action_hint(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(action_hint_from_event)
-        .unwrap_or_default()
-}
-
-fn action_hint_from_event(event: &crate::contracts::RunEvent) -> Option<String> {
-    let tool = event
-        .metadata
-        .get("tool_display_name")
-        .cloned()
-        .unwrap_or_default();
-    let task = event
-        .metadata
-        .get("task_title")
-        .cloned()
-        .unwrap_or_default();
-    let name = event.metadata.get("tool_name").cloned().unwrap_or_default();
-    if !tool.is_empty() && !task.is_empty() {
-        return Some(format!("{tool} ({task})"));
-    }
-    if !tool.is_empty() {
-        return Some(tool);
-    }
-    if !task.is_empty() {
-        return Some(task);
-    }
-    if !name.is_empty() {
-        return Some(name);
-    }
-    None
-}
-
-fn resume_execution_boundary(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(execution_boundary_from_event)
-        .or_else(|| confirmation_boundary_from_events(checkpoint))
-        .unwrap_or_default()
-}
-
-fn execution_boundary_from_event(event: &crate::contracts::RunEvent) -> Option<String> {
-    if !is_execution_boundary_event(event) {
-        return None;
-    }
-    let mut parts = vec![format!("阶段={}", event.stage), format!("事件={}", event.event_type)];
-    if let Some(step) = event.metadata.get("next_step").filter(|step| !step.is_empty()) {
-        parts.push(format!("下一步={step}"));
-    }
-    Some(parts.join("，"))
-}
-
-fn is_execution_boundary_event(event: &crate::contracts::RunEvent) -> bool {
-    matches!(
-        event.event_type.as_str(),
-        "action_requested" | "action_completed" | "verification_completed" | "run_failed"
-    )
-}
-
-fn confirmation_boundary_from_events(checkpoint: &RunCheckpoint) -> Option<String> {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find(|event| event.event_type == "confirmation_required")
-        .map(|event| {
-            let step = event
-                .metadata
-                .get("next_step")
-                .cloned()
-                .unwrap_or_else(|| "等待用户确认后再继续".to_string());
-            format!("阶段={}，事件={}，下一步={}", event.stage, event.event_type, step)
-        })
-}
-
-fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
-    let failed = checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find(|event| event.event_type == "run_failed")
-        .and_then(|event| event.metadata.get("failure_recovery_hint").cloned());
-    if failed.is_some() {
-        return failed.unwrap_or_default();
-    }
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find(|event| event.event_type == "verification_completed")
-        .and_then(|event| event.metadata.get("verification_summary").cloned())
-        .unwrap_or_default()
-}
-
 fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
     let verification = resume_verification_summary(checkpoint);
     if verification.is_empty() {
@@ -201,44 +101,6 @@ fn resume_recent_observation(checkpoint: &RunCheckpoint) -> String {
         return format!("恢复到产物：{artifact}");
     }
     format!("{answer}；产物：{artifact}")
-}
-
-fn resume_verification_summary(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| event.verification_snapshot.as_ref())
-        .map(|snapshot| snapshot.summary.clone())
-        .filter(|summary| !summary.is_empty())
-        .unwrap_or_default()
-}
-
-fn resume_artifact_path(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| {
-            event
-                .metadata
-                .get("artifact_path")
-                .cloned()
-                .filter(|path| !path.is_empty())
-                .or_else(|| artifact_from_verification_snapshot(event))
-        })
-        .unwrap_or_default()
-}
-
-fn artifact_from_verification_snapshot(event: &crate::contracts::RunEvent) -> Option<String> {
-    event.verification_snapshot.as_ref().and_then(|snapshot| {
-        snapshot
-            .evidence
-            .iter()
-            .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
-    })
 }
 
 #[cfg(test)]
@@ -433,7 +295,10 @@ mod tests {
 
     fn sample_checkpoint_with_execution_boundary() -> RunCheckpoint {
         let mut checkpoint = sample_checkpoint("retryable_failure", "D:/repo/handoff.json");
-        checkpoint.response.events.push(sample_execution_boundary_event());
+        checkpoint
+            .response
+            .events
+            .push(sample_execution_boundary_event());
         checkpoint
     }
 
