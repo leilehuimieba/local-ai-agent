@@ -12,6 +12,10 @@ pub(crate) fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
 pub(crate) fn resume_recent_observation(checkpoint: &RunCheckpoint) -> String {
     let answer = checkpoint.response.result.final_answer.clone();
     let artifact = crate::run_resume_artifact::resume_artifact_path(checkpoint);
+    join_observation_with_artifact(answer, artifact)
+}
+
+fn join_observation_with_artifact(answer: String, artifact: String) -> String {
     if artifact.is_empty() {
         return answer;
     }
