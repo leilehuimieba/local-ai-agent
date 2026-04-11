@@ -1,10 +1,8 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::run_resume_action_hint::resume_action_hint;
-use crate::run_resume_artifact::resume_artifact_path;
 use crate::run_resume_boundary::resume_execution_boundary;
 use crate::run_resume_hint::resume_recovery_hint;
-use crate::run_resume_verification::resume_verification_summary;
 use crate::session::SessionMemory;
 
 pub(crate) fn apply_resume_checkpoint(
@@ -88,24 +86,11 @@ fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
 }
 
 fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
-    let verification = resume_verification_summary(checkpoint);
-    if verification.is_empty() {
-        checkpoint.response.result.summary.clone()
-    } else {
-        format!("验证快照：{verification}")
-    }
+    crate::run_resume_observation::resume_recent_tool_result(checkpoint)
 }
 
 fn resume_recent_observation(checkpoint: &RunCheckpoint) -> String {
-    let answer = checkpoint.response.result.final_answer.clone();
-    let artifact = resume_artifact_path(checkpoint);
-    if artifact.is_empty() {
-        return answer;
-    }
-    if answer.is_empty() {
-        return format!("恢复到产物：{artifact}");
-    }
-    format!("{answer}；产物：{artifact}")
+    crate::run_resume_observation::resume_recent_observation(checkpoint)
 }
 
 #[cfg(test)]
