@@ -59,27 +59,5 @@ pub(crate) fn resume_verification_summary(checkpoint: &RunCheckpoint) -> String 
 }
 
 pub(crate) fn resume_artifact_path(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| {
-            event
-                .metadata
-                .get("artifact_path")
-                .cloned()
-                .filter(|path| !path.is_empty())
-                .or_else(|| artifact_from_verification_snapshot(event))
-        })
-        .unwrap_or_default()
-}
-
-fn artifact_from_verification_snapshot(event: &RunEvent) -> Option<String> {
-    event.verification_snapshot.as_ref().and_then(|snapshot| {
-        snapshot
-            .evidence
-            .iter()
-            .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
-    })
+    crate::run_resume_artifact::resume_artifact_path(checkpoint)
 }

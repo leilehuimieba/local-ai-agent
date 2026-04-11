@@ -38,6 +38,7 @@ mod run_memory_metadata;
 mod run_metadata;
 mod run_recover_action;
 mod run_resume;
+mod run_resume_artifact;
 mod run_resume_boundary;
 mod run_resume_extract;
 mod run_resume_hint;
