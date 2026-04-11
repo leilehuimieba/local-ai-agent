@@ -28,6 +28,8 @@
   - `tmp/stage-b-confirmation-acceptance/logs/gateway.log`
   - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.boundary_recovered=true`）
   - `tmp/stage-b-confirmation-acceptance/latest.json`（`after_confirmation.boundary_recovered=true`）
+  - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.checkpoint_resume_boundary` 非空）
+  - `tmp/stage-b-confirmation-acceptance/latest.json`（`after_confirmation.checkpoint_resume_boundary` 非空）
 
 ## 联调样本
 
@@ -101,6 +103,7 @@
   - `checkpoint_resumed.metadata.checkpoint_resume_boundary` 已写入结构化边界（`stage=...;event=...;next_step=...`）
   - `checkpoint_resume_skipped` 场景不写该字段，避免误判
   - 当前已可直接按事件元数据检索“恢复边界”，不再依赖 `context_snapshot.session_summary` 文本匹配
+  - 两条 acceptance 脚本已切到结构化断言：`boundary_recovered` 由 `checkpoint_resume_boundary` 是否为空判定
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环

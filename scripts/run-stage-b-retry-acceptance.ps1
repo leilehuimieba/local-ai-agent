@@ -275,9 +275,8 @@ try {
   $skipped = Last-Event -Items $retryLogs -EventType "checkpoint_resume_skipped"
   $retryCheckpoint = Last-Event -Items $retryLogs -EventType "checkpoint_written"
   $retryTerminal = @($retryLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
-  $boundaryRecovered = @($retryLogs | Where-Object {
-      $_.context_snapshot -and $_.context_snapshot.session_summary -like "*恢复边界：*"
-    }).Count -gt 0
+  $resumeBoundary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_boundary } else { "" })
+  $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
   $passed = (Has-Event -Items $retryLogs -EventType "checkpoint_resumed") -and
     (-not (Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")) -and
     $boundaryRecovered -and
@@ -306,6 +305,7 @@ try {
       resumed = $(Has-Event -Items $retryLogs -EventType "checkpoint_resumed")
       skipped = $(Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")
       boundary_recovered = $boundaryRecovered
+      checkpoint_resume_boundary = $resumeBoundary
       checkpoint_id = $(if ($retryCheckpoint.Count -gt 0) { $retryCheckpoint[0].metadata.checkpoint_id } else { "" })
       terminal_event = $(if ($retryTerminal.Count -gt 0) { $retryTerminal[0] } else { $null })
     }
