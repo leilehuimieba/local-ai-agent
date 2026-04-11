@@ -10,29 +10,8 @@ pub(crate) fn apply_resume_checkpoint(
     let Some(checkpoint) = checkpoint else {
         return;
     };
-    apply_resume_short_term_state(session, checkpoint);
+    crate::run_resume_state::apply_resume_short_term_state(session, checkpoint);
     crate::run_resume_clear::clear_resume_confirmation_state(session, checkpoint, request);
-}
-
-fn apply_resume_short_term_state(session: &mut SessionMemory, checkpoint: &RunCheckpoint) {
-    session.short_term.current_plan = crate::run_resume_plan::resume_plan(checkpoint);
-    session.short_term.current_phase = crate::run_resume_plan::resume_phase(checkpoint);
-    session.short_term.last_run_status = checkpoint.status.clone();
-    session.short_term.recent_observation = resume_recent_observation(checkpoint);
-    session.short_term.recent_tool_result = resume_recent_tool_result(checkpoint);
-    session.short_term.handoff_artifact_path = resume_handoff_artifact_path(checkpoint);
-}
-
-fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {
-    crate::run_resume_handoff::resume_handoff_artifact_path(checkpoint)
-}
-
-fn resume_recent_tool_result(checkpoint: &RunCheckpoint) -> String {
-    crate::run_resume_observation::resume_recent_tool_result(checkpoint)
-}
-
-fn resume_recent_observation(checkpoint: &RunCheckpoint) -> String {
-    crate::run_resume_observation::resume_recent_observation(checkpoint)
 }
 
 #[cfg(test)]
