@@ -40,3 +40,5 @@
   完成判据：confirmation 与 retry acceptance 均输出 `target_resumed_unique=true` 且 `target_resumed_count=1`，避免多次 `checkpoint_resumed` 串扰误判。
 - [x] 补齐恢复筛选口径一致性最小单测
   完成判据：`runtime-core/checkpoint.rs` 新增最小单测，验证按 `checkpoint_resume_reason + checkpoint_stage + checkpoint_id` 筛选后候选唯一，且 retry 场景边界为 `stage=Finish;event=run_failed`，与 acceptance 脚本断言口径一致。
+- [x] 补齐 confirmation 恢复筛选口径最小单测
+  完成判据：`runtime-core/checkpoint.rs` 新增 confirmation 侧最小单测，验证按 `checkpoint_resume_reason=confirmation_required + checkpoint_stage=PausedForConfirmation + checkpoint_id` 过滤后候选唯一，且边界值为 `stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续`。

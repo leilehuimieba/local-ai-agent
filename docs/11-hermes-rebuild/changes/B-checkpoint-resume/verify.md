@@ -130,6 +130,27 @@
   - 单测后回归 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-11 22:13（Asia/Shanghai）
+- 单测：`cargo test -p runtime-core metadata_for_acceptance_filters`
+- 关键事实：
+  - 新增 confirmation 侧最小单测 `emits_confirmation_resume_metadata_for_acceptance_filters` 并通过；同轮 `emits_retry_resume_metadata_for_acceptance_filters` 保持通过（`2 passed; 0 failed`）。
+  - confirmation 单测直接验证 acceptance 对齐口径：按 `checkpoint_resume_reason=confirmation_required`、`checkpoint_stage=PausedForConfirmation`、`checkpoint_id` 过滤后 `checkpoint_resumed` 候选唯一（`len=1`）。
+  - confirmation 单测断言边界值为 `checkpoint_resume_boundary=stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续`。
+
+- 时间：2026-04-11 22:13（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775916780151`
+- run：`run-1775916794648-2`
+- 关键事实：
+  - 单测后回归 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`checkpoint_id_matched=true`。
+
+- 时间：2026-04-11 22:13（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775916780151`
+- run：`run-1775916794476-2`
+- 关键事实：
+  - 单测后回归 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
@@ -176,6 +197,7 @@
   - 本轮补齐“边界事件类型精确匹配”断言：`after_confirmation.checkpoint_resume_event_type=confirmation_required`、`retry_run.checkpoint_resume_event_type=run_failed`，两条样本均为 `event_type_matched=true`
   - 本轮补齐“目标 resumed 事件唯一性”断言：`after_confirmation.target_resumed_unique=true`、`retry_run.target_resumed_unique=true`，且两条样本 `target_resumed_count=1`
   - 本轮补齐“脚本断言与 runtime 单测口径一致性”：`checkpoint.rs` 新增最小单测，直接覆盖 `reason/stage/checkpoint_id` 过滤与 retry 边界值断言
+  - 本轮补齐“confirmation 侧单测口径一致性”：`checkpoint.rs` 新增 confirmation 最小单测，直接覆盖 `reason/stage/checkpoint_id` 过滤与 confirmation 边界值断言
 - 恢复事件已新增结构化验证字段：
   - `checkpoint_resumed.metadata.checkpoint_resume_verification_code` 记录恢复时可见验证状态
   - `checkpoint_resumed.metadata.checkpoint_resume_verification_summary` 记录恢复时可见验证摘要
