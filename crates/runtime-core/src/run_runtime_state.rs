@@ -10,9 +10,9 @@ pub(crate) fn refresh_context_after_execution(
     envelope: &mut RuntimeContextEnvelope,
     trace: &ToolExecutionTrace,
 ) {
-    envelope.dynamic_block.reasoning_summary = trace.result.reasoning_summary.clone();
-    envelope.dynamic_block.cache_status = trace.result.cache_status.clone();
-    envelope.dynamic_block.cache_reason = trace.result.cache_reason.clone();
+    apply_reasoning_summary(envelope, trace);
+    apply_cache_status(envelope, trace);
+    apply_cache_reason(envelope, trace);
 }
 
 pub(crate) fn assemble_runtime_state(
@@ -39,4 +39,16 @@ pub(crate) fn assemble_runtime_state(
         tool_trace: None,
         verification_report: None,
     }
+}
+
+fn apply_reasoning_summary(envelope: &mut RuntimeContextEnvelope, trace: &ToolExecutionTrace) {
+    envelope.dynamic_block.reasoning_summary = trace.result.reasoning_summary.clone();
+}
+
+fn apply_cache_status(envelope: &mut RuntimeContextEnvelope, trace: &ToolExecutionTrace) {
+    envelope.dynamic_block.cache_status = trace.result.cache_status.clone();
+}
+
+fn apply_cache_reason(envelope: &mut RuntimeContextEnvelope, trace: &ToolExecutionTrace) {
+    envelope.dynamic_block.cache_reason = trace.result.cache_reason.clone();
 }
