@@ -44,3 +44,5 @@
   完成判据：`runtime-core/checkpoint.rs` 新增 confirmation 侧最小单测，验证按 `checkpoint_resume_reason=confirmation_required + checkpoint_stage=PausedForConfirmation + checkpoint_id` 过滤后候选唯一，且边界值为 `stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续`。
 - [x] 对齐工具动作快照参数跨端合同
   完成判据：`runtime-core`、`gateway`、`frontend` 的 `ToolCallSnapshot.arguments_json` 字段口径一致；`cargo test -p runtime-core`、`go test ./...`、`frontend npm run build` 通过，且 confirm/retry acceptance 回归通过。
+- [x] 收敛恢复链路模块内重复拼接与提取逻辑
+  完成判据：`run_resume_plan/hint/observation/action_hint/verification/handoff/boundary` 与测试辅助模块完成最小职责下沉，`cargo test -p runtime-core` 持续通过（`64 passed`）。

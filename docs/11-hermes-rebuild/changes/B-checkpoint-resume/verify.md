@@ -174,6 +174,13 @@
   - 合同对齐后回归 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-11 22:49（Asia/Shanghai）
+- 构建与测试：
+  - `cargo test -p runtime-core`：`64 passed; 0 failed`
+- 关键事实：
+  - 本轮持续执行恢复链路小刀拆分，覆盖 `run_resume_tests.rs`、`run_resume_event_testkit.rs`、`run_resume_testkit.rs`、`run_resume_plan.rs`、`run_resume_observation.rs`、`run_resume_hint.rs`、`run_resume_action_hint.rs`、`run_resume_verification.rs`、`run_resume_handoff.rs`、`run_resume_boundary.rs`。
+  - 每次代码提交前均执行 `cargo test -p runtime-core`，未引入回归失败，恢复相关测试与既有 64 条单测均保持通过。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
