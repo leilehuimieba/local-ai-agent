@@ -333,7 +333,15 @@ try {
       $_.metadata.checkpoint_resume_reason -eq "confirmation_required" -and
       $_.metadata.checkpoint_stage -eq "PausedForConfirmation"
     })
-  $resumed = @($resumedCandidates | Select-Object -Last 1)
+  $targetResumedCandidates = @()
+  if (-not [string]::IsNullOrWhiteSpace($initialCheckpointId)) {
+    $targetResumedCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq $initialCheckpointId })
+  }
+  if ($targetResumedCandidates.Count -eq 0) {
+    $targetResumedCandidates = $resumedCandidates
+  }
+  $resumed = @($targetResumedCandidates | Select-Object -Last 1)
+  $targetResumedUnique = $targetResumedCandidates.Count -eq 1
   $checkpointMatched = $false
   if (-not [string]::IsNullOrWhiteSpace($initialCheckpointId)) {
     $checkpointCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq $initialCheckpointId })
@@ -367,6 +375,7 @@ try {
     $stageMatched -and
     $verificationEmpty -and
     $eventTypeMatched -and
+    $targetResumedUnique -and
     (Has-Event -Items $confirmLogs -EventType "analysis_ready") -and
     (Has-Event -Items $confirmLogs -EventType "plan_ready") -and
     (Has-Event -Items $confirmLogs -EventType "action_requested") -and
@@ -400,6 +409,8 @@ try {
       resumed = $resumed.Count -gt 0
       skipped = $(Has-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped")
       checkpoint_id_matched = $checkpointMatched
+      target_resumed_unique = $targetResumedUnique
+      target_resumed_count = $targetResumedCandidates.Count
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
       checkpoint_resume_event_type = $checkpoint_resume_event_type

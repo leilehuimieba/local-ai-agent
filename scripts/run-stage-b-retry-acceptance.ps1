@@ -271,7 +271,17 @@ try {
   }
 
   $retryLogs = Wait-RunLogs -Url $logsUrl -RunId $retryAccepted.run_id -Since $retryStartedAt
-  $resumed = Last-Event -Items $retryLogs -EventType "checkpoint_resumed"
+  $resumeEvents = @($retryLogs | Where-Object { $_.event_type -eq "checkpoint_resumed" })
+  $resumedCandidates = @($resumeEvents | Where-Object {
+      $_.metadata.checkpoint_resume_reason -eq "retryable_failure" -and
+      $_.metadata.checkpoint_stage -eq "Execute"
+    })
+  $targetResumedCandidates = @($resumedCandidates | Where-Object { [string]$_.metadata.checkpoint_id -eq [string]$initialCheckpoint[0].metadata.checkpoint_id })
+  if ($targetResumedCandidates.Count -eq 0) {
+    $targetResumedCandidates = $resumedCandidates
+  }
+  $resumed = @($targetResumedCandidates | Select-Object -Last 1)
+  $targetResumedUnique = $targetResumedCandidates.Count -eq 1
   $skipped = Last-Event -Items $retryLogs -EventType "checkpoint_resume_skipped"
   $retryCheckpoint = Last-Event -Items $retryLogs -EventType "checkpoint_written"
   $retryTerminal = @($retryLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
@@ -293,6 +303,7 @@ try {
     $verificationRecovered -and
     $artifactRecovered -and
     $eventTypeMatched -and
+    $targetResumedUnique -and
     (Has-Event -Items $retryLogs -EventType "checkpoint_written") -and
     $retryTerminal.Count -gt 0
 
@@ -317,6 +328,8 @@ try {
       event_types = @($retryLogs | Select-Object -ExpandProperty event_type)
       resumed = $(Has-Event -Items $retryLogs -EventType "checkpoint_resumed")
       skipped = $(Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")
+      target_resumed_unique = $targetResumedUnique
+      target_resumed_count = $targetResumedCandidates.Count
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
       checkpoint_resume_event_type = $checkpoint_resume_event_type

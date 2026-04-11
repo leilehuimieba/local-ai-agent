@@ -36,3 +36,5 @@
   完成判据：`checkpoint_resumed` 可写出恢复时可见的 `verification_code/verification_summary/artifact_path`，并可被 acceptance 结构化断言消费。
 - [x] 收敛恢复边界事件类型精确匹配断言
   完成判据：confirmation acceptance 断言 `checkpoint_resume_event_type=confirmation_required`，retry acceptance 断言 `checkpoint_resume_event_type=run_failed`，两条样本均为 `event_type_matched=true`。
+- [x] 补齐目标 resumed 事件唯一性断言
+  完成判据：confirmation 与 retry acceptance 均输出 `target_resumed_unique=true` 且 `target_resumed_count=1`，避免多次 `checkpoint_resumed` 串扰误判。
