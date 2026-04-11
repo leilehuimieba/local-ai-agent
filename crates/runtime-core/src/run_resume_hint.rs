@@ -9,21 +9,23 @@ fn recovery_hint_candidates(checkpoint: &RunCheckpoint) -> Option<String> {
 }
 
 fn failed_recovery_hint(checkpoint: &RunCheckpoint) -> Option<String> {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find(|event| event.event_type == "run_failed")
-        .and_then(|event| event.metadata.get("failure_recovery_hint").cloned())
+    recovery_hint_from_event_metadata(checkpoint, "run_failed", "failure_recovery_hint")
 }
 
 fn verification_recovery_hint(checkpoint: &RunCheckpoint) -> Option<String> {
+    recovery_hint_from_event_metadata(checkpoint, "verification_completed", "verification_summary")
+}
+
+fn recovery_hint_from_event_metadata(
+    checkpoint: &RunCheckpoint,
+    event_type: &str,
+    metadata_key: &str,
+) -> Option<String> {
     checkpoint
         .response
         .events
         .iter()
         .rev()
-        .find(|event| event.event_type == "verification_completed")
-        .and_then(|event| event.metadata.get("verification_summary").cloned())
+        .find(|event| event.event_type == event_type)
+        .and_then(|event| event.metadata.get(metadata_key).cloned())
 }
