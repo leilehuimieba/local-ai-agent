@@ -302,11 +302,16 @@ try {
   $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
   $resumeVerificationSummary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_summary } else { "" })
   $resumeArtifactPath = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_artifact_path } else { "" })
+  $checkpoint_resume_boundary_stage = ""
   $checkpoint_resume_event_type = ""
+  if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)stage=([^;]+)') {
+    $checkpoint_resume_boundary_stage = $Matches[2].Trim()
+  }
   if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)event=([^;]+)') {
     $checkpoint_resume_event_type = $Matches[2].Trim()
   }
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
+  $boundaryStageMatched = $checkpoint_resume_boundary_stage -eq "Failed"
   $verificationRecovered = -not [string]::IsNullOrWhiteSpace($resumeVerificationCode)
   $artifactRecovered = -not [string]::IsNullOrWhiteSpace($resumeArtifactPath)
   $reasonMatched = $resumeReason -eq "retryable_failure"
@@ -317,6 +322,7 @@ try {
     $reasonMatched -and
     $stageMatched -and
     $boundaryRecovered -and
+    $boundaryStageMatched -and
     $verificationRecovered -and
     $artifactRecovered -and
     $eventTypeMatched -and
@@ -351,6 +357,8 @@ try {
       target_resumed_count = $targetResumedCandidates.Count
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
+      checkpoint_resume_boundary_stage = $checkpoint_resume_boundary_stage
+      boundary_stage_matched = $boundaryStageMatched
       checkpoint_resume_event_type = $checkpoint_resume_event_type
       event_type_matched = $eventTypeMatched
       reason_matched = $reasonMatched

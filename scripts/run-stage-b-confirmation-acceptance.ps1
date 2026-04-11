@@ -359,11 +359,21 @@ try {
   $resumeReason = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_reason } else { "" })
   $resumeStage = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_stage } else { "" })
   $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
+  $checkpoint_resume_boundary_stage = ""
+  $checkpoint_resume_boundary_next_step = ""
   $checkpoint_resume_event_type = ""
+  if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)stage=([^;]+)') {
+    $checkpoint_resume_boundary_stage = $Matches[2].Trim()
+  }
   if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)event=([^;]+)') {
     $checkpoint_resume_event_type = $Matches[2].Trim()
   }
+  if (-not [string]::IsNullOrWhiteSpace($resumeBoundary) -and $resumeBoundary -match '(^|;\s*)next_step=([^;]+)') {
+    $checkpoint_resume_boundary_next_step = $Matches[2].Trim()
+  }
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
+  $boundaryStageMatched = $checkpoint_resume_boundary_stage -eq "PausedForConfirmation"
+  $boundaryNextStepMatched = $checkpoint_resume_boundary_next_step -eq "等待用户确认后再继续"
   $reasonMatched = $resumeReason -eq "confirmation_required"
   $stageMatched = $resumeStage -eq "PausedForConfirmation"
   $verificationEmpty = [string]::IsNullOrWhiteSpace($resumeVerificationCode)
@@ -371,6 +381,8 @@ try {
   $passed = $resumed.Count -gt 0 -and
     (-not (Has-Event -Items $confirmLogs -EventType "checkpoint_resume_skipped")) -and
     $boundaryRecovered -and
+    $boundaryStageMatched -and
+    $boundaryNextStepMatched -and
     $reasonMatched -and
     $stageMatched -and
     $verificationEmpty -and
@@ -413,6 +425,10 @@ try {
       target_resumed_count = $targetResumedCandidates.Count
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
+      checkpoint_resume_boundary_stage = $checkpoint_resume_boundary_stage
+      checkpoint_resume_boundary_next_step = $checkpoint_resume_boundary_next_step
+      boundary_stage_matched = $boundaryStageMatched
+      boundary_next_step_matched = $boundaryNextStepMatched
       checkpoint_resume_event_type = $checkpoint_resume_event_type
       event_type_matched = $eventTypeMatched
       reason_matched = $reasonMatched

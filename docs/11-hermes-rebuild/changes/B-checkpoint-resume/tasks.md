@@ -66,3 +66,5 @@
   完成判据：`scripts/run-stage-b-acceptance-batch.ps1` 输出 `gate_b.required_rounds/required_rate/rounds_ok/*_rate_ok/ready`，并支持 `-RequireGateB` 强校验开关。
 - [x] 完成 Gate-B 强校验批量验收
   完成判据：执行 `scripts/run-stage-b-acceptance-batch.ps1 -Rounds 50 -RequireGateB` 返回成功，且报告字段 `gate_b.ready=true`。
+- [x] 收敛恢复边界 stage/next_step 精确匹配断言
+  完成判据：confirmation/retry 验收脚本新增边界 stage 精确匹配断言，confirmation 额外断言 `next_step` 精确匹配；两条脚本复跑通过并产出结构化字段。

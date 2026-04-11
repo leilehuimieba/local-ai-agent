@@ -423,6 +423,22 @@
   - Gate-B 强校验最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-12 01:39（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775929176179`
+- run：`run-1775929189898-2`
+- 关键事实：
+  - 边界结构化精确断言回归后 confirmation 样本 `tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 新增字段：`checkpoint_resume_boundary_stage=PausedForConfirmation`、`boundary_stage_matched=true`、`checkpoint_resume_boundary_next_step=等待用户确认后再继续`、`boundary_next_step_matched=true`。
+  - 既有关键字段保持稳定：`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`checkpoint_id_matched=true`、`verification_empty=true`。
+
+- 时间：2026-04-12 01:39（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775929176166`
+- run：`run-1775929189897-2`
+- 关键事实：
+  - 边界结构化精确断言回归后 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 新增字段：`checkpoint_resume_boundary_stage=Failed`、`boundary_stage_matched=true`。
+  - 既有关键字段保持稳定：`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`checkpoint_id_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
