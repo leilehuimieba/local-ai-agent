@@ -11,7 +11,7 @@ pub(crate) fn apply_resume_checkpoint(
         return;
     };
     apply_resume_short_term_state(session, checkpoint);
-    clear_resume_confirmation_state(session, checkpoint, request);
+    crate::run_resume_clear::clear_resume_confirmation_state(session, checkpoint, request);
 }
 
 fn apply_resume_short_term_state(session: &mut SessionMemory, checkpoint: &RunCheckpoint) {
@@ -21,22 +21,6 @@ fn apply_resume_short_term_state(session: &mut SessionMemory, checkpoint: &RunCh
     session.short_term.recent_observation = resume_recent_observation(checkpoint);
     session.short_term.recent_tool_result = resume_recent_tool_result(checkpoint);
     session.short_term.handoff_artifact_path = resume_handoff_artifact_path(checkpoint);
-}
-
-fn clear_resume_confirmation_state(
-    session: &mut SessionMemory,
-    checkpoint: &RunCheckpoint,
-    request: &RunRequest,
-) {
-    if checkpoint.resume_reason == "confirmation_required" {
-        session.short_term.pending_confirmation.clear();
-        session.short_term.open_issue.clear();
-        return;
-    }
-    if request.resume_strategy == "retry_failure" {
-        session.short_term.pending_confirmation.clear();
-        session.short_term.open_issue = checkpoint.response.result.summary.clone();
-    }
 }
 
 fn resume_handoff_artifact_path(checkpoint: &RunCheckpoint) -> String {

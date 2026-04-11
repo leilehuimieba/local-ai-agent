@@ -41,6 +41,7 @@ mod run_resume;
 mod run_resume_action_hint;
 mod run_resume_artifact;
 mod run_resume_boundary;
+mod run_resume_clear;
 mod run_resume_hint;
 mod run_resume_handoff;
 mod run_resume_observation;
