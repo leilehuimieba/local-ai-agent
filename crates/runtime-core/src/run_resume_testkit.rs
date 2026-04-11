@@ -94,22 +94,41 @@ pub(crate) mod testkit {
     }
 
     fn sample_result() -> RunResult {
+        let ids = sample_result_ids();
+        let payload = sample_result_payload();
         RunResult {
-            request_id: "request-1".to_string(),
-            run_id: "run-1".to_string(),
-            session_id: "session-1".to_string(),
-            trace_id: "trace-1".to_string(),
+            request_id: ids.0,
+            run_id: ids.1,
+            session_id: ids.2,
+            trace_id: ids.3,
             kind: "run_result".to_string(),
             source: "runtime".to_string(),
-            status: "failed".to_string(),
-            final_answer: "temporary failure".to_string(),
-            summary: "temporary failure".to_string(),
+            status: payload.0,
+            final_answer: payload.1,
+            summary: payload.2,
             error: None,
             memory_write_summary: None,
             final_stage: "Finish".to_string(),
             checkpoint_id: Some("cp-1".to_string()),
             resumable: Some(true),
         }
+    }
+
+    fn sample_result_ids() -> (String, String, String, String) {
+        (
+            "request-1".to_string(),
+            "run-1".to_string(),
+            "session-1".to_string(),
+            "trace-1".to_string(),
+        )
+    }
+
+    fn sample_result_payload() -> (String, String, String) {
+        (
+            "failed".to_string(),
+            "temporary failure".to_string(),
+            "temporary failure".to_string(),
+        )
     }
 
     fn sample_checkpoint_without_events(reason: &str, handoff_path: &str) -> RunCheckpoint {
