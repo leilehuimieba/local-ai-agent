@@ -39,14 +39,21 @@ fn action_hint_from_event(event: &RunEvent) -> Option<String> {
 }
 
 pub(crate) fn resume_execution_boundary(checkpoint: &RunCheckpoint) -> String {
+    execution_boundary_from_events(checkpoint).unwrap_or_default()
+}
+
+fn execution_boundary_from_events(checkpoint: &RunCheckpoint) -> Option<String> {
+    primary_execution_boundary(checkpoint)
+        .or_else(|| confirmation_boundary_from_events(checkpoint))
+}
+
+fn primary_execution_boundary(checkpoint: &RunCheckpoint) -> Option<String> {
     checkpoint
         .response
         .events
         .iter()
         .rev()
         .find_map(execution_boundary_from_event)
-        .or_else(|| confirmation_boundary_from_events(checkpoint))
-        .unwrap_or_default()
 }
 
 fn execution_boundary_from_event(event: &RunEvent) -> Option<String> {
