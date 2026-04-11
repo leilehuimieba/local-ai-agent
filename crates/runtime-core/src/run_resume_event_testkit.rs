@@ -89,6 +89,10 @@ pub(crate) mod testkit {
     }
 
     fn sample_failed_event_base() -> RunEvent {
+        sample_failed_event_core()
+    }
+
+    fn sample_failed_event_core() -> RunEvent {
         RunEvent {
             event_id: "event-1".to_string(),
             kind: "run_event".to_string(),
@@ -105,6 +109,12 @@ pub(crate) mod testkit {
             timestamp: "1".to_string(),
             stage: "Failed".to_string(),
             summary: "failed".to_string(),
+            ..sample_failed_event_empty_fields()
+        }
+    }
+
+    fn sample_failed_event_empty_fields() -> RunEvent {
+        RunEvent {
             detail: String::new(),
             tool_name: String::new(),
             tool_display_name: String::new(),
@@ -123,6 +133,27 @@ pub(crate) mod testkit {
             tool_call_snapshot: None,
             verification_snapshot: None,
             metadata: BTreeMap::new(),
+            ..sample_failed_event_identity_placeholders()
+        }
+    }
+
+    fn sample_failed_event_identity_placeholders() -> RunEvent {
+        RunEvent {
+            event_id: String::new(),
+            kind: String::new(),
+            source: String::new(),
+            record_type: String::new(),
+            source_type: String::new(),
+            agent_id: String::new(),
+            agent_label: String::new(),
+            event_type: String::new(),
+            trace_id: String::new(),
+            session_id: String::new(),
+            run_id: String::new(),
+            sequence: 0,
+            timestamp: String::new(),
+            stage: String::new(),
+            summary: String::new(),
         }
     }
 
