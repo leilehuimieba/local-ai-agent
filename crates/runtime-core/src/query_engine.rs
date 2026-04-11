@@ -7,9 +7,8 @@ use crate::repo_context::{RepoContextLoadResult, load_repo_context};
 use crate::risk::RiskOutcome;
 use crate::run_recover_action::resumed_prepared_state;
 use crate::run_resume::apply_resume_checkpoint;
-use crate::run_state_builder::{
-    PreparedRunState, bootstrap_context, prepare_run_state, record_bootstrap_memory,
-};
+use crate::run_runtime_state::{assemble_runtime_state, refresh_context_after_execution};
+use crate::run_state_builder::{bootstrap_context, prepare_run_state, record_bootstrap_memory};
 use crate::session::{SessionMemory, load_session_context, record_execution_memory};
 use crate::tool_registry::{ToolCall, runtime_tool_registry};
 use crate::tool_trace::execute_tool;
@@ -295,40 +294,5 @@ mod tests {
             verification_snapshot: None,
             metadata: BTreeMap::new(),
         }
-    }
-}
-
-fn refresh_context_after_execution(
-    envelope: &mut RuntimeContextEnvelope,
-    trace: &ToolExecutionTrace,
-) {
-    envelope.dynamic_block.reasoning_summary = trace.result.reasoning_summary.clone();
-    envelope.dynamic_block.cache_status = trace.result.cache_status.clone();
-    envelope.dynamic_block.cache_reason = trace.result.cache_reason.clone();
-}
-
-fn assemble_runtime_state(
-    request: &RunRequest,
-    session_context: SessionMemory,
-    repo_context: RepoContextLoadResult,
-    visible_tools: Vec<ToolDefinition>,
-    _context_envelope: RuntimeContextEnvelope,
-    prepared: PreparedRunState,
-) -> RuntimeRunState {
-    RuntimeRunState {
-        envelope: RuntimeEnvelope {
-            request: request.clone(),
-            session_context,
-            repo_context,
-            context_envelope: prepared.context_envelope,
-            visible_tools,
-        },
-        action: prepared.action,
-        tool_call: prepared.tool_call,
-        task_title: prepared.task_title,
-        analysis_detail: prepared.analysis_detail,
-        risk_outcome: prepared.risk_outcome,
-        tool_trace: None,
-        verification_report: None,
     }
 }
