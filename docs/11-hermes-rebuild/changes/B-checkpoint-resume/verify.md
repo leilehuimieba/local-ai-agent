@@ -216,6 +216,20 @@
   - 本轮继续执行恢复链路小刀拆分，新增覆盖 `run_resume_testkit.rs`、`run_resume_observation.rs`。
   - 上述改动均为无行为变更的职责下沉与样本字段收敛，提交前回归稳定，无新增失败测试。
 
+- 时间：2026-04-11 23:20（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775920832612`
+- run：`run-1775920847557-2`
+- 关键事实：
+  - 修复 retry 脚本结构化断言后回归 `scripts/run-stage-b-confirmation-acceptance.ps1`，`tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_empty=true`、`checkpoint_id_matched=true`。
+
+- 时间：2026-04-11 23:20（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775920833871`
+- run：`run-1775920848341-2`
+- 关键事实：
+  - `scripts/run-stage-b-retry-acceptance.ps1` 已补齐并启用 `reason_matched/stage_matched` 结构化断言；`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段为：`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`reason_matched=true`、`stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B

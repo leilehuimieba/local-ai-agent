@@ -286,6 +286,8 @@ try {
   $retryCheckpoint = Last-Event -Items $retryLogs -EventType "checkpoint_written"
   $retryTerminal = @($retryLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
   $resumeBoundary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_boundary } else { "" })
+  $resumeReason = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_reason } else { "" })
+  $resumeStage = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_stage } else { "" })
   $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
   $resumeVerificationSummary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_summary } else { "" })
   $resumeArtifactPath = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_artifact_path } else { "" })
@@ -296,9 +298,13 @@ try {
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
   $verificationRecovered = -not [string]::IsNullOrWhiteSpace($resumeVerificationCode)
   $artifactRecovered = -not [string]::IsNullOrWhiteSpace($resumeArtifactPath)
+  $reasonMatched = $resumeReason -eq "retryable_failure"
+  $stageMatched = $resumeStage -eq "Execute"
   $eventTypeMatched = $checkpoint_resume_event_type -eq "run_failed"
   $passed = (Has-Event -Items $retryLogs -EventType "checkpoint_resumed") -and
     (-not (Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")) -and
+    $reasonMatched -and
+    $stageMatched -and
     $boundaryRecovered -and
     $verificationRecovered -and
     $artifactRecovered -and
@@ -334,6 +340,10 @@ try {
       checkpoint_resume_boundary = $resumeBoundary
       checkpoint_resume_event_type = $checkpoint_resume_event_type
       event_type_matched = $eventTypeMatched
+      reason_matched = $reasonMatched
+      checkpoint_resume_reason = $resumeReason
+      stage_matched = $stageMatched
+      checkpoint_resume_stage = $resumeStage
       verification_recovered = $verificationRecovered
       checkpoint_resume_verification_code = $resumeVerificationCode
       checkpoint_resume_verification_summary = $resumeVerificationSummary
