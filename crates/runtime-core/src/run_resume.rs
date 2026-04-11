@@ -14,13 +14,17 @@ pub(crate) fn apply_resume_checkpoint(
     let Some(checkpoint) = checkpoint else {
         return;
     };
+    apply_resume_short_term_state(session, checkpoint);
+    clear_resume_confirmation_state(session, checkpoint, request);
+}
+
+fn apply_resume_short_term_state(session: &mut SessionMemory, checkpoint: &RunCheckpoint) {
     session.short_term.current_plan = resume_plan(checkpoint);
     session.short_term.current_phase = resume_phase(checkpoint);
     session.short_term.last_run_status = checkpoint.status.clone();
     session.short_term.recent_observation = resume_recent_observation(checkpoint);
     session.short_term.recent_tool_result = resume_recent_tool_result(checkpoint);
     session.short_term.handoff_artifact_path = resume_handoff_artifact_path(checkpoint);
-    clear_resume_confirmation_state(session, checkpoint, request);
 }
 
 fn clear_resume_confirmation_state(
