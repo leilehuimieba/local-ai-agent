@@ -40,6 +40,7 @@ mod run_resume_extract;
 mod run_risk_flow;
 mod run_runtime_state;
 mod run_state_builder;
+mod run_tool_metadata;
 mod session;
 mod sqlite_store;
 mod storage;

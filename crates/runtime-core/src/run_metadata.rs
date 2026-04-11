@@ -13,14 +13,7 @@ pub(crate) fn append_tool_spec_metadata(
     metadata: &mut BTreeMap<String, String>,
     tool_call: &crate::tool_registry::ToolCall,
 ) {
-    metadata.insert(
-        "input_schema".to_string(),
-        tool_call.spec.input_schema.clone(),
-    );
-    metadata.insert(
-        "requires_confirmation".to_string(),
-        bool_string(tool_call.spec.requires_confirmation),
-    );
+    crate::run_tool_metadata::append_tool_spec_metadata(metadata, tool_call);
 }
 
 pub(crate) fn append_verification_metadata(
