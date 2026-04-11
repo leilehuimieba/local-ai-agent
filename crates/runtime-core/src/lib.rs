@@ -44,6 +44,7 @@ mod run_resume_boundary;
 mod run_resume_extract;
 mod run_resume_hint;
 mod run_resume_testkit;
+mod run_resume_verification;
 mod run_risk_flow;
 mod run_runtime_state;
 mod run_snapshot_action;

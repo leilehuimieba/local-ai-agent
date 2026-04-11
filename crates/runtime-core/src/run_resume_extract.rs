@@ -13,15 +13,7 @@ pub(crate) fn resume_recovery_hint(checkpoint: &RunCheckpoint) -> String {
 }
 
 pub(crate) fn resume_verification_summary(checkpoint: &RunCheckpoint) -> String {
-    checkpoint
-        .response
-        .events
-        .iter()
-        .rev()
-        .find_map(|event| event.verification_snapshot.as_ref())
-        .map(|snapshot| snapshot.summary.clone())
-        .filter(|summary| !summary.is_empty())
-        .unwrap_or_default()
+    crate::run_resume_verification::resume_verification_summary(checkpoint)
 }
 
 pub(crate) fn resume_artifact_path(checkpoint: &RunCheckpoint) -> String {
