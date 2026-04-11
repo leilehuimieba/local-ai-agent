@@ -34,6 +34,7 @@ mod run_failure_metadata;
 mod run_finish_events;
 mod run_memory_metadata;
 mod run_metadata;
+mod run_recover_action;
 mod run_resume;
 mod run_risk_flow;
 mod run_state_builder;

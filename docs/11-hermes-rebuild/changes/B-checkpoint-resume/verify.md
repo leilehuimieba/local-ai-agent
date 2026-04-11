@@ -3,6 +3,7 @@
 ## 验证方式
 
 - 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复、“从 checkpoint 事件快照恢复已选动作”、“从 verification_snapshot/artifact_path 恢复验证快照摘要”，以及“从最近执行事件恢复执行中间态摘要”测试。
+- 单元测试：已补一部分，覆盖 retry checkpoint 查询与 retry request 重建；`runtime-core` 侧新增了确认恢复、失败重试、恢复写回保护、handoff 路径恢复、“从 checkpoint 事件快照恢复已选动作”、“从 verification_snapshot/artifact_path 恢复验证快照摘要”、“从最近执行事件恢复执行中间态摘要”，以及“checkpoint_resumed 携带验证元数据”测试。
 - 集成测试：已完成 `retryable_failure` 与 `after_confirmation` 两条恢复闭环样本。
 - 人工验证：已确认 retry 与 confirm 两条路径都不是单纯插入恢复事件，而是会继续进入统一主循环并产生后续执行事件；并新增“恢复边界已回填”断言。
 
@@ -30,6 +31,9 @@
   - `tmp/stage-b-confirmation-acceptance/latest.json`（`after_confirmation.boundary_recovered=true`）
   - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.checkpoint_resume_boundary` 非空）
   - `tmp/stage-b-confirmation-acceptance/latest.json`（`after_confirmation.checkpoint_resume_boundary` 非空）
+  - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.checkpoint_resume_verification_code` 非空）
+  - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.checkpoint_resume_verification_summary` 非空）
+  - `tmp/stage-b-retry-acceptance/latest.json`（`retry_run.checkpoint_resume_artifact_path` 非空）
 
 ## 联调样本
 
@@ -104,6 +108,11 @@
   - `checkpoint_resume_skipped` 场景不写该字段，避免误判
   - 当前已可直接按事件元数据检索“恢复边界”，不再依赖 `context_snapshot.session_summary` 文本匹配
   - 两条 acceptance 脚本已切到结构化断言：`boundary_recovered` 由 `checkpoint_resume_boundary` 是否为空判定
+- 恢复事件已新增结构化验证字段：
+  - `checkpoint_resumed.metadata.checkpoint_resume_verification_code` 记录恢复时可见验证状态
+  - `checkpoint_resumed.metadata.checkpoint_resume_verification_summary` 记录恢复时可见验证摘要
+  - `checkpoint_resumed.metadata.checkpoint_resume_artifact_path` 记录恢复时可见产物路径
+  - retry acceptance 已切到结构化断言：`verification_recovered` 与 `artifact_recovered` 由上述字段是否为空判定
 - 当前证据已经足以证明：
   - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
   - 恢复后会重新回到统一主循环

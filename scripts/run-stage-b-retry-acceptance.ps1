@@ -276,10 +276,17 @@ try {
   $retryCheckpoint = Last-Event -Items $retryLogs -EventType "checkpoint_written"
   $retryTerminal = @($retryLogs | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
   $resumeBoundary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_boundary } else { "" })
+  $resumeVerificationCode = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_code } else { "" })
+  $resumeVerificationSummary = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_verification_summary } else { "" })
+  $resumeArtifactPath = $(if ($resumed.Count -gt 0) { $resumed[0].metadata.checkpoint_resume_artifact_path } else { "" })
   $boundaryRecovered = -not [string]::IsNullOrWhiteSpace($resumeBoundary)
+  $verificationRecovered = -not [string]::IsNullOrWhiteSpace($resumeVerificationCode)
+  $artifactRecovered = -not [string]::IsNullOrWhiteSpace($resumeArtifactPath)
   $passed = (Has-Event -Items $retryLogs -EventType "checkpoint_resumed") -and
     (-not (Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")) -and
     $boundaryRecovered -and
+    $verificationRecovered -and
+    $artifactRecovered -and
     (Has-Event -Items $retryLogs -EventType "checkpoint_written") -and
     $retryTerminal.Count -gt 0
 
@@ -306,6 +313,11 @@ try {
       skipped = $(Has-Event -Items $retryLogs -EventType "checkpoint_resume_skipped")
       boundary_recovered = $boundaryRecovered
       checkpoint_resume_boundary = $resumeBoundary
+      verification_recovered = $verificationRecovered
+      checkpoint_resume_verification_code = $resumeVerificationCode
+      checkpoint_resume_verification_summary = $resumeVerificationSummary
+      artifact_recovered = $artifactRecovered
+      checkpoint_resume_artifact_path = $resumeArtifactPath
       checkpoint_id = $(if ($retryCheckpoint.Count -gt 0) { $retryCheckpoint[0].metadata.checkpoint_id } else { "" })
       terminal_event = $(if ($retryTerminal.Count -gt 0) { $retryTerminal[0] } else { $null })
     }

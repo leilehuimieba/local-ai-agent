@@ -229,6 +229,9 @@ fn resume_strategy(request: &RunRequest) -> String {
 
 fn resumed_event(request: &RunRequest, checkpoint: &RunCheckpoint) -> RunEvent {
     let boundary = resumed_boundary(checkpoint);
+    let verification_code = resumed_verification_code(checkpoint);
+    let verification_summary = resumed_verification_summary(checkpoint);
+    let artifact_path = resumed_artifact_path(checkpoint);
     make_event(
         request,
         0,
@@ -245,6 +248,9 @@ fn resumed_event(request: &RunRequest, checkpoint: &RunCheckpoint) -> RunEvent {
             &checkpoint.resume_stage,
             &checkpoint.resume_reason,
             &boundary,
+            &verification_code,
+            &verification_summary,
+            &artifact_path,
         ),
     )
 }
@@ -263,6 +269,9 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
             "Analyze",
             "resume_skipped",
             "",
+            "",
+            "",
+            "",
         ),
     )
 }
@@ -273,16 +282,38 @@ fn resume_metadata(
     stage: &str,
     reason: &str,
     boundary: &str,
+    verification_code: &str,
+    verification_summary: &str,
+    artifact_path: &str,
 ) -> BTreeMap<String, String> {
     let mut metadata = BTreeMap::new();
     metadata.insert("checkpoint_id".to_string(), checkpoint_id.to_string());
     metadata.insert("checkpoint_resume_status".to_string(), status.to_string());
     metadata.insert("checkpoint_stage".to_string(), stage.to_string());
     metadata.insert("checkpoint_resume_reason".to_string(), reason.to_string());
-    if !boundary.is_empty() {
-        metadata.insert("checkpoint_resume_boundary".to_string(), boundary.to_string());
-    }
+    insert_if_present(&mut metadata, "checkpoint_resume_boundary", boundary);
+    insert_if_present(
+        &mut metadata,
+        "checkpoint_resume_verification_code",
+        verification_code,
+    );
+    insert_if_present(
+        &mut metadata,
+        "checkpoint_resume_verification_summary",
+        verification_summary,
+    );
+    insert_if_present(
+        &mut metadata,
+        "checkpoint_resume_artifact_path",
+        artifact_path,
+    );
     metadata
+}
+
+fn insert_if_present(metadata: &mut BTreeMap<String, String>, key: &str, value: &str) {
+    if !value.is_empty() {
+        metadata.insert(key.to_string(), value.to_string());
+    }
 }
 
 fn resumed_boundary(checkpoint: &RunCheckpoint) -> String {
@@ -303,8 +334,15 @@ fn event_boundary(event: &RunEvent) -> Option<String> {
     ) {
         return None;
     }
-    let mut parts = vec![format!("stage={}", event.stage), format!("event={}", event.event_type)];
-    if let Some(step) = event.metadata.get("next_step").filter(|step| !step.is_empty()) {
+    let mut parts = vec![
+        format!("stage={}", event.stage),
+        format!("event={}", event.event_type),
+    ];
+    if let Some(step) = event
+        .metadata
+        .get("next_step")
+        .filter(|step| !step.is_empty())
+    {
         parts.push(format!("next_step={step}"));
     }
     Some(parts.join(";"))
@@ -328,6 +366,84 @@ fn confirmation_boundary(checkpoint: &RunCheckpoint) -> Option<String> {
                 event.stage, event.event_type
             )
         })
+}
+
+fn resumed_verification_code(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(event_verification_code)
+        .unwrap_or_default()
+}
+
+fn resumed_verification_summary(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(event_verification_summary)
+        .unwrap_or_default()
+}
+
+fn resumed_artifact_path(checkpoint: &RunCheckpoint) -> String {
+    checkpoint
+        .response
+        .events
+        .iter()
+        .rev()
+        .find_map(event_artifact_path)
+        .unwrap_or_default()
+}
+
+fn event_verification_code(event: &RunEvent) -> Option<String> {
+    event
+        .verification_snapshot
+        .as_ref()
+        .map(|snapshot| snapshot.code.clone())
+        .filter(|code| !code.is_empty())
+        .or_else(|| {
+            event
+                .metadata
+                .get("verification_code")
+                .cloned()
+                .filter(|code| !code.is_empty())
+        })
+}
+
+fn event_verification_summary(event: &RunEvent) -> Option<String> {
+    event
+        .verification_snapshot
+        .as_ref()
+        .map(|snapshot| snapshot.summary.clone())
+        .filter(|summary| !summary.is_empty())
+        .or_else(|| {
+            event
+                .metadata
+                .get("verification_summary")
+                .cloned()
+                .filter(|summary| !summary.is_empty())
+        })
+}
+
+fn event_artifact_path(event: &RunEvent) -> Option<String> {
+    event
+        .metadata
+        .get("artifact_path")
+        .cloned()
+        .filter(|path| !path.is_empty())
+        .or_else(|| snapshot_artifact_path(event))
+}
+
+fn snapshot_artifact_path(event: &RunEvent) -> Option<String> {
+    event.verification_snapshot.as_ref().and_then(|snapshot| {
+        snapshot
+            .evidence
+            .iter()
+            .find_map(|line| line.strip_prefix("artifact=").map(str::to_string))
+    })
 }
 
 fn checkpoint_resume_profile(response: &RuntimeRunResponse) -> (bool, String, String) {
@@ -457,7 +573,9 @@ mod tests {
                 .metadata
                 .get("checkpoint_resume_boundary")
                 .map(String::as_str),
-            Some("stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续")
+            Some(
+                "stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续"
+            )
         );
         let _ = fs::remove_dir_all(root);
     }
@@ -479,6 +597,31 @@ mod tests {
             loaded
                 .as_ref()
                 .is_some_and(|item| item.resume_stage == "Execute")
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn carries_verification_fields_on_retry_resume_event() {
+        let root = test_root("carries_verification_fields_on_retry_resume_event");
+        let request = sample_request(&root);
+        let response = with_runtime_checkpoint(&request, retryable_failure_verified_response(&request));
+        let mut resumed = request.clone();
+        resumed.resume_from_checkpoint_id = response.result.checkpoint_id.unwrap_or_default();
+        resumed.resume_strategy = "retry_failure".to_string();
+        let event = checkpoint_resume_event(&resumed).expect("resume event");
+        assert_eq!(event.event_type, "checkpoint_resumed");
+        assert_eq!(
+            event.metadata.get("checkpoint_resume_verification_code"),
+            Some(&"verification_failed".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("checkpoint_resume_verification_summary"),
+            Some(&"验证失败：命令执行失败".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("checkpoint_resume_artifact_path"),
+            Some(&"D:/repo/command.txt".to_string())
         );
         let _ = fs::remove_dir_all(root);
     }
@@ -641,6 +784,22 @@ mod tests {
             },
             confirmation_request: None,
         }
+    }
+
+    fn retryable_failure_verified_response(request: &RunRequest) -> RuntimeRunResponse {
+        let mut response = retryable_failure_response(request);
+        response.events[1]
+            .metadata
+            .insert("verification_code".to_string(), "verification_failed".to_string());
+        response.events[1].metadata.insert(
+            "verification_summary".to_string(),
+            "验证失败：命令执行失败".to_string(),
+        );
+        response
+            .events[1]
+            .metadata
+            .insert("artifact_path".to_string(), "D:/repo/command.txt".to_string());
+        response
     }
 
     fn sample_event(
