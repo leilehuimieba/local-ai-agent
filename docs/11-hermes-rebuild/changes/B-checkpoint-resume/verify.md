@@ -540,10 +540,8 @@
   - `runtime-core/contracts.rs`、`gateway/internal/contracts/contracts.go`、`frontend/src/shared/contracts/runtime.ts` 均包含 `ToolCallSnapshot.arguments_json`
   - `runtime-core/events.rs` 已按 `tool_arguments_json -> arguments_json` 映射，恢复动作反解继续可用
 - 当前证据已经足以证明：
-  - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复
-  - 恢复后会重新回到统一主循环
-- 当前证据已经足以证明：
-  - 运行时已具备“短期状态 + 最近已选动作 + 验证快照摘要 + 执行中间态摘要”四层恢复能力
-- 当前证据还不能证明：
-  - 运行时已经恢复到“工具执行中的精确中断边界”
-  - 执行阶段中间态或验证前快照已经被完整复用
+  - `after_confirmation` 与 `retryable_failure` 两条路径都能命中恢复并回到统一主循环。
+  - 运行时已具备“短期状态 + 最近已选动作 + 验证快照摘要 + 执行中间态摘要”恢复能力。
+  - 批量强校验口径下，Gate-B 相关指标可由结构化报告直接判定且已达标（`gate_b.ready=true`）。
+- 任务口径说明：
+  - 本 change 按 `tasks.md` 为收口基准，当前任务列表均已完成。
