@@ -28,6 +28,59 @@
 8. `run-stage-e-entry1-acceptance.ps1`
    - 用途：阶段 E `E-02` 网关首入口会话协议验收（`chat/run` 协议字段 + `logs` 会话过滤）。
    - 证据输出：`tmp/stage-e-entry1/latest.json`。
+9. `run-stage-e-consistency-acceptance.ps1`
+   - 用途：阶段 E `E-04` 跨入口一致性验收（CLI/runtime 与 gateway 同 `run_id` 锚点对比）。
+   - 差异分组：报告新增 `identity_diff_summary` 与 `identity_diff_groups`，按 `run_id/session_id/trace_id` 输出冲突与缺失计数，并给出 `severity`（`ok/warn/error`）。
+   - 证据输出：`tmp/stage-e-consistency/latest.json`。
+10. `run-stage-e-entry-failure-acceptance.ps1`
+   - 用途：阶段 E `E-05` 失败样本验收（gateway 入口在 runtime 不可达时的失败收口链）。
+   - 证据输出：`tmp/stage-e-entry-failure/latest.json`。
+11. `run-stage-e-gate-batch.ps1`
+   - 用途：阶段 E `E-G1` Gate-E 批量验收（聚合 E-02/E-04/E-05 三条链路并输出门禁结论）。
+   - 证据输出：`tmp/stage-e-batch/latest.json`。
+12. `run-stage-e-cli-history-acceptance.ps1`
+   - 用途：阶段 E `E-01` CLI/TUI 交互切片 1（历史视图）后端验收。
+   - 证据输出：`tmp/stage-e-cli-history/latest.json`。
+13. `run-stage-e-cli-cancel-acceptance.ps1`
+   - 用途：阶段 E `E-01` CLI/TUI 交互切片 2（中断接口）后端验收。
+   - 证据输出：`tmp/stage-e-cli-cancel/latest.json`。
+14. `install-local-agent.ps1`
+   - 用途：阶段 F `F-01` 安装/升级主路径实现（构建并部署到安装目录，支持 install/upgrade 两种模式）。
+   - 输出：安装结果 JSON（stdout）。
+15. `run-stage-f-install-acceptance.ps1`
+   - 用途：阶段 F `F-01` 安装与升级验收（安装 -> 启动校验 -> 升级 -> 启动校验）。
+   - 证据输出：`tmp/stage-f-install/latest.json`。
+16. `doctor.ps1`
+   - 用途：阶段 F `F-02` 核心诊断命令（依赖、配置、端口、前端产物、服务健康、日志可写）。
+   - 输出：诊断结果 JSON（stdout，可选落盘）。
+17. `run-stage-f-doctor-acceptance.ps1`
+   - 用途：阶段 F `F-02` `doctor` 命令验收（拉起 runtime/gateway 后执行 doctor 并校验字段）。
+   - 证据输出：`tmp/stage-f-doctor/latest.json`。
+18. `run-stage-f-rc-acceptance.ps1`
+   - 用途：阶段 F `F-04` 发布候选回归与故障注入聚合验收（组合 F-01/F-02 与核心入口链路样本）。
+   - 证据输出：`tmp/stage-f-rc/latest.json`。
+19. `run-stage-f-windows-acceptance.ps1`
+   - 用途：阶段 F `F-05` Windows 新机 10 分钟验证（安装后启动并完成首任务，校验总耗时门槛）。
+   - 证据输出：`tmp/stage-f-windows/latest.json`、`tmp/stage-f-windows/latest.md`。
+20. `run-stage-f-gate-acceptance.ps1`
+   - 用途：阶段 F `F-G1` Gate-F 评审聚合验收（汇总 F-01/F-02/F-04/F-05 与阻塞状态检查）。
+   - 证据输出：`tmp/stage-f-gate/latest.json`。
+21. `run-stage-backend-reverify-pack.ps1`
+   - 用途：后端一键复核包（聚合 E-01 历史/中断、E-04 跨入口一致性与 F-G1 门禁证据）。
+   - 门禁参数：支持 `-StrictGate`、`-MaxEvidenceAgeMinutes`、`-ReleaseWindow`（30 分钟阈值），用于证据时效与关键字段完整性严格校验。
+   - 审计参数：支持 `-EmitWarningAuditRecord`、`-WarningAuditOutPath`、`-WarningAuditExecutor`、`-WarningAuditTrackingId`、`-WarningAuditDueAt`、`-RequireWarningAuditReady`，可在同一次复核中生成 warning 审计快照并执行字段完整性校验。
+   - 接口证据：透传 `identity_diff_summary` 与 `identity_diff_groups`，用于前端直接展示 run/session/trace 一致性差异。
+   - 告警分层：输出 `non_blocking_warnings`（与 `failed_checks` 并列），承接 `severity=warn` 的非阻断告警，并提供 `details.title/description/priority/ui_hint/action_label/action_command` 供前端直连渲染。
+   - 失败定位：报告输出 `reason_codes`、`suggestions`、`recommended_commands_minimal`、`recommended_commands_full_refresh`（兼容保留 `recommended_commands`）。
+   - 命令策略：`recommended_commands_minimal` 按失败项定向修复；`recommended_commands_full_refresh` 提供一键全刷新严格校验命令。
+   - 证据输出：`tmp/stage-backend-reverify/latest.json`。
+22. `run-stage-backend-reverify-warning-sample.ps1`
+   - 用途：生成后端复核包非阻断告警样本（`warning-sample.json`），并自动恢复 `latest.json` 到标准通过态。
+   - 证据输出：`tmp/stage-backend-reverify/warning-sample.json`。
+23. `run-stage-f-warning-audit-record.ps1`
+   - 用途：把后端复核包报告转成发布/回滚统一告警审计记录（`pass/warn/blocked` 三态决策）。
+   - 规则：`warn` 状态要求补齐 `Executor/TrackingId/DueAt`，否则 `ready_for_release=false`。
+   - 证据输出：`tmp/stage-backend-reverify/warning-audit-*.json`。
 
 ## 2. 同步命令示例
 
