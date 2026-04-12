@@ -6,7 +6,8 @@
 
 ## 当前活跃 change
 
-1. [E-frontend-experience-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md)（2026-04-12 阶段 E 主推进，前端体验与确认链字段消费对齐）
+1. [E-gateway-session-entry1](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gateway-session-entry1/status.md)（2026-04-12 阶段 E 后端主推进，网关首入口会话协议收口）
+2. [E-frontend-experience-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md)（2026-04-12 用户并行推进前端体验窗口，暂不在本轮实施）
 
 ## 最近收口
 
