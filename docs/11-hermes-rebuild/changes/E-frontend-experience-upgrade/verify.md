@@ -42,6 +42,17 @@
 4. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 4）
+
+1. 文案映射单一来源可用
+   - `chatResultModel` 提供 `readPendingHeadline/readPendingBody/readPendingAdvice` 三个统一映射函数。
+2. 主线程文案复用映射
+   - `ChatPanel` 的等待首事件记录改为调用统一映射函数，不再保留本地同义映射。
+3. 调查层文案复用映射
+   - `BottomPanel` 的等待首事件摘要与建议改为调用统一映射函数，不再保留本地同义映射。
+4. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：

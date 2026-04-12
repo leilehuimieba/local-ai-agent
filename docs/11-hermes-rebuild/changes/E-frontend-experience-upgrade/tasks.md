@@ -55,3 +55,14 @@
   完成判据：存在确认、失败或历史事件时，进入任务页自动展开调查层，减少手动展开成本。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 4（主线程/调查层状态文案单一映射）
+
+- [x] 统一等待首事件文案映射函数
+  完成判据：在 `chatResultModel` 提供主线程与调查层共用的 `readPendingHeadline/readPendingBody/readPendingAdvice`。
+- [x] 主线程改为消费统一映射
+  完成判据：`ChatPanel` 不再保留本地等待态文案函数，改为调用统一映射。
+- [x] 调查层改为消费统一映射
+  完成判据：`BottomPanel` 不再保留本地等待态文案函数，改为调用统一映射。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

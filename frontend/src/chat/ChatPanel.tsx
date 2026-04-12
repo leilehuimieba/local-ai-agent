@@ -5,6 +5,9 @@ import {
   buildAssistantResult,
   formatEntryIndex,
   getStreamLiveLabel,
+  readPendingAdvice,
+  readPendingBody,
+  readPendingHeadline,
   readFailureAdvice,
   readFailureBody,
   readRunStateBody,
@@ -319,21 +322,10 @@ function WaitingForFirstEventRecord(props: {
     <StateRecord
       state="running"
       title={readPendingHeadline(props.runState)}
-      body={readPendingBody(props.taskTitle, props.currentRunId)}
-      advice="继续等待首个事件；事件到达后主线程和调查层会同步刷新。"
+      body={readPendingBody({ currentRunId: props.currentRunId, taskTitle: props.taskTitle })}
+      advice={readPendingAdvice(props.runState)}
     />
   );
-}
-
-function readPendingHeadline(runState: RunState) {
-  if (runState === "resuming") return "任务恢复中，等待首个事件";
-  if (runState === "streaming") return "任务运行中，等待首个事件";
-  return "任务已提交，等待首个事件";
-}
-
-function readPendingBody(taskTitle: string, currentRunId: string) {
-  if (!currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流。`;
-  return `任务“${taskTitle}”已进入运行 ${currentRunId}，正在等待第一条事件。`;
 }
 
 function readStateBadge(state: "failed" | "running" | "completed") {

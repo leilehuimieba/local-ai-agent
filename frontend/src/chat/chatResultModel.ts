@@ -89,6 +89,26 @@ export function readRunStateNextStep(args: {
   return "进入任务页并提交明确目标。";
 }
 
+export function readPendingHeadline(runState: RunState | undefined) {
+  if (runState === "resuming") return "任务恢复中，等待首个事件";
+  if (runState === "streaming") return "任务运行中，等待首个事件";
+  return "任务已提交，等待首个事件";
+}
+
+export function readPendingBody(args: {
+  currentRunId?: string;
+  taskTitle?: string;
+}) {
+  const taskTitle = args.taskTitle || "当前任务";
+  if (!args.currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流并等待第一条事件。`;
+  return `任务“${taskTitle}”已进入运行 ${args.currentRunId}，正在等待第一条事件。`;
+}
+
+export function readPendingAdvice(runState: RunState | undefined) {
+  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
+  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
+}
+
 export function formatEntryIndex(index: number) {
   return index < 10 ? `0${index}` : String(index);
 }

@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
-import { readRunStateBody, readRunStateHeadline, readRunStateNextStep } from "../chat/chatResultModel";
+import {
+  readPendingAdvice,
+  readPendingBody,
+  readPendingHeadline,
+  readRunStateBody,
+  readRunStateHeadline,
+  readRunStateNextStep,
+} from "../chat/chatResultModel";
 import { EventTimeline } from "../events/EventTimeline";
 import { RunState } from "../runtime/state";
 import { RunEvent } from "../shared/contracts";
 import { MetaGrid, SectionHeader } from "../ui/primitives";
 
 type BottomPanelProps = {
+  currentRunId: string;
   isOpen: boolean;
   events: RunEvent[];
   currentTaskTitle: string;
@@ -123,7 +131,13 @@ function BottomPanelBody(props: {
   progress: ReturnType<typeof useRunCycleProgress>;
 }) {
   if (shouldShowPendingInvestigation(props.props.runState, props.progress.hasNewEvent)) {
-    return <PendingInvestigationState runState={props.props.runState} taskTitle={props.props.currentTaskTitle} />;
+    return (
+      <PendingInvestigationState
+        currentRunId={props.props.currentRunId}
+        runState={props.props.runState}
+        taskTitle={props.props.currentTaskTitle}
+      />
+    );
   }
   if (shouldShowFailedInvestigation(props.props.runState, props.progress.hasNewEvent)) {
     return <FailedInvestigationState submitError={props.props.submitError} />;
@@ -180,12 +194,17 @@ function FocusLane(props: {
   );
 }
 
-function PendingInvestigationState(props: { taskTitle: string; runState: RunState }) {
+function PendingInvestigationState(props: {
+  currentRunId: string;
+  taskTitle: string;
+  runState: RunState;
+}) {
+  const pendingBody = readPendingBody({ currentRunId: props.currentRunId, taskTitle: props.taskTitle });
   return (
     <div id="investigation-panel-body" className="bottom-panel-body investigation-board">
       <section className="investigation-lane">
-        <LaneHeader title="事件流" text={readPendingSummary(props.taskTitle)} />
-        <StateCard title={readPendingHeadline(props.runState)} body={readPendingSummary(props.taskTitle)} advice={readPendingAdvice(props.runState)} />
+        <LaneHeader title="事件流" text={pendingBody} />
+        <StateCard title={readPendingHeadline(props.runState)} body={pendingBody} advice={readPendingAdvice(props.runState)} />
       </section>
       <aside className="inspection-lane">
         <LaneHeader title="焦点详情" text="首个事件返回前，焦点区保留等待态。" />
@@ -380,7 +399,7 @@ function readBottomPanelSummary(
     return readRunStateBody({ runState: "failed", submitError: props.submitError });
   }
   if (isBusyRunState(props.runState) && !progress.hasNewEvent) {
-    return readPendingSummary(props.currentTaskTitle);
+    return readPendingBody({ currentRunId: props.currentRunId, taskTitle: props.currentTaskTitle });
   }
   if (props.events.length === 0) return "任务进入运行后，这里会显示事件过程。";
   if (props.runState === "failed" || props.runState === "completed" || props.runState === "awaiting_confirmation") {
@@ -407,21 +426,6 @@ function readInspectionCopy(event: RunEvent) {
 function readToolLabel(event: RunEvent) {
   if (event.tool_display_name && event.tool_category) return `${event.tool_display_name} / ${event.tool_category}`;
   return event.tool_display_name || event.tool_name || event.tool_category || "未附带";
-}
-
-function readPendingHeadline(runState: RunState) {
-  if (runState === "resuming") return "任务恢复中，等待首个事件";
-  if (runState === "streaming") return "任务运行中，等待首个事件";
-  return "任务已提交，等待首个事件";
-}
-
-function readPendingSummary(taskTitle: string) {
-  return `任务“${taskTitle || "当前任务"}”已提交，系统正在建立运行流并等待第一条事件。`;
-}
-
-function readPendingAdvice(runState: RunState) {
-  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
-  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
 }
 
 function readEventCountLabel(totalCount: number, progress: ReturnType<typeof useRunCycleProgress>) {

@@ -501,6 +501,7 @@ function getTopBarProps(app: AppModel) {
 
 function getBottomPanelProps(app: AppModel) {
   return {
+    currentRunId: app.runtime.currentRunId,
     currentTaskTitle: app.runtime.currentTaskTitle,
     events: app.runtime.events,
     isOpen: app.view.bottomPanelOpen,
