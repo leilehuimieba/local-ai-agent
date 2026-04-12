@@ -172,7 +172,10 @@ pub(crate) mod testkit {
         )
     }
 
-    fn sample_checkpoint_with_event(mut checkpoint: RunCheckpoint, event: RunEvent) -> RunCheckpoint {
+    fn sample_checkpoint_with_event(
+        mut checkpoint: RunCheckpoint,
+        event: RunEvent,
+    ) -> RunCheckpoint {
         checkpoint.response.events.push(event);
         checkpoint
     }
@@ -185,5 +188,4 @@ pub(crate) mod testkit {
             "trace-1".to_string(),
         )
     }
-
 }

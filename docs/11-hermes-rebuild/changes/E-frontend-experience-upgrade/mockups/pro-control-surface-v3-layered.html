@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>前端重设效果稿 v3 - 分层职责版</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --soft: #f1f5fb;
+      --line: #dbe4ef;
+      --text: #152230;
+      --muted: #607386;
+      --accent: #116b78;
+      --accent-soft: #d9eef2;
+      --running: #116b78;
+      --awaiting: #916000;
+      --failed: #b42318;
+      --done: #116b49;
+      --shadow: 0 12px 30px rgba(16, 38, 61, 0.08);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Segoe UI", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(920px 480px at 103% -20%, #d8ecf6 0%, transparent 58%),
+        radial-gradient(780px 420px at -10% 100%, #e4edf9 0%, transparent 56%),
+        var(--bg);
+    }
+
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .topbar {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .brand { display: grid; gap: 2px; min-width: 0; }
+    .brand strong { font-size: 19px; letter-spacing: .01em; }
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      border-color: rgba(17,107,120,.45);
+      background: var(--accent-soft);
+      color: #0b5863;
+      font-weight: 600;
+    }
+
+    .status-row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--soft);
+      white-space: nowrap;
+    }
+
+    .view { display: none; }
+    .view.active { display: grid; gap: 12px; animation: rise .25s ease both; }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .kicker {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1,h2,h3,p { margin: 0; }
+    .stack { display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+    .layout-2 {
+      display: grid;
+      grid-template-columns: minmax(0,1.65fr) minmax(300px,.95fr);
+      gap: 12px;
+    }
+
+    .layout-2 .aside { min-width: 0; }
+    .layout-2 .main { min-width: 0; }
+
+    .hero {
+      border: 1px solid rgba(17,107,120,.28);
+      border-radius: var(--radius-md);
+      background: linear-gradient(130deg,#f4fbfd 0%,#ecf6fb 70%,#eef4fb 100%);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hero h1 {
+      max-width: 23ch;
+      line-height: 1.25;
+      font-size: 30px;
+      font-family: "Sora","Segoe UI","PingFang SC",sans-serif;
+    }
+
+    .hero p { color: var(--muted); line-height: 1.58; }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font: inherit;
+      color: var(--text);
+      resize: vertical;
+    }
+
+    .primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f4feff;
+      font-weight: 600;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 8px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #f8fbff;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .card strong { font-size: 14px; }
+    .card span { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+    .meta {
+      display: grid;
+      gap: 7px;
+    }
+
+    .meta-item {
+      display: grid;
+      grid-template-columns: 92px minmax(0,1fr);
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      background: #fff;
+    }
+
+    .meta-item strong { color: var(--muted); font-size: 12px; }
+
+    .state-rail {
+      display: grid;
+      grid-template-columns: repeat(5,minmax(0,1fr));
+      gap: 8px;
+    }
+
+    .stage {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      background: var(--soft);
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stage.active {
+      border-color: rgba(17,107,120,.45);
+      background: #e4f3f6;
+      color: #0b5a66;
+      font-weight: 600;
+    }
+
+    .thread {
+      display: grid;
+      gap: 8px;
+      max-height: 50vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .msg,.state-card,.evidence-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+      padding: 11px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .msg.user { background: #f7fbff; }
+
+    .msg-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .badge {
+      width: fit-content;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .running { color: #0b5a66; border-color: rgba(17,107,120,.4); background: #d9edf2; }
+    .awaiting { color: #684600; border-color: rgba(145,96,0,.4); background: #fff0cc; }
+    .failed { color: #7b1f16; border-color: rgba(180,35,24,.4); background: #fde4e3; }
+    .done { color: #0b5b3b; border-color: rgba(17,107,73,.4); background: #daf2e6; }
+
+    .layer-note {
+      border: 1px dashed rgba(17,107,120,.35);
+      border-radius: var(--radius-sm);
+      background: #f2f9fb;
+      padding: 9px;
+      font-size: 13px;
+      color: #2b5561;
+    }
+
+    .evidence-drawer { display: none; gap: 8px; }
+    .evidence-drawer.open { display: grid; animation: rise .2s ease both; }
+
+    .history-layout {
+      display: grid;
+      grid-template-columns: minmax(260px,.9fr) minmax(0,1.2fr);
+      gap: 12px;
+    }
+
+    .timeline-list,.setting-grid { display: grid; gap: 8px; }
+
+    .timeline-item,.setting-item {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .setting-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px) {
+      .topbar { grid-template-columns: 1fr; }
+      .status-row { justify-content: flex-start; }
+      .layout-2,.history-layout { grid-template-columns: 1fr; }
+      .quick-grid,.setting-grid,.state-rail { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <strong>本地智能体 · 分层职责版</strong>
+        <span>上下文层 / 主执行层 / 证据层 / 管理层，互不抢焦点</span>
+      </div>
+      <nav class="tabs">
+        <button class="active" data-page="home">首页</button>
+        <button data-page="task">任务页</button>
+        <button data-page="history">记录页</button>
+        <button data-page="settings">设置页</button>
+      </nav>
+      <div class="status-row">
+        <span class="chip">模型 GPT-5.4</span>
+        <span class="chip">观察模式</span>
+        <span class="chip">Runtime 正常</span>
+      </div>
+    </header>
+
+    <section id="home" class="view active">
+      <div class="layout-2">
+        <main class="panel stack main">
+          <div class="hero">
+            <span class="kicker">主执行层（首页仅启动/恢复）</span>
+            <h1>只做两件事：开始任务，或继续上次任务。</h1>
+            <p>首页不承接主线程推进，不展示复杂日志，只保留决策必需信息。</p>
+            <textarea placeholder="输入你要完成的任务目标..."></textarea>
+            <div class="row">
+              <span class="chip">最近任务：排查构建失败（可恢复）</span>
+              <button class="primary">开始任务</button>
+            </div>
+          </div>
+          <div class="quick-grid">
+            <article class="card"><strong>修复失败</strong><span>定位根因并最小修复。</span></article>
+            <article class="card"><strong>执行排错</strong><span>跑命令并解释日志。</span></article>
+            <article class="card"><strong>梳理进度</strong><span>根据 docs 输出当前状态。</span></article>
+          </div>
+        </main>
+        <aside class="panel stack aside">
+          <span class="kicker">上下文层（轻量）</span>
+          <div class="meta">
+            <div class="meta-item"><strong>当前状态</strong><span>等待首次任务</span></div>
+            <div class="meta-item"><strong>阻塞</strong><span>无阻塞，提交后进入任务页。</span></div>
+            <div class="meta-item"><strong>下一步</strong><span>输入目标后点击开始任务。</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="task" class="view">
+      <div class="layout-2">
+        <main class="panel stack main">
+          <span class="kicker">主执行层（唯一焦点）</span>
+          <h2>当前任务：排查构建失败并最小修复</h2>
+          <div class="state-rail" id="state-rail">
+            <div class="stage active">提交后等待</div>
+            <div class="stage">运行中</div>
+            <div class="stage">待确认</div>
+            <div class="stage">失败</div>
+            <div class="stage">完成</div>
+          </div>
+          <div class="row">
+            <div class="layer-note">规则：先看状态卡与下一步动作，再决定是否展开证据层。</div>
+            <div class="tabs">
+              <button data-state="submitting">等待</button>
+              <button data-state="running">运行</button>
+              <button data-state="awaiting">确认</button>
+              <button data-state="failed">失败</button>
+              <button data-state="done">完成</button>
+            </div>
+          </div>
+          <div class="thread">
+            <article class="msg user">
+              <div class="msg-head"><strong>任务输入</strong><span>01</span></div>
+              <p>帮我排查构建失败，只做最小改动并保留回退路径。</p>
+            </article>
+            <article class="state-card">
+              <span id="main-badge" class="badge running">运行中</span>
+              <strong id="main-title">任务已提交，等待首个事件</strong>
+              <p id="main-body">系统正在建立运行流，首个事件到达后将自动切换为运行中。</p>
+              <p id="main-next" style="color: var(--muted);">下一步动作：保持当前页面等待首个事件。</p>
+            </article>
+            <article class="msg">
+              <div class="msg-head"><strong>结果位</strong><span>02</span></div>
+              <p>完成时显示最终结论；失败时显示恢复建议，不回落空态。</p>
+            </article>
+          </div>
+        </main>
+        <aside class="panel stack aside">
+          <span class="kicker">上下文层（任务页侧栏）</span>
+          <div class="meta">
+            <div class="meta-item"><strong>当前阶段</strong><span id="side-stage">提交后等待</span></div>
+            <div class="meta-item"><strong>风险提示</strong><span id="side-risk">无阻塞，高风险动作会进入确认。</span></div>
+            <div class="meta-item"><strong>下一步</strong><span id="side-next">等待首个事件。</span></div>
+          </div>
+          <button id="toggle-evidence">展开证据层</button>
+        </aside>
+      </div>
+      <section id="evidence" class="panel evidence-drawer">
+        <span class="kicker">证据层（按需展开）</span>
+        <div class="quick-grid">
+          <article class="evidence-card"><strong>事件流</strong><p>run_queued → tool_started → verification。</p></article>
+          <article class="evidence-card"><strong>自动跟随</strong><p>默认跟随最新；手动查看历史可回到最新。</p></article>
+          <article class="evidence-card"><strong>验证摘要</strong><p>已通过 2/3 检查，剩余构建验证进行中。</p></article>
+        </div>
+      </section>
+    </section>
+
+    <section id="history" class="view">
+      <div class="history-layout">
+        <section class="panel stack">
+          <span class="kicker">管理层（复盘入口）</span>
+          <h3>历史时间线</h3>
+          <div class="timeline-list">
+            <article class="timeline-item"><strong>2026-04-12 10:20</strong><span>构建失败排查（失败）</span></article>
+            <article class="timeline-item"><strong>2026-04-12 09:40</strong><span>风险确认流程（完成）</span></article>
+            <article class="timeline-item"><strong>2026-04-11 18:10</strong><span>文档索引收口（完成）</span></article>
+          </div>
+        </section>
+        <section class="panel stack">
+          <span class="kicker">证据层（复盘详情）</span>
+          <h3>详情与证据</h3>
+          <div class="meta">
+            <div class="meta-item"><strong>失败原因</strong><span>依赖缺失导致 `npm run build` 失败。</span></div>
+            <div class="meta-item"><strong>验证结果</strong><span>修复后构建通过，需补窄屏手动复验。</span></div>
+            <div class="meta-item"><strong>产物路径</strong><span>frontend/dist/</span></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="settings" class="view">
+      <section class="panel stack">
+        <span class="kicker">管理层（运行控制）</span>
+        <h3>设置页只做控制，不做任务推进</h3>
+        <div class="setting-grid">
+          <article class="setting-item"><strong>模型</strong><span>GPT-5.4（可切换）</span></article>
+          <article class="setting-item"><strong>模式</strong><span>观察模式（可切换）</span></article>
+          <article class="setting-item"><strong>工作区</strong><span>本地智能体</span></article>
+          <article class="setting-item"><strong>风险策略</strong><span>高风险动作需确认</span></article>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    const pageButtons = document.querySelectorAll("[data-page]");
+    const pages = {
+      home: document.getElementById("home"),
+      task: document.getElementById("task"),
+      history: document.getElementById("history"),
+      settings: document.getElementById("settings")
+    };
+
+    pageButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        pageButtons.forEach((item) => item.classList.remove("active"));
+        btn.classList.add("active");
+        const key = btn.getAttribute("data-page");
+        Object.entries(pages).forEach(([name, node]) => node.classList.toggle("active", name === key));
+      });
+    });
+
+    const stageNodes = document.querySelectorAll("#state-rail .stage");
+    const stateButtons = document.querySelectorAll("[data-state]");
+    const badge = document.getElementById("main-badge");
+    const title = document.getElementById("main-title");
+    const body = document.getElementById("main-body");
+    const next = document.getElementById("main-next");
+    const sideStage = document.getElementById("side-stage");
+    const sideRisk = document.getElementById("side-risk");
+    const sideNext = document.getElementById("side-next");
+
+    const stateModel = {
+      submitting: {
+        idx: 0,
+        badge: ["running", "运行中"],
+        title: "任务已提交，等待首个事件",
+        body: "系统正在建立运行流，首个事件到达后将自动切换为运行中。",
+        next: "下一步动作：保持当前页面等待首个事件。",
+        stage: "提交后等待",
+        risk: "无阻塞，高风险动作会进入确认。"
+      },
+      running: {
+        idx: 1,
+        badge: ["running", "运行中"],
+        title: "任务运行中，主线程持续推进",
+        body: "工具动作和验证快照会持续更新，当前会话正在执行。",
+        next: "下一步动作：观察最近动作，必要时展开证据层。",
+        stage: "运行中",
+        risk: "当前无阻塞，可继续观察。"
+      },
+      awaiting: {
+        idx: 2,
+        badge: ["awaiting", "待确认"],
+        title: "任务暂停，等待你的确认",
+        body: "检测到高风险动作，确认后系统才会继续执行。",
+        next: "下一步动作：处理确认卡并观察恢复事件。",
+        stage: "待确认",
+        risk: "存在高风险动作，未确认前不执行。"
+      },
+      failed: {
+        idx: 3,
+        badge: ["failed", "失败"],
+        title: "任务失败，需要先恢复",
+        body: "建议先检查运行时连接、模型可用性和任务输入上下文。",
+        next: "下一步动作：按恢复建议重试，不回落普通空态。",
+        stage: "失败",
+        risk: "当前为失败阻塞，需先恢复。"
+      },
+      done: {
+        idx: 4,
+        badge: ["done", "完成"],
+        title: "任务完成，结果已收口",
+        body: "主线程已保留最终结论、关键动作和验证依据。",
+        next: "下一步动作：继续追问或进入记录页复盘。",
+        stage: "完成",
+        risk: "无阻塞，可进入下一轮任务。"
+      }
+    };
+
+    function applyState(key) {
+      const m = stateModel[key];
+      stageNodes.forEach((node, idx) => node.classList.toggle("active", idx === m.idx));
+      badge.className = "badge " + m.badge[0];
+      badge.textContent = m.badge[1];
+      title.textContent = m.title;
+      body.textContent = m.body;
+      next.textContent = m.next;
+      sideStage.textContent = m.stage;
+      sideRisk.textContent = m.risk;
+      sideNext.textContent = m.next.replace("下一步动作：", "");
+    }
+
+    stateButtons.forEach((btn) => {
+      btn.addEventListener("click", () => applyState(btn.getAttribute("data-state")));
+    });
+
+    const toggleEvidence = document.getElementById("toggle-evidence");
+    const evidence = document.getElementById("evidence");
+    let open = false;
+    toggleEvidence.addEventListener("click", () => {
+      open = !open;
+      evidence.classList.toggle("open", open);
+      toggleEvidence.textContent = open ? "收起证据层" : "展开证据层";
+    });
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ pub(crate) struct VerificationOutcome {
 #[derive(Clone, Debug)]
 pub(crate) struct VerificationReport {
     pub outcome: VerificationOutcome,
+    pub tool_elapsed_ms: u64,
 }
 
 pub(crate) fn verify_tool_execution(
@@ -30,7 +31,10 @@ pub(crate) fn verify_tool_execution(
     } else {
         passed_outcome(trace, &policy, evidence)
     };
-    VerificationReport { outcome }
+    VerificationReport {
+        outcome,
+        tool_elapsed_ms: trace.result.elapsed_ms,
+    }
 }
 
 fn passed_outcome(

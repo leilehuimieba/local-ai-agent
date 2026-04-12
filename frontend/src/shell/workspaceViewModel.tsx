@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
 import { readRunStateNextStep } from "../chat/chatResultModel";
 import { ChatPanel } from "../chat/ChatPanel";
@@ -92,6 +92,11 @@ type AppModel = {
   statusLine: string;
   view: HomeViewState;
 };
+type TaskNavEntry = {
+  id: string;
+  title: string;
+  tag: string;
+};
 
 const HOME_EXAMPLES = [
   {
@@ -124,22 +129,24 @@ export function renderWorkspaceContent(app: AppModel) {
 }
 
 export function renderTopBar(app: AppModel) {
+  if (app.view.currentView === "task") return null;
   return <TopBar {...getTopBarProps(app)} />;
 }
 
 export function renderHomeView(app: AppModel) {
   return (
-    <section className="single-view page-container">
+    <section className="single-view page-container home-layout home-layout-home">
       <div className="home-scene">
         <WorkbenchOverview {...app.home} />
       </div>
+      <ContextSidebar {...getSidebarProps(app, "home")} />
     </section>
   );
 }
 
 export function renderBottomPanel(app: AppModel) {
   if (app.view.currentView !== "task") return null;
-  return <BottomPanel {...getBottomPanelProps(app)} />;
+  return null;
 }
 
 export function renderGlobalLayers(app: AppModel) {
@@ -171,11 +178,166 @@ function renderLogsView(app: AppModel) {
 
 function renderTaskView(app: AppModel) {
   return (
-    <section className="single-view page-container home-layout agent-page">
-      <ChatPanel {...getChatPanelProps(app)} />
-      <ContextSidebar {...getSidebarProps(app, "task")} />
+    <section className="single-view page-container task-chat-layout">
+      <TaskLeftNav app={app} />
+      <div className="task-chat-only">
+        <ChatPanel {...getChatPanelProps(app)} />
+      </div>
     </section>
   );
+}
+
+function TaskLeftNav(props: { app: AppModel }) {
+  const [expanded, setExpanded] = useState(true);
+  const [search, setSearch] = useState("");
+  const groups = useMemo(() => buildTaskNavGroups(props.app), [props.app]);
+  const pinnedItems = useMemo(
+    () => filterTaskNavEntries(groups.pinned, search),
+    [groups.pinned, search],
+  );
+  const recentItems = useMemo(
+    () => filterTaskNavEntries(groups.recent, search),
+    [groups.recent, search],
+  );
+  return (
+    <aside className={readTaskLeftNavClass(expanded)} aria-label="任务页导航">
+      <TaskNavRail app={props.app} expanded={expanded} onToggleExpand={() => setExpanded((value) => !value)} />
+      {expanded ? (
+        <TaskNavPanel
+          app={props.app}
+          search={search}
+          pinnedItems={pinnedItems}
+          recentItems={recentItems}
+          onSearchChange={setSearch}
+        />
+      ) : null}
+    </aside>
+  );
+}
+
+function readTaskNavClass(currentView: AppView, nav: AppView) {
+  return currentView === nav ? "task-nav-button icon-only active" : "task-nav-button icon-only";
+}
+
+function readTaskLeftNavClass(expanded: boolean) {
+  return expanded ? "task-left-nav expanded" : "task-left-nav";
+}
+
+function TaskNavRail(props: { app: AppModel; expanded: boolean; onToggleExpand: () => void }) {
+  return (
+    <nav className="task-nav-rail" aria-label="任务快捷导航">
+      <button type="button" className="task-nav-button icon-only" data-label={props.expanded ? "收起侧栏" : "展开侧栏"} aria-label={props.expanded ? "收起侧栏" : "展开侧栏"} onClick={props.onToggleExpand}><span className="task-nav-icon" aria-hidden="true">☰</span></button>
+      <NavIconButton app={props.app} nav="home" icon="⌂" label="首页" />
+      <NavIconButton app={props.app} nav="task" icon="◉" label="任务" />
+      <NavIconButton app={props.app} nav="logs" icon="≡" label="记录" />
+      <NavIconButton app={props.app} nav="settings" icon="⚙" label="设置" />
+      <button type="button" className="task-nav-button icon-only task-nav-action" data-label="新任务" aria-label="新任务" onClick={props.app.actions.openHomeStart}><span className="task-nav-icon" aria-hidden="true">＋</span></button>
+    </nav>
+  );
+}
+
+function NavIconButton(props: { app: AppModel; nav: AppView; icon: string; label: string }) {
+  return (
+    <button
+      type="button"
+      className={readTaskNavClass(props.app.view.currentView, props.nav)}
+      data-label={props.label}
+      aria-label={props.label}
+      onClick={() => props.app.view.setCurrentView(props.nav)}
+    >
+      <span className="task-nav-icon" aria-hidden="true">{props.icon}</span>
+    </button>
+  );
+}
+
+function TaskNavPanel(props: {
+  app: AppModel;
+  search: string;
+  pinnedItems: TaskNavEntry[];
+  recentItems: TaskNavEntry[];
+  onSearchChange: (value: string) => void;
+}) {
+  return (
+    <section className="task-nav-panel">
+      <header className="task-nav-panel-head"><strong>任务</strong><span>会话导航</span></header>
+      <button type="button" className="task-nav-primary" onClick={props.app.actions.openHomeStart}>新建任务</button>
+      <input className="task-nav-search" type="search" value={props.search} placeholder="搜索任务与历史" aria-label="搜索任务与历史" onChange={(event) => props.onSearchChange(event.target.value)} />
+      <TaskNavGroup title="置顶" empty="暂无置顶任务" items={props.pinnedItems} onPick={(value) => props.app.actions.openTaskPageWithDraft(value)} />
+      <TaskNavGroup title="最近" empty="暂无历史记录" items={props.recentItems} onPick={(value) => props.app.actions.openTaskPageWithDraft(value)} />
+    </section>
+  );
+}
+
+function TaskNavGroup(props: { title: string; empty: string; items: TaskNavEntry[]; onPick: (value: string) => void }) {
+  return (
+    <section className="task-nav-group">
+      <header>{props.title}</header>
+      {props.items.length === 0 ? <p className="task-nav-empty">{props.empty}</p> : props.items.map((item) => (
+        <button key={item.id} type="button" className="task-history-item" onClick={() => props.onPick(item.title)}>
+          <span>{item.title}</span>
+          <em>{item.tag}</em>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function buildTaskNavGroups(app: AppModel) {
+  return {
+    pinned: buildPinnedTaskEntries(app),
+    recent: buildRecentTaskEntries(app),
+  };
+}
+
+function buildPinnedTaskEntries(app: AppModel) {
+  const items: TaskNavEntry[] = [];
+  if (hasUsefulTaskTitle(app.runtime.currentTaskTitle)) items.push({ id: "current", title: app.runtime.currentTaskTitle, tag: readRunStateTag(app.runtime.runState) });
+  if (app.runtime.confirmation) items.push({ id: `confirm-${app.runtime.confirmation.confirmation_id || "pending"}`, title: app.runtime.confirmation.action_summary || "待确认操作", tag: "待确认" });
+  if (app.runtime.runState === "failed") items.push({ id: "failed", title: "上次执行失败，建议重试或调整描述", tag: "恢复建议" });
+  return dedupeTaskNavEntries(items).slice(0, 4);
+}
+
+function buildRecentTaskEntries(app: AppModel) {
+  const userItems = app.runtime.messages.filter((item) => item.role === "user").map((item) => ({
+    id: item.id,
+    tag: "历史",
+    title: readTaskNavTitle(item.content),
+  }));
+  const suggestions = HOME_EXAMPLES.map((item) => ({ id: `example-${item.id}`, tag: "模板", title: item.prompt }));
+  const fallback = hasUsefulTaskTitle(app.runtime.currentTaskTitle)
+    ? [{ id: "recent-current", title: app.runtime.currentTaskTitle, tag: "当前" }]
+    : suggestions;
+  return dedupeTaskNavEntries([...userItems, ...fallback]).slice(0, 12);
+}
+
+function filterTaskNavEntries(items: TaskNavEntry[], search: string) {
+  const keyword = search.trim().toLowerCase();
+  if (!keyword) return items;
+  return items.filter((item) => item.title.toLowerCase().includes(keyword) || item.tag.toLowerCase().includes(keyword));
+}
+
+function dedupeTaskNavEntries(items: TaskNavEntry[]) {
+  const map = new Map<string, TaskNavEntry>();
+  items.forEach((item) => {
+    const key = item.title.trim().toLowerCase();
+    if (!key || map.has(key)) return;
+    map.set(key, item);
+  });
+  return [...map.values()];
+}
+
+function readTaskNavTitle(value: string) {
+  const text = value.replace(/\s+/g, " ").trim();
+  if (!text) return "未命名任务";
+  return text.length > 46 ? `${text.slice(0, 46)}…` : text;
+}
+
+function readRunStateTag(runState: string) {
+  if (runState === "streaming" || runState === "resuming") return "运行中";
+  if (runState === "awaiting_confirmation") return "待确认";
+  if (runState === "completed") return "已完成";
+  if (runState === "failed") return "已失败";
+  return "最新";
 }
 
 function renderSettingsView(app: AppModel) {

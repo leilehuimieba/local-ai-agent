@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>前端重设效果稿 v1 - 专业执行台</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --bg-soft: #ecf2f8;
+      --panel: #ffffff;
+      --panel-strong: #eef4fb;
+      --line: #d8e2ef;
+      --text: #162331;
+      --muted: #5f7185;
+      --accent: #0f7c90;
+      --accent-soft: #d9f0f4;
+      --running: #0f7c90;
+      --awaiting: #ad7a00;
+      --failed: #b42318;
+      --done: #127a52;
+      --shadow: 0 14px 40px rgba(17, 44, 71, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Segoe UI", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 620px at 92% -22%, #d6eff4 0%, transparent 56%),
+        radial-gradient(920px 460px at -12% 100%, #d7e8f8 0%, transparent 56%),
+        var(--bg);
+    }
+
+    .app {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .brand strong {
+      font-size: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav button,
+    .state-switch button,
+    .ghost-btn,
+    .primary-btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .nav button.active {
+      background: var(--accent-soft);
+      border-color: rgba(15, 124, 144, 0.45);
+      color: #0b5c6d;
+      font-weight: 600;
+    }
+
+    .status-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .view {
+      display: none;
+      grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.92fr);
+      gap: 14px;
+      animation: rise 320ms ease both;
+    }
+
+    .view.active { display: grid; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .kicker {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .stack { display: grid; gap: 12px; }
+    .stack-lg { display: grid; gap: 14px; }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(15, 124, 144, 0.26);
+      background: linear-gradient(130deg, #f5fbfd 0%, #edf7fb 62%, #ebf3fb 100%);
+    }
+
+    .hero h1 {
+      font-size: 30px;
+      line-height: 1.22;
+      max-width: 24ch;
+      font-family: "Sora", "Trebuchet MS", "PingFang SC", sans-serif;
+    }
+
+    .hero p { color: var(--muted); line-height: 1.6; }
+
+    textarea {
+      width: 100%;
+      min-height: 116px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      font: inherit;
+      color: var(--text);
+      resize: vertical;
+      background: #ffffff;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f3fcfd;
+      font-weight: 600;
+    }
+
+    .ghost-btn {
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: var(--panel-strong);
+      display: grid;
+      gap: 6px;
+      animation: rise 360ms ease both;
+    }
+
+    .mini-card strong { font-size: 15px; }
+    .mini-card span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .meta-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .meta-item {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+    }
+
+    .meta-item strong { color: var(--muted); font-size: 12px; }
+    .meta-item span { line-height: 1.45; }
+
+    .thread {
+      display: grid;
+      gap: 10px;
+      max-height: 56vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .msg {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .msg.user { background: #f8fbff; }
+
+    .msg-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .state-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .running { color: #085969; background: #d9eff4; border: 1px solid rgba(15, 124, 144, 0.45); }
+    .awaiting { color: #6e4c00; background: #fff1cf; border: 1px solid rgba(173, 122, 0, 0.45); }
+    .failed { color: #7a1f17; background: #fde6e4; border: 1px solid rgba(180, 35, 24, 0.42); }
+    .done { color: #0b5e3f; background: #d9f3ea; border: 1px solid rgba(18, 122, 82, 0.42); }
+
+    .state-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .investigation {
+      grid-column: 1 / -1;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .investigation .row {
+      align-items: flex-start;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .event {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 11px;
+      background: #fff;
+      display: grid;
+      gap: 5px;
+    }
+
+    .event small { color: var(--muted); }
+
+    .side-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .side-title h3 { font-size: 18px; }
+
+    .fade {
+      animation: rise 400ms ease both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1200px) {
+      .topbar { grid-template-columns: 1fr; }
+      .status-strip { justify-content: flex-start; }
+      .view { grid-template-columns: 1fr; }
+      .timeline { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .app { padding: 12px; }
+      .hero h1 { font-size: 24px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <strong>本地智能体 · 专业执行台</strong>
+        <span>目标：先看清状态，再决策下一步</span>
+      </div>
+      <nav class="nav" aria-label="页面切换">
+        <button class="active" data-view-target="home">首页</button>
+        <button data-view-target="task">任务页</button>
+      </nav>
+      <div class="status-strip">
+        <span class="chip">模型 GPT-5.4</span>
+        <span class="chip">观察模式</span>
+        <span class="chip">Runtime 正常</span>
+      </div>
+    </header>
+
+    <section class="view active" id="view-home">
+      <main class="panel stack-lg">
+        <div class="hero fade">
+          <span class="kicker">开始任务</span>
+          <h1>你要的不是“聊天页”，而是一个可控执行台。</h1>
+          <p>任务提交后要立即看到等待态、运行态、待确认、失败恢复和完成收口，不再让状态藏在零散角落。</p>
+          <textarea placeholder="例如：排查为什么构建失败，只做最小可回滚修改。"></textarea>
+          <div class="row">
+            <p style="color: var(--muted); font-size: 13px;">提交后自动进入任务页主线程，侧栏持续显示风险和下一步。</p>
+            <button class="primary-btn">开始任务</button>
+          </div>
+        </div>
+
+        <section class="stack">
+          <div class="row">
+            <h2>快速开始模板</h2>
+            <button class="ghost-btn">查看全部</button>
+          </div>
+          <div class="grid-2">
+            <article class="mini-card"><strong>修复构建</strong><span>定位失败根因并给出最小修复方案。</span></article>
+            <article class="mini-card"><strong>执行命令排错</strong><span>跑命令、解释异常、输出可复现步骤。</span></article>
+            <article class="mini-card"><strong>梳理项目状态</strong><span>基于 docs 与代码给出当前进展和风险。</span></article>
+            <article class="mini-card"><strong>本地知识检索</strong><span>提取正式需求与验收口径，避免偏航。</span></article>
+          </div>
+        </section>
+      </main>
+
+      <aside class="panel stack">
+        <div class="side-title">
+          <h3>右侧信息栏</h3>
+          <span class="chip">不再留白</span>
+        </div>
+        <div class="meta-list">
+          <div class="meta-item"><strong>当前任务</strong><span>等待你提交第一条任务</span></div>
+          <div class="meta-item"><strong>状态</strong><span>等待首次任务</span></div>
+          <div class="meta-item"><strong>风险提示</strong><span>高风险动作将进入确认卡，不会静默执行。</span></div>
+          <div class="meta-item"><strong>下一步</strong><span>提交任务后进入主线程，关注等待态是否出现。</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="view" id="view-task">
+      <main class="panel stack">
+        <div class="row">
+          <div class="stack" style="gap: 4px;">
+            <span class="kicker">主线程</span>
+            <h2>任务状态闭环预览</h2>
+          </div>
+          <div class="state-switch">
+            <button data-state="submitting">提交后等待</button>
+            <button data-state="running">运行中</button>
+            <button data-state="awaiting">待确认</button>
+            <button data-state="failed">失败</button>
+            <button data-state="done">完成</button>
+          </div>
+        </div>
+
+        <div class="thread">
+          <article class="msg user">
+            <div class="msg-head"><strong>任务输入</strong><span>01</span></div>
+            <p>帮我排查构建失败，只做最小改动并保留回退路径。</p>
+          </article>
+
+          <article class="state-card" id="state-card">
+            <span class="badge running" id="state-badge">运行中</span>
+            <strong id="state-title">任务已提交，等待首个事件</strong>
+            <p id="state-body">系统正在建立运行流。首个事件到达后，主线程与调查层会同步刷新。</p>
+            <p id="state-next" style="color: var(--muted);">下一步：保持在任务页，等待首个事件。</p>
+          </article>
+
+          <article class="msg">
+            <div class="msg-head"><strong>系统记录</strong><span>02</span></div>
+            <p>本区展示最终结论、关键动作、风险提示和建议下一步。</p>
+          </article>
+        </div>
+      </main>
+
+      <aside class="panel stack">
+        <div class="side-title">
+          <h3>检查器</h3>
+          <span class="chip">当前会话</span>
+        </div>
+        <div class="meta-list">
+          <div class="meta-item"><strong>当前状态</strong><span id="side-state">提交后等待</span></div>
+          <div class="meta-item"><strong>当前动作</strong><span>等待首个事件 / tool_started</span></div>
+          <div class="meta-item"><strong>风险</strong><span>无阻塞；若出现高风险动作会转为“待确认”。</span></div>
+          <div class="meta-item"><strong>下一步</strong><span id="side-next">观察是否进入运行并出现第一条事件。</span></div>
+        </div>
+      </aside>
+
+      <section class="investigation">
+        <div class="row">
+          <div class="stack" style="gap: 4px;">
+            <span class="kicker">调查层</span>
+            <strong>自动跟随最新 / 手动查看历史</strong>
+          </div>
+          <div class="row">
+            <span class="badge running" id="follow-badge">自动跟随最新</span>
+            <button class="ghost-btn" id="follow-btn">切换为手动查看</button>
+            <button class="primary-btn" id="back-btn" style="display: none;">回到最新事件</button>
+          </div>
+        </div>
+        <div class="timeline">
+          <article class="event">
+            <strong>事件 01 · run_queued</strong>
+            <small>任务提交，等待运行流建立</small>
+          </article>
+          <article class="event">
+            <strong>事件 02 · tool_started</strong>
+            <small>开始读取工作区与构建日志</small>
+          </article>
+          <article class="event">
+            <strong>事件 03 · verification</strong>
+            <small>对照验证输出，准备最终收口</small>
+          </article>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    const viewButtons = document.querySelectorAll("[data-view-target]");
+    const views = {
+      home: document.getElementById("view-home"),
+      task: document.getElementById("view-task")
+    };
+
+    viewButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        viewButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        const target = button.getAttribute("data-view-target");
+        Object.values(views).forEach((v) => v.classList.remove("active"));
+        views[target].classList.add("active");
+      });
+    });
+
+    const states = {
+      submitting: {
+        badge: ["running", "运行中"],
+        title: "任务已提交，等待首个事件",
+        body: "系统正在建立运行流。首个事件到达后，主线程与调查层会同步刷新。",
+        next: "下一步：保持在任务页，等待首个事件。",
+        side: "提交后等待"
+      },
+      running: {
+        badge: ["running", "运行中"],
+        title: "任务运行中，主线程持续刷新",
+        body: "工具动作、验证快照和阶段推进会逐步写入当前会话。",
+        next: "下一步：优先看最近动作，再判断是否需要追问。",
+        side: "运行中"
+      },
+      awaiting: {
+        badge: ["awaiting", "待确认"],
+        title: "任务暂停，等待你的确认",
+        body: "检测到高风险动作，系统已进入确认卡，未确认前不会继续执行。",
+        next: "下一步：选择批准/拒绝并观察恢复事件。",
+        side: "待确认"
+      },
+      failed: {
+        badge: ["failed", "失败"],
+        title: "任务失败，当前轮未形成完整结果",
+        body: "建议先检查运行时连接、模型可用性和任务输入，再重新提交。",
+        next: "下一步：优先恢复提交链路，不回落普通空态。",
+        side: "失败"
+      },
+      done: {
+        badge: ["done", "完成"],
+        title: "任务已完成，结果已收口",
+        body: "主线程保留最终结论、关键动作和验证依据，可直接复查。",
+        next: "下一步：继续追问细节，或进入记录页做跨会话复盘。",
+        side: "完成"
+      }
+    };
+
+    const stateButtons = document.querySelectorAll("[data-state]");
+    const stateBadge = document.getElementById("state-badge");
+    const stateTitle = document.getElementById("state-title");
+    const stateBody = document.getElementById("state-body");
+    const stateNext = document.getElementById("state-next");
+    const sideState = document.getElementById("side-state");
+    const sideNext = document.getElementById("side-next");
+
+    function applyState(key) {
+      const model = states[key];
+      stateBadge.className = "badge " + model.badge[0];
+      stateBadge.textContent = model.badge[1];
+      stateTitle.textContent = model.title;
+      stateBody.textContent = model.body;
+      stateNext.textContent = model.next;
+      sideState.textContent = model.side;
+      sideNext.textContent = model.next.replace("下一步：", "");
+    }
+
+    stateButtons.forEach((button) => {
+      button.addEventListener("click", () => applyState(button.getAttribute("data-state")));
+    });
+
+    const followBadge = document.getElementById("follow-badge");
+    const followBtn = document.getElementById("follow-btn");
+    const backBtn = document.getElementById("back-btn");
+    let manual = false;
+
+    function syncFollow() {
+      if (!manual) {
+        followBadge.className = "badge running";
+        followBadge.textContent = "自动跟随最新";
+        followBtn.textContent = "切换为手动查看";
+        backBtn.style.display = "none";
+      } else {
+        followBadge.className = "badge awaiting";
+        followBadge.textContent = "手动查看历史";
+        followBtn.textContent = "保持手动查看";
+        backBtn.style.display = "inline-flex";
+      }
+    }
+
+    followBtn.addEventListener("click", () => {
+      manual = true;
+      syncFollow();
+    });
+
+    backBtn.addEventListener("click", () => {
+      manual = false;
+      syncFollow();
+    });
+
+    syncFollow();
+  </script>
+</body>
+</html>

@@ -150,12 +150,14 @@ fn invalid_explicit_path_reason(path: &str) -> Option<&'static str> {
         return Some("目标路径为空，请提供可读取的文件路径。");
     }
     if has_encoding_placeholder(path) {
-        return Some("目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。");
+        return Some(
+            "目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。",
+        );
     }
     let bad = ['*', '"', '<', '>', '|', '\0'];
-    path.chars().any(|ch| bad.contains(&ch)).then_some(
-        "目标路径包含非法字符；请使用标准文件路径（不要包含 * \" < > |）。",
-    )
+    path.chars()
+        .any(|ch| bad.contains(&ch))
+        .then_some("目标路径包含非法字符；请使用标准文件路径（不要包含 * \" < > |）。")
 }
 
 fn has_encoding_placeholder(path: &str) -> bool {

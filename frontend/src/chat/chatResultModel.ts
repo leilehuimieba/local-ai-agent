@@ -93,8 +93,22 @@ export function formatEntryIndex(index: number) {
   return index < 10 ? `0${index}` : String(index);
 }
 
-export function shouldShowPendingMessages(runState: RunState | undefined, messages: ChatMessage[]) {
-  return messages.length <= 1 && (runState === "submitting" || runState === "streaming" || runState === "resuming");
+export function shouldShowPendingMessages(
+  runState: RunState | undefined,
+  messages: ChatMessage[],
+  events: RunEvent[],
+  currentRunId: string,
+) {
+  return messages.length <= 1 && isWaitingForFirstEvent(runState, events, currentRunId);
+}
+
+export function shouldShowInlinePendingNotice(
+  runState: RunState | undefined,
+  messages: ChatMessage[],
+  events: RunEvent[],
+  currentRunId: string,
+) {
+  return messages.length > 1 && isWaitingForFirstEvent(runState, events, currentRunId);
 }
 
 export function shouldShowMessageFailure(
@@ -278,4 +292,19 @@ function splitResultBlock(block: string) {
   const lines = block.split("\n").map((item) => item.trim()).filter(Boolean);
   if (lines.length <= 2) return [block];
   return lines;
+}
+
+function isWaitingForFirstEvent(
+  runState: RunState | undefined,
+  events: RunEvent[],
+  currentRunId: string,
+) {
+  if (runState !== "submitting" && runState !== "streaming" && runState !== "resuming") return false;
+  if (runState === "submitting") return true;
+  return !hasCurrentRunEvent(events, currentRunId);
+}
+
+function hasCurrentRunEvent(events: RunEvent[], currentRunId: string) {
+  if (!currentRunId) return false;
+  return events.some((event) => event.run_id === currentRunId);
 }

@@ -115,31 +115,13 @@ func (b *EventBus) Subscribe(sessionID string) (<-chan contracts.RunEvent, func(
 }
 
 func (b *EventBus) Recent(limit int) []contracts.LogEntry {
-	if limit <= 0 {
-		limit = 50
-	}
+	return tailLogEntries(b.readLogsFromFile(), limit)
+}
 
-	file, err := os.Open(b.logPath)
-	if err != nil {
-		return nil
-	}
-	defer file.Close()
-
-	var items []contracts.LogEntry
-	decoder := json.NewDecoder(file)
-	for {
-		var item contracts.LogEntry
-		if err := decoder.Decode(&item); err != nil {
-			break
-		}
-		item = normalizeLogEntry(item)
-		items = append(items, item)
-	}
-
-	if len(items) <= limit {
-		return items
-	}
-	return items[len(items)-limit:]
+func (b *EventBus) RecentBy(limit int, sessionID string, runID string) []contracts.LogEntry {
+	items := b.readLogsFromFile()
+	filtered := filterLogEntries(items, sessionID, runID)
+	return tailLogEntries(filtered, limit)
 }
 
 func (b *EventBus) appendEventLog(event contracts.RunEvent) {
@@ -294,4 +276,56 @@ func pickFirst(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func (b *EventBus) readLogsFromFile() []contracts.LogEntry {
+	file, err := os.Open(b.logPath)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+	var items []contracts.LogEntry
+	decoder := json.NewDecoder(file)
+	for {
+		var item contracts.LogEntry
+		if err := decoder.Decode(&item); err != nil {
+			break
+		}
+		items = append(items, normalizeLogEntry(item))
+	}
+	return items
+}
+
+func filterLogEntries(items []contracts.LogEntry, sessionID string, runID string) []contracts.LogEntry {
+	if sessionID == "" && runID == "" {
+		return items
+	}
+	filtered := make([]contracts.LogEntry, 0, len(items))
+	for _, item := range items {
+		if !matchesLogEntry(item, sessionID, runID) {
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	return filtered
+}
+
+func matchesLogEntry(item contracts.LogEntry, sessionID string, runID string) bool {
+	if sessionID != "" && item.SessionID != sessionID {
+		return false
+	}
+	if runID != "" && item.RunID != runID {
+		return false
+	}
+	return true
+}
+
+func tailLogEntries(items []contracts.LogEntry, limit int) []contracts.LogEntry {
+	if limit <= 0 {
+		limit = 50
+	}
+	if len(items) <= limit {
+		return items
+	}
+	return items[len(items)-limit:]
 }

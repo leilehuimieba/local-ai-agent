@@ -398,7 +398,13 @@ func systemInfoHandler(repoRoot string, runtimePort int) http.HandlerFunc {
 
 func logsHandler(eventBus *session.EventBus) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, LogsResponse{Items: eventBus.Recent(120)})
+		query, err := decodeLogsQuery(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		items := eventBus.RecentBy(query.Limit, query.SessionID, query.RunID)
+		writeJSON(w, http.StatusOK, LogsResponse{Items: items})
 	}
 }
 

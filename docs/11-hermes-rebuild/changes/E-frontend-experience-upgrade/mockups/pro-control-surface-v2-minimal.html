@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>前端重设效果稿 v2 - 低学习成本版</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --line: #dde5ef;
+      --text: #162231;
+      --muted: #5f6f82;
+      --accent: #0f766e;
+      --accent-soft: #daf2ee;
+      --running: #0f766e;
+      --awaiting: #946200;
+      --failed: #b42318;
+      --done: #157347;
+      --shadow: 0 12px 34px rgba(13, 33, 53, 0.08);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Segoe UI", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 460px at 100% -20%, #d7eee8 0%, transparent 55%),
+        radial-gradient(900px 500px at -10% 110%, #e2ebf8 0%, transparent 58%),
+        var(--bg);
+    }
+
+    .app {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: grid;
+      gap: 3px;
+    }
+
+    .brand strong {
+      font-size: 18px;
+      letter-spacing: 0.01em;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tabs button,
+    .ghost-btn,
+    .primary-btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background: var(--accent-soft);
+      border-color: rgba(15, 118, 110, 0.5);
+      color: #0b5751;
+      font-weight: 600;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: #f2f6fb;
+      white-space: nowrap;
+    }
+
+    .view { display: none; }
+    .view.active {
+      display: grid;
+      gap: 12px;
+      animation: rise 260ms ease both;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .kicker {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .stack { display: grid; gap: 10px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      font-size: 29px;
+      line-height: 1.26;
+      max-width: 22ch;
+      font-family: "Sora", "Trebuchet MS", "PingFang SC", sans-serif;
+    }
+
+    .hero p { color: var(--muted); line-height: 1.58; }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font: inherit;
+      color: var(--text);
+      background: #fff;
+      resize: vertical;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f3fffd;
+      font-weight: 600;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 11px;
+      background: #f8fbff;
+      display: grid;
+      gap: 6px;
+      min-height: 96px;
+    }
+
+    .card strong { font-size: 14px; }
+    .card span { color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+    .thread {
+      display: grid;
+      gap: 9px;
+      max-height: 56vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .msg,
+    .state-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      gap: 7px;
+    }
+
+    .msg.user { background: #f7fbff; }
+
+    .msg-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .badge {
+      width: fit-content;
+      border-radius: 999px;
+      padding: 4px 9px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .running { color: #0a5d56; background: #d8f1ec; border-color: rgba(15,118,110,.42); }
+    .awaiting { color: #6a4700; background: #fff0ce; border-color: rgba(148,98,0,.4); }
+    .failed { color: #7a1f17; background: #fde5e3; border-color: rgba(180,35,24,.4); }
+    .done { color: #0d5f3d; background: #daf1e5; border-color: rgba(21,115,71,.4); }
+
+    .state-line {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stage {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      background: #f5f8fc;
+    }
+
+    .stage.active {
+      border-color: rgba(15,118,110,.45);
+      background: #e5f5f1;
+      color: #0a5d56;
+      font-weight: 600;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .detail-toggle {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .detail-panel {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: #f8fbff;
+      gap: 10px;
+    }
+
+    .detail-panel.open {
+      display: grid;
+      animation: rise 240ms ease both;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .detail-item {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .detail-item strong { font-size: 13px; color: var(--muted); }
+    .detail-item span { line-height: 1.45; }
+
+    .state-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr; }
+      .state-line { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <strong>本地智能体 · 低学习成本版</strong>
+        <span>只保留：输入任务 → 看状态 → 再决定是否展开细节</span>
+      </div>
+      <div class="tabs" aria-label="页面切换">
+        <button class="active" data-view="home">首页</button>
+        <button data-view="task">任务页</button>
+      </div>
+      <span class="chip">当前模式：观察模式</span>
+    </header>
+
+    <section id="home" class="view active">
+      <main class="panel stack hero">
+        <span class="kicker">一步开始</span>
+        <h1>告诉我目标，我给你可执行过程和可回退结果。</h1>
+        <p>不用先理解复杂布局。提交后你只需要看一条主线程状态线，遇到风险再确认，失败就按恢复建议走。</p>
+        <textarea placeholder="例如：排查构建失败，要求最小改动、可回退。"></textarea>
+        <div class="row">
+          <span style="color: var(--muted); font-size: 13px;">提交后自动进入任务页主线程。</span>
+          <button class="primary-btn">开始任务</button>
+        </div>
+      </main>
+
+      <section class="panel stack">
+        <div class="row">
+          <h3>常用模板</h3>
+          <button class="ghost-btn">更多模板</button>
+        </div>
+        <div class="cards">
+          <article class="card"><strong>修复问题</strong><span>定位一个关键失败点并最小修复。</span></article>
+          <article class="card"><strong>执行排错</strong><span>运行命令、解释日志、给出操作建议。</span></article>
+          <article class="card"><strong>梳理进度</strong><span>从 docs 和代码提取当前阶段状态。</span></article>
+        </div>
+      </section>
+    </section>
+
+    <section id="task" class="view">
+      <main class="panel stack">
+        <div class="row">
+          <div class="stack" style="gap:4px;">
+            <span class="kicker">主线程</span>
+            <h2>当前任务：排查构建失败并最小修复</h2>
+          </div>
+          <div class="state-buttons">
+            <button class="ghost-btn" data-state="submitting">提交后等待</button>
+            <button class="ghost-btn" data-state="running">运行中</button>
+            <button class="ghost-btn" data-state="awaiting">待确认</button>
+            <button class="ghost-btn" data-state="failed">失败</button>
+            <button class="ghost-btn" data-state="done">完成</button>
+          </div>
+        </div>
+
+        <div class="state-line" id="state-line">
+          <div class="stage active">提交后等待</div>
+          <div class="stage">运行中</div>
+          <div class="stage">待确认</div>
+          <div class="stage">失败</div>
+          <div class="stage">完成</div>
+        </div>
+
+        <div class="thread">
+          <article class="msg user">
+            <div class="msg-head"><strong>任务输入</strong><span>01</span></div>
+            <p>帮我排查构建失败，只做最小改动并保留回退路径。</p>
+          </article>
+
+          <article class="state-card">
+            <span id="state-badge" class="badge running">运行中</span>
+            <strong id="state-title">任务已提交，等待首个事件</strong>
+            <p id="state-body">系统正在建立运行流，首个事件到达后会自动进入运行态。</p>
+            <p id="state-next" style="color: var(--muted);">下一步：保持当前页面，等待首个事件。</p>
+          </article>
+
+          <article class="msg">
+            <div class="msg-head"><strong>结果区</strong><span>02</span></div>
+            <p>这里在任务完成后展示最终结论和关键动作；失败时给恢复建议。</p>
+          </article>
+        </div>
+
+        <div class="detail-toggle">
+          <strong>运行细节（默认收起）</strong>
+          <button id="toggle-detail" class="ghost-btn">展开细节</button>
+        </div>
+
+        <section id="detail-panel" class="detail-panel">
+          <div class="detail-grid">
+            <article class="detail-item">
+              <strong>自动跟随</strong>
+              <span>默认跟随最新事件；手动查看历史时可一键回到最新。</span>
+            </article>
+            <article class="detail-item">
+              <strong>当前风险</strong>
+              <span>暂无风险；出现高风险动作会进入待确认态。</span>
+            </article>
+            <article class="detail-item">
+              <strong>当前动作</strong>
+              <span>等待首个事件 / tool_started</span>
+            </article>
+            <article class="detail-item">
+              <strong>下一步</strong>
+              <span>收到首个事件后观察是否持续推进到完成态。</span>
+            </article>
+          </div>
+          <div class="actions">
+            <button class="ghost-btn">回到最新事件</button>
+            <button class="primary-btn">处理待确认</button>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll("[data-view]");
+    const home = document.getElementById("home");
+    const task = document.getElementById("task");
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((it) => it.classList.remove("active"));
+        tab.classList.add("active");
+        const name = tab.getAttribute("data-view");
+        home.classList.toggle("active", name === "home");
+        task.classList.toggle("active", name === "task");
+      });
+    });
+
+    const stateMap = {
+      submitting: {
+        idx: 0,
+        badge: ["running", "运行中"],
+        title: "任务已提交，等待首个事件",
+        body: "系统正在建立运行流，首个事件到达后会自动进入运行态。",
+        next: "下一步：保持当前页面，等待首个事件。"
+      },
+      running: {
+        idx: 1,
+        badge: ["running", "运行中"],
+        title: "任务运行中，主线程持续推进",
+        body: "当前动作、阶段和结果摘要会持续刷新到主线程。",
+        next: "下一步：优先看最近动作，必要时展开运行细节。"
+      },
+      awaiting: {
+        idx: 2,
+        badge: ["awaiting", "待确认"],
+        title: "任务暂停，等待你的确认",
+        body: "检测到高风险动作，确认后才能继续推进。",
+        next: "下一步：处理确认卡，再观察恢复事件。"
+      },
+      failed: {
+        idx: 3,
+        badge: ["failed", "失败"],
+        title: "任务失败，需要先恢复",
+        body: "建议先检查运行时连接、模型可用性和输入上下文后重试。",
+        next: "下一步：按恢复建议操作，不回落普通空态。"
+      },
+      done: {
+        idx: 4,
+        badge: ["done", "完成"],
+        title: "任务完成，结果已收口",
+        body: "主线程已保留最终结论、关键动作与验证信息。",
+        next: "下一步：继续追问或进入记录页复盘。"
+      }
+    };
+
+    const stateButtons = document.querySelectorAll("[data-state]");
+    const stages = document.querySelectorAll(".stage");
+    const badge = document.getElementById("state-badge");
+    const title = document.getElementById("state-title");
+    const body = document.getElementById("state-body");
+    const next = document.getElementById("state-next");
+
+    function applyState(key) {
+      const m = stateMap[key];
+      stages.forEach((s, i) => s.classList.toggle("active", i === m.idx));
+      badge.className = "badge " + m.badge[0];
+      badge.textContent = m.badge[1];
+      title.textContent = m.title;
+      body.textContent = m.body;
+      next.textContent = m.next;
+    }
+
+    stateButtons.forEach((btn) => {
+      btn.addEventListener("click", () => applyState(btn.getAttribute("data-state")));
+    });
+
+    const toggle = document.getElementById("toggle-detail");
+    const detail = document.getElementById("detail-panel");
+    let opened = false;
+    toggle.addEventListener("click", () => {
+      opened = !opened;
+      detail.classList.toggle("open", opened);
+      toggle.textContent = opened ? "收起细节" : "展开细节";
+    });
+  </script>
+</body>
+</html>

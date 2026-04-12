@@ -59,6 +59,10 @@ export type RuntimeContextSnapshot = {
   includes_memory?: boolean;
   includes_knowledge?: boolean;
   includes_tool_preview?: boolean;
+  phase_label?: string;
+  selection_reason?: string;
+  prefers_artifact_context?: boolean;
+  artifact_hint?: string;
   prompt_static?: string;
   prompt_project?: string;
   prompt_dynamic?: string;

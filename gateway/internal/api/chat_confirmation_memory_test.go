@@ -24,6 +24,9 @@ func TestPublishConfirmationClosureRejectWritesRunFinishedEvent(t *testing.T) {
 	require.Equal(t, "run_finished", events[1].EventType)
 	require.Equal(t, "rejected", events[1].CompletionStatus)
 	require.Equal(t, "confirm-1", events[1].ConfirmationID)
+	require.Equal(t, "closed", events[1].Metadata["confirmation_chain_step"])
+	require.Equal(t, "after_confirmation", events[1].Metadata["confirmation_resume_strategy"])
+	require.Equal(t, "cp-1", events[1].Metadata["checkpoint_id"])
 }
 
 func TestPublishConfirmationClosureCancelWritesRunFinishedEvent(t *testing.T) {
@@ -41,6 +44,9 @@ func TestPublishConfirmationClosureCancelWritesRunFinishedEvent(t *testing.T) {
 	require.Equal(t, "run_finished", events[1].EventType)
 	require.Equal(t, "cancelled", events[1].CompletionStatus)
 	require.Equal(t, "confirm-2", events[1].ConfirmationID)
+	require.Equal(t, "closed", events[1].Metadata["confirmation_chain_step"])
+	require.Equal(t, "after_confirmation", events[1].Metadata["confirmation_resume_strategy"])
+	require.Equal(t, "cp-1", events[1].Metadata["checkpoint_id"])
 }
 
 func confirmationPendingFixture() state.PendingConfirmation {
@@ -62,5 +68,6 @@ func confirmationPendingFixture() state.PendingConfirmation {
 			Alternatives:   []string{"先备份再处理"},
 			Kind:           "high_risk_action",
 		},
+		CheckpointID: "cp-1",
 	}
 }

@@ -1,4 +1,4 @@
-use crate::contracts::{RunEvent, RunRequest, RuntimeRunResponse};
+use crate::contracts::{ConfirmationDecision, RunEvent, RunRequest, RuntimeRunResponse};
 use crate::events::make_event;
 use crate::sqlite_store::{load_runtime_checkpoint_sqlite, write_runtime_checkpoint_sqlite};
 use serde::{Deserialize, Serialize};
@@ -243,6 +243,7 @@ fn resumed_event(request: &RunRequest, checkpoint: &RunCheckpoint) -> RunEvent {
             checkpoint.checkpoint_id
         ),
         resume_metadata(
+            request,
             &checkpoint.checkpoint_id,
             "resumed",
             &checkpoint.resume_stage,
@@ -264,6 +265,7 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
         "checkpoint 恢复已跳过",
         reason,
         resume_metadata(
+            request,
             checkpoint_id,
             "skipped",
             "Analyze",
@@ -277,6 +279,7 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
 }
 
 fn resume_metadata(
+    request: &RunRequest,
     checkpoint_id: &str,
     status: &str,
     stage: &str,
@@ -287,27 +290,97 @@ fn resume_metadata(
     artifact_path: &str,
 ) -> BTreeMap<String, String> {
     let mut metadata = BTreeMap::new();
+    insert_resume_core_metadata(
+        &mut metadata,
+        checkpoint_id,
+        status,
+        stage,
+        reason,
+        boundary,
+        verification_code,
+        verification_summary,
+        artifact_path,
+    );
+    append_confirmation_resume_metadata(&mut metadata, request, reason, status);
+    metadata
+}
+
+fn insert_resume_core_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    checkpoint_id: &str,
+    status: &str,
+    stage: &str,
+    reason: &str,
+    boundary: &str,
+    verification_code: &str,
+    verification_summary: &str,
+    artifact_path: &str,
+) {
     metadata.insert("checkpoint_id".to_string(), checkpoint_id.to_string());
     metadata.insert("checkpoint_resume_status".to_string(), status.to_string());
     metadata.insert("checkpoint_stage".to_string(), stage.to_string());
     metadata.insert("checkpoint_resume_reason".to_string(), reason.to_string());
-    insert_if_present(&mut metadata, "checkpoint_resume_boundary", boundary);
+    insert_if_present(metadata, "checkpoint_resume_boundary", boundary);
     insert_if_present(
-        &mut metadata,
+        metadata,
         "checkpoint_resume_verification_code",
         verification_code,
     );
     insert_if_present(
-        &mut metadata,
+        metadata,
         "checkpoint_resume_verification_summary",
         verification_summary,
     );
-    insert_if_present(
-        &mut metadata,
-        "checkpoint_resume_artifact_path",
-        artifact_path,
+    insert_if_present(metadata, "checkpoint_resume_artifact_path", artifact_path);
+}
+
+fn append_confirmation_resume_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    request: &RunRequest,
+    reason: &str,
+    status: &str,
+) {
+    if reason != "confirmation_required" {
+        return;
+    }
+    metadata.insert(
+        "confirmation_resume_strategy".to_string(),
+        resume_strategy(request),
     );
-    metadata
+    metadata.insert(
+        "confirmation_chain_step".to_string(),
+        confirmation_chain_step(status),
+    );
+    if let Some(decision) = request.confirmation_decision.as_ref() {
+        insert_confirmation_decision_metadata(metadata, decision);
+    }
+}
+
+fn insert_confirmation_decision_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    decision: &ConfirmationDecision,
+) {
+    metadata.insert(
+        "confirmation_id".to_string(),
+        decision.confirmation_id.clone(),
+    );
+    metadata.insert(
+        "confirmation_decision".to_string(),
+        decision.decision.clone(),
+    );
+    metadata.insert(
+        "confirmation_decision_source".to_string(),
+        "user_confirm_api".to_string(),
+    );
+    insert_if_present(metadata, "confirmation_decision_note", &decision.note);
+}
+
+fn confirmation_chain_step(status: &str) -> String {
+    if status == "resumed" {
+        "resumed".to_string()
+    } else {
+        "resume_skipped".to_string()
+    }
 }
 
 fn insert_if_present(metadata: &mut BTreeMap<String, String>, key: &str, value: &str) {
@@ -605,7 +678,8 @@ mod tests {
     fn carries_verification_fields_on_retry_resume_event() {
         let root = test_root("carries_verification_fields_on_retry_resume_event");
         let request = sample_request(&root);
-        let response = with_runtime_checkpoint(&request, retryable_failure_verified_response(&request));
+        let response =
+            with_runtime_checkpoint(&request, retryable_failure_verified_response(&request));
         let mut resumed = request.clone();
         resumed.resume_from_checkpoint_id = response.result.checkpoint_id.unwrap_or_default();
         resumed.resume_strategy = "retry_failure".to_string();
@@ -641,7 +715,10 @@ mod tests {
             .events
             .iter()
             .filter(|item| item.event_type == "checkpoint_resumed")
-            .filter(|item| item.metadata.get("checkpoint_resume_reason") == Some(&"retryable_failure".to_string()))
+            .filter(|item| {
+                item.metadata.get("checkpoint_resume_reason")
+                    == Some(&"retryable_failure".to_string())
+            })
             .filter(|item| item.metadata.get("checkpoint_stage") == Some(&"Execute".to_string()))
             .filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id))
             .collect();
@@ -665,9 +742,37 @@ mod tests {
         resumed.confirmation_decision = Some(approve_decision(&request.run_id));
         let event = checkpoint_resume_event(&resumed).expect("resume event");
         let response = with_checkpoint_resume_event(sample_response(&resumed), Some(event));
-        let candidates: Vec<_> = response.events.iter().filter(|item| item.event_type == "checkpoint_resumed").filter(|item| item.metadata.get("checkpoint_resume_reason") == Some(&"confirmation_required".to_string())).filter(|item| item.metadata.get("checkpoint_stage") == Some(&"PausedForConfirmation".to_string())).filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id)).collect();
+        let candidates: Vec<_> = response
+            .events
+            .iter()
+            .filter(|item| item.event_type == "checkpoint_resumed")
+            .filter(|item| {
+                item.metadata.get("checkpoint_resume_reason")
+                    == Some(&"confirmation_required".to_string())
+            })
+            .filter(|item| {
+                item.metadata.get("checkpoint_stage") == Some(&"PausedForConfirmation".to_string())
+            })
+            .filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id))
+            .collect();
         assert_eq!(candidates.len(), 1);
         assert_eq!(candidates[0].metadata.get("checkpoint_resume_boundary"), Some(&"stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续".to_string()));
+        assert_eq!(
+            candidates[0].metadata.get("confirmation_id"),
+            Some(&format!("confirm-risk-{}", request.run_id))
+        );
+        assert_eq!(
+            candidates[0].metadata.get("confirmation_decision"),
+            Some(&"approve".to_string())
+        );
+        assert_eq!(
+            candidates[0].metadata.get("confirmation_resume_strategy"),
+            Some(&"after_confirmation".to_string())
+        );
+        assert_eq!(
+            candidates[0].metadata.get("confirmation_chain_step"),
+            Some(&"resumed".to_string())
+        );
         let _ = fs::remove_dir_all(root);
     }
 
@@ -833,17 +938,18 @@ mod tests {
 
     fn retryable_failure_verified_response(request: &RunRequest) -> RuntimeRunResponse {
         let mut response = retryable_failure_response(request);
-        response.events[1]
-            .metadata
-            .insert("verification_code".to_string(), "verification_failed".to_string());
+        response.events[1].metadata.insert(
+            "verification_code".to_string(),
+            "verification_failed".to_string(),
+        );
         response.events[1].metadata.insert(
             "verification_summary".to_string(),
             "验证失败：命令执行失败".to_string(),
         );
-        response
-            .events[1]
-            .metadata
-            .insert("artifact_path".to_string(), "D:/repo/command.txt".to_string());
+        response.events[1].metadata.insert(
+            "artifact_path".to_string(),
+            "D:/repo/command.txt".to_string(),
+        );
         response
     }
 

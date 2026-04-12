@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { LogEntry } from "../shared/contracts";
+import { AuditFilter, hasAuditSignal } from "./auditSignals";
 import { readLogType } from "./logType";
 
 export type HistoryStats = {
@@ -29,6 +30,7 @@ export function useHistoryReview(logs: LogEntry[]) {
 }
 
 function useReviewFilters() {
+  const [auditFilter, setAuditFilter] = useState<AuditFilter>("all");
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -38,8 +40,8 @@ function useReviewFilters() {
   return {
     selectedLogId,
     setSelectedLogId,
-    values: { levelFilter, onlyConfirmations, onlyErrors, query, typeFilter },
-    setters: { setLevelFilter, setOnlyConfirmations, setOnlyErrors, setQuery, setTypeFilter },
+    values: { auditFilter, levelFilter, onlyConfirmations, onlyErrors, query, typeFilter },
+    setters: { setAuditFilter, setLevelFilter, setOnlyConfirmations, setOnlyErrors, setQuery, setTypeFilter },
   };
 }
 
@@ -49,6 +51,8 @@ function useFocusLog(logs: LogEntry[], selectedLogId: string) {
 
 function buildToolbarProps(resultCount: number, filters: ReturnType<typeof useReviewFilters>) {
   return {
+    auditFilter: filters.values.auditFilter,
+    onAuditFilterChange: filters.setters.setAuditFilter,
     levelFilter: filters.values.levelFilter,
     onLevelFilterChange: filters.setters.setLevelFilter,
     onOnlyConfirmationsChange: filters.setters.setOnlyConfirmations,
@@ -92,6 +96,7 @@ function selectDefaultFocusLog(logs: LogEntry[]) {
 function filterLogs(
   logs: LogEntry[],
   filters: {
+    auditFilter: AuditFilter;
     query: string;
     levelFilter: string;
     typeFilter: string;
@@ -106,6 +111,7 @@ function filterLogs(
 function matchesAllFilters(
   log: LogEntry,
   filters: {
+    auditFilter: AuditFilter;
     levelFilter: string;
     typeFilter: string;
     onlyErrors: boolean;
@@ -113,11 +119,16 @@ function matchesAllFilters(
   },
   keyword: string,
 ) {
-  return matchesLevel(log, filters.levelFilter) &&
+  return matchesAudit(log, filters.auditFilter) &&
+    matchesLevel(log, filters.levelFilter) &&
     matchesType(log, filters.typeFilter) &&
     matchesErrorOnly(log, filters.onlyErrors) &&
     matchesConfirmationOnly(log, filters.onlyConfirmations) &&
     matchesKeyword(log, keyword);
+}
+
+function matchesAudit(log: LogEntry, auditFilter: AuditFilter) {
+  return hasAuditSignal(log, auditFilter);
 }
 
 function matchesLevel(log: LogEntry, levelFilter: string) {
@@ -163,6 +174,13 @@ function readTimestamp(value: string) {
 }
 
 function searchableText(log: LogEntry) {
+  return [...readBaseSearchFields(log), ...readAuditSearchFields(log)]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function readBaseSearchFields(log: LogEntry) {
   return [
     log.summary,
     log.detail,
@@ -187,7 +205,20 @@ function searchableText(log: LogEntry) {
     log.verification_summary,
     log.verification_snapshot?.summary,
     log.metadata?.verification_summary,
-  ].filter(Boolean).join(" ").toLowerCase();
+  ];
+}
+
+function readAuditSearchFields(log: LogEntry) {
+  return [
+    log.metadata?.confirmation_chain_step,
+    log.metadata?.confirmation_decision,
+    log.metadata?.confirmation_resume_strategy,
+    log.metadata?.checkpoint_id,
+    log.metadata?.tool_elapsed_ms,
+    log.metadata?.governance_status,
+    log.metadata?.governance_reason,
+    log.metadata?.archive_reason,
+  ];
 }
 
 function readRecordType(log: LogEntry) {

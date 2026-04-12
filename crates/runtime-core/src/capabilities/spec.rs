@@ -19,6 +19,7 @@ pub(crate) struct ToolCallResult {
     pub final_answer: String,
     pub artifact_path: Option<String>,
     pub error_code: Option<String>,
+    pub elapsed_ms: u64,
     pub retryable: bool,
     pub success: bool,
     pub memory_write_summary: Option<String>,

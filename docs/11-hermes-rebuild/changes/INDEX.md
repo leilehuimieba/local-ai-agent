@@ -6,11 +6,15 @@
 
 ## 当前活跃 change
 
-1. 当前无活跃 change（待新任务条目激活）
+1. [E-frontend-experience-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md)（2026-04-12 阶段 E 主推进，前端体验与确认链字段消费对齐）
 
 ## 最近收口
 
-1. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)（2026-04-12 按任务列表收口）
+1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（2026-04-12 完成 D-G1 批量验收准备并收口）
+2. [C-tool-contract-unification](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/C-tool-contract-unification/status.md)（2026-04-12 完成 C-G1 评审签收并收口）
+3. [C-roadmap-task-decomposition](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/C-roadmap-task-decomposition/status.md)（2026-04-12 全路线最小任务分解与执行协议收口）
+4. [B-doc-reading-guide](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-doc-reading-guide/status.md)（2026-04-12 文档阅读与口径治理收口）
+5. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)（2026-04-12 按任务列表收口）
 
 ## 选择规则
 

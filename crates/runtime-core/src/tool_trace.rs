@@ -5,12 +5,14 @@ use crate::contracts::RunRequest;
 use crate::execution::execute_action;
 use crate::planner::PlannedAction;
 use crate::session::SessionMemory;
+use std::time::Instant;
 
 pub(crate) fn execute_tool(
     request: &RunRequest,
     action: &PlannedAction,
     session_context: &SessionMemory,
 ) -> ToolExecutionTrace {
+    let started_at = Instant::now();
     let execution = execute_action(request, action, session_context);
     let artifact_path = materialize_artifact(request, action, &execution);
     ToolExecutionTrace {
@@ -25,6 +27,7 @@ pub(crate) fn execute_tool(
             } else {
                 Some(default_error_code(action))
             },
+            elapsed_ms: tool_elapsed_ms(started_at),
             retryable: !execution.success,
             success: execution.success,
             memory_write_summary: execution.memory_write_summary,
@@ -33,6 +36,11 @@ pub(crate) fn execute_tool(
             cache_reason: execution.cache_reason,
         },
     }
+}
+
+fn tool_elapsed_ms(started_at: Instant) -> u64 {
+    let elapsed = started_at.elapsed().as_millis();
+    elapsed.min(u128::from(u64::MAX)) as u64
 }
 
 pub(crate) fn materialize_artifact(

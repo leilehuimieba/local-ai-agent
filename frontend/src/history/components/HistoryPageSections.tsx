@@ -1,5 +1,6 @@
 import { HistoryStats } from "../useHistoryReview";
 import { MetricChip, SectionHeader } from "../../ui/primitives";
+import { AuditFilter } from "../auditSignals";
 import { readReviewTypeLabel, ReviewLogType } from "../logType";
 
 export function HistoryLogsHeader(props: {
@@ -39,12 +40,14 @@ export function HistoryLogsSummary(props: {
 export function HistoryFilterToolbar(props: {
   query: string;
   typeFilter: string;
+  auditFilter: AuditFilter;
   levelFilter: string;
   onlyErrors: boolean;
   onlyConfirmations: boolean;
   resultCount: number;
   onQueryChange: (value: string) => void;
   onTypeFilterChange: (value: string) => void;
+  onAuditFilterChange: (value: AuditFilter) => void;
   onLevelFilterChange: (value: string) => void;
   onOnlyErrorsChange: (value: boolean) => void;
   onOnlyConfirmationsChange: (value: boolean) => void;
@@ -68,6 +71,7 @@ function FilterToolbarControls(props: {
     <div className="filter-toolbar">
       <HistorySearchBox value={props.props.query} onChange={props.props.onQueryChange} />
       <HistoryFilterSelect label="类型" value={props.props.typeFilter} options={buildTypeOptions()} onChange={props.props.onTypeFilterChange} />
+      <HistoryFilterSelect label="审计" value={props.props.auditFilter} options={buildAuditOptions()} onChange={readAuditChange(props.props.onAuditFilterChange)} />
       <HistoryFilterSelect label="级别" value={props.props.levelFilter} options={buildLevelOptions()} onChange={props.props.onLevelFilterChange} />
       <HistoryFilterToggle checked={props.props.onlyErrors} label="仅错误" note="真实可用" onChange={props.props.onOnlyErrorsChange} />
       <HistoryFilterToggle checked={props.props.onlyConfirmations} label="仅确认" note="真实可用" onChange={props.props.onOnlyConfirmationsChange} />
@@ -153,4 +157,17 @@ function buildLevelOptions() {
 function buildTypeOptions() {
   const types: ReviewLogType[] = ["result", "tool", "memory", "verification", "confirmation", "error", "system"];
   return [{ value: "all", label: "全部类型" }, ...types.map((type) => ({ value: type, label: readReviewTypeLabel(type) }))];
+}
+
+function buildAuditOptions() {
+  return [
+    { value: "all", label: "全部审计" },
+    { value: "confirmation_chain", label: "确认链" },
+    { value: "tool_elapsed", label: "工具耗时" },
+    { value: "governance", label: "治理字段" },
+  ];
+}
+
+function readAuditChange(onChange: (value: AuditFilter) => void) {
+  return (value: string) => onChange(value as AuditFilter);
 }

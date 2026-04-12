@@ -335,7 +335,14 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
 fn should_use_context_for_fast_checklist(input: &str) -> bool {
     let has_time_limit = mentions_any(
         input,
-        &["30 minutes", "20 minutes", "15 minutes", "30分钟", "20分钟", "15分钟"],
+        &[
+            "30 minutes",
+            "20 minutes",
+            "15 minutes",
+            "30分钟",
+            "20分钟",
+            "15分钟",
+        ],
     );
     let has_checklist_intent = mentions_any(
         input,
@@ -389,10 +396,7 @@ fn should_use_context_for_priority_three_tasks(input: &str) -> bool {
     if !asks_priority {
         return false;
     }
-    let asks_three = mentions_any(
-        input,
-        &["三件事", "3件事", "three things", "three tasks"],
-    );
+    let asks_three = mentions_any(input, &["三件事", "3件事", "three things", "three tasks"]);
     let asks_next = mentions_any(input, &["下一步", "next step", "继续推进"]);
     asks_three && asks_next
 }
@@ -400,7 +404,13 @@ fn should_use_context_for_priority_three_tasks(input: &str) -> bool {
 fn should_use_context_for_smalltalk(input: &str) -> bool {
     mentions_any(
         input,
-        &["聊两句", "你今天状态", "最近怎么样", "随便聊聊", "casual chat"],
+        &[
+            "聊两句",
+            "你今天状态",
+            "最近怎么样",
+            "随便聊聊",
+            "casual chat",
+        ],
     )
 }
 
@@ -425,8 +435,8 @@ fn should_use_context_for_evidence_status(input: &str) -> bool {
 }
 
 fn should_use_context_for_pause_risk(input: &str) -> bool {
-    let asks_pause_risk = mentions_any(input, &["暂停", "pause now"])
-        && mentions_any(input, &["风险", "risk"]);
+    let asks_pause_risk =
+        mentions_any(input, &["暂停", "pause now"]) && mentions_any(input, &["风险", "risk"]);
     if !asks_pause_risk {
         return false;
     }

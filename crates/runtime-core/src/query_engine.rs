@@ -10,6 +10,7 @@ use crate::run_resume::apply_resume_checkpoint;
 use crate::run_runtime_state::{assemble_runtime_state, refresh_context_after_execution};
 use crate::run_state_builder::{bootstrap_context, prepare_run_state, record_bootstrap_memory};
 use crate::session::{SessionMemory, load_session_context, record_execution_memory};
+use crate::skill_catalog::{SkillCatalog, load_skill_catalog, skill_catalog_brief};
 use crate::tool_registry::{ToolCall, runtime_tool_registry};
 use crate::tool_trace::execute_tool;
 use crate::verify::VerificationReport;
@@ -20,6 +21,7 @@ pub(crate) struct RuntimeEnvelope {
     pub request: RunRequest,
     pub session_context: SessionMemory,
     pub repo_context: RepoContextLoadResult,
+    pub skill_catalog: SkillCatalog,
     pub context_envelope: RuntimeContextEnvelope,
     pub visible_tools: Vec<ToolDefinition>,
 }
@@ -39,6 +41,7 @@ pub(crate) struct RuntimeRunState {
 pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
     let workspace_root = PathBuf::from(&request.workspace_ref.root_path);
     let repo_context = load_repo_context(&workspace_root);
+    let skill_catalog = load_skill_catalog(request);
     let visible_tools = runtime_tool_registry().visible_tools(&request.mode);
     let resume_checkpoint = load_matching_resume_checkpoint(request);
     let mut session_context = load_session_context(request);
@@ -58,6 +61,7 @@ pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
         request,
         session_context,
         repo_context,
+        skill_catalog,
         visible_tools,
         context_envelope,
         prepared,
@@ -65,6 +69,7 @@ pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
 }
 
 pub(crate) fn execute_stage(state: &mut RuntimeRunState) {
+    let _skill_catalog = skill_catalog_brief(&state.envelope.skill_catalog);
     state.tool_trace = Some(execute_tool(
         &state.envelope.request,
         &state.action,
@@ -128,5 +133,4 @@ mod tests {
             if command == "echo restored"
         ));
     }
-
 }

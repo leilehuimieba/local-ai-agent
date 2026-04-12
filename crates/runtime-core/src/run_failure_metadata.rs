@@ -54,6 +54,10 @@ fn append_tool_outcome(
     trace: &crate::capabilities::ToolExecutionTrace,
 ) {
     metadata.insert("result_summary".to_string(), trace.result.summary.clone());
+    metadata.insert(
+        "tool_elapsed_ms".to_string(),
+        trace.result.elapsed_ms.to_string(),
+    );
     metadata.insert("risk_level".to_string(), trace.tool.risk_level.clone());
     metadata.insert(
         "reasoning_summary".to_string(),

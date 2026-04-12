@@ -2,9 +2,7 @@ use crate::checkpoint::RunCheckpoint;
 use crate::contracts::ToolCallSnapshot;
 use crate::planner::PlannedAction;
 
-pub(crate) fn resumed_action_from_checkpoint(
-    checkpoint: &RunCheckpoint,
-) -> Option<PlannedAction> {
+pub(crate) fn resumed_action_from_checkpoint(checkpoint: &RunCheckpoint) -> Option<PlannedAction> {
     let snapshot = latest_tool_call_snapshot(checkpoint)?;
     decode_snapshot_action(snapshot)
 }

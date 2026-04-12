@@ -9,12 +9,7 @@ pub(crate) mod testkit {
 
     pub(crate) fn sample_verification_event() -> RunEvent {
         let mut event = sample_event("");
-        assign_event_marker(
-            &mut event,
-            "event-2",
-            "verification_completed",
-            "Verify",
-        );
+        assign_event_marker(&mut event, "event-2", "verification_completed", "Verify");
         event.summary = "verification passed".to_string();
         event.metadata.insert(
             "artifact_path".to_string(),
@@ -137,10 +132,39 @@ pub(crate) mod testkit {
 
     fn sample_failed_event_identity_placeholders() -> RunEvent {
         RunEvent {
-            event_id: String::new(), kind: String::new(), source: String::new(), record_type: String::new(), source_type: String::new(), agent_id: String::new(), agent_label: String::new(), event_type: String::new(), trace_id: String::new(), session_id: String::new(), run_id: String::new(),
-            sequence: 0, timestamp: String::new(), stage: String::new(), summary: String::new(),
-            detail: String::new(), tool_name: String::new(), tool_display_name: String::new(), tool_category: String::new(), output_kind: String::new(), result_summary: String::new(), artifact_path: String::new(), risk_level: String::new(), confirmation_id: String::new(), final_answer: String::new(), completion_status: String::new(), completion_reason: String::new(), verification_summary: String::new(),
-            checkpoint_written: false, context_snapshot: None, tool_call_snapshot: None, verification_snapshot: None, metadata: BTreeMap::new(),
+            event_id: String::new(),
+            kind: String::new(),
+            source: String::new(),
+            record_type: String::new(),
+            source_type: String::new(),
+            agent_id: String::new(),
+            agent_label: String::new(),
+            event_type: String::new(),
+            trace_id: String::new(),
+            session_id: String::new(),
+            run_id: String::new(),
+            sequence: 0,
+            timestamp: String::new(),
+            stage: String::new(),
+            summary: String::new(),
+            detail: String::new(),
+            tool_name: String::new(),
+            tool_display_name: String::new(),
+            tool_category: String::new(),
+            output_kind: String::new(),
+            result_summary: String::new(),
+            artifact_path: String::new(),
+            risk_level: String::new(),
+            confirmation_id: String::new(),
+            final_answer: String::new(),
+            completion_status: String::new(),
+            completion_reason: String::new(),
+            verification_summary: String::new(),
+            checkpoint_written: false,
+            context_snapshot: None,
+            tool_call_snapshot: None,
+            verification_snapshot: None,
+            metadata: BTreeMap::new(),
         }
     }
 

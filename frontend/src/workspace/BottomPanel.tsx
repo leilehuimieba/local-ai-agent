@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { readRunStateBody, readRunStateHeadline, readRunStateNextStep } from "../chat/chatResultModel";
 import { EventTimeline } from "../events/EventTimeline";
@@ -17,14 +17,32 @@ type BottomPanelProps = {
 
 export function BottomPanel(props: BottomPanelProps) {
   const focus = useInvestigationFocus(props.events);
+  const progress = useRunCycleProgress(props.runState, props.events.length);
   const model = buildInvestigationModel(props.events, focus.selectedEventId, focus.autoFollow);
   return (
     <section className={props.isOpen ? "bottom-panel open" : "bottom-panel"} aria-label="当前任务调查层">
       <BottomPanelHeader isOpen={props.isOpen} onOpenChange={props.onOpenChange} />
-      <BottomPanelSummary props={props} model={model} />
-      {props.isOpen ? <BottomPanelBody props={props} model={model} focus={focus} /> : null}
+      <BottomPanelSummary props={props} model={model} progress={progress} />
+      {props.isOpen ? <BottomPanelBody props={props} model={model} focus={focus} progress={progress} /> : null}
     </section>
   );
+}
+
+function useRunCycleProgress(runState: RunState, eventCount: number) {
+  const [baselineCount, setBaselineCount] = useState<number | null>(null);
+  const previousRunState = useRef(runState);
+  useEffect(() => {
+    const wasBusy = isBusyRunState(previousRunState.current);
+    if (isBusyRunState(runState) && !wasBusy) setBaselineCount(eventCount);
+    if (runState === "idle") setBaselineCount(null);
+    previousRunState.current = runState;
+  }, [eventCount, runState]);
+  const newEventCount = baselineCount === null ? eventCount : Math.max(eventCount - baselineCount, 0);
+  return {
+    baselineCount,
+    hasNewEvent: newEventCount > 0,
+    newEventCount,
+  };
 }
 
 function useInvestigationFocus(events: RunEvent[]) {
@@ -79,18 +97,20 @@ function BottomPanelHeader(props: { isOpen: boolean; onOpenChange: (open: boolea
 function BottomPanelSummary(props: {
   props: BottomPanelProps;
   model: ReturnType<typeof buildInvestigationModel>;
+  progress: ReturnType<typeof useRunCycleProgress>;
 }) {
   const summaryStatus = readSummaryStatusClass(props.props.runState, props.model.autoFollow);
   const summaryLabel = readSummaryStatusLabel(props.props.runState, props.model.autoFollow);
   return (
     <div className="bottom-panel-summary" aria-live="polite">
       <div className="bottom-panel-summary-copy">
-        <strong>{readRunStateHeadline(props.props.runState, props.model.focusEvent || undefined)}</strong>
-        <p>{readBottomPanelSummary(props.props.runState, props.model)}</p>
+        <strong>{readBottomPanelHeadline(props.props, props.progress)}</strong>
+        <p>{readBottomPanelSummary(props.props, props.progress)}</p>
       </div>
       <div className="bottom-panel-summary-meta">
         <span className={`status-badge ${summaryStatus}`}>{summaryLabel}</span>
-        <span className="sidebar-chip-muted">{props.props.events.length} 条事件</span>
+        <span className={`status-badge ${props.model.autoFollow ? "status-running" : "status-idle"}`}>{props.model.autoFollow ? "自动跟随最新" : "手动查看历史"}</span>
+        <span className="sidebar-chip-muted">{readEventCountLabel(props.props.events.length, props.progress)}</span>
       </div>
     </div>
   );
@@ -100,11 +120,12 @@ function BottomPanelBody(props: {
   props: BottomPanelProps;
   model: ReturnType<typeof buildInvestigationModel>;
   focus: ReturnType<typeof useInvestigationFocus>;
+  progress: ReturnType<typeof useRunCycleProgress>;
 }) {
-  if (shouldShowPendingInvestigation(props.props.runState, props.model.events)) {
-    return <PendingInvestigationState taskTitle={props.props.currentTaskTitle} />;
+  if (shouldShowPendingInvestigation(props.props.runState, props.progress.hasNewEvent)) {
+    return <PendingInvestigationState runState={props.props.runState} taskTitle={props.props.currentTaskTitle} />;
   }
-  if (shouldShowFailedInvestigation(props.props.runState, props.model.events, props.props.submitError)) {
+  if (shouldShowFailedInvestigation(props.props.runState, props.progress.hasNewEvent)) {
     return <FailedInvestigationState submitError={props.props.submitError} />;
   }
   return (
@@ -120,12 +141,14 @@ function InvestigationLane(props: {
     props: BottomPanelProps;
     model: ReturnType<typeof buildInvestigationModel>;
     focus: ReturnType<typeof useInvestigationFocus>;
+    progress: ReturnType<typeof useRunCycleProgress>;
   };
 }) {
   return (
     <section className="investigation-lane">
       <LaneHeader title="事件流" text="当前会话过程。" />
-      {shouldShowInlineInvestigationFailure(props.props.props.runState, props.props.model.events, props.props.props.submitError) ? (
+      <FollowModeNotice autoFollow={props.props.model.autoFollow} onResumeFollow={props.props.focus.resumeFollow} />
+      {shouldShowInlineInvestigationFailure(props.props.props.runState, props.props.progress.hasNewEvent) ? (
         <InlineInvestigationFailure submitError={props.props.props.submitError} />
       ) : null}
       <EventTimeline
@@ -149,7 +172,7 @@ function FocusLane(props: {
   return (
     <aside className="inspection-lane">
       <LaneHeader title="焦点详情" text="阶段、证据、下一步。" />
-      {!props.props.model.autoFollow ? <button type="button" className="secondary-button" onClick={props.props.focus.resumeFollow}>返回最新事件</button> : null}
+      {!props.props.model.autoFollow ? <button type="button" className="secondary-button" onClick={props.props.focus.resumeFollow}>回到最新事件</button> : null}
       <InspectionFocusCard model={props.props.model} />
       <InspectionMetaGrid model={props.props.model} />
       <InspectionNextCard model={props.props.model} />
@@ -157,16 +180,16 @@ function FocusLane(props: {
   );
 }
 
-function PendingInvestigationState(props: { taskTitle: string }) {
+function PendingInvestigationState(props: { taskTitle: string; runState: RunState }) {
   return (
     <div id="investigation-panel-body" className="bottom-panel-body investigation-board">
       <section className="investigation-lane">
-        <LaneHeader title="事件流" text={readRunStateBody({ currentTaskTitle: props.taskTitle, runState: "submitting" })} />
-        <StateCard title={readRunStateHeadline("submitting")} body={props.taskTitle || "当前任务"} advice={readRunStateNextStep({ runState: "submitting" })} />
+        <LaneHeader title="事件流" text={readPendingSummary(props.taskTitle)} />
+        <StateCard title={readPendingHeadline(props.runState)} body={readPendingSummary(props.taskTitle)} advice={readPendingAdvice(props.runState)} />
       </section>
       <aside className="inspection-lane">
-        <LaneHeader title="焦点详情" text="首个事件返回后，这里会显示重点信息。" />
-        <StateCard title="等待第一条事件" body="系统正在建立运行流。" advice="焦点详情会在首个事件到达后同步更新。" />
+        <LaneHeader title="焦点详情" text="首个事件返回前，焦点区保留等待态。" />
+        <StateCard title="等待首个事件" body="系统正在建立本轮任务的事件流。" advice="收到首个事件后将自动切换到最新焦点。" />
       </aside>
     </div>
   );
@@ -177,11 +200,11 @@ function FailedInvestigationState(props: { submitError: string | null }) {
     <div id="investigation-panel-body" className="bottom-panel-body investigation-board">
       <section className="investigation-lane">
         <LaneHeader title="事件流" text="当前没有进入事件流。" />
-        <StateCard title={readRunStateHeadline("failed")} body={readRunStateBody({ runState: "failed", submitError: props.submitError })} advice={readRunStateNextStep({ runState: "failed" })} />
+        <StateCard title="任务失败且无事件" body={readRunStateBody({ runState: "failed", submitError: props.submitError })} advice="建议先检查运行时连接和任务输入，再重新提交任务。" />
       </section>
       <aside className="inspection-lane">
-        <LaneHeader title="焦点详情" text="恢复可提交状态后再继续查看过程。" />
-        <StateCard title="下一步建议" body="先恢复提交链路。" advice={readRunStateNextStep({ runState: "failed" })} />
+        <LaneHeader title="焦点详情" text="本轮尚未形成可调查事件，先完成恢复再继续。" />
+        <StateCard title="恢复建议" body="排查模型可用性、工作区权限和网络后重试。" advice={readRunStateNextStep({ runState: "failed" })} />
       </aside>
     </div>
   );
@@ -189,6 +212,20 @@ function FailedInvestigationState(props: { submitError: string | null }) {
 
 function InlineInvestigationFailure(props: { submitError: string | null }) {
   return <StateCard title={readRunStateHeadline("failed")} body={readRunStateBody({ runState: "failed", submitError: props.submitError })} advice="当前仍显示上一轮历史事件，可继续查看已有过程。" />;
+}
+
+function FollowModeNotice(props: { autoFollow: boolean; onResumeFollow: () => void }) {
+  if (props.autoFollow) {
+    return <StateCard title="跟随模式：自动跟随" body="新事件到达时，时间线和焦点会自动跳到最新事件。" advice="如果要阅读历史事件，点击旧事件或滚动离开最新位置即可切换为手动查看。" />;
+  }
+  return (
+    <div className="detail-card state-card">
+      <strong>跟随模式：手动查看</strong>
+      <p>当前焦点不会被新事件抢走，你可以稳定阅读历史节点。</p>
+      <p>查看完历史后可一键返回最新事件。</p>
+      <button type="button" className="secondary-button" onClick={props.onResumeFollow}>回到最新事件</button>
+    </div>
+  );
 }
 
 function InspectionFocusCard(props: { model: ReturnType<typeof buildInvestigationModel> }) {
@@ -285,16 +322,16 @@ function buildNextObservations(focusEvent: RunEvent) {
   ];
 }
 
-function shouldShowPendingInvestigation(runState: RunState, events: RunEvent[]) {
-  return events.length === 0 && (runState === "submitting" || runState === "streaming" || runState === "resuming");
+function shouldShowPendingInvestigation(runState: RunState, hasNewEvent: boolean) {
+  return isBusyRunState(runState) && !hasNewEvent;
 }
 
-function shouldShowFailedInvestigation(runState: RunState, events: RunEvent[], submitError: string | null) {
-  return events.length === 0 && runState === "failed" && Boolean(submitError);
+function shouldShowFailedInvestigation(runState: RunState, hasNewEvent: boolean) {
+  return runState === "failed" && !hasNewEvent;
 }
 
-function shouldShowInlineInvestigationFailure(runState: RunState, events: RunEvent[], submitError: string | null) {
-  return events.length > 0 && runState === "failed" && Boolean(submitError);
+function shouldShowInlineInvestigationFailure(runState: RunState, hasNewEvent: boolean) {
+  return runState === "failed" && hasNewEvent;
 }
 
 function resetFocus(setSelectedEventId: (value: string) => void, setAutoFollow: (value: boolean) => void) {
@@ -336,14 +373,27 @@ function readSummaryStatusLabel(runState: RunState, autoFollow: boolean) {
 }
 
 function readBottomPanelSummary(
-  runState: RunState,
-  model: ReturnType<typeof buildInvestigationModel>,
+  props: BottomPanelProps,
+  progress: ReturnType<typeof useRunCycleProgress>,
 ) {
-  if (model.events.length === 0) return "任务进入运行后，这里会显示事件过程。";
-  if (runState === "failed" || runState === "completed" || runState === "awaiting_confirmation") {
-    return readRunStateBody({ latestFailureEvent: model.focusEvent || undefined, runState });
+  if (props.runState === "failed" && !progress.hasNewEvent) {
+    return readRunStateBody({ runState: "failed", submitError: props.submitError });
   }
-  return model.preview.summary;
+  if (isBusyRunState(props.runState) && !progress.hasNewEvent) {
+    return readPendingSummary(props.currentTaskTitle);
+  }
+  if (props.events.length === 0) return "任务进入运行后，这里会显示事件过程。";
+  if (props.runState === "failed" || props.runState === "completed" || props.runState === "awaiting_confirmation") {
+    return readRunStateBody({ latestFailureEvent: props.events[props.events.length - 1], runState: props.runState });
+  }
+  return readPreviewSummary(props.events[props.events.length - 1]);
+}
+
+function readBottomPanelHeadline(props: BottomPanelProps, progress: ReturnType<typeof useRunCycleProgress>) {
+  if (props.runState === "failed" && !progress.hasNewEvent) {
+    return readRunStateHeadline("failed");
+  }
+  return readRunStateHeadline(props.runState, props.events[props.events.length - 1]);
 }
 
 function readPreviewSummary(event: RunEvent) {
@@ -357,4 +407,28 @@ function readInspectionCopy(event: RunEvent) {
 function readToolLabel(event: RunEvent) {
   if (event.tool_display_name && event.tool_category) return `${event.tool_display_name} / ${event.tool_category}`;
   return event.tool_display_name || event.tool_name || event.tool_category || "未附带";
+}
+
+function readPendingHeadline(runState: RunState) {
+  if (runState === "resuming") return "任务恢复中，等待首个事件";
+  if (runState === "streaming") return "任务运行中，等待首个事件";
+  return "任务已提交，等待首个事件";
+}
+
+function readPendingSummary(taskTitle: string) {
+  return `任务“${taskTitle || "当前任务"}”已提交，系统正在建立运行流并等待第一条事件。`;
+}
+
+function readPendingAdvice(runState: RunState) {
+  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
+  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
+}
+
+function readEventCountLabel(totalCount: number, progress: ReturnType<typeof useRunCycleProgress>) {
+  if (progress.baselineCount === null) return `${totalCount} 条事件`;
+  return `${progress.newEventCount} 条本轮事件`;
+}
+
+function isBusyRunState(runState: RunState) {
+  return runState === "submitting" || runState === "streaming" || runState === "resuming";
 }

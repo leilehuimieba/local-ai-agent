@@ -5,6 +5,7 @@ use crate::query_engine::{RuntimeEnvelope, RuntimeRunState};
 use crate::repo_context::RepoContextLoadResult;
 use crate::run_state_builder::PreparedRunState;
 use crate::session::SessionMemory;
+use crate::skill_catalog::SkillCatalog;
 
 pub(crate) fn refresh_context_after_execution(
     envelope: &mut RuntimeContextEnvelope,
@@ -19,6 +20,7 @@ pub(crate) fn assemble_runtime_state(
     request: &RunRequest,
     session_context: SessionMemory,
     repo_context: RepoContextLoadResult,
+    skill_catalog: SkillCatalog,
     visible_tools: Vec<ToolDefinition>,
     _context_envelope: RuntimeContextEnvelope,
     prepared: PreparedRunState,
@@ -28,6 +30,7 @@ pub(crate) fn assemble_runtime_state(
             request: request.clone(),
             session_context,
             repo_context,
+            skill_catalog,
             context_envelope: prepared.context_envelope,
             visible_tools,
         },

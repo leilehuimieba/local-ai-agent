@@ -10,16 +10,15 @@ import {
   readRunStateBody,
   readRunStateHeadline,
   readRunStateNextStep,
-  readThreadStatusClass,
   ResultSection,
   shouldShowMessageFailure,
   shouldShowConfirmationRecord,
+  shouldShowInlinePendingNotice,
   shouldShowInlineFailureNotice,
   shouldShowPendingMessages,
 } from "./chatResultModel";
 import { RunState } from "../runtime/state";
 import { ChatMessage, ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
-import { EmptyStateBlock, MetricChip, SectionHeader, StatusPill } from "../ui/primitives";
 
 type ConfirmationDecision = "approve" | "reject" | "cancel";
 
@@ -46,27 +45,10 @@ type ChatPanelProps = {
 
 export function ChatPanel(props: ChatPanelProps) {
   return (
-    <article className="panel chat-panel">
-      <TaskHeader props={props} />
+    <article className="panel chat-panel chat-panel-simple">
       <TaskThread props={props} />
       <TaskComposer props={props} />
     </article>
-  );
-}
-
-function TaskHeader(props: { props: ChatPanelProps }) {
-  return (
-    <section className="task-header">
-      <div className="task-header-main">
-        <span className="section-kicker">任务</span>
-        <h1>{props.props.currentTaskTitle || "等待任务"}</h1>
-      </div>
-      <div className="task-meta-row">
-        <SummaryChip label="状态" value={props.props.statusLine} />
-        <SummaryChip label="运行" value={props.props.currentRunId || "等待生成"} />
-        <SummaryChip label="工作区" value={props.props.settings?.workspace.name || "未加载"} />
-      </div>
-    </section>
   );
 }
 
@@ -84,13 +66,22 @@ function TaskThread(props: { props: ChatPanelProps }) {
 
 function ThreadHeader(props: { props: ChatPanelProps }) {
   return (
-    <SectionHeader kicker="主线" className="stream-header" title="回答与状态" action={<StatusPill className={readThreadStatusClass(props.props.runState)} label={props.props.statusLine} />} />
+    <div className="stream-header stream-header-simple">
+      <strong>聊天</strong>
+      <span className="chat-status-text">{props.props.statusLine}</span>
+    </div>
   );
 }
 
 function ThreadContent(props: { props: ChatPanelProps }) {
-  if (shouldShowPendingMessages(props.props.runState, props.props.messages)) {
-    return <PendingMessageState taskTitle={props.props.currentTaskTitle || "当前任务"} />;
+  if (shouldShowPendingMessages(props.props.runState, props.props.messages, props.props.events, props.props.currentRunId)) {
+    return (
+      <PendingMessageState
+        currentRunId={props.props.currentRunId}
+        runState={props.props.runState}
+        taskTitle={props.props.currentTaskTitle || "当前任务"}
+      />
+    );
   }
   if (shouldShowMessageFailure(props.props.runState, props.props.messages, props.props.submitError, props.props.latestFailureEvent)) {
     return <PrimaryErrorState latestFailureEvent={props.props.latestFailureEvent} submitError={props.props.submitError} />;
@@ -99,7 +90,7 @@ function ThreadContent(props: { props: ChatPanelProps }) {
     return <ConfirmationOnlyState props={props.props} />;
   }
   if (props.props.messages.length === 0) {
-    return <EmptyWorkbench settings={props.props.settings} />;
+    return <EmptyWorkbench />;
   }
   return <ThreadRecords props={props.props} />;
 }
@@ -107,7 +98,7 @@ function ThreadContent(props: { props: ChatPanelProps }) {
 function ConfirmationOnlyState(props: { props: ChatPanelProps }) {
   return (
     <>
-      <EmptyWorkbench settings={props.props.settings} />
+      <EmptyWorkbench />
       <ConfirmationRecord props={props.props} />
     </>
   );
@@ -115,7 +106,6 @@ function ConfirmationOnlyState(props: { props: ChatPanelProps }) {
 
 function ThreadRecords(props: { props: ChatPanelProps }) {
   const tailRecord = readThreadTailRecord(props.props);
-  const toolEvents = getToolFeedItems(props.props.events);
   return (
     <>
       {[...props.props.messages].reverse().map((message, index) => (
@@ -126,7 +116,6 @@ function ThreadRecords(props: { props: ChatPanelProps }) {
           runEvent={findTerminalRunEvent(props.props, message.runId)}
         />
       ))}
-      {toolEvents.length > 0 ? <ToolEventFeed events={toolEvents} /> : null}
       {tailRecord}
     </>
   );
@@ -193,35 +182,6 @@ function ResultBlock(props: { section: ResultSection }) {
   );
 }
 
-function ToolEventFeed(props: { events: RunEvent[] }) {
-  if (props.events.length === 0) return null;
-  return (
-    <section className="tool-event-strip">
-      <strong>当前进度</strong>
-      <div className="tool-event-feed">
-      {props.events.map((event) => (
-        <ToolEventBadge key={event.event_id} event={event} />
-      ))}
-      </div>
-    </section>
-  );
-}
-
-function ToolEventBadge(props: { event: RunEvent }) {
-  const label = getToolEventLabel(props.event);
-  const isCompleted = isToolCompletedEvent(props.event);
-  if (!label) return null;
-  if (isCompleted) {
-    return <div className="status-badge status-completed">已完成 {label}</div>;
-  }
-  return (
-    <div className="status-badge status-running">
-      <span className="tool-event-spinner" aria-hidden="true" />
-      正在处理 {label}
-    </div>
-  );
-}
-
 function ThinkingDots() {
   return (
     <div className="thinking-dots" aria-label="正在思考" role="status">
@@ -250,31 +210,23 @@ function ConfirmationRecord(props: { props: ChatPanelProps }) {
   );
 }
 
-function EmptyWorkbench(props: { settings: SettingsResponse | null }) {
+function EmptyWorkbench() {
   return (
-    <div>
-      <EmptyStateBlock title="没有任务记录" text="输入明确目标后，这里会持续显示执行结果。" />
-      <div className="empty-status-strip">
-        <span>{props.settings?.model.display_name || "未加载模型"}</span>
-        <span>{props.settings?.workspace.name || "未加载工作区"}</span>
-      </div>
+    <div className="chat-empty-simple">
+      <strong>开始一个任务</strong>
+      <p>输入目标后，这里会按时间顺序显示回复和执行状态。</p>
     </div>
   );
 }
 
-function PendingMessageState(props: { taskTitle: string }) {
+function PendingMessageState(props: { taskTitle: string; runState: RunState; currentRunId: string }) {
   return (
     <div className="pending-thread">
       <article className="thread-record user">
         <RecordHead index={0} role="任务输入" />
         <div className="thread-record-copy"><p>{props.taskTitle}</p></div>
       </article>
-      <StateRecord
-        state="running"
-        title={readRunStateHeadline("submitting")}
-        body={readRunStateBody({ currentTaskTitle: props.taskTitle, runState: "submitting" })}
-        advice={readRunStateNextStep({ runState: "submitting" })}
-      />
+      <WaitingForFirstEventRecord taskTitle={props.taskTitle} runState={props.runState} currentRunId={props.currentRunId} />
     </div>
   );
 }
@@ -283,7 +235,7 @@ function PrimaryErrorState(props: { latestFailureEvent?: RunEvent; submitError?:
   return (
     <StateRecord
       state="failed"
-      title="任务没有可读结果"
+      title={readRunStateHeadline("failed", props.latestFailureEvent)}
       body={readFailureBody(props.latestFailureEvent, props.submitError)}
       advice={readFailureAdvice(props.latestFailureEvent)}
     />
@@ -306,7 +258,7 @@ function CompletionRecord(props: { props: ChatPanelProps }) {
   if (props.props.runState !== "completed" || props.props.messages.length === 0) return null;
   return (
     <StateRecord
-      state="running"
+      state="completed"
       title={readRunStateHeadline("completed")}
       body={readRunStateBody({ runState: "completed" })}
       advice={readRunStateNextStep({ runState: "completed" })}
@@ -318,6 +270,15 @@ function readThreadTailRecord(props: ChatPanelProps) {
   if (shouldShowConfirmationRecord(props.runState, props.confirmation)) {
     return <ConfirmationRecord props={props} />;
   }
+  if (shouldShowInlinePendingNotice(props.runState, props.messages, props.events, props.currentRunId)) {
+    return (
+      <WaitingForFirstEventRecord
+        currentRunId={props.currentRunId}
+        runState={props.runState}
+        taskTitle={props.currentTaskTitle || "当前任务"}
+      />
+    );
+  }
   if (shouldShowInlineFailureNotice(props.runState, props.messages, props.submitError, props.latestFailureEvent)) {
     return <RecoveryRecord latestFailureEvent={props.latestFailureEvent} submitError={props.submitError} />;
   }
@@ -328,13 +289,18 @@ function readThreadTailRecord(props: ChatPanelProps) {
 }
 
 function StateRecord(props: {
-  state: "failed" | "running";
+  state: "failed" | "running" | "completed";
   title: string;
   body: string;
   advice: string;
 }) {
+  const badge = readStateBadge(props.state);
   return (
     <article className={`thread-record state-record state-record-${props.state}`}>
+      <div className="thread-record-head">
+        <span className="thread-record-role">{badge.label}</span>
+        <span className={`status-badge ${badge.className}`}>{badge.label}</span>
+      </div>
       <div className="thread-record-copy">
         <strong>{props.title}</strong>
         <p>{props.body}</p>
@@ -344,62 +310,63 @@ function StateRecord(props: {
   );
 }
 
-function TaskComposer(props: { props: ChatPanelProps }) {
-  return (
-    <form className="composer" onSubmit={props.props.onSubmit}>
-      <ComposerHeader />
-      <ComposerInput
-        composeValue={props.props.composeValue}
-        isDisabled={!props.props.settings || props.props.isRunning}
-        onComposeValueChange={props.props.onComposeValueChange}
-      />
-      <ComposerFooter props={props.props} />
-    </form>
-  );
-}
-
-function ComposerHeader() {
-  return (
-    <SectionHeader kicker="输入" className="composer-header" title="输入任务" />
-  );
-}
-
-function ComposerInput(props: {
-  composeValue: string;
-  isDisabled: boolean;
-  onComposeValueChange: (value: string) => void;
+function WaitingForFirstEventRecord(props: {
+  taskTitle: string;
+  runState: RunState;
+  currentRunId: string;
 }) {
   return (
-    <textarea
-      id="task-composer-input"
-      className="composer-input"
-      aria-label="任务输入"
-      rows={4}
-      value={props.composeValue}
-      disabled={props.isDisabled}
-      placeholder="描述要完成的任务"
-      onChange={(event) => props.onComposeValueChange(event.target.value)}
+    <StateRecord
+      state="running"
+      title={readPendingHeadline(props.runState)}
+      body={readPendingBody(props.taskTitle, props.currentRunId)}
+      advice="继续等待首个事件；事件到达后主线程和调查层会同步刷新。"
     />
   );
 }
 
-function ComposerFooter(props: { props: ChatPanelProps }) {
+function readPendingHeadline(runState: RunState) {
+  if (runState === "resuming") return "任务恢复中，等待首个事件";
+  if (runState === "streaming") return "任务运行中，等待首个事件";
+  return "任务已提交，等待首个事件";
+}
+
+function readPendingBody(taskTitle: string, currentRunId: string) {
+  if (!currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流。`;
+  return `任务“${taskTitle}”已进入运行 ${currentRunId}，正在等待第一条事件。`;
+}
+
+function readStateBadge(state: "failed" | "running" | "completed") {
+  if (state === "failed") return { className: "status-failed", label: "失败" };
+  if (state === "completed") return { className: "status-completed", label: "完成" };
+  return { className: "status-running", label: "运行中" };
+}
+
+function TaskComposer(props: { props: ChatPanelProps }) {
   const isDisabled = !props.props.settings || props.props.isRunning || !props.props.composeValue.trim();
   return (
-    <div className="composer-footer">
-      <div className="composer-meta">
-        <span>{props.props.settings?.model.display_name || "未加载模型"}</span>
-        <span>{props.props.settings?.workspace.name || "未加载工作区"}</span>
+    <form className="composer composer-simple" onSubmit={props.props.onSubmit}>
+      <div className="simple-composer-shell">
+        <input
+          id="task-composer-input"
+          className="simple-composer-input"
+          aria-label="任务输入"
+          type="text"
+          value={props.props.composeValue}
+          disabled={!props.props.settings || props.props.isRunning}
+          placeholder="输入任务，按回车发送"
+          onChange={(event) => props.props.onComposeValueChange(event.target.value)}
+        />
+        <button className="primary-action" type="submit" disabled={isDisabled}>
+          {readSubmitLabel(props.props.isRunning)}
+        </button>
       </div>
-      <button className="primary-action" type="submit" disabled={isDisabled}>
-        {props.props.isRunning ? "发送任务中" : "发送任务"}
-      </button>
-    </div>
+    </form>
   );
 }
 
-function SummaryChip(props: { label: string; value: string }) {
-  return <MetricChip className="metric-chip" label={props.label} value={props.value} />;
+function readSubmitLabel(isRunning: boolean) {
+  return isRunning ? "发送中" : "发送";
 }
 
 function splitMessage(content: string) {
@@ -413,47 +380,4 @@ function findTerminalRunEvent(props: ChatPanelProps, runId?: string) {
     if (event.run_id !== runId) return false;
     return event.event_type === "run_finished" || event.event_type === "run_failed";
   });
-}
-
-function getToolFeedItems(events: RunEvent[]) {
-  const ordered = [...events].reverse();
-  const current = ordered.find((event) => hasToolName(event) && !isToolCompletedEvent(event));
-  const completed = collectCompletedToolEvents(ordered, current?.event_id);
-  return current ? [current, ...completed] : completed;
-}
-
-function collectCompletedToolEvents(events: RunEvent[], currentEventId?: string) {
-  const labels = new Set<string>();
-  const items: RunEvent[] = [];
-  for (const event of events) {
-    const label = getToolEventLabel(event);
-    if (!label || !isToolCompletedEvent(event) || event.event_id === currentEventId || labels.has(label)) continue;
-    labels.add(label);
-    items.push(event);
-    if (items.length === 2) break;
-  }
-  return items;
-}
-
-function isToolStartedEvent(event: RunEvent) {
-  return event.event_type === "tool_started";
-}
-
-function isToolCompletedEvent(event: RunEvent) {
-  return event.event_type === "tool_completed" || event.event_type === "tool_finished" || event.event_type === "action_completed" || event.event_type === "run_finished";
-}
-
-function hasToolName(event: RunEvent) {
-  return Boolean(getToolEventLabel(event));
-}
-
-function getToolEventLabel(event: RunEvent) {
-  return (
-    event.tool_display_name ||
-    event.tool_call_snapshot?.display_name ||
-    event.tool_name ||
-    event.tool_category ||
-    event.metadata?.tool_name ||
-    ""
-  );
 }

@@ -1,12 +1,13 @@
 ﻿# 本地智能体 Docs 导航
 
-更新时间：2026-04-10
+更新时间：2026-04-12
 状态：`重构执行阶段导航`
 
 ## 0. 当前唯一执行入口
 
 1. 完整总路线： [Hermes重构总路线图_完整计划](D:/newwork/本地智能体/docs/11-hermes-rebuild/Hermes重构总路线图_完整计划.md)
 2. 阶段执行计划： [阶段计划总表](D:/newwork/本地智能体/docs/11-hermes-rebuild/stage-plans/阶段计划总表.md)
+3. 文档阅读与新旧口径判断： [文档阅读与执行指引](D:/newwork/本地智能体/docs/11-hermes-rebuild/文档阅读与执行指引.md)
 
 ## 1. 文档使用规则
 

@@ -20,6 +20,18 @@
 
 ## P3 项目规则
 
+### 项目推进
+
+1. 项目推进类请求默认先检查当前执行状态，再决定是否进入设计或实现。典型触发表述包括：`继续做`、`看看进度`、`下一步该干嘛`、`按当前项目状态推进`、`先梳理再实现`。
+2. 项目推进类请求默认按以下顺序读取：`docs/README.md`、`docs/11-hermes-rebuild/Hermes重构总路线图_完整计划.md`、`docs/11-hermes-rebuild/stage-plans/阶段计划总表.md`、`docs/11-hermes-rebuild/changes/INDEX.md`。
+3. 如果用户明确点名某个 change，以用户指定为准；否则优先读取 `docs/11-hermes-rebuild/changes/INDEX.md` 中的当前活跃 change。
+4. 如果缺少关键输入，先输出 `当前状态`、`缺失项`、`下一步建议`，不要直接进入大规模实现。关键输入至少包括：当前阶段、当前 Gate、活跃 change，以及 change 下的 `proposal.md`、`design.md`、`tasks.md`、`status.md`、`verify.md`。
+5. 中等以上任务、跨模块改动、需要单独验收证据或回退方案的任务，统一进入 `docs/11-hermes-rebuild/changes/` 工作区，不要只在聊天中推进。
+6. 新建或切换主推进项时，同步更新 `docs/11-hermes-rebuild/changes/INDEX.md`；实现推进时同步更新对应 change 下的 `tasks.md`、`status.md`，进入验证或提审前补齐 `verify.md`。
+7. 默认不把 `docs/archive/` 下的历史文档作为当前执行口径，除非用户明确要求参考历史方案。
+8. 如果阶段目标、Gate、活跃 change 与具体实现方案冲突，先指出冲突并暂停推进，不要擅自扩 scope 或绕过阶段约束。
+9. 未补齐验证证据前，不要把阶段性任务表述为已完成；未满足当前阶段 Gate 前，不要默认进入下一阶段开发。
+
 ### Go
 
 1. 新增或修改 Go 代码时，使用 Go 1.22+ 可用的新特性和标准库能力。

@@ -420,7 +420,10 @@ mod tests {
             "分析结果",
             &RiskOutcome::Proceed,
         );
-        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
+        assert_eq!(
+            session.short_term.handoff_artifact_path,
+            "D:/repo/handoff.json"
+        );
     }
 
     fn sample_request(strategy: &str) -> RunRequest {

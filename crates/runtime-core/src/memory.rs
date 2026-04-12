@@ -189,6 +189,7 @@ fn score_memory_entry(
 ) -> Option<(i32, MemoryEntry)> {
     let mut score = base_memory_score(query_text, &entry);
     score += memory_source_priority(&entry);
+    score += memory_priority_bonus(entry.priority);
     if entry.workspace_id == request.workspace_ref.workspace_id {
         score += 8;
     }
@@ -205,6 +206,10 @@ fn base_memory_score(query_text: &str, entry: &MemoryEntry) -> i32 {
         score += 1;
     }
     score
+}
+
+fn memory_priority_bonus(priority: i32) -> i32 {
+    priority.clamp(-40, 120) / 2
 }
 
 fn sort_memory_entries(scored: &mut [(i32, MemoryEntry)]) {
@@ -514,4 +519,73 @@ fn archived_at(entry: &StructuredMemoryEntry) -> String {
         return fallback_time(&entry.archived_at, &entry.updated_at, &entry.timestamp);
     }
     String::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn dedupe_keeps_first_entry_per_memory_key() {
+        let first = sample_entry("memory-1", "lesson_learned", "同一条记忆", 20);
+        let mut duplicate = sample_entry("memory-2", "lesson_learned", "同一条记忆", 80);
+        duplicate.timestamp = "2".to_string();
+        let third = sample_entry("memory-3", "lesson_learned", "另一条记忆", 20);
+        let items = dedupe_memory_entries(vec![first.clone(), duplicate, third.clone()]);
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].id, first.id);
+        assert_eq!(items[1].id, third.id);
+    }
+
+    #[test]
+    fn score_prefers_higher_priority_for_same_query() {
+        let request = sample_request();
+        let high = sample_entry("memory-high", "preference", "统一中文输出", 80);
+        let low = sample_entry("memory-low", "lesson_learned", "统一中文输出", 60);
+        let high_score = score_memory_entry(&request, "中文输出", high).unwrap().0;
+        let low_score = score_memory_entry(&request, "中文输出", low).unwrap().0;
+        assert!(high_score > low_score);
+    }
+
+    #[test]
+    fn append_blocks_low_value_runtime_fallback_memory() {
+        let request = sample_request();
+        let mut entry = sample_entry("memory-archive", "lesson_learned", "低价值回退", 0);
+        entry.source_type = "runtime".to_string();
+        entry.content = "无法打开你的计算机，请使用本地文件管理。".to_string();
+        assert!(should_archive_memory_entry(&entry));
+        let result = append_memory_entry(&request, &entry);
+        assert!(result.is_err());
+    }
+
+    fn sample_request() -> RunRequest {
+        RunRequest {
+            request_id: "request-test".to_string(),
+            run_id: "run-test".to_string(),
+            session_id: "session-test".to_string(),
+            trace_id: "trace-test".to_string(),
+            user_input: "test".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef { provider_id: "p".to_string(), model_id: "m".to_string(), display_name: "model".to_string() },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef { workspace_id: "workspace-test".to_string(), name: "workspace".to_string(), root_path: "D:/repo".to_string(), is_active: true },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: String::new(),
+            resume_strategy: String::new(),
+            confirmation_decision: None,
+        }
+    }
+
+    fn sample_entry(id: &str, kind: &str, summary: &str, priority: i32) -> MemoryEntry {
+        MemoryEntry {
+            id: id.to_string(), kind: kind.to_string(), title: summary.to_string(), summary: summary.to_string(), content: summary.to_string(),
+            scope: "workspace".to_string(), workspace_id: "workspace-test".to_string(), session_id: "session-test".to_string(),
+            source_run_id: "run-test".to_string(), source: "run:run-test".to_string(), source_type: "runtime".to_string(), source_title: summary.to_string(),
+            source_event_type: "run_finished".to_string(), source_artifact_path: String::new(), governance_version: String::new(), governance_reason: String::new(),
+            governance_source: String::new(), governance_at: "1".to_string(), archive_reason: String::new(), verified: true, priority, archived: false,
+            archived_at: String::new(), created_at: "1".to_string(), updated_at: "1".to_string(), timestamp: "1".to_string(),
+        }
+    }
 }

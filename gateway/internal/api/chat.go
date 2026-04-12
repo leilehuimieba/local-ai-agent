@@ -44,13 +44,26 @@ type ChatRetryRequest struct {
 }
 
 type ChatRunAccepted struct {
-	Accepted      bool   `json:"accepted"`
-	SessionID     string `json:"session_id"`
-	RunID         string `json:"run_id"`
-	InitialStatus string `json:"initial_status"`
+	Accepted        bool   `json:"accepted"`
+	SessionID       string `json:"session_id"`
+	RunID           string `json:"run_id"`
+	RequestID       string `json:"request_id"`
+	TraceID         string `json:"trace_id"`
+	InitialStatus   string `json:"initial_status"`
+	EntryID         string `json:"entry_id"`
+	ProtocolVersion string `json:"protocol_version"`
+	StreamEndpoint  string `json:"stream_endpoint"`
+	LogsEndpoint    string `json:"logs_endpoint"`
+	ConfirmEndpoint string `json:"confirm_endpoint"`
+	RetryEndpoint   string `json:"retry_endpoint"`
 }
 
 var idCounter uint64
+
+const (
+	chatEntryID         = "gateway.chat.entry1"
+	chatProtocolVersion = "v1"
+)
 
 func NewChatHandler(
 	repoRoot string,
@@ -95,12 +108,7 @@ func (h *ChatHandler) Run(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go h.execute(runRequest)
-	writeJSON(w, http.StatusAccepted, ChatRunAccepted{
-		Accepted:      true,
-		SessionID:     runRequest.SessionID,
-		RunID:         runRequest.RunID,
-		InitialStatus: "accepted",
-	})
+	writeJSON(w, http.StatusAccepted, newChatRunAccepted(runRequest))
 }
 
 func decodeRunPayload(r *http.Request) (ChatRunRequest, error) {
@@ -147,12 +155,7 @@ func (h *ChatHandler) Retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go h.execute(runRequest)
-	writeJSON(w, http.StatusAccepted, ChatRunAccepted{
-		Accepted:      true,
-		SessionID:     runRequest.SessionID,
-		RunID:         runRequest.RunID,
-		InitialStatus: "accepted",
-	})
+	writeJSON(w, http.StatusAccepted, newChatRunAccepted(runRequest))
 }
 
 func (h *ChatHandler) Stream(w http.ResponseWriter, r *http.Request) {
@@ -320,4 +323,21 @@ func newID(prefix string) string {
 
 func timestampNow() string {
 	return fmt.Sprintf("%d", time.Now().UnixMilli())
+}
+
+func newChatRunAccepted(runRequest contracts.RunRequest) ChatRunAccepted {
+	return ChatRunAccepted{
+		Accepted:        true,
+		SessionID:       runRequest.SessionID,
+		RunID:           runRequest.RunID,
+		RequestID:       runRequest.RequestID,
+		TraceID:         runRequest.TraceID,
+		InitialStatus:   "accepted",
+		EntryID:         chatEntryID,
+		ProtocolVersion: chatProtocolVersion,
+		StreamEndpoint:  "/api/v1/events/stream?session_id={session_id}",
+		LogsEndpoint:    "/api/v1/logs?session_id={session_id}&run_id={run_id}",
+		ConfirmEndpoint: "/api/v1/chat/confirm",
+		RetryEndpoint:   "/api/v1/chat/retry",
+	}
 }

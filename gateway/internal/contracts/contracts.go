@@ -22,39 +22,43 @@ type ErrorInfo struct {
 }
 
 type RunRequest struct {
-	RequestID            string                `json:"request_id"`
-	RunID                string                `json:"run_id"`
-	SessionID            string                `json:"session_id"`
-	TraceID              string                `json:"trace_id"`
-	UserInput            string                `json:"user_input"`
-	Mode                 string                `json:"mode"`
-	ModelRef             config.ModelRef       `json:"model_ref"`
-	ProviderRef          ProviderRef           `json:"provider_ref"`
-	WorkspaceRef         config.WorkspaceRef   `json:"workspace_ref"`
-	ContextHints         map[string]string     `json:"context_hints,omitempty"`
-	ResumeFromCheckpointID string              `json:"resume_from_checkpoint_id,omitempty"`
-	ResumeStrategy       string                `json:"resume_strategy,omitempty"`
-	ConfirmationDecision *ConfirmationDecision `json:"confirmation_decision,omitempty"`
+	RequestID              string                `json:"request_id"`
+	RunID                  string                `json:"run_id"`
+	SessionID              string                `json:"session_id"`
+	TraceID                string                `json:"trace_id"`
+	UserInput              string                `json:"user_input"`
+	Mode                   string                `json:"mode"`
+	ModelRef               config.ModelRef       `json:"model_ref"`
+	ProviderRef            ProviderRef           `json:"provider_ref"`
+	WorkspaceRef           config.WorkspaceRef   `json:"workspace_ref"`
+	ContextHints           map[string]string     `json:"context_hints,omitempty"`
+	ResumeFromCheckpointID string                `json:"resume_from_checkpoint_id,omitempty"`
+	ResumeStrategy         string                `json:"resume_strategy,omitempty"`
+	ConfirmationDecision   *ConfirmationDecision `json:"confirmation_decision,omitempty"`
 }
 
 type RuntimeContextSnapshot struct {
-	WorkspaceRoot    string `json:"workspace_root,omitempty"`
-	Mode             string `json:"mode,omitempty"`
-	SessionSummary   string `json:"session_summary,omitempty"`
-	MemoryDigest     string `json:"memory_digest,omitempty"`
-	KnowledgeDigest  string `json:"knowledge_digest,omitempty"`
-	ToolPreview      string `json:"tool_preview,omitempty"`
-	ReasoningSummary string `json:"reasoning_summary,omitempty"`
-	CacheStatus      string `json:"cache_status,omitempty"`
-	CacheReason      string `json:"cache_reason,omitempty"`
-	AssemblyProfile  string `json:"assembly_profile,omitempty"`
-	IncludesSession  bool   `json:"includes_session,omitempty"`
-	IncludesMemory   bool   `json:"includes_memory,omitempty"`
-	IncludesKnowledge bool  `json:"includes_knowledge,omitempty"`
-	IncludesToolPreview bool `json:"includes_tool_preview,omitempty"`
-	PromptStatic     string `json:"prompt_static,omitempty"`
-	PromptProject    string `json:"prompt_project,omitempty"`
-	PromptDynamic    string `json:"prompt_dynamic,omitempty"`
+	WorkspaceRoot          string `json:"workspace_root,omitempty"`
+	Mode                   string `json:"mode,omitempty"`
+	SessionSummary         string `json:"session_summary,omitempty"`
+	MemoryDigest           string `json:"memory_digest,omitempty"`
+	KnowledgeDigest        string `json:"knowledge_digest,omitempty"`
+	ToolPreview            string `json:"tool_preview,omitempty"`
+	ReasoningSummary       string `json:"reasoning_summary,omitempty"`
+	CacheStatus            string `json:"cache_status,omitempty"`
+	CacheReason            string `json:"cache_reason,omitempty"`
+	AssemblyProfile        string `json:"assembly_profile,omitempty"`
+	IncludesSession        bool   `json:"includes_session,omitempty"`
+	IncludesMemory         bool   `json:"includes_memory,omitempty"`
+	IncludesKnowledge      bool   `json:"includes_knowledge,omitempty"`
+	IncludesToolPreview    bool   `json:"includes_tool_preview,omitempty"`
+	PhaseLabel             string `json:"phase_label,omitempty"`
+	SelectionReason        string `json:"selection_reason,omitempty"`
+	PrefersArtifactContext bool   `json:"prefers_artifact_context,omitempty"`
+	ArtifactHint           string `json:"artifact_hint,omitempty"`
+	PromptStatic           string `json:"prompt_static,omitempty"`
+	PromptProject          string `json:"prompt_project,omitempty"`
+	PromptDynamic          string `json:"prompt_dynamic,omitempty"`
 }
 
 type ToolCallSnapshot struct {
@@ -69,10 +73,10 @@ type ToolCallSnapshot struct {
 }
 
 type VerificationSnapshot struct {
-	Code    string `json:"code,omitempty"`
-	Summary string `json:"summary,omitempty"`
-	Passed  bool   `json:"passed,omitempty"`
-	Policy  string `json:"policy,omitempty"`
+	Code     string   `json:"code,omitempty"`
+	Summary  string   `json:"summary,omitempty"`
+	Passed   bool     `json:"passed,omitempty"`
+	Policy   string   `json:"policy,omitempty"`
 	Evidence []string `json:"evidence,omitempty"`
 }
 

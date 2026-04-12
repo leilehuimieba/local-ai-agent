@@ -495,6 +495,7 @@ mod tests {
                 final_answer: "结果正文".to_string(),
                 artifact_path: artifact.then(|| "tmp/out.txt".to_string()),
                 error_code: error_code.map(|v| v.to_string()),
+                elapsed_ms: 0,
                 retryable: !success,
                 success,
                 memory_write_summary: None,

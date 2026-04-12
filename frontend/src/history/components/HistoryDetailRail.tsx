@@ -185,8 +185,14 @@ function buildMetadataRows(log: LogEntry) {
     { label: "最近动作", value: readDetailMemoryActivity(log) },
     { label: "来源事件", value: log.event_type || "未附带" },
     { label: "证据路径", value: log.artifact_path || "未附带" },
+    { label: "确认链步骤", value: readMetadataValue(log, "confirmation_chain_step") },
+    { label: "确认决策", value: readMetadataValue(log, "confirmation_decision") },
+    { label: "恢复策略", value: readMetadataValue(log, "confirmation_resume_strategy") },
+    { label: "Checkpoint", value: readMetadataValue(log, "checkpoint_id") },
+    { label: "工具耗时(ms)", value: readMetadataValue(log, "tool_elapsed_ms") },
     { label: "治理版本", value: readMetadataValue(log, "governance_version") },
     { label: "治理来源", value: readMetadataValue(log, "governance_source") },
+    { label: "治理状态", value: readMetadataValue(log, "governance_status") },
     { label: "治理时间", value: readMetadataValue(log, "governance_at") },
     { label: "记录来源", value: readLogSource(log) },
     { label: "记录时间", value: log.timestamp },
@@ -195,6 +201,7 @@ function buildMetadataRows(log: LogEntry) {
 
 function buildMetadataParagraphs(log: LogEntry) {
   return [
+    readAuditChainSummary(log),
     readMetadataValue(log, "governance_reason", false),
     readMetadataValue(log, "archive_reason", false),
   ].filter(Boolean) as string[];
@@ -261,6 +268,15 @@ function readLogSource(log: LogEntry) {
 function readMetadataValue(log: LogEntry, key: string, withFallback = true) {
   const value = log.metadata?.[key] || "";
   return value || (withFallback ? "未附带" : "");
+}
+
+function readAuditChainSummary(log: LogEntry) {
+  const step = readMetadataValue(log, "confirmation_chain_step", false);
+  if (!step) return "";
+  const decision = readMetadataValue(log, "confirmation_decision", false);
+  const strategy = readMetadataValue(log, "confirmation_resume_strategy", false);
+  const checkpoint = readMetadataValue(log, "checkpoint_id", false);
+  return `确认链：步骤=${step}；决策=${decision || "未附带"}；策略=${strategy || "未附带"}；checkpoint=${checkpoint || "未附带"}`;
 }
 
 function readLessonHint(log: LogEntry) {

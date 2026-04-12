@@ -43,7 +43,9 @@ pub(crate) fn load_runtime_checkpoint_sqlite(
     request: &RunRequest,
     checkpoint_id: &str,
 ) -> Result<Option<RunCheckpoint>, String> {
-    with_connection(request, |conn| select_runtime_checkpoint(conn, checkpoint_id))
+    with_connection(request, |conn| {
+        select_runtime_checkpoint(conn, checkpoint_id)
+    })
 }
 
 pub(crate) fn with_connection<T, F>(request: &RunRequest, f: F) -> Result<T, String>
@@ -581,10 +583,7 @@ const MEMORY_MIGRATIONS: [&str; 11] = [
     "alter table runtime_checkpoints add column resume_stage text not null default ''",
 ];
 
-fn insert_runtime_checkpoint(
-    conn: &Connection,
-    checkpoint: &RunCheckpoint,
-) -> Result<(), String> {
+fn insert_runtime_checkpoint(conn: &Connection, checkpoint: &RunCheckpoint) -> Result<(), String> {
     let request_payload = to_string(&checkpoint.request).map_err(|error| error.to_string())?;
     let response_payload = to_string(&checkpoint.response).map_err(|error| error.to_string())?;
     conn.execute(

@@ -289,9 +289,8 @@ fn cet_vocab_review_template(user_input: &str) -> Option<String> {
 
 fn acceptance_readiness_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_acceptance = lower.contains("验收")
-        || lower.contains("提测")
-        || lower.contains("ready for acceptance");
+    let asks_acceptance =
+        lower.contains("验收") || lower.contains("提测") || lower.contains("ready for acceptance");
     if !asks_acceptance {
         return None;
     }
@@ -308,9 +307,8 @@ fn acceptance_readiness_template(user_input: &str) -> Option<String> {
 fn priority_three_tasks_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
     let asks_priority = lower.contains("优先级") || lower.contains("priority");
-    let asks_three = lower.contains("三件事")
-        || lower.contains("3件事")
-        || lower.contains("three tasks");
+    let asks_three =
+        lower.contains("三件事") || lower.contains("3件事") || lower.contains("three tasks");
     let asks_next = lower.contains("下一步") || lower.contains("继续推进");
     if !(asks_priority && asks_three && asks_next) {
         return None;
@@ -320,9 +318,8 @@ fn priority_three_tasks_template(user_input: &str) -> Option<String> {
 
 fn next_step_30min_plan_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let has_30min = lower.contains("30 分钟")
-        || lower.contains("30分钟")
-        || lower.contains("30 minutes");
+    let has_30min =
+        lower.contains("30 分钟") || lower.contains("30分钟") || lower.contains("30 minutes");
     if !has_30min {
         return None;
     }
@@ -338,15 +335,12 @@ fn next_step_30min_plan_template(user_input: &str) -> Option<String> {
 
 fn one_action_reason_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_one_action = lower.contains("只给一个动作")
-        || lower.contains("一件事")
-        || lower.contains("one action");
+    let asks_one_action =
+        lower.contains("只给一个动作") || lower.contains("一件事") || lower.contains("one action");
     if !asks_one_action {
         return None;
     }
-    let asks_reason = lower.contains("说明原因")
-        || lower.contains("原因")
-        || lower.contains("why");
+    let asks_reason = lower.contains("说明原因") || lower.contains("原因") || lower.contains("why");
     if !asks_reason {
         return None;
     }
@@ -387,13 +381,12 @@ fn smalltalk_template(user_input: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        acceptance_readiness_template, evidence_readiness_template, evidence_status_template,
-        cet_daily_plan_template, cet_first_step_template, cet_first_week_plan_template,
-        cet_listening_boost_template, cet_vocab_review_template, fast_checklist_template,
-        kickoff_message_template, pause_risk_template, priority_three_tasks_template,
-        one_action_reason_template, next_step_30min_plan_template,
-        next_step_four_section_template, smalltalk_template, top_action_reason_template,
-        top_three_actions_template,
+        acceptance_readiness_template, cet_daily_plan_template, cet_first_step_template,
+        cet_first_week_plan_template, cet_listening_boost_template, cet_vocab_review_template,
+        evidence_readiness_template, evidence_status_template, fast_checklist_template,
+        kickoff_message_template, next_step_30min_plan_template, next_step_four_section_template,
+        one_action_reason_template, pause_risk_template, priority_three_tasks_template,
+        smalltalk_template, top_action_reason_template, top_three_actions_template,
     };
 
     #[test]
@@ -482,15 +475,13 @@ mod tests {
 
     #[test]
     fn matches_top_three_actions_question() {
-        let text =
-            "What are the top 3 concrete actions I should do next to continue the knowledge-assistant closure?";
+        let text = "What are the top 3 concrete actions I should do next to continue the knowledge-assistant closure?";
         assert!(top_three_actions_template(text).is_some());
     }
 
     #[test]
     fn matches_evidence_readiness_question() {
-        let text =
-            "Based on current evidence only, is this project ready to continue to the next day, and why?";
+        let text = "Based on current evidence only, is this project ready to continue to the next day, and why?";
         assert!(evidence_readiness_template(text).is_some());
     }
 

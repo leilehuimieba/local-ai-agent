@@ -74,7 +74,7 @@ func rejectionMetadata(
 	pending state.PendingConfirmation,
 	summary string,
 ) map[string]string {
-	return map[string]string{
+	metadata := map[string]string{
 		"confirmation_id":   decision.ConfirmationID,
 		"decision":          decision.Decision,
 		"decision_note":     decision.Note,
@@ -89,6 +89,10 @@ func rejectionMetadata(
 		"source_type":       "gateway",
 		"next_step":         "任务已结束",
 	}
+	for key, value := range confirmationAuditMetadata(pending) {
+		metadata[key] = value
+	}
+	return metadata
 }
 
 func rejectionStatus(decision string) string {
@@ -252,7 +256,7 @@ func confirmationMemoryMetadata(
 	entry memory.Entry,
 	layer string,
 ) map[string]string {
-	return map[string]string{
+	metadata := map[string]string{
 		"layer": layer, "record_type": entry.Kind, "source_type": "gateway",
 		"memory_kind": entry.Kind, "reason": entry.GovernanceReason,
 		"decision": decision.Decision, "decision_note": decision.Note,
@@ -268,6 +272,19 @@ func confirmationMemoryMetadata(
 		"source_event_type":    entry.SourceEventType,
 		"source_artifact_path": entry.SourceArtifactPath,
 		"archive_reason":       entry.ArchiveReason,
+	}
+	for key, value := range confirmationAuditMetadata(pending) {
+		metadata[key] = value
+	}
+	return metadata
+}
+
+func confirmationAuditMetadata(pending state.PendingConfirmation) map[string]string {
+	return map[string]string{
+		"checkpoint_id":                pending.CheckpointID,
+		"confirmation_resume_strategy": "after_confirmation",
+		"confirmation_chain_step":      "closed",
+		"confirmation_decision_source": "user_confirm_api",
 	}
 }
 

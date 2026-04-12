@@ -112,15 +112,20 @@ mod tests {
         SessionMemory::default()
     }
 
-    fn sample_retry_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint) {
+    fn sample_retry_pair() -> (
+        crate::contracts::RunRequest,
+        crate::checkpoint::RunCheckpoint,
+    ) {
         (
             sample_request("retry_failure"),
             sample_checkpoint("retryable_failure", "D:/repo/handoff.json"),
         )
     }
 
-    fn sample_confirmation_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint)
-    {
+    fn sample_confirmation_pair() -> (
+        crate::contracts::RunRequest,
+        crate::checkpoint::RunCheckpoint,
+    ) {
         (
             sample_request("after_confirmation"),
             sample_checkpoint("confirmation_required", ""),

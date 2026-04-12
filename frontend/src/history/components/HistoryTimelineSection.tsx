@@ -2,6 +2,7 @@ import { KeyboardEvent } from "react";
 
 import { LogEntry } from "../../shared/contracts";
 import { EmptyStateBlock, SectionHeader, StatusPill } from "../../ui/primitives";
+import { readAuditTags } from "../auditSignals";
 import { readLogType, readReviewTypeLabel } from "../logType";
 
 type HistoryTimelineSectionProps = {
@@ -88,12 +89,14 @@ function TimelineItemDetails(props: { log: LogEntry }) {
 }
 
 function TimelineItemMeta(props: { log: LogEntry }) {
+  const auditTags = readAuditTags(props.log);
   return (
     <div className="timeline-tags">
       <span>{readReviewTypeLabel(readLogType(props.log))}</span>
       <span>{props.log.tool_category || props.log.category}</span>
       <span>{props.log.level}</span>
       <span>{props.log.source || "runtime"}</span>
+      {auditTags.map((item) => <span key={`${props.log.log_id}-${item}`}>{item}</span>)}
       <span>{formatTimestamp(props.log.timestamp)}</span>
     </div>
   );
@@ -123,6 +126,8 @@ function readRiskTag(log: LogEntry) {
 function readKeyDetail(log: LogEntry) {
   if (log.error) return `${log.error.error_code} / ${log.error.message}`;
   if (readLogType(log) === "confirmation") return log.metadata?.reason || log.detail || "当前记录要求人工确认后才能继续。";
+  if (log.metadata?.confirmation_chain_step) return `确认链：${log.metadata.confirmation_chain_step}`;
+  if (log.metadata?.tool_elapsed_ms) return `工具耗时：${log.metadata.tool_elapsed_ms}ms`;
   return log.result_summary || log.verification_snapshot?.summary || log.detail || "";
 }
 

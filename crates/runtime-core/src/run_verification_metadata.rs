@@ -25,6 +25,10 @@ pub(crate) fn append_verification_metadata(
         "verification_evidence".to_string(),
         report.outcome.evidence.join("\n"),
     );
+    metadata.insert(
+        "tool_elapsed_ms".to_string(),
+        report.tool_elapsed_ms.to_string(),
+    );
 }
 
 fn bool_string(value: bool) -> String {
