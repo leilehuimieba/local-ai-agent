@@ -1,12 +1,16 @@
 # Hermes Change 索引
 
-更新时间：2026-04-10
+更新时间：2026-04-12
 
 这个文件用于标记当前执行主线下的活跃 change，避免多项变更并行时上下文漂移。
 
 ## 当前活跃 change
 
-1. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)
+1. 当前无活跃 change（待新任务条目激活）
+
+## 最近收口
+
+1. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)（2026-04-12 按任务列表收口）
 
 ## 选择规则
 
