@@ -25,6 +25,9 @@
 7. `run-stage-d-gate-batch.ps1`
    - 用途：阶段 D `D-G1` 7 天 Gate-D 批量验收（连续性与召回命中率阈值校验）。
    - 证据输出：`tmp/stage-d-batch/latest.json`。
+8. `run-stage-e-entry1-acceptance.ps1`
+   - 用途：阶段 E `E-02` 网关首入口会话协议验收（`chat/run` 协议字段 + `logs` 会话过滤）。
+   - 证据输出：`tmp/stage-e-entry1/latest.json`。
 
 ## 2. 同步命令示例
 
