@@ -17,10 +17,10 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		return contracts.RunRequest{}, err
 	}
 	return contracts.RunRequest{
-		RequestID:              newID("request"),
-		RunID:                  newID("run"),
+		RequestID:              pickRunIdentity(payload.RequestID, "request"),
+		RunID:                  pickRunIdentity(payload.RunID, "run"),
 		SessionID:              sessionID,
-		TraceID:                newID("trace"),
+		TraceID:                pickRunIdentity(payload.TraceID, "trace"),
 		UserInput:              payload.UserInput,
 		Mode:                   mode,
 		ModelRef:               model,
@@ -30,6 +30,13 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		ResumeFromCheckpointID: "",
 		ResumeStrategy:         "",
 	}, nil
+}
+
+func pickRunIdentity(source string, prefix string) string {
+	if source != "" {
+		return source
+	}
+	return newID(prefix)
 }
 
 func (h *ChatHandler) resolveRunContext(payload ChatRunRequest) (string, string, config.ModelRef, config.WorkspaceRef, bool, error) {

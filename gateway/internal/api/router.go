@@ -159,25 +159,41 @@ func NewRouter(
 ) http.Handler {
 	mux := http.NewServeMux()
 	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
-	memoryDeps := memoryRouteDeps{
-		store: memory.NewStore(repoRoot),
-		state: settingsStore,
-	}
+	memoryDeps := memoryRouteDeps{store: memory.NewStore(repoRoot), state: settingsStore}
 	registerCoreRoutes(mux, cfg)
 	registerProviderSettingsRoutes(mux, cfg, credentialStore, runtimeStore)
+	registerSettingsAndLogsRoutes(mux, repoRoot, cfg, settingsStore, eventBus)
+	registerMemoryRoutes(mux, memoryDeps)
+	registerChatRoutes(mux, chat)
+	mux.Handle("/", spaHandler(repoRoot))
+	return mux
+}
+
+func registerSettingsAndLogsRoutes(
+	mux *http.ServeMux,
+	repoRoot string,
+	cfg config.AppConfig,
+	settingsStore *state.SettingsStore,
+	eventBus *session.EventBus,
+) {
 	mux.HandleFunc("/api/v1/settings", settingsHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/settings/external-connections/action", externalConnectionActionHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/system/info", systemInfoHandler(repoRoot, cfg.RuntimePort))
 	mux.HandleFunc("/api/v1/logs", logsHandler(eventBus))
-	mux.HandleFunc("/api/v1/memories", memoryDeps.handleMemories)
-	mux.HandleFunc("/api/v1/memories/delete", memoryDeps.handleMemoryDelete)
+}
+
+func registerMemoryRoutes(mux *http.ServeMux, deps memoryRouteDeps) {
+	mux.HandleFunc("/api/v1/memories", deps.handleMemories)
+	mux.HandleFunc("/api/v1/memories/delete", deps.handleMemoryDelete)
+}
+
+func registerChatRoutes(mux *http.ServeMux, chat *ChatHandler) {
 	mux.HandleFunc("/api/v1/chat/run", chat.Run)
 	mux.HandleFunc("/api/v1/chat/retry", chat.Retry)
 	mux.HandleFunc("/api/v1/chat/confirm", chat.Confirm)
+	mux.HandleFunc("/api/v1/chat/cancel", chat.Cancel)
 	mux.HandleFunc("/api/v1/events/stream", chat.Stream)
-	mux.Handle("/", spaHandler(repoRoot))
-	return mux
 }
 
 func registerCoreRoutes(mux *http.ServeMux, cfg config.AppConfig) {
@@ -269,34 +285,75 @@ func buildMemoryPolicy(repoRoot string, workspace config.WorkspaceRef) MemoryPol
 
 func buildDiagnostics(repoRoot string, cfg config.AppConfig, runtimeStatus RuntimeStatus, modelCount int, workspaceCount int, approvalCount int) DiagnosticsStatus {
 	storageRoot := filepath.Join(repoRoot, "data")
-	status := DiagnosticsStatus{
-		CheckedAt:               fmt.Sprintf("%d", time.Now().UnixMilli()),
-		RepoRoot:                repoRoot,
-		RepoRootExists:          pathExists(repoRoot),
-		StorageRoot:             storageRoot,
-		StorageRootExists:       pathExists(storageRoot),
-		SettingsPath:            filepath.Join(storageRoot, "settings", "ui-state.json"),
-		SettingsPathExists:      pathExists(filepath.Join(storageRoot, "settings", "ui-state.json")),
-		RunLogPath:              filepath.Join(repoRoot, "logs", "run-logs.jsonl"),
-		RunLogPathExists:        pathExists(filepath.Join(repoRoot, "logs", "run-logs.jsonl")),
-		EventLogPath:            filepath.Join(repoRoot, "logs", "run-events.jsonl"),
-		EventLogPathExists:      pathExists(filepath.Join(repoRoot, "logs", "run-events.jsonl")),
-		WorkingMemoryDirExists:  pathExists(filepath.Join(storageRoot, "working_memory")),
-		KnowledgeBasePathExists: pathExists(filepath.Join(storageRoot, "knowledge_base")),
-		RuntimeReachable:        runtimeStatus.OK,
-		RuntimeVersion:          fmt.Sprintf("%s / %s", runtimeStatus.Name, runtimeStatus.Version),
-		ProviderCount:           len(cfg.Providers),
-		ModelCount:              modelCount,
-		WorkspaceCount:          workspaceCount,
-		ApprovedDirectoryCount:  approvalCount,
-		SiyuanRoot:              cfg.Siyuan.RootDir,
-		SiyuanRootExists:        pathExists(cfg.Siyuan.RootDir),
-		SiyuanExportDir:         cfg.Siyuan.ExportDir,
-		SiyuanExportDirExists:   pathExists(cfg.Siyuan.ExportDir),
-		SiyuanAutoWriteEnabled:  cfg.Siyuan.AutoWriteEnabled,
-		SiyuanSyncEnabled:       cfg.Siyuan.SyncEnabled,
-	}
+	settingsPath, runLogPath, eventLogPath := diagnosticsStoragePaths(repoRoot, storageRoot)
+	status := buildDiagnosticsBase(diagnosticsBaseArgs{
+		repoRoot:       repoRoot,
+		storageRoot:    storageRoot,
+		settingsPath:   settingsPath,
+		runLogPath:     runLogPath,
+		eventLogPath:   eventLogPath,
+		runtimeStatus:  runtimeStatus,
+		providerCount:  len(cfg.Providers),
+		modelCount:     modelCount,
+		workspaceCount: workspaceCount,
+		approvalCount:  approvalCount,
+	})
+	status = withSiyuanDiagnostics(status, cfg.Siyuan)
 	return finalizeDiagnostics(status)
+}
+
+func diagnosticsStoragePaths(repoRoot string, storageRoot string) (string, string, string) {
+	settingsPath := filepath.Join(storageRoot, "settings", "ui-state.json")
+	runLogPath := filepath.Join(repoRoot, "logs", "run-logs.jsonl")
+	eventLogPath := filepath.Join(repoRoot, "logs", "run-events.jsonl")
+	return settingsPath, runLogPath, eventLogPath
+}
+
+type diagnosticsBaseArgs struct {
+	repoRoot       string
+	storageRoot    string
+	settingsPath   string
+	runLogPath     string
+	eventLogPath   string
+	runtimeStatus  RuntimeStatus
+	providerCount  int
+	modelCount     int
+	workspaceCount int
+	approvalCount  int
+}
+
+func buildDiagnosticsBase(args diagnosticsBaseArgs) DiagnosticsStatus {
+	return DiagnosticsStatus{
+		CheckedAt:               fmt.Sprintf("%d", time.Now().UnixMilli()),
+		RepoRoot:                args.repoRoot,
+		RepoRootExists:          pathExists(args.repoRoot),
+		StorageRoot:             args.storageRoot,
+		StorageRootExists:       pathExists(args.storageRoot),
+		SettingsPath:            args.settingsPath,
+		SettingsPathExists:      pathExists(args.settingsPath),
+		RunLogPath:              args.runLogPath,
+		RunLogPathExists:        pathExists(args.runLogPath),
+		EventLogPath:            args.eventLogPath,
+		EventLogPathExists:      pathExists(args.eventLogPath),
+		WorkingMemoryDirExists:  pathExists(filepath.Join(args.storageRoot, "working_memory")),
+		KnowledgeBasePathExists: pathExists(filepath.Join(args.storageRoot, "knowledge_base")),
+		RuntimeReachable:        args.runtimeStatus.OK,
+		RuntimeVersion:          fmt.Sprintf("%s / %s", args.runtimeStatus.Name, args.runtimeStatus.Version),
+		ProviderCount:           args.providerCount,
+		ModelCount:              args.modelCount,
+		WorkspaceCount:          args.workspaceCount,
+		ApprovedDirectoryCount:  args.approvalCount,
+	}
+}
+
+func withSiyuanDiagnostics(status DiagnosticsStatus, siyuan config.SiyuanConfig) DiagnosticsStatus {
+	status.SiyuanRoot = siyuan.RootDir
+	status.SiyuanRootExists = pathExists(siyuan.RootDir)
+	status.SiyuanExportDir = siyuan.ExportDir
+	status.SiyuanExportDirExists = pathExists(siyuan.ExportDir)
+	status.SiyuanAutoWriteEnabled = siyuan.AutoWriteEnabled
+	status.SiyuanSyncEnabled = siyuan.SyncEnabled
+	return status
 }
 
 func buildExternalConnections(repoRoot string, cfg config.AppConfig, workspace config.WorkspaceRef) []ExternalConnectionSlot {
@@ -403,9 +460,16 @@ func logsHandler(eventBus *session.EventBus) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		items := eventBus.RecentBy(query.Limit, query.SessionID, query.RunID)
+		items := queryLogItems(eventBus, query)
 		writeJSON(w, http.StatusOK, LogsResponse{Items: items})
 	}
+}
+
+func queryLogItems(eventBus *session.EventBus, query logsQuery) []contracts.LogEntry {
+	if query.View == "runs" {
+		return eventBus.RecentRuns(query.Limit, query.SessionID)
+	}
+	return eventBus.RecentBy(query.Limit, query.SessionID, query.RunID)
 }
 
 func (deps memoryRouteDeps) handleMemories(w http.ResponseWriter, r *http.Request) {

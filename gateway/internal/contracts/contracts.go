@@ -235,6 +235,7 @@ type LogEntry struct {
 	AgentID              string                  `json:"agent_id,omitempty"`
 	AgentLabel           string                  `json:"agent_label,omitempty"`
 	EventType            string                  `json:"event_type,omitempty"`
+	TraceID              string                  `json:"trace_id,omitempty"`
 	Stage                string                  `json:"stage,omitempty"`
 	Summary              string                  `json:"summary"`
 	Detail               string                  `json:"detail,omitempty"`

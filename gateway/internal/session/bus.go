@@ -124,6 +124,12 @@ func (b *EventBus) RecentBy(limit int, sessionID string, runID string) []contrac
 	return tailLogEntries(filtered, limit)
 }
 
+func (b *EventBus) RecentRuns(limit int, sessionID string) []contracts.LogEntry {
+	items := b.readLogsFromFile()
+	filtered := filterLogEntries(items, sessionID, "")
+	return tailUniqueRunEntries(filtered, limit)
+}
+
 func (b *EventBus) appendEventLog(event contracts.RunEvent) {
 	file, err := os.OpenFile(b.eventLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
@@ -154,83 +160,93 @@ func (b *EventBus) appendLog(event contracts.RunEvent) {
 }
 
 func logEntryFromEvent(event contracts.RunEvent) contracts.LogEntry {
+	level, category := classifyLogLevelAndCategory(event)
+	entry := baseLogEntry(event, level, category)
+	fillLogEntryOutcome(&entry, event)
+	fillLogEntrySnapshots(&entry, event, buildErrorInfo(event))
+	return entry
+}
+
+func classifyLogLevelAndCategory(event contracts.RunEvent) (string, string) {
 	level := "info"
 	category := "runtime"
 	if event.ToolName != "" {
 		category = "tool"
 	}
-	if event.EventType == "confirmation_required" {
-		category = "risk"
-		level = "warn"
-	}
-	if event.EventType == "memory_written" {
+	switch event.EventType {
+	case "confirmation_required":
+		level, category = "warn", "risk"
+	case "memory_written", "memory_recalled":
 		category = "memory"
-	}
-	if event.EventType == "memory_recalled" {
-		category = "memory"
-	}
-	if event.EventType == "knowledge_written" {
+	case "knowledge_written":
 		category = "knowledge"
-	}
-	if event.EventType == "knowledge_write_skipped" {
-		category = "knowledge"
-		level = "warn"
-	}
-	if event.EventType == "memory_write_skipped" {
-		category = "memory"
-		level = "warn"
-	}
-	if event.EventType == "run_failed" {
+	case "knowledge_write_skipped":
+		level, category = "warn", "knowledge"
+	case "memory_write_skipped":
+		level, category = "warn", "memory"
+	case "run_failed":
 		level = "error"
 	}
+	return level, category
+}
 
-	var errorInfo *contracts.ErrorInfo
-	if event.EventType == "run_failed" || event.Metadata["error_code"] != "" {
-		errorInfo = &contracts.ErrorInfo{
-			ErrorCode: event.Metadata["error_code"],
-			Message:   pickFirst(event.Metadata["error_message"], event.Detail),
-			Summary:   event.Summary,
-			Retryable: event.Metadata["retryable"] != "false",
-			Source:    pickFirst(event.Metadata["error_source"], event.Source),
-			Stage:     event.Stage,
-			Metadata:  event.Metadata,
-		}
+func buildErrorInfo(event contracts.RunEvent) *contracts.ErrorInfo {
+	if event.EventType != "run_failed" && event.Metadata["error_code"] == "" {
+		return nil
 	}
+	return &contracts.ErrorInfo{
+		ErrorCode: event.Metadata["error_code"],
+		Message:   pickFirst(event.Metadata["error_message"], event.Detail),
+		Summary:   event.Summary,
+		Retryable: event.Metadata["retryable"] != "false",
+		Source:    pickFirst(event.Metadata["error_source"], event.Source),
+		Stage:     event.Stage,
+		Metadata:  event.Metadata,
+	}
+}
 
+func baseLogEntry(event contracts.RunEvent, level string, category string) contracts.LogEntry {
 	return contracts.LogEntry{
-		LogID:                event.EventID,
-		SessionID:            event.SessionID,
-		RunID:                event.RunID,
-		Timestamp:            event.Timestamp,
-		Level:                level,
-		Category:             category,
-		Source:               event.Source,
-		RecordType:           pickFirst(event.RecordType, event.Metadata["record_type"]),
-		SourceType:           pickFirst(event.SourceType, event.Metadata["source_type"]),
-		AgentID:              event.AgentID,
-		AgentLabel:           event.AgentLabel,
-		EventType:            event.EventType,
-		Stage:                event.Stage,
-		Summary:              event.Summary,
-		Detail:               event.Detail,
-		ToolName:             pickFirst(event.ToolName, event.Metadata["tool_name"]),
-		ToolDisplayName:      pickFirst(event.ToolDisplayName, event.Metadata["tool_display_name"]),
-		ToolCategory:         pickFirst(event.ToolCategory, event.Metadata["tool_category"]),
-		OutputKind:           pickFirst(event.OutputKind, event.Metadata["output_kind"]),
-		ResultSummary:        pickFirst(event.ResultSummary, event.Metadata["result_summary"]),
-		ArtifactPath:         pickFirst(event.ArtifactPath, event.Metadata["artifact_path"]),
-		RiskLevel:            pickFirst(event.RiskLevel, event.Metadata["risk_level"]),
-		ConfirmationID:       pickFirst(event.ConfirmationID, event.Metadata["confirmation_id"]),
-		FinalAnswer:          pickFirst(event.FinalAnswer, event.Metadata["final_answer"]),
-		CompletionStatus:     pickFirst(event.CompletionStatus, event.Metadata["completion_status"]),
-		CompletionReason:     pickFirst(event.CompletionReason, event.Metadata["completion_reason"]),
-		VerificationSummary:  pickFirst(event.VerificationSummary, event.Metadata["verification_summary"], verificationSummaryFromSnapshot(event.VerificationSnapshot)),
-		ContextSnapshot:      event.ContextSnapshot,
-		ToolCallSnapshot:     event.ToolCallSnapshot,
-		VerificationSnapshot: event.VerificationSnapshot,
-		Error:                errorInfo,
-		Metadata:             event.Metadata,
+		LogID:       event.EventID,
+		SessionID:   event.SessionID,
+		RunID:       event.RunID,
+		Timestamp:   event.Timestamp,
+		Level:       level,
+		Category:    category,
+		Source:      event.Source,
+		RecordType:  pickFirst(event.RecordType, event.Metadata["record_type"]),
+		SourceType:  pickFirst(event.SourceType, event.Metadata["source_type"]),
+		AgentID:     event.AgentID,
+		AgentLabel:  event.AgentLabel,
+		EventType:   event.EventType,
+		TraceID:     pickFirst(event.TraceID, event.Metadata["trace_id"]),
+		Stage:       event.Stage,
+		Summary:     event.Summary,
+		Detail:      event.Detail,
+		Metadata:    event.Metadata,
+		FinalAnswer: pickFirst(event.FinalAnswer, event.Metadata["final_answer"]),
 	}
+}
+
+func fillLogEntryOutcome(entry *contracts.LogEntry, event contracts.RunEvent) {
+	entry.ToolName = pickFirst(event.ToolName, event.Metadata["tool_name"])
+	entry.ToolDisplayName = pickFirst(event.ToolDisplayName, event.Metadata["tool_display_name"])
+	entry.ToolCategory = pickFirst(event.ToolCategory, event.Metadata["tool_category"])
+	entry.OutputKind = pickFirst(event.OutputKind, event.Metadata["output_kind"])
+	entry.ResultSummary = pickFirst(event.ResultSummary, event.Metadata["result_summary"])
+	entry.ArtifactPath = pickFirst(event.ArtifactPath, event.Metadata["artifact_path"])
+	entry.RiskLevel = pickFirst(event.RiskLevel, event.Metadata["risk_level"])
+	entry.ConfirmationID = pickFirst(event.ConfirmationID, event.Metadata["confirmation_id"])
+	entry.CompletionStatus = pickFirst(event.CompletionStatus, event.Metadata["completion_status"])
+	entry.CompletionReason = pickFirst(event.CompletionReason, event.Metadata["completion_reason"])
+	entry.VerificationSummary = pickFirst(event.VerificationSummary, event.Metadata["verification_summary"], verificationSummaryFromSnapshot(event.VerificationSnapshot))
+}
+
+func fillLogEntrySnapshots(entry *contracts.LogEntry, event contracts.RunEvent, errorInfo *contracts.ErrorInfo) {
+	entry.ContextSnapshot = event.ContextSnapshot
+	entry.ToolCallSnapshot = event.ToolCallSnapshot
+	entry.VerificationSnapshot = event.VerificationSnapshot
+	entry.Error = errorInfo
 }
 
 func normalizeEventFields(event contracts.RunEvent, previous contracts.RunEvent) contracts.RunEvent {
@@ -256,6 +272,7 @@ func normalizeRunFailedEvent(event contracts.RunEvent, previous contracts.RunEve
 func normalizeLogEntry(item contracts.LogEntry) contracts.LogEntry {
 	item.RecordType = pickFirst(item.RecordType, item.Metadata["record_type"])
 	item.SourceType = pickFirst(item.SourceType, item.Metadata["source_type"])
+	item.TraceID = pickFirst(item.TraceID, item.Metadata["trace_id"])
 	item.ArtifactPath = pickFirst(item.ArtifactPath, item.Metadata["artifact_path"])
 	item.CompletionReason = pickFirst(item.CompletionReason, item.Metadata["completion_reason"])
 	item.VerificationSummary = pickFirst(item.VerificationSummary, item.Metadata["verification_summary"], verificationSummaryFromSnapshot(item.VerificationSnapshot))
@@ -328,4 +345,32 @@ func tailLogEntries(items []contracts.LogEntry, limit int) []contracts.LogEntry 
 		return items
 	}
 	return items[len(items)-limit:]
+}
+
+func tailUniqueRunEntries(items []contracts.LogEntry, limit int) []contracts.LogEntry {
+	if limit <= 0 {
+		limit = 50
+	}
+	seen := make(map[string]struct{})
+	result := make([]contracts.LogEntry, 0, limit)
+	for index := len(items) - 1; index >= 0 && len(result) < limit; index-- {
+		key := runIdentityKey(items[index])
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, items[index])
+	}
+	reverseLogEntries(result)
+	return result
+}
+
+func runIdentityKey(item contracts.LogEntry) string {
+	return item.SessionID + "|" + item.RunID
+}
+
+func reverseLogEntries(items []contracts.LogEntry) {
+	for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
+		items[left], items[right] = items[right], items[left]
+	}
 }

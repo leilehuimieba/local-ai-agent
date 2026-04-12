@@ -8,6 +8,7 @@ import (
 
 type logsQuery struct {
 	Limit     int
+	View      string
 	SessionID string
 	RunID     string
 }
@@ -17,8 +18,13 @@ func decodeLogsQuery(r *http.Request) (logsQuery, error) {
 	if err != nil {
 		return logsQuery{}, err
 	}
+	view, err := parseLogsView(r.URL.Query().Get("view"))
+	if err != nil {
+		return logsQuery{}, err
+	}
 	return logsQuery{
 		Limit:     limit,
+		View:      view,
 		SessionID: r.URL.Query().Get("session_id"),
 		RunID:     r.URL.Query().Get("run_id"),
 	}, nil
@@ -36,4 +42,14 @@ func parseLogsLimit(raw string) (int, error) {
 		return 0, fmt.Errorf("limit must be in [1,500]")
 	}
 	return value, nil
+}
+
+func parseLogsView(raw string) (string, error) {
+	if raw == "" {
+		return "events", nil
+	}
+	if raw == "events" || raw == "runs" {
+		return raw, nil
+	}
+	return "", fmt.Errorf("view must be one of events,runs")
 }
