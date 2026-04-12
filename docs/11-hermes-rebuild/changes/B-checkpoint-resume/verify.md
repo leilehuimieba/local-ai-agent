@@ -484,6 +484,20 @@
   - 强校验最后一轮 retry 样本 `tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
   - 关键字段保持稳定：`checkpoint_resume_boundary_stage=Failed`、`boundary_stage_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
 
+- 时间：2026-04-12 08:50（Asia/Shanghai）
+- 会话：`stage-b-confirmation-acceptance-1775954969514`
+- run：`run-1775955006236-2`
+- 关键事实：
+  - 复跑 `scripts/run-stage-b-confirmation-acceptance.ps1` 后，`tmp/stage-b-confirmation-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`reason_matched=true`、`stage_matched=true`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=confirmation_required`、`event_type_matched=true`、`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_boundary_stage=PausedForConfirmation`、`boundary_stage_matched=true`、`checkpoint_resume_boundary_next_step=等待用户确认后再继续`、`boundary_next_step_matched=true`、`verification_empty=true`。
+
+- 时间：2026-04-12 08:50（Asia/Shanghai）
+- 会话：`stage-b-retry-acceptance-1775955029581`
+- run：`run-1775955043412-2`
+- 关键事实：
+  - 复跑 `scripts/run-stage-b-retry-acceptance.ps1` 后，`tmp/stage-b-retry-acceptance/latest.json` 为 `status=passed`。
+  - 关键字段保持稳定：`reason_matched=true`、`stage_matched=true`、`checkpoint_id_matched=true`、`checkpoint_resume_event_type=run_failed`、`event_type_matched=true`、`target_resumed_unique=true`、`target_resumed_count=1`、`checkpoint_resume_boundary_stage=Failed`、`boundary_stage_matched=true`、`verification_recovered=true`、`artifact_recovered=true`。
+
 ## Gate 映射
 
 - 对应阶段 Gate：Gate-B
