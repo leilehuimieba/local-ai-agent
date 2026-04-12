@@ -6,16 +6,20 @@
 
 ## 当前活跃 change
 
-1. [E-gateway-session-entry1](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gateway-session-entry1/status.md)（2026-04-12 阶段 E 后端主推进，网关首入口会话协议收口）
-2. [E-frontend-experience-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md)（2026-04-12 用户并行推进前端体验窗口，暂不在本轮实施）
+1. [F-release-rollback-closure](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-release-rollback-closure/status.md)（2026-04-12 进入下一 change：warning 协议接入发布/回滚固定流程）
+2. [E-backend-reverify-pack](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-backend-reverify-pack/status.md)（2026-04-12 后端一键复核包与 warning 样本链已收口，可作为 F 口径输入）
 
 ## 最近收口
 
-1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（2026-04-12 完成 D-G1 批量验收准备并收口）
-2. [C-tool-contract-unification](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/C-tool-contract-unification/status.md)（2026-04-12 完成 C-G1 评审签收并收口）
-3. [C-roadmap-task-decomposition](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/C-roadmap-task-decomposition/status.md)（2026-04-12 全路线最小任务分解与执行协议收口）
-4. [B-doc-reading-guide](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-doc-reading-guide/status.md)（2026-04-12 文档阅读与口径治理收口）
-5. [B-checkpoint-resume](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/B-checkpoint-resume/status.md)（2026-04-12 按任务列表收口）
+1. [E-cli-cancel-slice2](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cli-cancel-slice2/status.md)（2026-04-12 完成 E-01 CLI/TUI 中断切片后端收口）
+2. [E-cli-history-slice1](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cli-history-slice1/status.md)（2026-04-12 完成 E-01 CLI/TUI 历史切片后端收口）
+3. [F-gate-f-signoff](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-gate-f-signoff/status.md)（2026-04-12 完成 F-G1 Gate-F 评审与发布决策）
+4. [F-windows-10min-verification](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-windows-10min-verification/status.md)（2026-04-12 完成 F-05 Windows 新机 10 分钟验证）
+5. [F-release-candidate-regression](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-release-candidate-regression/status.md)（2026-04-12 完成 F-04 发布候选回归与故障注入）
+
+## 并行窗口
+
+1. [E-frontend-experience-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md)（2026-04-12 已暂停，不阻塞后端主线；由用户前端窗口恢复推进）
 
 ## 选择规则
 

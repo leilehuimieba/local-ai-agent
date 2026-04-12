@@ -1,0 +1,35 @@
+# 当前状态
+
+- 最近更新时间：2026-04-12
+- 状态：已完成（收口）
+- 当前阶段：阶段 E/F 复核窗口
+- 已完成：
+  - 新增 `run-stage-backend-reverify-pack.ps1` 一键复核脚本。
+  - 已完成 `-RefreshEvidence` 全刷新复核，`tmp/stage-backend-reverify/latest.json` 为 passed。
+  - 复核包已纳入 `E-04` 跨入口一致性链，聚合报告新增 `e04_consistency_ready` 与接口级证据摘要。
+  - 已新增 `StrictGate` 严格门禁，支持证据时效与关键结构字段完整性校验。
+  - 已新增失败原因聚合：`failed_checks.reason_codes`，失败报告可直接给出定位码。
+  - 已新增失败修复建议：`failed_checks.suggestions`，失败报告可直接给出下一步动作。
+  - 已新增失败修复命令数组：`failed_checks.recommended_commands`，可直接复制执行。
+  - 已新增命令分层：`recommended_commands_minimal/full_refresh`，支持“定向修复”与“全量刷新”两种执行策略。
+  - 已补齐严格时效失败的定向修复：仅返回过期证据对应脚本命令，避免无关重跑。
+  - 已新增发布窗口参数：`-ReleaseWindow`（30 分钟阈值），用于发布前/回滚后严格口径复核。
+  - 已增强 E-04 对比证据：`run-stage-e-consistency-acceptance.ps1` 新增 `identity_diff_summary/identity_diff_groups`，按 `run_id/session_id/trace_id` 输出冲突与缺失分组。
+  - 已在复核包透传差异分组：`tmp/stage-backend-reverify/latest.json` 的 `interface_evidence` 可直接提供给前端展示。
+  - 已补齐 Gateway 日志 `trace_id` 字段透传：`LogEntry` 与日志映射链路已接入 `trace_id`，E-04 差异分组中 `trace_id` 缺失计数降为 0。
+  - 已补齐 E-04 差异分级字段：`identity_diff_summary.severity` 与 `checks.identity_diff_severity` 输出 `ok/warn/error`，前端可直接映射颜色与状态标签。
+  - 已新增复核包非阻断告警区：`non_blocking_warnings` 与 `failed_checks` 并列输出，`warn` 告警不阻断 Gate 通过。
+  - 已标准化告警详情：`non_blocking_warnings.details` 输出 `title/description/action_label/action_command`，前端可直接渲染告警卡片与修复按钮。
+  - 已补齐告警展示提示字段：`non_blocking_warnings.details` 新增 `priority/ui_hint`，前端可直接用于排序与样式映射。
+  - 已新增告警样本生成脚本：`run-stage-backend-reverify-warning-sample.ps1` 可一键生成 `warning-sample.json`，并自动恢复 `latest.json` 为通过态。
+  - 已补齐失败样本可复核触发链：通过回拨 `history` 证据时间 31 分钟稳定触发 `strict_evidence_age_exceeded`，并留档 `failure-sample.json`。
+  - 已修正文档与脚本口径一致性：`recommended_commands_full_refresh` 对齐为 `-RefreshEvidence -StrictGate -ReleaseWindow -RequirePass`。
+  - 发布清单与回滚预案已接入一键复核包命令。
+  - 完成后端函数长度合规修正：拆分 `ChatHandler.Stream`、`buildDiagnostics`、`logEntryFromEvent`，新增/修改函数满足 30 行约束。
+  - 已复测：`go test ./...`（gateway）通过；E-01 历史/中断、E-04 一致性、F-G1 门禁与后端复核包（含 StrictGate）脚本重跑通过。
+- 进行中：
+  - 无。
+- 阻塞点：
+  - 无。
+- 下一步：
+  - 如需复核，优先执行后端一键复核包；如需发布前确认，再加 `-RefreshEvidence`。
