@@ -31,12 +31,25 @@
 5. 接口样本字段落盘
    - 已生成 `tmp/stage-e-audit-consumption/latest.json`，包含阶段 C 风险确认链与阶段 D 治理字段样本值。
 
+## 本轮验证点（Wave 1 - 主题 3）
+
+1. 任务页调查层真实挂载恢复
+   - 任务页渲染路径恢复 `BottomPanel`，`renderBottomPanel` 不再固定返回 `null`。
+2. 调查层状态接线可用
+   - `BottomPanel` 接收 `isOpen/onOpenChange/events/runState/submitError`，与现有任务态联动一致。
+3. 任务页关键场景自动展开可用
+   - `openTaskPage/openTaskPageForConfirmation` 在确认、失败或已有事件场景下自动展开调查层。
+4. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
   - `frontend/src/chat/ChatPanel.tsx`
   - `frontend/src/chat/chatResultModel.ts`
   - `frontend/src/workspace/BottomPanel.tsx`
+  - `frontend/src/shell/workspaceViewModel.tsx`
+  - `frontend/src/App.tsx`
   - `frontend/src/history/auditSignals.ts`
   - `frontend/src/history/useHistoryReview.ts`
   - `frontend/src/history/components/HistoryPageSections.tsx`

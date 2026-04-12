@@ -44,3 +44,14 @@
   完成判据：生成 `tmp/stage-e-audit-consumption/latest.json`，可复核阶段 C/D 样本中的审计字段值。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 3（任务页调查层真实挂载恢复）
+
+- [x] 任务页恢复调查层挂载
+  完成判据：`renderBottomPanel` 在任务页渲染 `BottomPanel`，不再固定返回 `null`。
+- [x] 任务页调查层展开状态接线校验
+  完成判据：`BottomPanel` 正确接收 `isOpen/onOpenChange/events/runState`，可响应现有联动状态。
+- [x] 进入任务页关键场景自动展开调查层
+  完成判据：存在确认、失败或历史事件时，进入任务页自动展开调查层，减少手动展开成本。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

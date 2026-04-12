@@ -182,8 +182,8 @@ function buildActions(
     openHomeStart: () => openHomeStart(actions.setComposeValue, view),
     openLogsPage: () => openLogsPage(logs, view),
     openSettingsPage: () => openSettingsPage(view),
-    openTaskPage: () => openTaskPage(view),
-    openTaskPageForConfirmation: () => openTaskPageForConfirmation(view),
+    openTaskPage: () => openTaskPage(runtime, view),
+    openTaskPageForConfirmation: () => openTaskPageForConfirmation(runtime, view),
     openTaskPageWithDraft: (value: string) =>
       openTaskPageWithDraft(value, actions.setComposeValue, view),
   };
@@ -286,12 +286,14 @@ function openSettingsPage(view: ViewState) {
   view.setCurrentView("settings");
 }
 
-function openTaskPage(view: ViewState) {
+function openTaskPage(runtime: RuntimeView, view: ViewState) {
   view.setCurrentView("task");
+  if (shouldOpenBottomPanel(runtime)) view.setBottomPanelOpen(true);
 }
 
-function openTaskPageForConfirmation(view: ViewState) {
+function openTaskPageForConfirmation(runtime: RuntimeView, view: ViewState) {
   view.setCurrentView("task");
+  view.setBottomPanelOpen(true);
   focusConfirmationCard();
 }
 
@@ -302,6 +304,14 @@ function openTaskPageWithDraft(
 ) {
   setComposeValue(value);
   view.setCurrentView("task");
+}
+
+function shouldOpenBottomPanel(runtime: RuntimeView) {
+  return Boolean(
+    runtime.confirmation
+    || runtime.runState === "failed"
+    || runtime.events.length > 0,
+  );
 }
 
 function updateCurrentView(

@@ -146,7 +146,7 @@ export function renderHomeView(app: AppModel) {
 
 export function renderBottomPanel(app: AppModel) {
   if (app.view.currentView !== "task") return null;
-  return null;
+  return <BottomPanel {...getBottomPanelProps(app)} />;
 }
 
 export function renderGlobalLayers(app: AppModel) {
