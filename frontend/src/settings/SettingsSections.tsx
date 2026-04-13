@@ -118,13 +118,13 @@ function ModelControls(props: { props: SettingsModulesProps }) {
     <div className="settings-control-grid">
       <label className="control-field">
         <span>当前模型</span>
-        <select value={readModelValue(props.props.settings)} disabled={modelPending} onChange={(event) => props.props.onModelChange(event.target.value)}>
+        <select name="model_select" value={readModelValue(props.props.settings)} disabled={modelPending} onChange={(event) => props.props.onModelChange(event.target.value)}>
           {props.props.settings.available_models.map(renderModelOption)}
         </select>
       </label>
       <label className="control-field">
         <span>运行模式</span>
-        <select value={props.props.settings.mode} disabled={modePending} onChange={(event) => props.props.onModeChange(event.target.value)}>
+        <select name="mode_select" value={props.props.settings.mode} disabled={modePending} onChange={(event) => props.props.onModeChange(event.target.value)}>
           <option value="observe">观察模式</option>
           <option value="standard">标准模式</option>
           <option value="full_access">全权限模式</option>
@@ -167,7 +167,7 @@ function WorkspaceControlGrid(props: { props: SettingsModulesProps }) {
     <div className="settings-control-grid">
       <label className="control-field">
         <span>当前工作区</span>
-        <select value={props.props.settings.workspace.workspace_id} disabled={workspacePending} onChange={(event) => props.props.onWorkspaceChange(event.target.value)}>
+        <select name="workspace_select" value={props.props.settings.workspace.workspace_id} disabled={workspacePending} onChange={(event) => props.props.onWorkspaceChange(event.target.value)}>
           {props.props.settings.available_workspaces.map(renderWorkspaceOption)}
         </select>
       </label>
@@ -215,8 +215,8 @@ function RiskModule(props: { props: SettingsModulesProps }) {
     <section className="settings-module control-module">
       <ModuleHeader title="风险与权限" badge={badge} />
       <div className="settings-control-grid">
-        <ToggleTile title="新目录首次接触提醒" description="进入新目录时，先提示授权边界。" checked={props.props.settings.directory_prompt_enabled} isRunning={props.props.isActionPending("directoryPrompt")} onChange={props.props.onDirectoryPromptEnabledChange} />
-        <ToggleTile title="显示风险等级" description="在确认流中展示风险等级。" checked={props.props.settings.show_risk_level} isRunning={props.props.isActionPending("riskLevel")} onChange={props.props.onShowRiskLevelChange} />
+        <ToggleTile name="directory_prompt_enabled" title="新目录首次接触提醒" description="进入新目录时，先提示授权边界。" checked={props.props.settings.directory_prompt_enabled} isRunning={props.props.isActionPending("directoryPrompt")} onChange={props.props.onDirectoryPromptEnabledChange} />
+        <ToggleTile name="show_risk_level" title="显示风险等级" description="在确认流中展示风险等级。" checked={props.props.settings.show_risk_level} isRunning={props.props.isActionPending("riskLevel")} onChange={props.props.onShowRiskLevelChange} />
       </div>
       <ActionHint props={props.props} actions={["directoryPrompt", "riskLevel"]} />
     </section>
@@ -433,6 +433,7 @@ function DiagnosticsAlerts(props: { settings: SettingsResponse }) {
 }
 
 function ToggleTile(props: {
+  name: string;
   title: string;
   description: string;
   checked: boolean;
@@ -441,7 +442,7 @@ function ToggleTile(props: {
 }) {
   return (
     <label className="toggle-tile">
-      <input type="checkbox" checked={props.checked} disabled={props.isRunning} onChange={(event) => props.onChange(event.target.checked)} />
+      <input name={props.name} type="checkbox" checked={props.checked} disabled={props.isRunning} onChange={(event) => props.onChange(event.target.checked)} />
       <div>
         <strong>{props.title}</strong>
         <p>{props.description}</p>

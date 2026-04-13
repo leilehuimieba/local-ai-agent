@@ -15,6 +15,7 @@
   2. 当前会话点击记录：设置页“打开诊断信息”反馈 `diagnostics-snapshot.json 已开始导出。`
   3. 当前会话页面快照：`最近检测：2026/4/13 14:58:40`
   4. 当前会话控制台检查：未再出现 `治理状态` 重复 key 报错
+  5. 当前会话 DOM 检查脚本：`missingNameOrId=[]`、`passwordOutsideForm=[]`、`passwordAutocomplete=new-password`
 
 ## Gate 映射
 

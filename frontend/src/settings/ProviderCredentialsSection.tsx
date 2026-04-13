@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { ProviderSettingsItem, ProviderSettingsResponse } from "../shared/contracts";
@@ -85,14 +85,18 @@ function ProviderCredentialCard(props: {
   const [visible, setVisible] = useState(false);
   const pending = Boolean(props.action?.pending);
   return (
-    <article className="memory-item">
+    <form className="memory-item" onSubmit={preventSubmit}>
       <ProviderCardHead item={props.item} activeProviderId={props.activeProviderId} />
       <MetaGrid items={buildProviderRows(props.item, props.activeProviderId)} />
-      <ProviderKeyInput apiKey={apiKey} visible={visible} pending={pending} onChange={setApiKey} onToggle={() => setVisible((current) => !current)} />
+      <ProviderKeyInput providerId={props.item.provider_id} apiKey={apiKey} visible={visible} pending={pending} onChange={setApiKey} onToggle={() => setVisible((current) => !current)} />
       <ProviderActionButtons item={props.item} apiKey={apiKey} pending={pending} onTest={() => void handleProviderTest(props.item, apiKey, props.onTestProvider)} onSave={() => void handleProviderSave(props.item, apiKey, props.onSaveProvider, setApiKey, setVisible)} onApply={() => void props.onApplyProvider(props.item.provider_id)} onRemove={() => void handleProviderRemove(props.item.provider_id, props.onRemoveProvider, setApiKey, setVisible)} />
       <ProviderInlineFeedback feedback={readProviderFeedback(props.item, props.action, props.activeProviderId)} />
-    </article>
+    </form>
   );
+}
+
+function preventSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 }
 
 function ProviderCardHead(props: { item: ProviderSettingsItem; activeProviderId?: string }) {
@@ -110,17 +114,19 @@ function ProviderCardHead(props: { item: ProviderSettingsItem; activeProviderId?
 }
 
 function ProviderKeyInput(props: {
+  providerId: string;
   apiKey: string;
   visible: boolean;
   pending: boolean;
   onChange: (value: string) => void;
   onToggle: () => void;
 }) {
+  const inputId = `provider-api-key-${props.providerId}`;
   return (
     <div className="approval-item">
-      <label className="control-field">
+      <label className="control-field" htmlFor={inputId}>
         <span>API key</span>
-        <input type={props.visible ? "text" : "password"} value={props.apiKey} placeholder="输入新的 API key，仅保留在当前输入框" disabled={props.pending} onChange={(event) => props.onChange(event.target.value)} />
+        <input id={inputId} name={inputId} autoComplete="new-password" type={props.visible ? "text" : "password"} value={props.apiKey} placeholder="输入新的 API key，仅保留在当前输入框" disabled={props.pending} onChange={(event) => props.onChange(event.target.value)} />
       </label>
       <button type="button" className="secondary-button" disabled={props.pending} onClick={props.onToggle}>
         {props.visible ? "隐藏" : "显示"}

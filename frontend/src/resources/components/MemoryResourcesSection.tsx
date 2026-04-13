@@ -169,7 +169,7 @@ function MemoryFilterSelect(props: { filter: MemoryFilter; onChange: (filter: Me
   return (
     <label className="filter-select">
       <span>筛选</span>
-      <select value={props.filter} onChange={(event) => props.onChange(event.target.value as MemoryFilter)}>
+      <select name="memory_filter" value={props.filter} onChange={(event) => props.onChange(event.target.value as MemoryFilter)}>
         <option value="all">全部记忆</option>
         <option value="preference">仅看偏好</option>
         <option value="lesson">仅看失败教训</option>
