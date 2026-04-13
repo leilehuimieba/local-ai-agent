@@ -199,6 +199,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 19）
+
+1. Pending 文案短句化可见
+   - `readPendingBody/readPendingAdvice` 已改为短句，仍保留“等待首个事件”和“自动切回最新焦点”核心语义。
+2. 运行态正文与下一步短句化可见
+   - `readRunStateBody/readRunStateNextStep` 在 submitting/streaming/awaiting_confirmation/resuming/completed 场景下已收短，状态卡阅读密度下降。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -237,4 +246,5 @@
   - Wave 1 主题 16「主线程状态样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 17「检查器与调查层状态短词补齐」已完成代码落地与构建验证。
   - Wave 1 主题 18「主线程状态标题短词化」已完成代码落地与构建验证。
+  - Wave 1 主题 19「主线程状态副文案压缩」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

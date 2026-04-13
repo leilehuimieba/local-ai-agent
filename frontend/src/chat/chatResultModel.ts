@@ -75,13 +75,13 @@ export function readPendingBody(args: {
   taskTitle?: string;
 }) {
   const taskTitle = args.taskTitle || "当前任务";
-  if (!args.currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流并等待第一条事件。`;
-  return `任务“${taskTitle}”已进入运行 ${args.currentRunId}，正在等待第一条事件。`;
+  if (!args.currentRunId) return `任务“${taskTitle}”已提交，等待首个事件。`;
+  return `任务“${taskTitle}”已进入运行 ${args.currentRunId}，等待首个事件。`;
 }
 
 export function readPendingAdvice(runState: RunState | undefined) {
-  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
-  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
+  if (runState === "resuming") return "确认已提交，等待恢复事件。";
+  return "收到首个事件后会自动切到最新焦点。";
 }
 
 export function readFailureTitle(event?: RunEvent) {
@@ -103,11 +103,11 @@ export function readRunStateBody(args: {
   latestFailureEvent?: RunEvent;
   submitError?: string | null;
 }) {
-  if (args.runState === "submitting") return `任务“${args.currentTaskTitle || "当前任务"}”已提交，正在等待首个结果和事件返回。`;
-  if (args.runState === "streaming") return "当前任务正在执行，主线程、检查器和调查层会持续刷新。";
-  if (args.runState === "awaiting_confirmation") return "当前任务已暂停，等待你处理确认后继续推进。";
-  if (args.runState === "resuming") return "确认已提交，任务正在恢复执行。";
-  if (args.runState === "completed") return "当前任务已完成，本轮不会继续产生新的运行步骤。";
+  if (args.runState === "submitting") return `任务“${args.currentTaskTitle || "当前任务"}”已提交，等待首个结果。`;
+  if (args.runState === "streaming") return "任务持续执行中，主线程与调查层会同步刷新。";
+  if (args.runState === "awaiting_confirmation") return "任务已暂停，等待确认后继续。";
+  if (args.runState === "resuming") return "确认已提交，任务正在恢复。";
+  if (args.runState === "completed") return "当前任务已完成，本轮不再产生新步骤。";
   if (args.runState === "failed") return readFailureBody(args.latestFailureEvent, args.submitError);
   return "输入明确目标后，这里会持续显示当前任务推进。";
 }
@@ -117,11 +117,11 @@ export function readRunStateNextStep(args: {
   latestFailureEvent?: RunEvent;
   latestEvent?: RunEvent;
 }) {
-  if (args.runState === "submitting") return "继续等待系统建立运行流。";
-  if (args.runState === "streaming") return "优先查看最近动作，等待新的阶段推进。";
-  if (args.runState === "awaiting_confirmation") return "先处理当前确认，再继续观察后续动作。";
-  if (args.runState === "resuming") return "等待恢复后的下一条结果或事件。";
-  if (args.runState === "completed") return args.latestEvent?.metadata?.next_step || "查看最终结果，决定继续追问、验收或开始下一轮任务。";
+  if (args.runState === "submitting") return "保持当前页面，等待首个事件。";
+  if (args.runState === "streaming") return "先看最近动作，等待下一阶段推进。";
+  if (args.runState === "awaiting_confirmation") return "先处理确认，再继续推进。";
+  if (args.runState === "resuming") return "等待恢复后的下一条事件。";
+  if (args.runState === "completed") return args.latestEvent?.metadata?.next_step || "查看结果后决定追问、验收或开启下一轮任务。";
   if (args.runState === "failed") return readFailureAdvice(args.latestFailureEvent);
   return "进入任务页并提交明确目标。";
 }

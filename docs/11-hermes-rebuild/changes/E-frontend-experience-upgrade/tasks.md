@@ -210,3 +210,12 @@
   完成判据：失败态在有 `error_code` 时仍可显示错误码，否则回落“失败”短词，正文继续承载详细说明。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 19（主线程状态副文案压缩）
+
+- [x] Pending 文案短句化
+  完成判据：`readPendingBody/readPendingAdvice` 改为短句表达，保持“等待首个事件”和“自动切回最新焦点”语义不变。
+- [x] 运行态正文与下一步短句化
+  完成判据：`readRunStateBody/readRunStateNextStep` 在 submitting/streaming/awaiting_confirmation/resuming/completed 场景改为更短表达，减少状态卡文案密度。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
