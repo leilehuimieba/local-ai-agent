@@ -26,6 +26,12 @@ export type UnifiedStatusKey =
   | "completed"
   | "failed";
 
+const FAILED_STATUS_LABELS = ["失败", "降级", "failed", "error"];
+const AWAITING_STATUS_LABELS = ["待确认", "high", "medium", "low", "待治理", "已跳过"];
+const COMPLETED_STATUS_LABELS = ["完成", "已完成", "就绪", "稳定", "已验证", "已归档"];
+const RUNNING_STATUS_LABELS = ["处理中", "进行中", "running"];
+const IDLE_STATUS_LABELS = ["等待任务", "等待中", "idle", "空闲"];
+
 type RuntimeState = {
   composeValue: string;
   sessionId: string;
@@ -139,6 +145,16 @@ export function readUnifiedStatusFromRunState(runState: RunState): UnifiedStatus
   if (runState === "awaiting_confirmation") return "awaiting_confirmation";
   if (runState === "completed") return "completed";
   if (runState === "submitting" || runState === "streaming" || runState === "resuming") return "running";
+  return "idle";
+}
+
+export function readUnifiedStatusFromLabel(label: string): UnifiedStatusKey {
+  const normalized = label.trim().toLowerCase();
+  if (FAILED_STATUS_LABELS.includes(normalized)) return "failed";
+  if (AWAITING_STATUS_LABELS.includes(normalized)) return "awaiting_confirmation";
+  if (COMPLETED_STATUS_LABELS.includes(normalized)) return "completed";
+  if (RUNNING_STATUS_LABELS.includes(normalized)) return "running";
+  if (IDLE_STATUS_LABELS.includes(normalized)) return "idle";
   return "idle";
 }
 

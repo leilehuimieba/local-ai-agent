@@ -1,7 +1,7 @@
 import { cloneElement, ReactElement } from "react";
 import { readRunStateBody, readRunStateNextStep } from "../chat/chatResultModel";
 import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
-import { ConnectionState, readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
+import { ConnectionState, readUnifiedStatusFromLabel, readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
 
 type ContextSidebarProps = {
@@ -447,11 +447,5 @@ function eventLikeMemory(event: RunEvent) {
 }
 
 function readInspectorStatusClass(status: string) {
-  if (status === "失败" || status === "降级") return "status-failed";
-  if (status === "待确认" || status === "high" || status === "medium" || status === "low") return "status-awaiting";
-  if (status === "完成" || status === "已完成" || status === "就绪" || status === "稳定" || status === "已验证" || status === "已归档") return "status-completed";
-  if (status === "待治理" || status === "已跳过") return "status-awaiting";
-  if (status === "等待任务" || status === "等待中") return "status-idle";
-  if (status === "处理中" || status === "进行中") return "status-running";
-  return "status-idle";
+  return readUnifiedStatusMeta(readUnifiedStatusFromLabel(status)).className;
 }

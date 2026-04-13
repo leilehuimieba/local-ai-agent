@@ -321,3 +321,12 @@
   完成判据：治理状态在“完成/待治理/默认”场景分别命中统一词典的 `completed/awaiting_confirmation/idle`，视觉语义不变。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 32（检查器状态 class 映射单源化）
+
+- [x] 检查器状态 class 映射改为消费统一词典
+  完成判据：`ContextSidebar` 的 `readInspectorStatusClass` 改为通过 `runtime/state` 的状态词典映射返回 class，不再维护本地同义词分支。
+- [x] 文案别名兼容迁移到运行时词典
+  完成判据：`失败/降级`、`待确认/high/medium/low`、`完成/已归档`、`等待中/空闲` 等兼容标签统一由运行时词典处理。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
