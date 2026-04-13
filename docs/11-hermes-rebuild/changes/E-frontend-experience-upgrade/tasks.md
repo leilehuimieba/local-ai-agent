@@ -357,3 +357,10 @@
   完成判据：`已断开` 状态继续命中 `status-disconnected`，其余状态由统一词典映射，保持既有语义色。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 36（Provider 就绪语义色修正）
+
+- [x] Provider “就绪”状态语义色回归
+  完成判据：`ProviderCredentialsSection` 在“就绪”标签场景继续使用空闲色，不因词典收口误命中完成色。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

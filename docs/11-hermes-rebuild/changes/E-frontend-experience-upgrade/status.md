@@ -42,6 +42,7 @@
   - 设置页状态样式映射已收口：`readModuleStatusClass` 改为消费统一词典，设置页状态 class 分支由运行时集中维护。
   - Provider 状态样式映射已收口：`readProviderModuleBadge/readProviderPill` 改为消费统一词典，Provider 状态 class 分支由运行时集中维护。
   - 状态总览卡样式映射已收口：`readOverallStatusClass` 改为消费统一词典，断连特例由组件内保留处理。
+  - Provider 就绪语义色已修正：Provider 标题“就绪”标签回归空闲色，避免词典收口后的完成色误判。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：

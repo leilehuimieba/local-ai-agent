@@ -346,6 +346,13 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 36）
+
+1. Provider “就绪”语义色修正可见
+   - `ProviderCredentialsSection` 在“就绪”标签场景已回归空闲色，不再误命中完成色。
+2. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -405,4 +412,5 @@
   - Wave 1 主题 33「设置页状态样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 34「Provider 状态样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 35「状态总览卡样式映射收口」已完成代码落地与构建验证。
+  - Wave 1 主题 36「Provider 就绪语义色修正」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

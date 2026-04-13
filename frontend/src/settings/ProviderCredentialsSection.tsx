@@ -209,7 +209,7 @@ function readProviderModuleBadge(
   if (providerSettings.providers.some((item) => item.credential_status.apply_status === "saved_not_applied")) {
     return { label: "待应用", className: readProviderStatusClass("待应用") };
   }
-  return { label: "就绪", className: readProviderStatusClass("就绪") };
+  return { label: "就绪", className: readProviderStatusClass("空闲") };
 }
 
 function readProviderPill(item: ProviderSettingsItem, activeProviderId?: string) {
