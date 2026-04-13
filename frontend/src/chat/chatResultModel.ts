@@ -55,8 +55,38 @@ function normalizeResultText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+export function readRunStateHeadline(runState: RunState | undefined, event?: RunEvent) {
+  void event;
+  if (!runState || runState === "idle") return "等待任务";
+  if (runState === "archived") return "已归档";
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
+}
+
+export function readPendingHeadline(runState: RunState | undefined) {
+  if (runState === "awaiting_confirmation") return readUnifiedStatusMeta("awaiting_confirmation").label;
+  if (runState === "completed") return readUnifiedStatusMeta("completed").label;
+  if (runState === "failed") return readUnifiedStatusMeta("failed").label;
+  if (runState === "idle" || runState === "archived") return "等待任务";
+  return readUnifiedStatusMeta("running").label;
+}
+
+export function readPendingBody(args: {
+  currentRunId?: string;
+  taskTitle?: string;
+}) {
+  const taskTitle = args.taskTitle || "当前任务";
+  if (!args.currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流并等待第一条事件。`;
+  return `任务“${taskTitle}”已进入运行 ${args.currentRunId}，正在等待第一条事件。`;
+}
+
+export function readPendingAdvice(runState: RunState | undefined) {
+  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
+  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
+}
+
 export function readFailureTitle(event?: RunEvent) {
-  return event?.metadata?.error_code || "任务执行失败";
+  if (event?.metadata?.error_code) return event.metadata.error_code;
+  return readUnifiedStatusMeta("failed").label;
 }
 
 export function readFailureBody(event?: RunEvent, submitError?: string | null) {
@@ -65,16 +95,6 @@ export function readFailureBody(event?: RunEvent, submitError?: string | null) {
 
 export function readFailureAdvice(event?: RunEvent) {
   return event?.metadata?.next_step || "检查运行时、模型配置或补充更具体的任务输入。";
-}
-
-export function readRunStateHeadline(runState: RunState | undefined, event?: RunEvent) {
-  if (runState === "submitting") return "提交已发送";
-  if (runState === "streaming") return "任务运行中";
-  if (runState === "awaiting_confirmation") return "等待确认";
-  if (runState === "resuming") return "任务恢复中";
-  if (runState === "completed") return "任务已完成";
-  if (runState === "failed") return readFailureTitle(event);
-  return "等待任务";
 }
 
 export function readRunStateBody(args: {
@@ -104,26 +124,6 @@ export function readRunStateNextStep(args: {
   if (args.runState === "completed") return args.latestEvent?.metadata?.next_step || "查看最终结果，决定继续追问、验收或开始下一轮任务。";
   if (args.runState === "failed") return readFailureAdvice(args.latestFailureEvent);
   return "进入任务页并提交明确目标。";
-}
-
-export function readPendingHeadline(runState: RunState | undefined) {
-  if (runState === "resuming") return "任务恢复中，等待首个事件";
-  if (runState === "streaming") return "任务运行中，等待首个事件";
-  return "任务已提交，等待首个事件";
-}
-
-export function readPendingBody(args: {
-  currentRunId?: string;
-  taskTitle?: string;
-}) {
-  const taskTitle = args.taskTitle || "当前任务";
-  if (!args.currentRunId) return `任务“${taskTitle}”已提交，系统正在建立运行流并等待第一条事件。`;
-  return `任务“${taskTitle}”已进入运行 ${args.currentRunId}，正在等待第一条事件。`;
-}
-
-export function readPendingAdvice(runState: RunState | undefined) {
-  if (runState === "resuming") return "确认已提交，等待恢复后的首个事件。";
-  return "保持当前页面，首个事件到达后会自动切换到最新焦点。";
 }
 
 export function formatEntryIndex(index: number) {
