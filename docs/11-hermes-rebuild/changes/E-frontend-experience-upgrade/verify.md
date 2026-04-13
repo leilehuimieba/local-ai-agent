@@ -473,6 +473,15 @@
 4. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（阶段性提审包）
+
+1. 提审文档落盘
+   - 已新增 `review.md`，覆盖主题 38-48 的提审范围、证据入口、关键提交、风险与回退、归档前待确认项。
+2. 提审证据链闭环
+   - 提审文档已关联主题 45 验收包、主题 48 回归清单、回归脚本与 `latest.json` 证据路径。
+3. 变更状态同步
+   - `tasks.md / status.md / verify.md` 已同步到“主题 38-48 完成、当前待提审”口径。
+
 ## 证据位置
 
 - 测试记录：
@@ -499,6 +508,7 @@
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
+  - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/review.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/artifacts/主题45-状态词典收口阶段验收包.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/artifacts/主题48-前端阶段性回归脚本清单.md`
 - 日志或截图：
@@ -549,4 +559,5 @@
   - Wave 1 主题 46「记录页结构化筛选增强」已完成代码落地与构建验证。
   - Wave 1 主题 47「设置页诊断链路可读性增强」已完成代码落地与构建验证。
   - Wave 1 主题 48「前端重构阶段性回归脚本清单」已完成脚本与文档落地，并完成脚本执行留证。
+  - 主题 38-48 阶段性提审包已补齐，可进入归档决策。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
