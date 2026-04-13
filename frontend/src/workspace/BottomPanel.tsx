@@ -402,7 +402,7 @@ function readBottomPanelSummary(
 }
 
 function readBottomPanelHeadline(props: BottomPanelProps, progress: ReturnType<typeof useRunCycleProgress>) {
-  if (props.runState === "idle") return "等待任务";
+  if (props.runState === "idle") return readUnifiedStatusMeta("idle").label;
   if (props.runState === "archived") return "已归档";
   if (props.runState === "failed" && !progress.hasNewEvent) return readUnifiedStatusMeta("failed").label;
   return readUnifiedStatusMeta(readUnifiedStatusFromRunState(props.runState)).label;

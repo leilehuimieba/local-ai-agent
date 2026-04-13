@@ -59,7 +59,8 @@ export function readPendingHeadline(runState: RunState | undefined) {
   if (runState === "awaiting_confirmation") return readUnifiedStatusMeta("awaiting_confirmation").label;
   if (runState === "completed") return readUnifiedStatusMeta("completed").label;
   if (runState === "failed") return readUnifiedStatusMeta("failed").label;
-  if (runState === "idle" || runState === "archived") return "等待任务";
+  if (runState === "idle") return readUnifiedStatusMeta("idle").label;
+  if (runState === "archived") return "已归档";
   return readUnifiedStatusMeta("running").label;
 }
 
@@ -167,12 +168,11 @@ export function shouldShowConfirmationRecord(
 }
 
 export function getStreamLiveLabel(runState: RunState | undefined, messageCount: number) {
-  if (runState === "submitting") return "任务已提交，等待系统返回首个结果。";
-  if (runState === "streaming" || runState === "resuming") return "任务执行流已更新。";
-  if (runState === "awaiting_confirmation") return "当前任务需要确认后才能继续。";
-  if (runState === "failed") return "当前任务执行失败。";
-  if (runState === "completed" && messageCount > 0) return "当前任务已完成。";
-  return "";
+  if (!runState || runState === "idle") return "";
+  if (runState === "archived") return "状态更新：已归档。";
+  if (runState === "completed" && messageCount <= 0) return "";
+  const label = readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
+  return `状态更新：${label}。`;
 }
 
 export function readThreadStatusClass(runState: RunState | undefined) {

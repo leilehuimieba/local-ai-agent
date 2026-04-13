@@ -1,4 +1,5 @@
 import { LogEntry, MemoryEntry, RunEvent } from "../shared/contracts";
+import { readUnifiedStatusMeta } from "../runtime/state";
 
 export type ReviewLogType =
   | "result"
@@ -86,9 +87,13 @@ export function readMemoryGovernanceLabel(memory?: MemoryLike | null) {
 
 export function readMemoryGovernanceClass(memory?: MemoryLike | null) {
   const label = readMemoryGovernanceLabel(memory);
-  if (["已归档", "已验证", "已写入", "已召回", "生效中"].includes(label)) return "status-completed";
-  if (label === "待治理" || label === "已跳过") return "status-awaiting";
-  return "status-idle";
+  if (["已归档", "已验证", "已写入", "已召回", "生效中"].includes(label)) {
+    return readUnifiedStatusMeta("completed").className;
+  }
+  if (label === "待治理" || label === "已跳过") {
+    return readUnifiedStatusMeta("awaiting_confirmation").className;
+  }
+  return readUnifiedStatusMeta("idle").className;
 }
 
 export function readMemoryActivityLabel(memory?: MemoryLike | null) {

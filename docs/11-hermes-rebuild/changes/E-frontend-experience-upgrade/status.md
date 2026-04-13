@@ -28,6 +28,16 @@
   - 主线程状态副文案已压缩：`chatResultModel` 的 Pending/运行态正文与下一步建议改为短句表达，主线程状态卡更紧凑。
   - 主线程状态标题来源已收口：`ChatPanel` 状态卡移除无效 `title` 传参，标题统一由状态映射函数生成；`chatResultModel` 去除未消费标题函数。
   - 全局状态徽标短词已统一：`getRunStateLabel` 改为短词口径输出，TopBar 与检查器等 `statusLine` 消费位自动对齐统一词典。
+  - 状态线接口已去冗余：`getRunStateLabel` 移除无效参数，`App.tsx` 状态线调用同步收口为单参数。
+  - TopBar 状态色与文案已对齐：`getRunTone` 改为复用统一状态映射，`submitting` 场景不再出现“进行中文案 + 空闲色”不一致。
+  - TopBar 运行占位词已统一：无 `runId` 场景从“空闲”收口为“等待中”，避免状态词汇并行。
+  - 等待态词汇口径已统一：主线程等待标题、检查器动作状态、调查层摘要标题统一改为“等待中”，并保留“等待任务”样式兼容映射。
+  - TopBar tone 命名已收口：确认态 tone 从 `waiting` 收口为 `awaiting`，与 `status-awaiting` 样式命名保持一致。
+  - 状态样式别名已去冗余：TopBar tone 输出与状态类名完全对齐，并移除未使用 `status-waiting/status-error/status-done` 别名。
+  - 检查器空闲词汇已统一：Repo 与 Context 状态在无事件时统一显示“等待中”，不再混用“空闲”。
+  - 主线程播报状态已短词化：`getStreamLiveLabel` 统一播报“状态更新：短词”，并补齐归档态播报。
+  - 检查器低风险状态映射已修复：`readInspectorStatusClass` 将 `low` 风险映射到 `status-awaiting`，避免“低风险待确认”回落空闲色。
+  - 记录页治理状态样式已收口：`readMemoryGovernanceClass` 改为复用统一词典 class，减少与任务页并行维护。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：

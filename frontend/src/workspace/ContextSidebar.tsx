@@ -347,21 +347,21 @@ function readActionStatus(model: ReturnType<typeof buildHubModel>) {
   if (model.confirmation) return readUnifiedStatusMeta("awaiting_confirmation").label;
   if (model.runState === "failed") return readUnifiedStatusMeta("failed").label;
   if (model.runState === "completed") return readUnifiedStatusMeta("completed").label;
-  if (model.runState === "idle") return "等待任务";
+  if (model.runState === "idle") return readUnifiedStatusMeta("idle").label;
   return readUnifiedStatusMeta(readUnifiedStatusFromRunState(model.runState)).label;
 }
 
 function readRepoStatus(model: ReturnType<typeof buildHubModel>) {
-  if (!model.latestRepoEvent) return "空闲";
+  if (!model.latestRepoEvent) return readUnifiedStatusMeta("idle").label;
   return model.latestRepoEvent.metadata?.repo_context_status === "degraded" ? "降级" : "就绪";
 }
 
 function readContextStatus(model: ReturnType<typeof buildHubModel>) {
   const snapshot = model.latestContextEvent?.context_snapshot;
-  if (!snapshot) return "空闲";
+  if (!snapshot) return readUnifiedStatusMeta("idle").label;
   if (snapshot.knowledge_digest || snapshot.memory_digest) return "已沉淀";
   if (snapshot.session_summary || snapshot.reasoning_summary) return "有上下文";
-  return "空闲";
+  return readUnifiedStatusMeta("idle").label;
 }
 
 function readWorkspaceRoot(model: ReturnType<typeof buildHubModel>) {
@@ -448,10 +448,10 @@ function eventLikeMemory(event: RunEvent) {
 
 function readInspectorStatusClass(status: string) {
   if (status === "失败" || status === "降级") return "status-failed";
-  if (status === "待确认" || status === "high" || status === "medium") return "status-awaiting";
+  if (status === "待确认" || status === "high" || status === "medium" || status === "low") return "status-awaiting";
   if (status === "完成" || status === "已完成" || status === "就绪" || status === "稳定" || status === "已验证" || status === "已归档") return "status-completed";
   if (status === "待治理" || status === "已跳过") return "status-awaiting";
-  if (status === "等待任务") return "status-idle";
+  if (status === "等待任务" || status === "等待中") return "status-idle";
   if (status === "处理中" || status === "进行中") return "status-running";
   return "status-idle";
 }

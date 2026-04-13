@@ -93,7 +93,7 @@ function UtilityBlock(props: {
     <section className="topbar-group topbar-utility">
       <ContextItem label="连接" value={props.connectionLabel} />
       <ContextItem label="会话" value={shortId(props.sessionId, "未创建")} />
-      <ContextItem label="运行" value={shortId(props.currentRunId, "空闲")} />
+      <ContextItem label="运行" value={shortId(props.currentRunId, "等待中")} />
       <nav className="topbar-nav topbar-nav-compact" aria-label="主导航">
         {NAV_ITEMS.map((item) => (
           <button key={item.id} type="button" aria-current={item.id === props.currentView ? "page" : undefined} className={item.id === props.currentView ? "nav-button active" : "nav-button"} onClick={() => props.onViewChange(item.id)}>

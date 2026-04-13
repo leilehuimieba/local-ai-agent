@@ -1241,23 +1241,20 @@ textarea {
   border-color: var(--state-running-border);
 }
 
-.status-awaiting,
-.status-waiting {
+.status-awaiting {
   background: var(--state-awaiting-bg);
   color: var(--state-awaiting-text);
   border-color: var(--state-awaiting-border);
 }
 
 .status-failed,
-.status-error,
 .status-disconnected {
   background: var(--state-failed-bg);
   color: var(--state-failed-text);
   border-color: var(--state-failed-border);
 }
 
-.status-completed,
-.status-done {
+.status-completed {
   background: var(--state-completed-bg);
   color: var(--state-completed-text);
   border-color: var(--state-completed-border);

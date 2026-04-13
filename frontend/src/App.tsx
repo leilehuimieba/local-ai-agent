@@ -154,7 +154,7 @@ function buildAppModel(
   statusLine: string;
   view: ViewState;
 } {
-  const statusLine = getRunStateLabel(runtime.runState, runtime.events.length);
+  const statusLine = getRunStateLabel(runtime.runState);
   const connectionLabel = getConnectionStateLabel(runtime.connectionState);
   const home = buildHomeViewModel({ actions, connectionLabel, runtime, settingsApi, statusLine, view });
   return { actions, connectionLabel, home, logs, runtime, settingsApi, statusLine, view };

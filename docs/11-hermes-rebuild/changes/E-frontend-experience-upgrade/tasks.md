@@ -237,3 +237,87 @@
   完成判据：依赖 `statusLine` 的顶栏与检查器状态徽标自动对齐统一词典，无需额外分支改造。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 22（状态线接口去冗余）
+
+- [x] 去除 `getRunStateLabel` 无效参数
+  完成判据：`runtime/state` 的 `getRunStateLabel` 移除未使用 `eventCount` 参数，函数签名与行为一致。
+- [x] 状态线调用点同步
+  完成判据：`App.tsx` 的 `statusLine` 计算调用同步改为单参数，保持运行行为不变。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 23（TopBar 状态色与文案对齐）
+
+- [x] `getRunTone` 改为复用统一状态映射
+  完成判据：`runtime/state` 的 `getRunTone` 基于统一状态词典计算，`submitting` 不再回落 `idle` 色。
+- [x] TopBar 状态色与短词文案一致
+  完成判据：TopBar 在 `submitting/streaming/resuming` 场景下统一显示“进行中”且使用 `status-running` 语义色。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 24（TopBar 运行占位词汇统一）
+
+- [x] TopBar 运行占位词改为统一口径
+  完成判据：TopBar 的“运行”字段在无 `runId` 时从“空闲”改为“等待中”，与全局状态短词一致。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 25（等待态词汇口径统一）
+
+- [x] 运行态等待词统一为“等待中”
+  完成判据：主线程等待标题、检查器动作状态、调查层摘要标题中的运行态等待词统一为“等待中”。
+- [x] 旧词样式兼容映射保留
+  完成判据：检查器状态样式映射保留“等待任务”兼容分支，避免历史数据回放样式异常。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 26（TopBar tone 命名收口）
+
+- [x] TopBar tone 命名对齐 `status-awaiting`
+  完成判据：`getRunTone` 的确认态 tone 输出从 `waiting` 收口为 `awaiting`，与主样式命名保持一致。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 27（状态样式别名去冗余）
+
+- [x] TopBar tone 输出与状态类名完全对齐
+  完成判据：`getRunTone` 输出统一为 `idle/running/awaiting/completed/failed`，不再使用 `done/error` 别名。
+- [x] 未使用状态样式别名移除
+  完成判据：样式中移除 `status-waiting/status-error/status-done` 未使用别名，仅保留统一状态类名。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 28（检查器空闲词汇统一）
+
+- [x] 检查器 Repo/Context 空闲词汇改为等待中
+  完成判据：任务页检查器中 Repo 与 Context 状态在无事件时统一显示“等待中”，不再混用“空闲”。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 29（主线程播报状态短词化）
+
+- [x] `aria-live` 状态播报收口到统一短词
+  完成判据：`getStreamLiveLabel` 在运行中/待确认/完成/失败场景统一播报“状态更新：短词”，不再使用长句播报。
+- [x] 归档态播报补齐
+  完成判据：`archived` 场景可播报“状态更新：已归档”。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 30（检查器低风险状态映射修复）
+
+- [x] 低风险待确认状态映射修复
+  完成判据：`ContextSidebar` 的检查器状态样式映射中，`low` 风险状态映射到 `status-awaiting`，不再误落 `status-idle`。
+- [x] 低风险词汇样式与短词口径一致
+  完成判据：检查器风险状态在“待确认”语义下统一显示待确认色，与统一状态词典口径一致。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 31（记录页治理状态样式收口）
+
+- [x] 记录页治理状态 class 复用统一词典
+  完成判据：`history/logType.ts` 的 `readMemoryGovernanceClass` 改为通过统一状态词典返回 class，不再本地硬编码 `status-*` 字符串。
+- [x] 治理状态完成/待治理/空闲语义保持一致
+  完成判据：治理状态在“完成/待治理/默认”场景分别命中统一词典的 `completed/awaiting_confirmation/idle`，视觉语义不变。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

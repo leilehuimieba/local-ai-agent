@@ -104,8 +104,7 @@ export function isTerminalRunState(runState: RunState) {
   return runState === "completed" || runState === "failed" || runState === "archived";
 }
 
-export function getRunStateLabel(runState: RunState, eventCount: number) {
-  void eventCount;
+export function getRunStateLabel(runState: RunState) {
   if (runState === "archived") return "已归档";
   return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
 }
@@ -119,10 +118,11 @@ export function getConnectionStateLabel(connectionState: ConnectionState) {
 }
 
 export function getRunTone(runState: RunState) {
-  if (runState === "streaming" || runState === "resuming") return "running";
-  if (runState === "awaiting_confirmation") return "waiting";
-  if (runState === "failed") return "error";
-  if (runState === "completed") return "done";
+  const status = readUnifiedStatusFromRunState(runState);
+  if (status === "running") return "running";
+  if (status === "awaiting_confirmation") return "awaiting";
+  if (status === "failed") return "failed";
+  if (status === "completed") return "completed";
   return "idle";
 }
 

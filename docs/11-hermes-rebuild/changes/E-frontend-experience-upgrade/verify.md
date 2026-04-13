@@ -226,6 +226,90 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 22）
+
+1. 状态线接口签名收口可见
+   - `getRunStateLabel` 已移除未使用 `eventCount` 参数，接口与实际行为一致。
+2. 状态线调用同步可见
+   - `App.tsx` 中 `statusLine` 计算已切到单参数调用，无行为回归。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 23）
+
+1. TopBar 色词一致性可见
+   - `submitting/streaming/resuming` 场景下，TopBar 状态徽标与“进行中”短词保持一致，不再出现空闲色。
+2. Tone 映射单一来源可见
+   - `getRunTone` 已基于统一状态映射计算，避免与 `getRunStateLabel` 语义分叉。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 24）
+
+1. TopBar 运行占位词汇一致
+   - 无 `runId` 时 TopBar “运行”字段显示“等待中”，与全局状态短词口径保持一致。
+2. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 25）
+
+1. 等待态词汇统一可见
+   - 主线程等待标题、检查器动作状态、调查层摘要标题已统一显示“等待中”。
+2. 兼容映射可见
+   - 检查器状态样式映射保留“等待任务”兼容分支，历史状态词仍能映射到 `status-idle`。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 26）
+
+1. TopBar tone 命名一致性可见
+   - `getRunTone` 确认态已输出 `awaiting`，TopBar 徽标直接命中 `status-awaiting` 样式命名。
+2. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 27）
+
+1. TopBar tone 输出与状态类名一致
+   - `getRunTone` 输出已统一到 `idle/running/awaiting/completed/failed`，TopBar 徽标不再依赖 `done/error` 别名类。
+2. 状态样式别名去冗余可见
+   - 样式中 `status-waiting/status-error/status-done` 已移除，统一使用主状态类名。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 28）
+
+1. 检查器空闲词汇统一可见
+   - Repo 与 Context 状态在无事件时均显示“等待中”，不再显示“空闲”。
+2. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 29）
+
+1. 主线程状态播报短词化可见
+   - `getStreamLiveLabel` 在运行中/待确认/完成/失败场景统一播报“状态更新：短词”。
+2. 归档态播报可见
+   - `archived` 场景播报“状态更新：已归档”。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 30）
+
+1. 检查器低风险状态样式映射正确
+   - `ContextSidebar` 中风险状态为 `low` 时，检查器样式命中 `status-awaiting`，不再回落 `status-idle`。
+2. 待确认语义色一致
+   - 低风险待确认场景与 `high/medium` 场景保持同一待确认语义色，避免风险等级显示成空闲态。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 31）
+
+1. 记录页治理状态 class 映射收口可见
+   - `history/logType.ts` 的 `readMemoryGovernanceClass` 已改为复用统一状态词典返回 class，不再本地硬编码 `status-*`。
+2. 治理状态语义一致可见
+   - “已归档/已验证/已写入/已召回/生效中”命中完成态；“待治理/已跳过”命中待确认态；其余回落等待中。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -240,6 +324,7 @@
   - `frontend/src/App.tsx`
   - `frontend/src/workspace/WorkbenchOverview.tsx`
   - `frontend/src/history/auditSignals.ts`
+  - `frontend/src/history/logType.ts`
   - `frontend/src/history/useHistoryReview.ts`
   - `frontend/src/history/components/HistoryPageSections.tsx`
   - `frontend/src/history/components/HistoryTimelineSection.tsx`
@@ -267,4 +352,14 @@
   - Wave 1 主题 19「主线程状态副文案压缩」已完成代码落地与构建验证。
   - Wave 1 主题 20「主线程状态标题来源收口」已完成代码落地与构建验证。
   - Wave 1 主题 21「全局状态徽标短词统一」已完成代码落地与构建验证。
+  - Wave 1 主题 22「状态线接口去冗余」已完成代码落地与构建验证。
+  - Wave 1 主题 23「TopBar 状态色与文案对齐」已完成代码落地与构建验证。
+  - Wave 1 主题 24「TopBar 运行占位词汇统一」已完成代码落地与构建验证。
+  - Wave 1 主题 25「等待态词汇口径统一」已完成代码落地与构建验证。
+  - Wave 1 主题 26「TopBar tone 命名收口」已完成代码落地与构建验证。
+  - Wave 1 主题 27「状态样式别名去冗余」已完成代码落地与构建验证。
+  - Wave 1 主题 28「检查器空闲词汇统一」已完成代码落地与构建验证。
+  - Wave 1 主题 29「主线程播报状态短词化」已完成代码落地与构建验证。
+  - Wave 1 主题 30「检查器低风险状态映射修复」已完成代码落地与构建验证。
+  - Wave 1 主题 31「记录页治理状态样式收口」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
