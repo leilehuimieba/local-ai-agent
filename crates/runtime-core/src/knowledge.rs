@@ -18,6 +18,23 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 const CORTEX_RETRY_ATTEMPTS: u8 = 3;
 const CORTEX_CONNECT_TIMEOUT_SECONDS: &str = "2";
 const CORTEX_MAX_TIMEOUT_SECONDS: &str = "6";
+const CHINESE_QUERY_ALIASES: [(&str, &str); 15] = [
+    ("四级", "cet4"),
+    ("备考", "study"),
+    ("计划", "planning"),
+    ("听力", "listening"),
+    ("阅读", "reading"),
+    ("写作", "writing"),
+    ("翻译", "translation"),
+    ("追踪", "tracking"),
+    ("模板", "template"),
+    ("调整", "adjustment"),
+    ("明天", "next_day"),
+    ("今天", "today"),
+    ("浏览器", "browser"),
+    ("扩展", "extension"),
+    ("启动语", "micro_action"),
+];
 
 #[derive(Clone, Debug)]
 pub(crate) struct KnowledgeHit {
@@ -141,7 +158,17 @@ fn search_external_knowledge(request: &RunRequest, query: &str, limit: usize) ->
     if token.trim().is_empty() {
         return Vec::new();
     }
-    cortex_result_or_empty(recall_cortex_hits(request, &flag, &token, query, limit))
+    let primary = cortex_result_or_empty(recall_cortex_hits(request, &flag, &token, query, limit));
+    if !primary.is_empty() {
+        return primary;
+    }
+    let Some(fallback_query) = chinese_recall_fallback_query(query) else {
+        return primary;
+    };
+    if fallback_query == query {
+        return primary;
+    }
+    cortex_result_or_empty(recall_cortex_hits(request, &flag, &token, &fallback_query, limit))
 }
 
 fn cortex_result_or_empty(result: Result<Vec<KnowledgeHit>, String>) -> Vec<KnowledgeHit> {
@@ -229,6 +256,26 @@ fn sensitive_query_marker(text: &str) -> bool {
         "ak-",
     ];
     markers.iter().any(|marker| lower.contains(marker))
+}
+
+fn contains_cjk(text: &str) -> bool {
+    text.chars().any(|ch| ('\u{4E00}'..='\u{9FFF}').contains(&ch))
+}
+
+fn chinese_recall_fallback_query(query: &str) -> Option<String> {
+    if !contains_cjk(query) {
+        return None;
+    }
+    let mut aliases = Vec::<&str>::new();
+    for (needle, alias) in CHINESE_QUERY_ALIASES {
+        if query.contains(needle) && !aliases.contains(&alias) {
+            aliases.push(alias);
+        }
+    }
+    if aliases.is_empty() {
+        return None;
+    }
+    Some(aliases.join(" "))
 }
 
 fn recall_source(query: &str) -> String {
@@ -567,8 +614,8 @@ fn collect_search_files(
 mod tests {
     use crate::paths::external_memory_audit_path;
     use super::{
-        KnowledgeHit, cortex_result_or_empty, dedupe_hits, merge_knowledge_hits,
-        parse_cortex_recall_hits, recall_source,
+        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits,
+        merge_knowledge_hits, parse_cortex_recall_hits, recall_source,
     };
 
     #[test]
@@ -661,6 +708,21 @@ mod tests {
     fn recall_source_redacts_sensitive_query() {
         let source = recall_source("please use api_key=sk-test-123 to recall");
         assert_eq!(source, "knowledge_search:[REDACTED]");
+    }
+
+    #[test]
+    fn chinese_query_builds_fallback_aliases() {
+        let query = "我目标是 2026 年 6 月通过英语四级，请给我一个 8 周备考计划";
+        let fallback = chinese_recall_fallback_query(query).expect("should build fallback");
+        assert!(fallback.contains("cet4"));
+        assert!(fallback.contains("study"));
+        assert!(fallback.contains("planning"));
+    }
+
+    #[test]
+    fn english_query_has_no_fallback_aliases() {
+        let fallback = chinese_recall_fallback_query("cet4 planning template");
+        assert!(fallback.is_none());
     }
 
     #[test]
