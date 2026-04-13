@@ -391,6 +391,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 41）
+
+1. 调查层事件状态别名清理可见
+   - `EventTimeline.readEventStatusKey` 已改为先消费失败/待确认/完成明确信号，再回退默认分类，减少按事件类型的同义漂移。
+2. 调查层事件语义色一致可见
+   - 失败、待确认、完成事件在时间线徽标和卡片 tone 上保持一致语义（`failed/awaiting_confirmation/completed`）。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -455,4 +464,5 @@
   - Wave 1 主题 38「设置页 Provider 反馈态样式收口」已完成代码落地与构建验证。
   - Wave 1 主题 39「设置页状态映射消费口径巡检」已完成清单巡检与待收口定位。
   - Wave 1 主题 40「设置页 ExternalConnection 状态映射收口」已完成代码落地与构建验证。
+  - Wave 1 主题 41「调查层事件状态别名清理」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

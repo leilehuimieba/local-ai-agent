@@ -202,11 +202,26 @@ function readStatusClass(event: RunEvent) {
 }
 
 function readEventStatusKey(event: RunEvent): UnifiedStatusKey {
+  if (hasFailedSignal(event)) return "failed";
+  if (hasAwaitingSignal(event)) return "awaiting_confirmation";
+  if (hasCompletedSignal(event)) return "completed";
   const eventType = readRunEventType(event);
-  if (eventType === "error") return "failed";
-  if (eventType === "confirmation") return "awaiting_confirmation";
-  if (eventType === "memory" || eventType === "verification" || eventType === "result") return "completed";
+  if (eventType === "memory" || eventType === "verification" || eventType === "result") {
+    return "completed";
+  }
   return "running";
+}
+
+function hasFailedSignal(event: RunEvent) {
+  return event.event_type === "run_failed" || event.completion_status === "failed" || Boolean(event.metadata?.error_code);
+}
+
+function hasAwaitingSignal(event: RunEvent) {
+  return event.event_type === "confirmation_required" || event.completion_status === "confirmation_required";
+}
+
+function hasCompletedSignal(event: RunEvent) {
+  return event.completion_status === "completed" || event.event_type === "run_finished";
 }
 
 function cacheDetail(context?: RuntimeContextSnapshot) {
@@ -222,10 +237,10 @@ function buildEventCardClassName(selected: boolean, isLatest: boolean, event: Ru
 }
 
 function readEventTone(event: RunEvent) {
-  const eventType = readRunEventType(event);
-  if (eventType === "error") return "danger";
-  if (eventType === "confirmation") return "warning";
-  if (eventType === "memory" || eventType === "verification") return "calm";
+  const status = readEventStatusKey(event);
+  if (status === "failed") return "danger";
+  if (status === "awaiting_confirmation") return "warning";
+  if (status === "completed") return "calm";
   return "neutral";
 }
 
