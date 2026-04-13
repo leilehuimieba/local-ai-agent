@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { readUnifiedStatusFromLabel, readUnifiedStatusMeta } from "../runtime/state";
 import { ProviderSettingsItem, ProviderSettingsResponse } from "../shared/contracts";
 import { EmptyStateBlock, MetaGrid, SectionHeader, StatusPill } from "../ui/primitives";
 import { ProviderActionState } from "./useSettings";
@@ -202,23 +203,27 @@ function readProviderModuleBadge(
   providerSettings: ProviderSettingsResponse | null,
   providerBootstrapError: string | null,
 ) {
-  if (providerBootstrapError) return { label: "失败", className: "status-failed" };
-  if (!providerSettings?.providers.length) return { label: "空闲", className: "status-idle" };
-  if (providerSettings.active_provider_id) return { label: "已应用", className: "status-completed" };
+  if (providerBootstrapError) return { label: "失败", className: readProviderStatusClass("失败") };
+  if (!providerSettings?.providers.length) return { label: "空闲", className: readProviderStatusClass("空闲") };
+  if (providerSettings.active_provider_id) return { label: "已应用", className: readProviderStatusClass("已应用") };
   if (providerSettings.providers.some((item) => item.credential_status.apply_status === "saved_not_applied")) {
-    return { label: "待应用", className: "status-awaiting" };
+    return { label: "待应用", className: readProviderStatusClass("待应用") };
   }
-  return { label: "就绪", className: "status-idle" };
+  return { label: "就绪", className: readProviderStatusClass("就绪") };
 }
 
 function readProviderPill(item: ProviderSettingsItem, activeProviderId?: string) {
   if (item.credential_status.apply_status === "applied" || item.provider_id === activeProviderId) {
-    return { label: "已应用", className: "status-completed" };
+    return { label: "已应用", className: readProviderStatusClass("已应用") };
   }
   if (item.credential_status.apply_status === "saved_not_applied") {
-    return { label: "已保存未应用", className: "status-awaiting" };
+    return { label: "已保存未应用", className: readProviderStatusClass("已保存未应用") };
   }
-  return { label: "未配置", className: "status-idle" };
+  return { label: "未配置", className: readProviderStatusClass("未配置") };
+}
+
+function readProviderStatusClass(label: string) {
+  return readUnifiedStatusMeta(readUnifiedStatusFromLabel(label)).className;
 }
 
 function readCredentialSummary(item: ProviderSettingsItem) {

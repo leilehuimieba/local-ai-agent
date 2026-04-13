@@ -328,6 +328,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 34）
+
+1. Provider 状态 class 映射单源化可见
+   - `ProviderCredentialsSection` 的 `readProviderModuleBadge/readProviderPill` 已改为消费 `runtime/state` 统一词典映射。
+2. Provider 状态别名映射一致可见
+   - `已应用/待应用/已保存未应用/未配置` 等 Provider 状态标签仍命中原有语义色，不出现样式回归。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -348,6 +357,7 @@
   - `frontend/src/history/components/HistoryTimelineSection.tsx`
   - `frontend/src/history/components/HistoryDetailRail.tsx`
   - `frontend/src/settings/SettingsSections.tsx`
+  - `frontend/src/settings/ProviderCredentialsSection.tsx`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
@@ -383,4 +393,5 @@
   - Wave 1 主题 31「记录页治理状态样式收口」已完成代码落地与构建验证。
   - Wave 1 主题 32「检查器状态 class 映射单源化」已完成代码落地与构建验证。
   - Wave 1 主题 33「设置页状态样式映射收口」已完成代码落地与构建验证。
+  - Wave 1 主题 34「Provider 状态样式映射收口」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

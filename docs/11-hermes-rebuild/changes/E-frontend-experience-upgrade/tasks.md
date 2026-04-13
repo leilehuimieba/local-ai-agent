@@ -339,3 +339,12 @@
   完成判据：`已锁定/未启用/已启用` 等设置页状态别名由运行时词典统一映射，设置页与任务页语义一致。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 34（Provider 状态样式映射收口）
+
+- [x] Provider 区域状态 class 改为复用统一词典
+  完成判据：`ProviderCredentialsSection` 的 `readProviderModuleBadge/readProviderPill` 改为通过统一词典映射 class，不再本地硬编码 `status-*`。
+- [x] Provider 状态别名纳入运行时词典
+  完成判据：`已应用/待应用/已保存未应用/未配置` 等 Provider 专用状态标签由运行时词典统一映射。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
