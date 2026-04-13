@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { LogEntry } from "../shared/contracts";
 import { AuditFilter, hasAuditSignal } from "./auditSignals";
-import { readLogType } from "./logType";
+import { readLogType, readReviewTypeLabel } from "./logType";
 
 export type HistoryStats = {
   confirmationCount: number;
@@ -191,7 +191,12 @@ function readTimestamp(value: string) {
 }
 
 function searchableText(log: LogEntry) {
-  return [...readBaseSearchFields(log), ...readAuditSearchFields(log)]
+  return [
+    ...readBaseSearchFields(log),
+    ...readErrorSearchFields(log),
+    ...readAuditSearchFields(log),
+    ...readLocalizedSearchFields(log),
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -217,11 +222,23 @@ function readBaseSearchFields(log: LogEntry) {
     readSourceType(log),
     log.metadata?.reason,
     log.final_answer,
+    log.result_summary,
     log.context_snapshot?.workspace_root,
     log.context_snapshot?.memory_digest,
     log.verification_summary,
     log.verification_snapshot?.summary,
     log.metadata?.verification_summary,
+  ];
+}
+
+function readErrorSearchFields(log: LogEntry) {
+  return [
+    log.error?.error_code,
+    log.error?.message,
+    log.error?.summary,
+    log.metadata?.error_code,
+    log.metadata?.error_message,
+    log.metadata?.failure_recovery_hint,
   ];
 }
 
@@ -236,6 +253,28 @@ function readAuditSearchFields(log: LogEntry) {
     log.metadata?.governance_reason,
     log.metadata?.archive_reason,
   ];
+}
+
+function readLocalizedSearchFields(log: LogEntry) {
+  return [
+    readReviewTypeLabel(readLogType(log)),
+    readLevelLabel(log.level),
+    readCompletionLabel(log.completion_status),
+  ];
+}
+
+function readLevelLabel(level: string) {
+  if (level === "error") return "错误";
+  if (level === "warn") return "警告";
+  if (level === "info") return "信息";
+  return "";
+}
+
+function readCompletionLabel(status?: string) {
+  if (status === "completed") return "完成";
+  if (status === "failed") return "失败";
+  if (status === "confirmation_required") return "待确认";
+  return "";
 }
 
 function hasResultFocus(log: LogEntry) {

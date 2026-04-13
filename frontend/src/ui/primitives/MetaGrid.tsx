@@ -14,7 +14,7 @@ export function MetaGrid(props: MetaGridProps) {
   const className = props.className ? `detail-meta-grid ${props.className}` : "detail-meta-grid";
   return (
     <div className={className}>
-      {props.items.map((item) => <MetaItemCard key={item.label} label={item.label} value={item.value} />)}
+      {props.items.map((item, index) => <MetaItemCard key={`${item.label}-${index}`} label={item.label} value={item.value} />)}
     </div>
   );
 }
