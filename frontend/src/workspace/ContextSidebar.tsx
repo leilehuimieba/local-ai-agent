@@ -282,6 +282,7 @@ function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
       { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
       { label: "系统", value: readSystemState(model) },
     ];
+    if (model.confirmation) rows.push({ label: "风险等级", value: readRiskLevelLabel(model.confirmation.risk_level) });
     if (model.latestMemoryEvent) rows.push({ label: "最近记忆", value: readMemoryCopy(model) });
     return rows;
   }
@@ -290,6 +291,7 @@ function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
     { label: "系统", value: readSystemState(model) },
     { label: "最近验证", value: readVerification(model) },
   ];
+  if (model.confirmation) rows.push({ label: "风险等级", value: readRiskLevelLabel(model.confirmation.risk_level) });
   return model.latestMemoryEvent
     ? [...rows, { label: "最近记忆", value: readMemoryCopy(model) }]
     : rows;
@@ -369,9 +371,16 @@ function readWorkspaceRoot(model: ReturnType<typeof buildHubModel>) {
 }
 
 function readRiskStatus(model: ReturnType<typeof buildHubModel>) {
-  if (model.confirmation) return model.confirmation.risk_level;
+  if (model.confirmation) return readUnifiedStatusMeta("awaiting_confirmation").label;
   if (model.latestMemoryEvent) return readMemoryGovernance(model.latestMemoryEvent);
   return "稳定";
+}
+
+function readRiskLevelLabel(level: string) {
+  if (level === "high") return "高风险";
+  if (level === "medium") return "中风险";
+  if (level === "low") return "低风险";
+  return level || "未提供";
 }
 
 function readMemoryCopy(model: ReturnType<typeof buildHubModel>) {

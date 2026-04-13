@@ -20,6 +20,7 @@
   7. 当前会话静态检查：`StatusCard.tsx` 与 `SettingsSections.tsx` 中不再出现 `已完成/处理中/空闲`，状态短词统一由 `readUnifiedStatusMeta` 输出。
   8. 当前会话任务页 DOM 检查脚本：`missingNameOrId=[]`，任务输入框输出 `id=task-composer-input`、`name=task_composer_input`、`autocomplete=off`。
   9. 当前会话源码巡检：`WorkbenchOverview/ConfirmationCard/workspaceViewModel` 对应输入控件已补齐稳定 `id/name`（首页任务输入、记住选择、任务导航搜索）。
+  10. 当前会话确认态快照：检查器“风险与记忆”状态徽标显示 `待确认`，并新增 `风险等级=高风险` 独立字段（不再直接显示 `high`）。
 
 ## Gate 映射
 
