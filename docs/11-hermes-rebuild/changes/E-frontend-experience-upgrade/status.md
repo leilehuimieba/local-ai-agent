@@ -41,6 +41,7 @@
   - 检查器状态 class 映射已单源化：`readInspectorStatusClass` 改为消费 `runtime/state` 统一词典映射，兼容同义状态由运行时集中维护。
   - 设置页状态样式映射已收口：`readModuleStatusClass` 改为消费统一词典，设置页状态 class 分支由运行时集中维护。
   - Provider 状态样式映射已收口：`readProviderModuleBadge/readProviderPill` 改为消费统一词典，Provider 状态 class 分支由运行时集中维护。
+  - 状态总览卡样式映射已收口：`readOverallStatusClass` 改为消费统一词典，断连特例由组件内保留处理。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：

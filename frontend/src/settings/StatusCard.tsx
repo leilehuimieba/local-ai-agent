@@ -1,4 +1,5 @@
 import { SettingsResponse } from "../shared/contracts";
+import { readUnifiedStatusFromLabel, readUnifiedStatusMeta } from "../runtime/state";
 import { EmptyStateBlock, MetricChip, SectionHeader, StatusPill } from "../ui/primitives";
 import { SettingsActionFeedback } from "./useSettings";
 
@@ -87,10 +88,11 @@ function ActionBlock(props: { tone: "running" | "failed" | "completed"; title: s
 }
 
 function buildStatusModel(props: StatusCardProps) {
+  const status = readOverallStatus(props);
   return {
     error: readStatusError(props.settings, props.bootstrapError),
-    statusClass: readOverallStatusClass(props),
-    status: readOverallStatus(props),
+    status,
+    statusClass: readOverallStatusClass(status),
   };
 }
 
@@ -106,12 +108,9 @@ function readOverallStatus(props: StatusCardProps) {
   return props.settings.runtime_status.ok ? "已完成" : "已断开";
 }
 
-function readOverallStatusClass(props: StatusCardProps) {
-  if (props.bootstrapError || props.actionError) return "status-failed";
-  if (props.pendingAction) return "status-running";
-  if (props.lastSuccess) return "status-completed";
-  if (!props.settings) return "status-idle";
-  return props.settings.runtime_status.ok ? "status-completed" : "status-disconnected";
+function readOverallStatusClass(status: string) {
+  if (status === "已断开") return "status-disconnected";
+  return readUnifiedStatusMeta(readUnifiedStatusFromLabel(status)).className;
 }
 
 function readStatusError(settings: SettingsResponse | null, bootstrapError: string | null) {

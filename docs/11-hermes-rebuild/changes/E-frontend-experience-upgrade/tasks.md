@@ -348,3 +348,12 @@
   完成判据：`已应用/待应用/已保存未应用/未配置` 等 Provider 专用状态标签由运行时词典统一映射。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 35（状态总览卡样式映射收口）
+
+- [x] 状态总览卡 class 映射改为复用统一词典
+  完成判据：`StatusCard` 的 `readOverallStatusClass` 改为消费 `runtime/state` 统一词典，不再本地维护 `status-*` 分支。
+- [x] 状态总览卡断连特例保留
+  完成判据：`已断开` 状态继续命中 `status-disconnected`，其余状态由统一词典映射，保持既有语义色。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

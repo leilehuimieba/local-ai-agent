@@ -337,6 +337,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 35）
+
+1. 状态总览卡 class 映射单源化可见
+   - `StatusCard` 的 `readOverallStatusClass` 已改为消费 `runtime/state` 统一词典映射。
+2. 断连特例语义保持可见
+   - 状态为 `已断开` 时仍命中 `status-disconnected`，未因收口回落到默认状态色。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -358,6 +367,7 @@
   - `frontend/src/history/components/HistoryDetailRail.tsx`
   - `frontend/src/settings/SettingsSections.tsx`
   - `frontend/src/settings/ProviderCredentialsSection.tsx`
+  - `frontend/src/settings/StatusCard.tsx`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
@@ -394,4 +404,5 @@
   - Wave 1 主题 32「检查器状态 class 映射单源化」已完成代码落地与构建验证。
   - Wave 1 主题 33「设置页状态样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 34「Provider 状态样式映射收口」已完成代码落地与构建验证。
+  - Wave 1 主题 35「状态总览卡样式映射收口」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
