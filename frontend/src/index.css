@@ -2119,6 +2119,48 @@ textarea {
   align-items: end;
 }
 
+.history-focus-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.focus-chip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-8);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.focus-chip strong {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.focus-chip span {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.focus-chip.active {
+  border-color: rgba(26, 110, 243, 0.32);
+  background: rgba(26, 110, 243, 0.1);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px rgba(26, 110, 243, 0.16) inset;
+}
+
+.detail-anchor.focused .detail-card {
+  border-color: rgba(26, 110, 243, 0.36);
+  box-shadow: 0 0 0 1px rgba(26, 110, 243, 0.15) inset;
+}
+
 .filter-toggle,
 .toggle-tile {
   display: grid;
@@ -2366,6 +2408,10 @@ textarea {
     right: 0;
     min-width: 0;
     transform: none;
+  }
+
+  .history-focus-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .chat-panel {

@@ -1,32 +1,53 @@
+import { useEffect } from "react";
+
 import { LogEntry } from "../../shared/contracts";
 import { buildLogResult, getFocusLogDetails, getHistoryNextSteps, getLearningContinuation, getReplaySummary } from "../viewModel";
 import { EmptyStateBlock, MetaGrid, SectionHeader } from "../../ui/primitives";
 import { readLogType, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel } from "../logType";
+import { HistoryDetailFocusSection } from "../useHistoryReview";
 
 const DETAIL_SECTION_ORDER = ["basic", "summary", "learning", "replay", "risk", "metadata", "context", "verification"] as const;
 
-export function HistoryDetailRail(props: { focusLog: LogEntry | null }) {
+export function HistoryDetailRail(props: { focusLog: LogEntry | null; focusSection?: HistoryDetailFocusSection }) {
+  useFocusDetailSection(props.focusSection, props.focusLog?.log_id || "");
   return (
     <section className="page-section detail-rail logs-detail-rail">
       <SectionHeader title="详情栏" />
-      {buildDetailSections(props.focusLog).map((section) => section.node)}
+      {buildDetailSections(props.focusLog, props.focusSection || null).map((section) => section.node)}
     </section>
   );
 }
 
-function buildDetailSections(focusLog: LogEntry | null) {
-  return DETAIL_SECTION_ORDER.map((key) => createDetailSection(key, focusLog));
+function useFocusDetailSection(focusSection: HistoryDetailFocusSection | undefined, focusLogId: string) {
+  useEffect(() => {
+    if (!focusSection || !focusLogId) return;
+    document.getElementById(`history-detail-${focusSection}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focusLogId, focusSection]);
 }
 
-function createDetailSection(key: typeof DETAIL_SECTION_ORDER[number], focusLog: LogEntry | null) {
-  if (key === "basic") return { key, node: <BasicInfoSection key={key} focusLog={focusLog} /> };
-  if (key === "summary") return { key, node: <SummarySection key={key} focusLog={focusLog} /> };
-  if (key === "learning") return { key, node: <LearningSection key={key} focusLog={focusLog} /> };
-  if (key === "replay") return { key, node: <ReplaySection key={key} focusLog={focusLog} /> };
-  if (key === "risk") return { key, node: <RiskSection key={key} focusLog={focusLog} /> };
-  if (key === "metadata") return { key, node: <MetadataSection key={key} focusLog={focusLog} /> };
-  if (key === "context") return { key, node: <ContextSection key={key} focusLog={focusLog} /> };
-  return { key, node: <VerificationSection key={key} focusLog={focusLog} /> };
+function buildDetailSections(focusLog: LogEntry | null, focusSection: HistoryDetailFocusSection) {
+  return DETAIL_SECTION_ORDER.map((key) => createDetailSection(key, focusLog, focusSection));
+}
+
+function createDetailSection(
+  key: typeof DETAIL_SECTION_ORDER[number],
+  focusLog: LogEntry | null,
+  focusSection: HistoryDetailFocusSection,
+) {
+  const current = buildDetailSectionNode(key, focusLog);
+  const className = focusSection === key ? "detail-anchor focused" : "detail-anchor";
+  return { key, node: <div id={`history-detail-${key}`} className={className} key={key}>{current}</div> };
+}
+
+function buildDetailSectionNode(key: typeof DETAIL_SECTION_ORDER[number], focusLog: LogEntry | null) {
+  if (key === "basic") return <BasicInfoSection focusLog={focusLog} />;
+  if (key === "summary") return <SummarySection focusLog={focusLog} />;
+  if (key === "learning") return <LearningSection focusLog={focusLog} />;
+  if (key === "replay") return <ReplaySection focusLog={focusLog} />;
+  if (key === "risk") return <RiskSection focusLog={focusLog} />;
+  if (key === "metadata") return <MetadataSection focusLog={focusLog} />;
+  if (key === "context") return <ContextSection focusLog={focusLog} />;
+  return <VerificationSection focusLog={focusLog} />;
 }
 
 function BasicInfoSection(props: { focusLog: LogEntry | null }) {

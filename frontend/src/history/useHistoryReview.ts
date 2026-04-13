@@ -10,6 +10,8 @@ export type HistoryStats = {
   sessionCount: number;
   toolCount: number;
 };
+export type ReviewFocusFilter = "all" | "result" | "risk" | "verification" | "governance";
+export type HistoryDetailFocusSection = "summary" | "risk" | "verification" | "metadata" | null;
 
 export function useHistoryReview(logs: LogEntry[]) {
   const filters = useReviewFilters();
@@ -25,12 +27,14 @@ export function useHistoryReview(logs: LogEntry[]) {
     recentLogs,
     selectLog: filters.setSelectedLogId,
     stats,
+    detailFocusSection: readDetailFocusSection(filters.values.focusFilter),
     toolbarProps: buildToolbarProps(filteredLogs.length, filters),
   };
 }
 
 function useReviewFilters() {
   const [auditFilter, setAuditFilter] = useState<AuditFilter>("all");
+  const [focusFilter, setFocusFilter] = useState<ReviewFocusFilter>("all");
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -40,8 +44,8 @@ function useReviewFilters() {
   return {
     selectedLogId,
     setSelectedLogId,
-    values: { auditFilter, levelFilter, onlyConfirmations, onlyErrors, query, typeFilter },
-    setters: { setAuditFilter, setLevelFilter, setOnlyConfirmations, setOnlyErrors, setQuery, setTypeFilter },
+    values: { auditFilter, focusFilter, levelFilter, onlyConfirmations, onlyErrors, query, typeFilter },
+    setters: { setAuditFilter, setFocusFilter, setLevelFilter, setOnlyConfirmations, setOnlyErrors, setQuery, setTypeFilter },
   };
 }
 
@@ -52,7 +56,9 @@ function useFocusLog(logs: LogEntry[], selectedLogId: string) {
 function buildToolbarProps(resultCount: number, filters: ReturnType<typeof useReviewFilters>) {
   return {
     auditFilter: filters.values.auditFilter,
+    focusFilter: filters.values.focusFilter,
     onAuditFilterChange: filters.setters.setAuditFilter,
+    onFocusFilterChange: filters.setters.setFocusFilter,
     levelFilter: filters.values.levelFilter,
     onLevelFilterChange: filters.setters.setLevelFilter,
     onOnlyConfirmationsChange: filters.setters.setOnlyConfirmations,
@@ -97,6 +103,7 @@ function filterLogs(
   logs: LogEntry[],
   filters: {
     auditFilter: AuditFilter;
+    focusFilter: ReviewFocusFilter;
     query: string;
     levelFilter: string;
     typeFilter: string;
@@ -112,6 +119,7 @@ function matchesAllFilters(
   log: LogEntry,
   filters: {
     auditFilter: AuditFilter;
+    focusFilter: ReviewFocusFilter;
     levelFilter: string;
     typeFilter: string;
     onlyErrors: boolean;
@@ -120,6 +128,7 @@ function matchesAllFilters(
   keyword: string,
 ) {
   return matchesAudit(log, filters.auditFilter) &&
+    matchesFocus(log, filters.focusFilter) &&
     matchesLevel(log, filters.levelFilter) &&
     matchesType(log, filters.typeFilter) &&
     matchesErrorOnly(log, filters.onlyErrors) &&
@@ -129,6 +138,14 @@ function matchesAllFilters(
 
 function matchesAudit(log: LogEntry, auditFilter: AuditFilter) {
   return hasAuditSignal(log, auditFilter);
+}
+
+function matchesFocus(log: LogEntry, focusFilter: ReviewFocusFilter) {
+  if (focusFilter === "all") return true;
+  if (focusFilter === "result") return hasResultFocus(log);
+  if (focusFilter === "risk") return hasRiskFocus(log);
+  if (focusFilter === "verification") return hasVerificationFocus(log);
+  return hasGovernanceFocus(log);
 }
 
 function matchesLevel(log: LogEntry, levelFilter: string) {
@@ -219,6 +236,32 @@ function readAuditSearchFields(log: LogEntry) {
     log.metadata?.governance_reason,
     log.metadata?.archive_reason,
   ];
+}
+
+function hasResultFocus(log: LogEntry) {
+  return readLogType(log) === "result" || Boolean(log.result_summary || log.final_answer || log.completion_status === "completed");
+}
+
+function hasRiskFocus(log: LogEntry) {
+  return readLogType(log) === "error"
+    || readLogType(log) === "confirmation"
+    || Boolean(log.error || log.risk_level || log.confirmation_id || log.metadata?.failure_recovery_hint);
+}
+
+function hasVerificationFocus(log: LogEntry) {
+  return readLogType(log) === "verification" || Boolean(log.verification_summary || log.verification_snapshot?.summary);
+}
+
+function hasGovernanceFocus(log: LogEntry) {
+  return hasAuditSignal(log, "governance") || readLogType(log) === "memory";
+}
+
+function readDetailFocusSection(focusFilter: ReviewFocusFilter): HistoryDetailFocusSection {
+  if (focusFilter === "result") return "summary";
+  if (focusFilter === "risk") return "risk";
+  if (focusFilter === "verification") return "verification";
+  if (focusFilter === "governance") return "metadata";
+  return null;
 }
 
 function readRecordType(log: LogEntry) {

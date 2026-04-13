@@ -1,4 +1,4 @@
-import { HistoryStats } from "../useHistoryReview";
+import { HistoryStats, ReviewFocusFilter } from "../useHistoryReview";
 import { MetricChip, SectionHeader } from "../../ui/primitives";
 import { AuditFilter } from "../auditSignals";
 import { readReviewTypeLabel, ReviewLogType } from "../logType";
@@ -39,6 +39,7 @@ export function HistoryLogsSummary(props: {
 
 export function HistoryFilterToolbar(props: {
   query: string;
+  focusFilter: ReviewFocusFilter;
   typeFilter: string;
   auditFilter: AuditFilter;
   levelFilter: string;
@@ -46,6 +47,7 @@ export function HistoryFilterToolbar(props: {
   onlyConfirmations: boolean;
   resultCount: number;
   onQueryChange: (value: string) => void;
+  onFocusFilterChange: (value: ReviewFocusFilter) => void;
   onTypeFilterChange: (value: string) => void;
   onAuditFilterChange: (value: AuditFilter) => void;
   onLevelFilterChange: (value: string) => void;
@@ -69,12 +71,34 @@ function FilterToolbarControls(props: {
 }) {
   return (
     <div className="filter-toolbar">
+      <HistoryFocusGroupBar value={props.props.focusFilter} onChange={props.props.onFocusFilterChange} />
       <HistorySearchBox value={props.props.query} onChange={props.props.onQueryChange} />
       <HistoryFilterSelect label="类型" value={props.props.typeFilter} options={buildTypeOptions()} onChange={props.props.onTypeFilterChange} />
       <HistoryFilterSelect label="审计" value={props.props.auditFilter} options={buildAuditOptions()} onChange={readAuditChange(props.props.onAuditFilterChange)} />
       <HistoryFilterSelect label="级别" value={props.props.levelFilter} options={buildLevelOptions()} onChange={props.props.onLevelFilterChange} />
       <HistoryFilterToggle checked={props.props.onlyErrors} label="仅错误" note="真实可用" onChange={props.props.onOnlyErrorsChange} />
       <HistoryFilterToggle checked={props.props.onlyConfirmations} label="仅确认" note="真实可用" onChange={props.props.onOnlyConfirmationsChange} />
+    </div>
+  );
+}
+
+function HistoryFocusGroupBar(props: {
+  value: ReviewFocusFilter;
+  onChange: (value: ReviewFocusFilter) => void;
+}) {
+  return (
+    <div className="history-focus-bar" role="group" aria-label="结构化复查分组">
+      {buildFocusOptions().map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          className={props.value === item.value ? "focus-chip active" : "focus-chip"}
+          onClick={() => props.onChange(item.value)}
+        >
+          <strong>{item.label}</strong>
+          <span>{item.note}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -170,4 +194,14 @@ function buildAuditOptions() {
 
 function readAuditChange(onChange: (value: AuditFilter) => void) {
   return (value: string) => onChange(value as AuditFilter);
+}
+
+function buildFocusOptions(): Array<{ value: ReviewFocusFilter; label: string; note: string }> {
+  return [
+    { value: "all", label: "全部", note: "整体复盘" },
+    { value: "result", label: "结果", note: "看结论与输出" },
+    { value: "risk", label: "风险", note: "看失败与确认" },
+    { value: "verification", label: "验证", note: "看验证证据" },
+    { value: "governance", label: "治理", note: "看沉淀与治理" },
+  ];
 }
