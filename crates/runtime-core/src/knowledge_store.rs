@@ -1,4 +1,5 @@
 use crate::paths::{external_memory_audit_path, knowledge_base_file_path, repo_root};
+use crate::sensitive_data::contains_sensitive_text;
 use crate::sqlite_store::{list_knowledge_records_sqlite, write_knowledge_record_sqlite};
 use crate::storage::{append_jsonl, read_jsonl};
 use serde::{Deserialize, Serialize};
@@ -109,28 +110,14 @@ fn same_siyuan_content(record: &KnowledgeRecord, title: &str, summary: &str) -> 
     record.title == title && record.summary == summary
 }
 
-fn contains_sensitive_marker(text: &str) -> bool {
-    let lower = text.to_ascii_lowercase();
-    let markers = [
-        "authorization: bearer",
-        "api_key",
-        "token=",
-        "password=",
-        "secret=",
-        "sk-",
-        "ak-",
-    ];
-    markers.iter().any(|marker| lower.contains(marker))
-}
-
 fn record_contains_sensitive_data(record: &KnowledgeRecord) -> bool {
-    contains_sensitive_marker(&record.title)
-        || contains_sensitive_marker(&record.summary)
-        || contains_sensitive_marker(&record.content)
+    contains_sensitive_text(&record.title)
+        || contains_sensitive_text(&record.summary)
+        || contains_sensitive_text(&record.content)
         || record
             .tags
             .iter()
-            .any(|tag| contains_sensitive_marker(tag))
+            .any(|tag| contains_sensitive_text(tag))
 }
 
 pub(crate) fn should_skip_knowledge_record(record: &KnowledgeRecord) -> Option<KnowledgeSkip> {
@@ -146,7 +133,7 @@ pub(crate) fn should_skip_knowledge_record(record: &KnowledgeRecord) -> Option<K
     }
     if record_contains_sensitive_data(record) {
         return Some(KnowledgeSkip {
-            reason: "命中敏感信息清洗规则：疑似密钥/令牌/凭证，禁止入库。".to_string(),
+            reason: "命中敏感信息清洗规则：疑似密钥或隐私字段，禁止入库。".to_string(),
         });
     }
     if record.summary.chars().count() < 20 {
@@ -473,6 +460,30 @@ mod tests {
         let mut record = runtime_record("k5", "summary long enough for sensitive check");
         record.content = "authorization: bearer sk-test-token".to_string();
         let skip = should_skip_knowledge_record(&record).expect("sensitive should be skipped");
+        assert!(skip.reason.contains("敏感信息"));
+    }
+
+    #[test]
+    fn email_record_is_skipped() {
+        let mut record = runtime_record("k7", "summary long enough for email sensitive check");
+        record.content = "contact: user.demo@example.com".to_string();
+        let skip = should_skip_knowledge_record(&record).expect("email should be skipped");
+        assert!(skip.reason.contains("敏感信息"));
+    }
+
+    #[test]
+    fn phone_record_is_skipped() {
+        let mut record = runtime_record("k8", "summary long enough for phone sensitive check");
+        record.content = "联系电话 13800138000".to_string();
+        let skip = should_skip_knowledge_record(&record).expect("phone should be skipped");
+        assert!(skip.reason.contains("敏感信息"));
+    }
+
+    #[test]
+    fn id_card_record_is_skipped() {
+        let mut record = runtime_record("k9", "summary long enough for id-card sensitive check");
+        record.content = "身份证 11010519491231002X".to_string();
+        let skip = should_skip_knowledge_record(&record).expect("id card should be skipped");
         assert!(skip.reason.contains("敏感信息"));
     }
 

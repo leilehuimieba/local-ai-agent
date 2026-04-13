@@ -1,6 +1,7 @@
 use crate::contracts::RunRequest;
 use crate::knowledge_store::{KnowledgeRecord, search_knowledge_records};
 use crate::paths::{external_memory_audit_path, repo_root, siyuan_root_dir, siyuan_sync_enabled};
+use crate::sensitive_data::contains_sensitive_text;
 use crate::storage::append_jsonl;
 use crate::text::{extract_snippet, score_text};
 use serde::{Deserialize, Serialize};
@@ -245,17 +246,7 @@ fn resolve_agent_id(flag: &CortexFlag) -> String {
 }
 
 fn sensitive_query_marker(text: &str) -> bool {
-    let lower = text.to_ascii_lowercase();
-    let markers = [
-        "authorization: bearer",
-        "api_key",
-        "token=",
-        "password=",
-        "secret=",
-        "sk-",
-        "ak-",
-    ];
-    markers.iter().any(|marker| lower.contains(marker))
+    contains_sensitive_text(text)
 }
 
 fn contains_cjk(text: &str) -> bool {
@@ -707,6 +698,24 @@ mod tests {
     #[test]
     fn recall_source_redacts_sensitive_query() {
         let source = recall_source("please use api_key=sk-test-123 to recall");
+        assert_eq!(source, "knowledge_search:[REDACTED]");
+    }
+
+    #[test]
+    fn recall_source_redacts_email_query() {
+        let source = recall_source("帮我查一下 user.demo@example.com 的使用记录");
+        assert_eq!(source, "knowledge_search:[REDACTED]");
+    }
+
+    #[test]
+    fn recall_source_redacts_phone_query() {
+        let source = recall_source("帮我查一下手机号 13800138000 的历史对话");
+        assert_eq!(source, "knowledge_search:[REDACTED]");
+    }
+
+    #[test]
+    fn recall_source_redacts_id_card_query() {
+        let source = recall_source("身份证 11010519491231002X 的关联信息");
         assert_eq!(source, "knowledge_search:[REDACTED]");
     }
 

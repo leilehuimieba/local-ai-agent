@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 E（交互与网关统一）
 2. 当前 Gate：Gate-E（执行中，未做完成声明）
-3. 当前活跃 change：`E-low-quality-scoring-upgrade`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/`
+3. 当前活跃 change：`E-sensitive-pattern-expansion`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/E-sensitive-pattern-expansion/`
 
 ## 2. 口径边界
 

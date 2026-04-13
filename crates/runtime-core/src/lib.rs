@@ -59,6 +59,7 @@ mod run_tool_metadata;
 mod run_verification_metadata;
 mod session;
 mod skill_catalog;
+mod sensitive_data;
 mod sqlite_store;
 mod storage;
 mod storage_migration;

@@ -8,12 +8,13 @@
 
 ## 当前活跃 change
 
-1. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/`
-3. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（上一轮已收口）
-4. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
-5. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
-6. 历史说明：`E-frontend-experience-upgrade` 已迁入 `archive/2026-04-13/`。
+1. [E-sensitive-pattern-expansion](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-sensitive-pattern-expansion/status.md)
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/E-sensitive-pattern-expansion/`
+3. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（上一轮已收口）
+4. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（历史已收口）
+5. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
+6. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
+7. 历史说明：`E-frontend-experience-upgrade` 已迁入 `archive/2026-04-13/`。
 
 ## 保留观察项
 
