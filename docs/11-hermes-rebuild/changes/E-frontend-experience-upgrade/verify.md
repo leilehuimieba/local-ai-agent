@@ -400,6 +400,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 42）
+
+1. 记录页状态徽标映射收口补齐可见
+   - `HistoryTimelineSection.readHistoryStatusKey` 已改为先消费失败/待确认/完成明确信号，再回退默认分类。
+2. 记录页徽标与 tone 语义一致可见
+   - 时间线 `StatusPill` 与条目 `tone-*` 同步基于统一状态键，不再按类型与状态并行推断。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -465,4 +474,5 @@
   - Wave 1 主题 39「设置页状态映射消费口径巡检」已完成清单巡检与待收口定位。
   - Wave 1 主题 40「设置页 ExternalConnection 状态映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 41「调查层事件状态别名清理」已完成代码落地与构建验证。
+  - Wave 1 主题 42「记录页状态徽标映射收口补齐」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

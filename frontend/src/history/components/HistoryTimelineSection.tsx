@@ -109,10 +109,10 @@ function buildItemClass(selected: boolean, log: LogEntry) {
 }
 
 function readItemTone(log: LogEntry) {
-  const type = readLogType(log);
-  if (type === "error") return "danger";
-  if (type === "confirmation") return "warning";
-  if (type === "memory" || type === "verification") return "calm";
+  const status = readHistoryStatusKey(log);
+  if (status === "failed") return "danger";
+  if (status === "awaiting_confirmation") return "warning";
+  if (status === "completed") return "calm";
   return "neutral";
 }
 
@@ -141,13 +141,24 @@ function readStatusClass(log: LogEntry) {
 }
 
 function readHistoryStatusKey(log: LogEntry): UnifiedStatusKey {
+  if (hasHistoryFailedSignal(log)) return "failed";
+  if (hasHistoryAwaitingSignal(log)) return "awaiting_confirmation";
+  if (hasHistoryCompletedSignal(log)) return "completed";
   const type = readLogType(log);
-  if (type === "error") return "failed";
-  if (type === "confirmation") return "awaiting_confirmation";
-  if (log.completion_status === "completed" || log.final_answer) return "completed";
-  if (log.completion_status === "failed") return "failed";
-  if (log.completion_status === "confirmation_required") return "awaiting_confirmation";
+  if (type === "result" || type === "memory" || type === "verification") return "completed";
   return "running";
+}
+
+function hasHistoryFailedSignal(log: LogEntry) {
+  return readLogType(log) === "error" || log.completion_status === "failed" || Boolean(log.error || log.metadata?.error_code);
+}
+
+function hasHistoryAwaitingSignal(log: LogEntry) {
+  return readLogType(log) === "confirmation" || log.completion_status === "confirmation_required" || Boolean(log.confirmation_id);
+}
+
+function hasHistoryCompletedSignal(log: LogEntry) {
+  return log.completion_status === "completed" || Boolean(log.final_answer);
 }
 
 function handleHistoryItemKeyDown(
