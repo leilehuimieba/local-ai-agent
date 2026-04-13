@@ -462,6 +462,17 @@
 4. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 48）
+
+1. 自动回归脚本落盘
+   - 新增 `scripts/run-frontend-wave1-regression.ps1`，可固定执行前端最小回归并产出 `latest.json`。
+2. 阶段回归清单落盘
+   - 新增 `artifacts/主题48-前端阶段性回归脚本清单.md`，固定“自动脚本入口 + 人工检查项 + 判定规则”。
+3. 脚本执行留证可复查
+   - 已执行回归脚本并生成 `tmp/frontend-wave1-regression/latest.json`，其中构建状态为 `passed`，含人工检查项模板。
+4. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -484,14 +495,17 @@
   - `frontend/src/settings/SettingsSections.tsx`
   - `frontend/src/settings/ProviderCredentialsSection.tsx`
   - `frontend/src/settings/StatusCard.tsx`
+  - `scripts/run-frontend-wave1-regression.ps1`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/artifacts/主题45-状态词典收口阶段验收包.md`
+  - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/artifacts/主题48-前端阶段性回归脚本清单.md`
 - 日志或截图：
   - 构建命令：`frontend/` 目录执行 `npm run build`。
   - 构建结果：`tsc -b && vite build` 执行成功，产物已生成到 `frontend/dist/`。
   - 接口样本提取：`tmp/stage-e-audit-consumption/latest.json`（来源：`tmp/stage-c-risk-audit-acceptance/latest.json`、`tmp/stage-d-day1/latest.json`）。
+  - 回归脚本结果：`tmp/frontend-wave1-regression/latest.json`（含构建状态与固定人工检查项）。
 
 ## Gate 映射
 
@@ -534,4 +548,5 @@
   - Wave 1 主题 45「状态词典收口阶段验收包」已完成文档落地与构建验证。
   - Wave 1 主题 46「记录页结构化筛选增强」已完成代码落地与构建验证。
   - Wave 1 主题 47「设置页诊断链路可读性增强」已完成代码落地与构建验证。
+  - Wave 1 主题 48「前端重构阶段性回归脚本清单」已完成脚本与文档落地，并完成脚本执行留证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
