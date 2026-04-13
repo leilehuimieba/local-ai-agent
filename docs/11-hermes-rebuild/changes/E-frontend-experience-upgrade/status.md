@@ -43,11 +43,18 @@
   - Provider 状态样式映射已收口：`readProviderModuleBadge/readProviderPill` 改为消费统一词典，Provider 状态 class 分支由运行时集中维护。
   - 状态总览卡样式映射已收口：`readOverallStatusClass` 改为消费统一词典，断连特例由组件内保留处理。
   - Provider 就绪语义色已修正：Provider 标题“就绪”标签回归空闲色，避免词典收口后的完成色误判。
+  - Provider 状态键映射已显式化：`readProviderModuleBadge/readProviderPill` 改为按明确状态键映射 class，移除文案反推依赖。
+  - 设置页 Provider 反馈态样式已收口：`ProviderInlineFeedback` 改为消费统一词典状态 class，反馈态不再依赖局部 tone-class 隐式映射。
+  - 设置页状态映射消费巡检已完成：已形成“已收口/待收口”清单，当前主要待收口点为 `readExternalConnectionModel` 的 class 直写分支。
+  - 设置页 ExternalConnection 状态映射已收口：`readExternalConnectionModel` 去除 `status-*` 直写分支，改为按状态键输出语义色。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：
   - Wave 1 持续小步收口（以“单主题 + 最小构建回归”推进剩余体验细节）。
+  - 已建立后续待推进任务池（主题 38-48），后续执行按任务池顺序推进，避免临时扩散。
 - 阻塞点：无。
 - 下一步：
-  - 继续推进 Wave 1 剩余主题，保持“每轮一个主题 + 最小构建回归”。
+  - 按优先顺序推进主题 41-43（调查层别名清理、记录页映射收口、主线程密度二次压缩）。
+  - 再推进主题 44-45（任务页移动端压测、阶段验收包）。
+  - 最后推进主题 46-48（记录页筛选增强、设置页诊断增强、回归脚本清单）。
   - 每轮同步更新 `tasks.md / status.md / verify.md` 与对应证据路径。

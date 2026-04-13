@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { readUnifiedStatusFromLabel, readUnifiedStatusMeta } from "../runtime/state";
+import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { ProviderSettingsItem, ProviderSettingsResponse } from "../shared/contracts";
 import { EmptyStateBlock, MetaGrid, SectionHeader, StatusPill } from "../ui/primitives";
 import { ProviderActionState } from "./useSettings";
@@ -17,7 +17,7 @@ type ProviderCredentialsSectionProps = {
 };
 
 type ProviderFeedback = {
-  tone: "running" | "failed" | "completed";
+  status: "running" | "failed" | "completed";
   detail: string;
 };
 
@@ -55,7 +55,7 @@ function ProviderSectionBody(props: { props: ProviderCredentialsSectionProps }) 
   if (providers.length === 0) return <EmptyStateBlock compact title="暂无可配置 provider" text="后端当前没有返回可管理的模型服务条目。" />;
   return (
     <div className="settings-subsection">
-      {props.props.providerBootstrapError ? <ProviderInlineFeedback feedback={{ tone: "failed", detail: props.props.providerBootstrapError }} /> : null}
+      {props.props.providerBootstrapError ? <ProviderInlineFeedback feedback={{ detail: props.props.providerBootstrapError, status: "failed" }} /> : null}
       <div className="memory-list">
         {providers.map((item) => <ProviderCredentialCard key={item.provider_id} item={item} action={props.props.providerActions[item.provider_id]} activeProviderId={props.props.providerSettings?.active_provider_id} onTestProvider={props.props.onTestProvider} onSaveProvider={props.props.onSaveProvider} onApplyProvider={props.props.onApplyProvider} onRemoveProvider={props.props.onRemoveProvider} />)}
       </div>
@@ -66,7 +66,7 @@ function ProviderSectionBody(props: { props: ProviderCredentialsSectionProps }) 
 function ProviderLoadError(props: { message: string }) {
   return (
     <div className="settings-subsection">
-      <ProviderInlineFeedback feedback={{ tone: "failed", detail: props.message }} />
+      <ProviderInlineFeedback feedback={{ detail: props.message, status: "failed" }} />
       <EmptyStateBlock compact title="模型服务设置加载失败" text="可先检查后端接口，再点击“刷新状态”重试。" />
     </div>
   );
@@ -187,7 +187,7 @@ async function handleProviderRemove(
 
 function ProviderInlineFeedback(props: { feedback: ProviderFeedback | null }) {
   if (!props.feedback) return null;
-  return <p className={`settings-inline-feedback settings-inline-feedback-${props.feedback.tone}`}>{props.feedback.detail}</p>;
+  return <p className={`settings-inline-feedback ${readUnifiedStatusMeta(props.feedback.status).className}`}>{props.feedback.detail}</p>;
 }
 
 function buildProviderRows(item: ProviderSettingsItem, activeProviderId?: string) {
@@ -203,27 +203,27 @@ function readProviderModuleBadge(
   providerSettings: ProviderSettingsResponse | null,
   providerBootstrapError: string | null,
 ) {
-  if (providerBootstrapError) return { label: "失败", className: readProviderStatusClass("失败") };
-  if (!providerSettings?.providers.length) return { label: "空闲", className: readProviderStatusClass("空闲") };
-  if (providerSettings.active_provider_id) return { label: "已应用", className: readProviderStatusClass("已应用") };
+  if (providerBootstrapError) return { label: "失败", className: readProviderStatusClassByKey("failed") };
+  if (!providerSettings?.providers.length) return { label: "空闲", className: readProviderStatusClassByKey("idle") };
+  if (providerSettings.active_provider_id) return { label: "已应用", className: readProviderStatusClassByKey("completed") };
   if (providerSettings.providers.some((item) => item.credential_status.apply_status === "saved_not_applied")) {
-    return { label: "待应用", className: readProviderStatusClass("待应用") };
+    return { label: "待应用", className: readProviderStatusClassByKey("awaiting_confirmation") };
   }
-  return { label: "就绪", className: readProviderStatusClass("空闲") };
+  return { label: "就绪", className: readProviderStatusClassByKey("idle") };
 }
 
 function readProviderPill(item: ProviderSettingsItem, activeProviderId?: string) {
   if (item.credential_status.apply_status === "applied" || item.provider_id === activeProviderId) {
-    return { label: "已应用", className: readProviderStatusClass("已应用") };
+    return { label: "已应用", className: readProviderStatusClassByKey("completed") };
   }
   if (item.credential_status.apply_status === "saved_not_applied") {
-    return { label: "已保存未应用", className: readProviderStatusClass("已保存未应用") };
+    return { label: "已保存未应用", className: readProviderStatusClassByKey("awaiting_confirmation") };
   }
-  return { label: "未配置", className: readProviderStatusClass("未配置") };
+  return { label: "未配置", className: readProviderStatusClassByKey("idle") };
 }
 
-function readProviderStatusClass(label: string) {
-  return readUnifiedStatusMeta(readUnifiedStatusFromLabel(label)).className;
+function readProviderStatusClassByKey(status: UnifiedStatusKey) {
+  return readUnifiedStatusMeta(status).className;
 }
 
 function readCredentialSummary(item: ProviderSettingsItem) {
@@ -252,14 +252,14 @@ function readProviderFeedback(
   action: ProviderActionState | undefined,
   activeProviderId?: string,
 ) {
-  if (action?.pending) return { tone: "running", detail: "正在处理当前 provider 设置。" } satisfies ProviderFeedback;
-  if (action?.error) return { tone: "failed", detail: action.error } satisfies ProviderFeedback;
-  if (action?.success) return { tone: "completed", detail: action.success } satisfies ProviderFeedback;
+  if (action?.pending) return { detail: "正在处理当前 provider 设置。", status: "running" } satisfies ProviderFeedback;
+  if (action?.error) return { detail: action.error, status: "failed" } satisfies ProviderFeedback;
+  if (action?.success) return { detail: action.success, status: "completed" } satisfies ProviderFeedback;
   if (item.credential_status.apply_status === "saved_not_applied") {
-    return { tone: "running", detail: "密钥已保存，尚未应用到运行时。点击“应用到运行时”后，新任务才会使用新配置。" } satisfies ProviderFeedback;
+    return { detail: "密钥已保存，尚未应用到运行时。点击“应用到运行时”后，新任务才会使用新配置。", status: "running" } satisfies ProviderFeedback;
   }
   if (item.provider_id === activeProviderId) {
-    return { tone: "completed", detail: "当前 provider 已应用到运行时，新发起的任务会优先使用这套配置。" } satisfies ProviderFeedback;
+    return { detail: "当前 provider 已应用到运行时，新发起的任务会优先使用这套配置。", status: "completed" } satisfies ProviderFeedback;
   }
   return null;
 }

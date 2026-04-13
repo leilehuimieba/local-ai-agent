@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { countMemoryFacets, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
 import { ResourcesEntrySection } from "../resources/components";
-import { readUnifiedStatusFromLabel, readUnifiedStatusMeta } from "../runtime/state";
+import { readUnifiedStatusFromLabel, readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { ExternalConnectionSlot, MemoryEntry, ProviderSettingsResponse, SettingsResponse } from "../shared/contracts";
 import { EmptyStateBlock, MetaGrid, SectionHeader, StatusPill } from "../ui/primitives";
 import { exportRunLogs, exportSettingsSnapshot, openDiagnosticsSnapshot } from "./api";
@@ -539,26 +539,29 @@ function buildExternalConnectionRows(
 function buildExternalConnectionModel(slot: ExternalConnectionSlot) {
   const action = readExternalConnectionAction(slot);
   if (slot.status === "active" && slot.current_tools.length > 0) {
-    return createExternalConnectionModel("已可用", "status-completed", "当前已发现可用接点。", slot.current_tools.join(" / "), readNextStep(slot, "当前不需要额外前端操作。"), action, readExternalConnectionActionLabel(action, true));
+    return createExternalConnectionModel("已可用", "completed", "当前已发现可用接点。", slot.current_tools.join(" / "), readNextStep(slot, "当前不需要额外前端操作。"), action, readExternalConnectionActionLabel(action, true));
   }
   if (slot.status === "limited") {
-    return createExternalConnectionModel("当前受限", "status-awaiting", "连接位置已登记，但当前能力受限。", readToolSummary(slot), readNextStep(slot, "等待运行环境或工具能力恢复。"), action, readExternalConnectionActionLabel(action, false));
+    return createExternalConnectionModel("当前受限", "awaiting_confirmation", "连接位置已登记，但当前能力受限。", readToolSummary(slot), readNextStep(slot, "等待运行环境或工具能力恢复。"), action, readExternalConnectionActionLabel(action, false));
   }
   if (slot.current_tools.length > 0) {
-    return createExternalConnectionModel("已预留未接入", "status-idle", "当前只保留接入位置，还没有进入可用态。", slot.current_tools.join(" / "), readNextStep(slot, "等待后端接入后再转为可用。"));
+    return createExternalConnectionModel("已预留未接入", "idle", "当前只保留接入位置，还没有进入可用态。", slot.current_tools.join(" / "), readNextStep(slot, "等待后端接入后再转为可用。"));
   }
-  return createExternalConnectionModel("未绑定工具", "status-disconnected", "当前没有绑定可执行工具。", "无", readNextStep(slot, "等待相关工具注册或接入信息返回。"));
+  return createExternalConnectionModel("未绑定工具", "disconnected", "当前没有绑定可执行工具。", "无", readNextStep(slot, "等待相关工具注册或接入信息返回。"));
 }
 
 function createExternalConnectionModel(
   statusLabel: string,
-  statusClass: string,
+  status: UnifiedStatusKey | "disconnected",
   summary: string,
   toolSummary: string,
   nextStep: string,
   action?: "validate" | "recheck",
   actionLabel?: string,
 ) {
+  const statusClass = status === "disconnected"
+    ? "status-disconnected"
+    : readUnifiedStatusMeta(status).className;
   return { action, actionLabel, nextStep, statusClass, statusLabel, summary, toolSummary };
 }
 

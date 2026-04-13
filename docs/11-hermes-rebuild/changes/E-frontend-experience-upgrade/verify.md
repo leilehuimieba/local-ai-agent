@@ -353,6 +353,44 @@
 2. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 37）
+
+1. Provider 状态键映射显式化可见
+   - `ProviderCredentialsSection` 的状态 class 已改为按明确状态键映射，不再依赖文案反推。
+2. 语义色稳定性可见
+   - `失败/待应用/已应用/未配置/就绪` 场景分别命中 `failed/awaiting_confirmation/completed/idle` 预期语义色。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 38）
+
+1. Provider 反馈态样式映射收口可见
+   - `ProviderInlineFeedback` 已改为消费统一词典状态 class，不再依赖 `settings-inline-feedback-${tone}` 的局部隐式映射。
+2. Provider 反馈态语义一致可见
+   - `pending/error/success` 场景反馈仍分别命中进行中/失败/完成语义色，视觉语义不回归。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 39）
+
+1. 设置页状态映射消费点巡检完成
+   - 已完成设置页 `StatusPill` 与状态 class 消费点巡检，并形成“已收口/待收口”清单。
+2. 已收口清单
+   - `StatusCard.readOverallStatusClass`：已收口到统一词典（保留 `status-disconnected` 特例）。
+   - `SettingsSections.readModuleStatusClass`：已收口到统一词典（保留 `status-disconnected` 特例）。
+   - `ProviderCredentialsSection.readProviderModuleBadge/readProviderPill`：已收口为状态键显式映射。
+3. 待收口清单
+   - `SettingsSections.readExternalConnectionModel`：仍存在 `status-completed/status-awaiting/status-idle/status-disconnected` 直写分支，需改为统一词典消费。
+
+## 本轮验证点（Wave 1 - 主题 40）
+
+1. ExternalConnection 状态映射收口可见
+   - `SettingsSections.readExternalConnectionModel` 已移除 `status-*` 直写分支，改为按状态键映射语义色。
+2. ExternalConnection 语义色一致可见
+   - `已可用/当前受限/已预留未接入/未绑定工具` 场景分别命中 `completed/awaiting_confirmation/idle/disconnected` 预期语义色。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -413,4 +451,8 @@
   - Wave 1 主题 34「Provider 状态样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 35「状态总览卡样式映射收口」已完成代码落地与构建验证。
   - Wave 1 主题 36「Provider 就绪语义色修正」已完成代码落地与构建验证。
+  - Wave 1 主题 37「Provider 状态键映射显式化」已完成代码落地与构建验证。
+  - Wave 1 主题 38「设置页 Provider 反馈态样式收口」已完成代码落地与构建验证。
+  - Wave 1 主题 39「设置页状态映射消费口径巡检」已完成清单巡检与待收口定位。
+  - Wave 1 主题 40「设置页 ExternalConnection 状态映射收口」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
