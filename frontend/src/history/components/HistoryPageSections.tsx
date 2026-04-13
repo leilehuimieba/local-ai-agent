@@ -73,11 +73,11 @@ function FilterToolbarControls(props: {
     <div className="filter-toolbar">
       <HistoryFocusGroupBar value={props.props.focusFilter} onChange={props.props.onFocusFilterChange} />
       <HistorySearchBox value={props.props.query} onChange={props.props.onQueryChange} />
-      <HistoryFilterSelect label="类型" value={props.props.typeFilter} options={buildTypeOptions()} onChange={props.props.onTypeFilterChange} />
-      <HistoryFilterSelect label="审计" value={props.props.auditFilter} options={buildAuditOptions()} onChange={readAuditChange(props.props.onAuditFilterChange)} />
-      <HistoryFilterSelect label="级别" value={props.props.levelFilter} options={buildLevelOptions()} onChange={props.props.onLevelFilterChange} />
-      <HistoryFilterToggle checked={props.props.onlyErrors} label="仅错误" note="真实可用" onChange={props.props.onOnlyErrorsChange} />
-      <HistoryFilterToggle checked={props.props.onlyConfirmations} label="仅确认" note="真实可用" onChange={props.props.onOnlyConfirmationsChange} />
+      <HistoryFilterSelect fieldName="history_type_filter" label="类型" value={props.props.typeFilter} options={buildTypeOptions()} onChange={props.props.onTypeFilterChange} />
+      <HistoryFilterSelect fieldName="history_audit_filter" label="审计" value={props.props.auditFilter} options={buildAuditOptions()} onChange={readAuditChange(props.props.onAuditFilterChange)} />
+      <HistoryFilterSelect fieldName="history_level_filter" label="级别" value={props.props.levelFilter} options={buildLevelOptions()} onChange={props.props.onLevelFilterChange} />
+      <HistoryFilterToggle name="history_only_errors" checked={props.props.onlyErrors} label="仅错误" note="真实可用" onChange={props.props.onOnlyErrorsChange} />
+      <HistoryFilterToggle name="history_only_confirmations" checked={props.props.onlyConfirmations} label="仅确认" note="真实可用" onChange={props.props.onOnlyConfirmationsChange} />
     </div>
   );
 }
@@ -104,6 +104,7 @@ function HistoryFocusGroupBar(props: {
 }
 
 function HistoryFilterSelect(props: {
+  fieldName: string;
   label: string;
   value: string;
   options: Array<{ value: string; label: string }>;
@@ -112,7 +113,7 @@ function HistoryFilterSelect(props: {
   return (
     <label className="filter-select">
       <span>{props.label}</span>
-      <select value={props.value} onChange={(event) => props.onChange(event.target.value)}>
+      <select id={props.fieldName} name={props.fieldName} value={props.value} onChange={(event) => props.onChange(event.target.value)}>
         {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </label>
@@ -127,6 +128,8 @@ function HistorySearchBox(props: {
     <label className="search-placeholder logs-search">
       <span>搜索</span>
       <input
+        id="history_search_query"
+        name="history_search_query"
         value={props.value}
         placeholder="搜索摘要、工具、来源、Run ID"
         onChange={(event) => props.onChange(event.target.value)}
@@ -136,6 +139,7 @@ function HistorySearchBox(props: {
 }
 
 function HistoryFilterToggle(props: {
+  name: string;
   label: string;
   note: string;
   checked: boolean;
@@ -144,6 +148,8 @@ function HistoryFilterToggle(props: {
   return (
     <label className="toggle-tile filter-toggle">
       <input
+        id={props.name}
+        name={props.name}
         type="checkbox"
         checked={props.checked}
         onChange={(event) => props.onChange(event.target.checked)}

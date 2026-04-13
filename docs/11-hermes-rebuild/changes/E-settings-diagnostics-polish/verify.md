@@ -16,6 +16,7 @@
   3. 当前会话页面快照：`最近检测：2026/4/13 14:58:40`
   4. 当前会话控制台检查：未再出现 `治理状态` 重复 key 报错
   5. 当前会话 DOM 检查脚本：`missingNameOrId=[]`、`passwordOutsideForm=[]`、`passwordAutocomplete=new-password`
+  6. 当前会话记录页 DOM 检查脚本：`missingNameOrId=[]`（搜索框、3 个筛选下拉、2 个筛选开关已具备 `name/id`）
 
 ## Gate 映射
 
