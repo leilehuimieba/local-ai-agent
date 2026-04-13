@@ -158,11 +158,15 @@ fn build_knowledge_record(
 }
 
 fn knowledge_summary(trace: &ToolExecutionTrace) -> String {
-    if trace.tool.tool_name == "knowledge_search" {
-        summarize_text(&trace.result.final_answer)
-    } else {
-        summarize_text(&trace.result.summary)
+    let summary = summarize_text(&trace.result.summary);
+    if trace.tool.tool_name == "knowledge_search" || summary.chars().count() >= 20 {
+        return summary;
     }
+    let fallback = summarize_text(&trace.result.final_answer);
+    if fallback.chars().count() >= 20 {
+        return fallback;
+    }
+    summary
 }
 
 fn knowledge_type(trace: &ToolExecutionTrace, report: &VerificationReport) -> Option<String> {
@@ -173,6 +177,7 @@ fn knowledge_type(trace: &ToolExecutionTrace, report: &VerificationReport) -> Op
         "knowledge_search" => Some("knowledge_recall".to_string()),
         "project_answer" => Some("project_status".to_string()),
         "read_siyuan_note" | "search_siyuan_notes" => Some("user_curated".to_string()),
+        "agent_resolve" => Some("workflow_pattern".to_string()),
         _ => None,
     }
 }
@@ -775,5 +780,85 @@ fn knowledge_audit(record: &KnowledgeRecord) -> MemoryAuditTrail {
         source_event_type: "knowledge_written".to_string(),
         source_artifact_path: String::new(),
         archive_reason: String::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{knowledge_summary, knowledge_type};
+    use crate::capabilities::{ToolDefinition, ToolExecutionTrace};
+    use crate::verify::{VerificationOutcome, VerificationReport};
+
+    #[test]
+    fn knowledge_type_accepts_agent_resolve_when_verified() {
+        let trace = sample_trace("agent_resolve", "任务已完成", "可复用流程说明");
+        let report = sample_report(true);
+        assert_eq!(
+            knowledge_type(&trace, &report),
+            Some("workflow_pattern".to_string())
+        );
+    }
+
+    #[test]
+    fn knowledge_summary_falls_back_to_final_answer_when_short() {
+        let trace = sample_trace(
+            "agent_resolve",
+            "完成",
+            "这是一段可复用的较长知识摘要文本，用于验证回退策略有效。",
+        );
+        assert_eq!(
+            knowledge_summary(&trace),
+            "这是一段可复用的较长知识摘要文本，用于验证回退策略有效。"
+        );
+    }
+
+    fn sample_trace(tool_name: &str, summary: &str, final_answer: &str) -> ToolExecutionTrace {
+        ToolExecutionTrace {
+            tool: sample_tool(tool_name),
+            action_summary: "测试动作".to_string(),
+            result: sample_result(summary, final_answer),
+        }
+    }
+
+    fn sample_tool(tool_name: &str) -> ToolDefinition {
+        ToolDefinition {
+            tool_name: tool_name.to_string(),
+            display_name: "测试工具".to_string(),
+            category: "agent".to_string(),
+            risk_level: "low".to_string(),
+            input_schema: "none".to_string(),
+            output_kind: "text_preview".to_string(),
+            requires_confirmation: false,
+        }
+    }
+
+    fn sample_result(summary: &str, final_answer: &str) -> crate::capabilities::ToolCallResult {
+        crate::capabilities::ToolCallResult {
+            summary: summary.to_string(),
+            final_answer: final_answer.to_string(),
+            artifact_path: None,
+            error_code: None,
+            elapsed_ms: 10,
+            retryable: false,
+            success: true,
+            memory_write_summary: None,
+            reasoning_summary: "测试推理".to_string(),
+            cache_status: "bypass".to_string(),
+            cache_reason: String::new(),
+        }
+    }
+
+    fn sample_report(passed: bool) -> VerificationReport {
+        VerificationReport {
+            outcome: VerificationOutcome {
+                passed,
+                code: "verified".to_string(),
+                policy: "check_result_summary".to_string(),
+                evidence: vec![],
+                summary: "验证".to_string(),
+                next_step: "继续".to_string(),
+            },
+            tool_elapsed_ms: 10,
+        }
     }
 }

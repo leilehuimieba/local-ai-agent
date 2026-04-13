@@ -8,9 +8,10 @@
 
 ## 当前活跃 change
 
-1. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/`
-3. 历史说明：`E-frontend-experience-upgrade` 已迁入 `archive/2026-04-13/`。
+1. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/E-knowledge-base-activation/`
+3. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（上一轮已完成）
+4. 历史说明：`E-frontend-experience-upgrade` 已迁入 `archive/2026-04-13/`。
 
 ## 保留观察项
 
