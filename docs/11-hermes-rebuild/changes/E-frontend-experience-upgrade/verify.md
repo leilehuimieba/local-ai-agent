@@ -319,6 +319,15 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 33）
+
+1. 设置页状态 class 映射单源化可见
+   - `SettingsSections` 的 `readModuleStatusClass` 已改为消费 `runtime/state` 统一状态词典。
+2. 设置页状态别名映射一致可见
+   - `已锁定/未启用/已启用` 等状态在设置页仍命中原有语义色，不因映射收口出现视觉偏差。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -338,6 +347,7 @@
   - `frontend/src/history/components/HistoryPageSections.tsx`
   - `frontend/src/history/components/HistoryTimelineSection.tsx`
   - `frontend/src/history/components/HistoryDetailRail.tsx`
+  - `frontend/src/settings/SettingsSections.tsx`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
@@ -372,4 +382,5 @@
   - Wave 1 主题 30「检查器低风险状态映射修复」已完成代码落地与构建验证。
   - Wave 1 主题 31「记录页治理状态样式收口」已完成代码落地与构建验证。
   - Wave 1 主题 32「检查器状态 class 映射单源化」已完成代码落地与构建验证。
+  - Wave 1 主题 33「设置页状态样式映射收口」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

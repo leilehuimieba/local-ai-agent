@@ -39,6 +39,7 @@
   - 检查器低风险状态映射已修复：`readInspectorStatusClass` 将 `low` 风险映射到 `status-awaiting`，避免“低风险待确认”回落空闲色。
   - 记录页治理状态样式已收口：`readMemoryGovernanceClass` 改为复用统一词典 class，减少与任务页并行维护。
   - 检查器状态 class 映射已单源化：`readInspectorStatusClass` 改为消费 `runtime/state` 统一词典映射，兼容同义状态由运行时集中维护。
+  - 设置页状态样式映射已收口：`readModuleStatusClass` 改为消费统一词典，设置页状态 class 分支由运行时集中维护。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：

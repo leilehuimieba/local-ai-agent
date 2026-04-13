@@ -27,10 +27,10 @@ export type UnifiedStatusKey =
   | "failed";
 
 const FAILED_STATUS_LABELS = ["失败", "降级", "failed", "error"];
-const AWAITING_STATUS_LABELS = ["待确认", "high", "medium", "low", "待治理", "已跳过"];
-const COMPLETED_STATUS_LABELS = ["完成", "已完成", "就绪", "稳定", "已验证", "已归档"];
+const AWAITING_STATUS_LABELS = ["待确认", "high", "medium", "low", "待治理", "已跳过", "已锁定"];
+const COMPLETED_STATUS_LABELS = ["完成", "已完成", "已启用", "就绪", "稳定", "已验证", "已归档"];
 const RUNNING_STATUS_LABELS = ["处理中", "进行中", "running"];
-const IDLE_STATUS_LABELS = ["等待任务", "等待中", "idle", "空闲"];
+const IDLE_STATUS_LABELS = ["等待任务", "等待中", "未启用", "idle", "空闲"];
 
 type RuntimeState = {
   composeValue: string;

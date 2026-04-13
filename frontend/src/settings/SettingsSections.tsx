@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { countMemoryFacets, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
 import { ResourcesEntrySection } from "../resources/components";
+import { readUnifiedStatusFromLabel, readUnifiedStatusMeta } from "../runtime/state";
 import { ExternalConnectionSlot, MemoryEntry, ProviderSettingsResponse, SettingsResponse } from "../shared/contracts";
 import { EmptyStateBlock, MetaGrid, SectionHeader, StatusPill } from "../ui/primitives";
 import { exportRunLogs, exportSettingsSnapshot, openDiagnosticsSnapshot } from "./api";
@@ -609,12 +610,7 @@ function readControlBadge(props: SettingsModulesProps, actions: SettingsActionKi
 
 function readModuleStatusClass(status: string) {
   if (status === "已断开") return "status-disconnected";
-  if (status === "未启用") return "status-idle";
-  if (status === "已锁定" || status === "待确认") return "status-awaiting";
-  if (status === "失败") return "status-failed";
-  if (status === "已完成" || status === "就绪" || status === "已启用") return "status-completed";
-  if (status === "处理中") return "status-running";
-  return "status-idle";
+  return readUnifiedStatusMeta(readUnifiedStatusFromLabel(status)).className;
 }
 
 function readMemoryActionState(props: SettingsModulesProps) {
