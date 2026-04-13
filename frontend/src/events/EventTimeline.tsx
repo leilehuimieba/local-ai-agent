@@ -2,6 +2,7 @@ import { KeyboardEvent, useEffect, useMemo, useRef } from "react";
 
 import { RunEvent, RuntimeContextSnapshot } from "../shared/contracts";
 import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
+import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 
 type EventTimelineProps = {
   autoFollow?: boolean;
@@ -193,19 +194,19 @@ function readActionDetail(event: RunEvent) {
 }
 
 function readStatusLabel(event: RunEvent) {
-  const eventType = readRunEventType(event);
-  if (eventType === "error") return "失败";
-  if (eventType === "confirmation") return "待确认";
-  if (eventType === "memory" || eventType === "verification" || eventType === "result") return "已完成";
-  return "处理中";
+  return readUnifiedStatusMeta(readEventStatusKey(event)).label;
 }
 
 function readStatusClass(event: RunEvent) {
+  return readUnifiedStatusMeta(readEventStatusKey(event)).className;
+}
+
+function readEventStatusKey(event: RunEvent): UnifiedStatusKey {
   const eventType = readRunEventType(event);
-  if (eventType === "error") return "status-failed";
-  if (eventType === "confirmation") return "status-awaiting";
-  if (eventType === "memory" || eventType === "verification" || eventType === "result") return "status-completed";
-  return "status-running";
+  if (eventType === "error") return "failed";
+  if (eventType === "confirmation") return "awaiting_confirmation";
+  if (eventType === "memory" || eventType === "verification" || eventType === "result") return "completed";
+  return "running";
 }
 
 function cacheDetail(context?: RuntimeContextSnapshot) {

@@ -5,11 +5,10 @@ import {
   readPendingBody,
   readPendingHeadline,
   readRunStateBody,
-  readRunStateHeadline,
   readRunStateNextStep,
 } from "../chat/chatResultModel";
 import { EventTimeline } from "../events/EventTimeline";
-import { RunState } from "../runtime/state";
+import { readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { RunEvent } from "../shared/contracts";
 import { MetaGrid, SectionHeader } from "../ui/primitives";
 
@@ -107,8 +106,8 @@ function BottomPanelSummary(props: {
   model: ReturnType<typeof buildInvestigationModel>;
   progress: ReturnType<typeof useRunCycleProgress>;
 }) {
-  const summaryStatus = readSummaryStatusClass(props.props.runState, props.model.autoFollow);
-  const summaryLabel = readSummaryStatusLabel(props.props.runState, props.model.autoFollow);
+  const summaryStatus = readSummaryStatusClass(props.props.runState);
+  const summaryLabel = readSummaryStatusLabel(props.props.runState);
   return (
     <div className="bottom-panel-summary" aria-live="polite">
       <div className="bottom-panel-summary-copy">
@@ -230,7 +229,7 @@ function FailedInvestigationState(props: { submitError: string | null }) {
 }
 
 function InlineInvestigationFailure(props: { submitError: string | null }) {
-  return <StateCard title={readRunStateHeadline("failed")} body={readRunStateBody({ runState: "failed", submitError: props.submitError })} advice="当前仍显示上一轮历史事件，可继续查看已有过程。" />;
+  return <StateCard title={readUnifiedStatusMeta("failed").label} body={readRunStateBody({ runState: "failed", submitError: props.submitError })} advice="当前仍显示上一轮历史事件，可继续查看已有过程。" />;
 }
 
 function FollowModeNotice(props: { autoFollow: boolean; onResumeFollow: () => void }) {
@@ -377,18 +376,12 @@ function selectFocusEventId(
   setAutoFollow(eventId === latestEventId);
 }
 
-function readSummaryStatusClass(runState: RunState, autoFollow: boolean) {
-  if (runState === "failed") return "status-failed";
-  if (runState === "awaiting_confirmation") return "status-awaiting";
-  if (runState === "completed") return "status-completed";
-  return autoFollow ? "status-running" : "status-idle";
+function readSummaryStatusClass(runState: RunState) {
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).className;
 }
 
-function readSummaryStatusLabel(runState: RunState, autoFollow: boolean) {
-  if (runState === "failed") return "执行失败";
-  if (runState === "awaiting_confirmation") return "等待确认";
-  if (runState === "completed") return "本轮完成";
-  return autoFollow ? "自动跟随" : "手动查看";
+function readSummaryStatusLabel(runState: RunState) {
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
 }
 
 function readBottomPanelSummary(
@@ -409,10 +402,10 @@ function readBottomPanelSummary(
 }
 
 function readBottomPanelHeadline(props: BottomPanelProps, progress: ReturnType<typeof useRunCycleProgress>) {
-  if (props.runState === "failed" && !progress.hasNewEvent) {
-    return readRunStateHeadline("failed");
-  }
-  return readRunStateHeadline(props.runState, props.events[props.events.length - 1]);
+  if (props.runState === "idle") return "等待任务";
+  if (props.runState === "archived") return "已归档";
+  if (props.runState === "failed" && !progress.hasNewEvent) return readUnifiedStatusMeta("failed").label;
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(props.runState)).label;
 }
 
 function readPreviewSummary(event: RunEvent) {

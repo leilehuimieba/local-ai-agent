@@ -6,6 +6,8 @@ import { LogsPanel } from "../logs/LogsPanel";
 import {
   getLatestFailureEvent,
   isBusyRunState,
+  readUnifiedStatusFromRunState,
+  readUnifiedStatusMeta,
   useRuntimeStore,
 } from "../runtime/state";
 import { SettingsPanel } from "../settings/SettingsPanel";
@@ -381,12 +383,10 @@ function readTaskNavTitle(value: string) {
   return text.length > 46 ? `${text.slice(0, 46)}…` : text;
 }
 
-function readRunStateTag(runState: string) {
-  if (runState === "streaming" || runState === "resuming") return "运行中";
-  if (runState === "awaiting_confirmation") return "待确认";
-  if (runState === "completed") return "已完成";
-  if (runState === "failed") return "已失败";
-  return "最新";
+function readRunStateTag(runState: RuntimeView["runState"]) {
+  if (runState === "archived") return "最新";
+  if (runState === "idle") return "最新";
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
 }
 
 function renderSettingsView(app: AppModel) {

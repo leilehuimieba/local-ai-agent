@@ -21,7 +21,7 @@ import {
   shouldShowInlineFailureNotice,
   shouldShowPendingMessages,
 } from "./chatResultModel";
-import { RunState } from "../runtime/state";
+import { readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { ChatMessage, ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
 
 type ConfirmationDecision = "approve" | "reject" | "cancel";
@@ -346,9 +346,7 @@ function StateRecord(props: {
 }
 
 function readCompactStateTitle(state: "failed" | "running" | "completed") {
-  if (state === "failed") return "失败";
-  if (state === "completed") return "完成";
-  return "进行中";
+  return readStateMeta(state).label;
 }
 
 function readCompactStateCopy(body: string, advice: string) {
@@ -377,9 +375,13 @@ function WaitingForFirstEventRecord(props: {
 }
 
 function readStateBadge(state: "failed" | "running" | "completed") {
-  if (state === "failed") return { className: "status-failed", label: "失败" };
-  if (state === "completed") return { className: "status-completed", label: "完成" };
-  return { className: "status-running", label: "进行中" };
+  return readStateMeta(state);
+}
+
+function readStateMeta(state: "failed" | "running" | "completed") {
+  if (state === "failed") return readUnifiedStatusMeta("failed");
+  if (state === "completed") return readUnifiedStatusMeta("completed");
+  return readUnifiedStatusMeta("running");
 }
 
 function TaskComposer(props: { props: ChatPanelProps }) {

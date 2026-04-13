@@ -1,7 +1,7 @@
 import { cloneElement, ReactElement } from "react";
-import { readRunStateBody, readRunStateHeadline, readRunStateNextStep } from "../chat/chatResultModel";
+import { readRunStateBody, readRunStateNextStep } from "../chat/chatResultModel";
 import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
-import { ConnectionState, RunState } from "../runtime/state";
+import { ConnectionState, readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
 
 type ContextSidebarProps = {
@@ -231,7 +231,7 @@ function buildTaskRows(model: ReturnType<typeof buildHubModel>) {
 function buildActionRows(model: ReturnType<typeof buildHubModel>) {
   if (model.variant === "task") {
     const rows = [
-      { label: "当前状态", value: readRunStateHeadline(model.runState, model.latestEvent) },
+      { label: "当前状态", value: readTaskStatusLabel(model) },
       { label: "当前动作", value: readCurrentAction(model) },
       { label: "下一步线索", value: model.nextAction },
     ];
@@ -239,12 +239,17 @@ function buildActionRows(model: ReturnType<typeof buildHubModel>) {
     return rows;
   }
   return [
-    { label: "当前状态", value: readRunStateHeadline(model.runState, model.latestEvent) },
+    { label: "当前状态", value: readTaskStatusLabel(model) },
     { label: "当前阶段", value: model.latestEvent?.stage || "等待事件" },
     { label: "下一步线索", value: model.nextAction },
     { label: "验证依据", value: readVerification(model) },
     { label: "当前动作", value: readCurrentAction(model) },
   ];
+}
+
+function readTaskStatusLabel(model: ReturnType<typeof buildHubModel>) {
+  if (model.confirmation) return readUnifiedStatusMeta("awaiting_confirmation").label;
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(model.runState)).label;
 }
 
 function buildRepoRows(model: ReturnType<typeof buildHubModel>) {
@@ -339,11 +344,11 @@ function readRecentSummary(model: ReturnType<typeof buildHubModel>) {
 }
 
 function readActionStatus(model: ReturnType<typeof buildHubModel>) {
-  if (model.confirmation) return "待确认";
-  if (model.runState === "failed") return "失败";
-  if (model.runState === "completed") return "已完成";
+  if (model.confirmation) return readUnifiedStatusMeta("awaiting_confirmation").label;
+  if (model.runState === "failed") return readUnifiedStatusMeta("failed").label;
+  if (model.runState === "completed") return readUnifiedStatusMeta("completed").label;
   if (model.runState === "idle") return "等待任务";
-  return "处理中";
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(model.runState)).label;
 }
 
 function readRepoStatus(model: ReturnType<typeof buildHubModel>) {
@@ -444,9 +449,9 @@ function eventLikeMemory(event: RunEvent) {
 function readInspectorStatusClass(status: string) {
   if (status === "失败" || status === "降级") return "status-failed";
   if (status === "待确认" || status === "high" || status === "medium") return "status-awaiting";
-  if (status === "已完成" || status === "就绪" || status === "稳定" || status === "已验证" || status === "已归档") return "status-completed";
+  if (status === "完成" || status === "已完成" || status === "就绪" || status === "稳定" || status === "已验证" || status === "已归档") return "status-completed";
   if (status === "待治理" || status === "已跳过") return "status-awaiting";
   if (status === "等待任务") return "status-idle";
-  if (status === "处理中") return "status-running";
+  if (status === "处理中" || status === "进行中") return "status-running";
   return "status-idle";
 }

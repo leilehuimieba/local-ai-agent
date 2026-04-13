@@ -163,12 +163,41 @@
 4. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 15）
+
+1. 统一状态词典可复用
+   - `runtime/state.ts` 提供统一状态短词词典与 `runState` 映射，统一口径为“进行中 / 待确认 / 完成 / 失败”。
+2. 任务页与调查层状态词汇一致
+   - 任务页主线程状态卡、任务页工具条标签、调查层摘要状态均消费统一词典，不再混用“运行中/已完成/执行失败”等词。
+3. 调查层事件流与记录页时间线状态词汇一致
+   - `EventTimeline` 与 `HistoryTimelineSection` 状态徽标统一消费同一词典，跨页状态词汇一致。
+4. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 16）
+
+1. 主线程状态样式映射单一来源可用
+   - `chatResultModel` 的 `readThreadStatusClass` 改为消费 `runtime/state` 的统一映射，不再本地维护重复 runState 分支。
+2. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 17）
+
+1. 检查器当前状态短词统一
+   - 任务页与首页态检查器“当前状态”字段统一显示短词“进行中 / 待确认 / 完成 / 失败”。
+2. 调查层摘要标题短词统一
+   - 调查层摘要主标题状态改为统一短词，和任务页与记录页状态词汇一致。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
   - `frontend/src/chat/ChatPanel.tsx`
   - `frontend/src/chat/chatResultModel.ts`
+  - `frontend/src/runtime/state.ts`
   - `frontend/src/workspace/BottomPanel.tsx`
+  - `frontend/src/events/EventTimeline.tsx`
   - `frontend/src/shell/workspaceViewModel.tsx`
   - `frontend/src/index.css`
   - `frontend/src/workspace/ContextSidebar.tsx`
@@ -195,4 +224,7 @@
   - 已完成 E-03「前端确认链字段消费改造」代码落地与构建验证。
   - 已完成阶段 C/D 样本审计字段提取，确认前端消费字段与后端口径一致。
   - 已补齐本轮任务与状态文档同步，证据路径可复查。
-  - Wave 1 其余主题尚未执行，Gate-E 尚未满足整体完成条件。
+  - Wave 1 主题 15「任务页/调查层/记录页状态词汇统一」已完成代码落地与构建验证。
+  - Wave 1 主题 16「主线程状态样式映射收口」已完成代码落地与构建验证。
+  - Wave 1 主题 17「检查器与调查层状态短词补齐」已完成代码落地与构建验证。
+  - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

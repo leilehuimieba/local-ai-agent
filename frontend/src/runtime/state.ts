@@ -19,6 +19,13 @@ export type ConnectionState =
   | "disconnected"
   | "closed";
 
+export type UnifiedStatusKey =
+  | "idle"
+  | "running"
+  | "awaiting_confirmation"
+  | "completed"
+  | "failed";
+
 type RuntimeState = {
   composeValue: string;
   sessionId: string;
@@ -99,12 +106,12 @@ export function isTerminalRunState(runState: RunState) {
 
 export function getRunStateLabel(runState: RunState, eventCount: number) {
   if (runState === "idle") return eventCount > 0 ? "空闲" : "等待首次任务";
-  if (runState === "submitting") return "提交中";
-  if (runState === "streaming") return "运行中";
-  if (runState === "awaiting_confirmation") return "等待确认";
-  if (runState === "resuming") return "恢复中";
-  if (runState === "completed") return "完成";
-  if (runState === "failed") return "失败";
+  if (runState === "submitting" || runState === "streaming" || runState === "resuming") {
+    return readUnifiedStatusMeta("running").label;
+  }
+  if (runState === "awaiting_confirmation") return readUnifiedStatusMeta("awaiting_confirmation").label;
+  if (runState === "completed") return readUnifiedStatusMeta("completed").label;
+  if (runState === "failed") return readUnifiedStatusMeta("failed").label;
   return "已归档";
 }
 
@@ -121,6 +128,22 @@ export function getRunTone(runState: RunState) {
   if (runState === "awaiting_confirmation") return "waiting";
   if (runState === "failed") return "error";
   if (runState === "completed") return "done";
+  return "idle";
+}
+
+export function readUnifiedStatusMeta(status: UnifiedStatusKey) {
+  if (status === "failed") return { className: "status-failed", label: "失败" };
+  if (status === "awaiting_confirmation") return { className: "status-awaiting", label: "待确认" };
+  if (status === "completed") return { className: "status-completed", label: "完成" };
+  if (status === "running") return { className: "status-running", label: "进行中" };
+  return { className: "status-idle", label: "等待中" };
+}
+
+export function readUnifiedStatusFromRunState(runState: RunState): UnifiedStatusKey {
+  if (runState === "failed") return "failed";
+  if (runState === "awaiting_confirmation") return "awaiting_confirmation";
+  if (runState === "completed") return "completed";
+  if (runState === "submitting" || runState === "streaming" || runState === "resuming") return "running";
   return "idle";
 }
 

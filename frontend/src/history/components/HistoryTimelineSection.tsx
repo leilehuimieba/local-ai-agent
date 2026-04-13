@@ -4,6 +4,7 @@ import { LogEntry } from "../../shared/contracts";
 import { EmptyStateBlock, SectionHeader, StatusPill } from "../../ui/primitives";
 import { readAuditTags } from "../auditSignals";
 import { readLogType, readReviewTypeLabel } from "../logType";
+import { readUnifiedStatusMeta, UnifiedStatusKey } from "../../runtime/state";
 
 type HistoryTimelineSectionProps = {
   logs: LogEntry[];
@@ -132,20 +133,21 @@ function readKeyDetail(log: LogEntry) {
 }
 
 function readStatusLabel(log: LogEntry) {
-  const type = readLogType(log);
-  if (type === "error") return "失败";
-  if (type === "confirmation") return "待确认";
-  if (log.completion_status) return log.completion_status;
-  if (log.final_answer) return "已完成";
-  return "处理中";
+  return readUnifiedStatusMeta(readHistoryStatusKey(log)).label;
 }
 
 function readStatusClass(log: LogEntry) {
+  return readUnifiedStatusMeta(readHistoryStatusKey(log)).className;
+}
+
+function readHistoryStatusKey(log: LogEntry): UnifiedStatusKey {
   const type = readLogType(log);
-  if (type === "error") return "status-failed";
-  if (type === "confirmation") return "status-awaiting";
-  if (log.completion_status === "completed" || log.final_answer) return "status-completed";
-  return "status-running";
+  if (type === "error") return "failed";
+  if (type === "confirmation") return "awaiting_confirmation";
+  if (log.completion_status === "completed" || log.final_answer) return "completed";
+  if (log.completion_status === "failed") return "failed";
+  if (log.completion_status === "confirmation_required") return "awaiting_confirmation";
+  return "running";
 }
 
 function handleHistoryItemKeyDown(

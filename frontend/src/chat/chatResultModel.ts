@@ -1,4 +1,4 @@
-import { RunState } from "../runtime/state";
+import { readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { ChatMessage, ConfirmationRequest, RunEvent } from "../shared/contracts";
 
 export type ResultSection = {
@@ -183,11 +183,7 @@ export function getStreamLiveLabel(runState: RunState | undefined, messageCount:
 }
 
 export function readThreadStatusClass(runState: RunState | undefined) {
-  if (runState === "failed") return "status-failed";
-  if (runState === "awaiting_confirmation") return "status-awaiting";
-  if (runState === "completed") return "status-completed";
-  if (runState === "streaming" || runState === "resuming" || runState === "submitting") return "status-running";
-  return "status-idle";
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState || "idle")).className;
 }
 
 function toResultSection(text: string): ResultSection {
