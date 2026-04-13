@@ -243,21 +243,32 @@ fn natural_language_action(
     if is_learning_continuation_question(input) {
         return PlannedAction::ContextAnswer;
     }
+    if should_use_agent_for_learning_plan(input) {
+        return PlannedAction::AgentResolve;
+    }
     if has_project_material && is_project_status_question(input) {
         return PlannedAction::ProjectAnswer;
     }
-    if should_default_to_context_answer(input) {
+    if should_default_to_context_answer(input)
+        || should_continue_session(input, has_session_context)
+    {
         return PlannedAction::ContextAnswer;
     }
-    if should_continue_session(input, has_session_context) {
-        return PlannedAction::ContextAnswer;
-    }
+    fallback_natural_action(input, has_session_context, has_project_material)
+}
+
+fn fallback_natural_action(
+    input: &str,
+    has_session_context: bool,
+    has_project_material: bool,
+) -> PlannedAction {
     if should_answer_project(input, has_project_material) {
         return PlannedAction::ProjectAnswer;
     }
     if has_session_context {
-        PlannedAction::ContextAnswer
-    } else if is_project_status_question(input) && has_project_material {
+        return PlannedAction::ContextAnswer;
+    }
+    if is_project_status_question(input) && has_project_material {
         PlannedAction::ProjectAnswer
     } else {
         PlannedAction::AgentResolve
@@ -605,6 +616,36 @@ fn is_learning_continuation_question(input: &str) -> bool {
     learning_words && continue_words
 }
 
+fn should_use_agent_for_learning_plan(input: &str) -> bool {
+    let lower = input.trim().to_lowercase();
+    let learning_scope = mentions_any(
+        &lower,
+        &[
+            "备考",
+            "四级",
+            "六级",
+            "cet",
+            "学习计划",
+            "复习计划",
+            "听力",
+            "阅读",
+            "写作",
+            "翻译",
+        ],
+    );
+    let plan_intent = mentions_any(
+        &lower,
+        &[
+            "制定", "安排", "计划", "按周", "每天", "自测", "错题", "复盘",
+        ],
+    );
+    let continue_words = mentions_any(
+        &lower,
+        &["继续", "上次", "做到哪", "还差什么", "掌握到哪", "下一步"],
+    );
+    learning_scope && plan_intent && !continue_words
+}
+
 fn has_project_context(envelope: &RuntimeContextEnvelope) -> bool {
     let repo_summary = envelope.project_block.repo_summary.trim();
     let doc_summary = envelope.project_block.doc_summary.trim();
@@ -897,6 +938,20 @@ mod tests {
         assert!(matches!(
             plan_action_with_context(&env),
             PlannedAction::ContextAnswer
+        ));
+    }
+
+    #[test]
+    fn plans_agent_resolve_for_learning_plan_request() {
+        let env = envelope(
+            "请为我制定一份8周英语四级备考计划，按周安排听力阅读写作翻译，并给出每周自测标准。",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "docs/README.md: 项目说明",
+        );
+        assert!(matches!(
+            plan_action_with_context(&env),
+            PlannedAction::AgentResolve
         ));
     }
 }

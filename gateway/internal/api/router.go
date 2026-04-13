@@ -466,10 +466,30 @@ func logsHandler(eventBus *session.EventBus) http.HandlerFunc {
 }
 
 func queryLogItems(eventBus *session.EventBus, query logsQuery) []contracts.LogEntry {
+	var items []contracts.LogEntry
 	if query.View == "runs" {
-		return eventBus.RecentRuns(query.Limit, query.SessionID)
+		items = eventBus.RecentRuns(query.Limit, query.SessionID)
+	} else {
+		items = eventBus.RecentBy(query.Limit, query.SessionID, query.RunID)
 	}
-	return eventBus.RecentBy(query.Limit, query.SessionID, query.RunID)
+	return applyLogsQueryFilter(items, query)
+}
+
+func applyLogsQueryFilter(items []contracts.LogEntry, query logsQuery) []contracts.LogEntry {
+	if query.SessionID == "" && query.RunID == "" {
+		return items
+	}
+	filtered := make([]contracts.LogEntry, 0, len(items))
+	for _, item := range items {
+		if query.SessionID != "" && item.SessionID != query.SessionID {
+			continue
+		}
+		if query.RunID != "" && item.RunID != query.RunID {
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	return filtered
 }
 
 func (deps memoryRouteDeps) handleMemories(w http.ResponseWriter, r *http.Request) {

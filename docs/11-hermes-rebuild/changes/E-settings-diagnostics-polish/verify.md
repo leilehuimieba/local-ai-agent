@@ -2,14 +2,18 @@
 
 ## 验证方式
 
-- 单元测试：暂无（本次为前端交互与展示收口）
+- 单元测试：
+  1. `cargo test -p runtime-core plans_agent_resolve_for_learning_plan_request -- --nocapture`
+  2. `go test ./internal/api -run "TestLogsHandlerEventsViewAppliesSessionRunAndLimit|TestLogsHandlerRunsViewReturnsDistinctRuns|TestDecodeLogsQueryReadsFilterFields"`
 - 集成测试：`frontend` 构建验证（`npm run build`）
-- 人工验证：DevTools 真人点击（记录页搜索、设置页诊断动作、诊断时间文案）
+- 人工验证：DevTools 真人点击（记录页搜索、设置页诊断动作、诊断时间文案）+ 真实业务请求回归（四级备考）
 
 ## 证据位置
 
 - 测试记录：
   1. `npm run build`（2026-04-13）通过
+  2. `cargo test -p runtime-core plans_agent_resolve_for_learning_plan_request -- --nocapture`（2026-04-13）通过
+  3. `go test ./internal/api -run "TestLogsHandlerEventsViewAppliesSessionRunAndLimit|TestLogsHandlerRunsViewReturnsDistinctRuns|TestDecodeLogsQueryReadsFilterFields"`（2026-04-13）通过
 - 日志或截图：
   1. 当前会话点击记录：`runtime_unavailable` / `运行时不可达` / `错误` 检索命中
   2. 当前会话点击记录：设置页“打开诊断信息”反馈 `diagnostics-snapshot.json 已开始导出。`
@@ -22,6 +26,9 @@
   9. 当前会话源码巡检：`WorkbenchOverview/ConfirmationCard/workspaceViewModel` 对应输入控件已补齐稳定 `id/name`（首页任务输入、记住选择、任务导航搜索）。
   10. 当前会话确认态快照：检查器“风险与记忆”状态徽标显示 `待确认`，并新增 `风险等级=高风险` 独立字段（不再直接显示 `high`）。
   11. 当前会话脚本检查：`.context-sidebar .section-head .status-badge` 输出为 `["待确认","等待中","待确认"]`，`legacyHits=[]`（未出现 `就绪/稳定/已沉淀/有上下文/降级`）。
+  12. 日志接口参数回归：`GET /api/v1/logs?limit=3` 返回 `3` 条；`GET /api/v1/logs?session_id=NOPE&run_id=NOPE&limit=3` 返回 `0` 条。
+  13. 真实业务回归：`run_id=run-1776067603370-19`、`session_id=session-biztest-1776067603310`，`plan_ready.tool_name=agent_resolve`（不再是 `session_context`）。
+  14. 该 run 的最终失败原因为模型传输超时（`model_transport_failed`），但已验证“路由策略修复”生效。
 
 ## Gate 映射
 

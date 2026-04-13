@@ -30,6 +30,23 @@ func TestLogsHandlerRunsViewReturnsDistinctRuns(t *testing.T) {
 	}
 }
 
+func TestLogsHandlerEventsViewAppliesSessionRunAndLimit(t *testing.T) {
+	bus := session.NewEventBus(t.TempDir())
+	bus.Publish(testRunEvent("s1", "r1", "1", "run_started"))
+	bus.Publish(testRunEvent("s2", "r2", "2", "run_started"))
+	bus.Publish(testRunEvent("s2", "r2", "3", "run_finished"))
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/logs?session_id=s2&run_id=r2&limit=1", nil)
+	rec := httptest.NewRecorder()
+	logsHandler(bus).ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d want 200", rec.Code)
+	}
+	items := decodeLogsResponse(t, rec.Body.Bytes())
+	if len(items) != 1 || items[0].SessionID != "s2" || items[0].RunID != "r2" {
+		t.Fatalf("unexpected items: %#v", items)
+	}
+}
+
 func decodeLogsResponse(t *testing.T, body []byte) []contracts.LogEntry {
 	t.Helper()
 	var payload LogsResponse
