@@ -254,6 +254,7 @@ function readTaskStatusLabel(model: ReturnType<typeof buildHubModel>) {
 
 function buildRepoRows(model: ReturnType<typeof buildHubModel>) {
   return [
+    { label: "上下文状态", value: readRepoStatusDetail(model) },
     { label: "工作区根", value: readWorkspaceRoot(model) },
     { label: "仓库根", value: model.latestRepoEvent?.metadata?.repo_root || "非 Git 或未识别" },
     { label: "分支", value: model.latestRepoEvent?.metadata?.current_branch || "未识别" },
@@ -265,11 +266,13 @@ function buildContextRows(model: ReturnType<typeof buildHubModel>) {
   const snapshot = model.latestContextEvent?.context_snapshot;
   if (model.variant === "task") {
     return [
+      { label: "上下文状态", value: readContextStatusDetail(snapshot) },
       { label: "沉淀依据", value: readContextEvidence(snapshot) },
       { label: "思考线索", value: snapshot?.reasoning_summary || snapshot?.assembly_profile || "当前没有额外思考线索。" },
     ];
   }
   return [
+    { label: "上下文状态", value: readContextStatusDetail(snapshot) },
     { label: "会话续接", value: snapshot?.session_summary || "当前没有会话摘要。" },
     { label: "沉淀依据", value: readContextEvidence(snapshot) },
     { label: "思考线索", value: snapshot?.reasoning_summary || snapshot?.assembly_profile || "当前没有额外思考线索。" },
@@ -279,6 +282,7 @@ function buildContextRows(model: ReturnType<typeof buildHubModel>) {
 function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
   if (model.variant === "task") {
     const rows = [
+      { label: "风险概览", value: readRiskOverview(model) },
       { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
       { label: "系统", value: readSystemState(model) },
     ];
@@ -287,6 +291,7 @@ function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
     return rows;
   }
   const rows = [
+    { label: "风险概览", value: readRiskOverview(model) },
     { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
     { label: "系统", value: readSystemState(model) },
     { label: "最近验证", value: readVerification(model) },
@@ -355,15 +360,14 @@ function readActionStatus(model: ReturnType<typeof buildHubModel>) {
 
 function readRepoStatus(model: ReturnType<typeof buildHubModel>) {
   if (!model.latestRepoEvent) return readUnifiedStatusMeta("idle").label;
-  return model.latestRepoEvent.metadata?.repo_context_status === "degraded" ? "降级" : "就绪";
+  if (model.latestRepoEvent.metadata?.repo_context_status === "degraded") return readUnifiedStatusMeta("failed").label;
+  return readUnifiedStatusMeta("completed").label;
 }
 
 function readContextStatus(model: ReturnType<typeof buildHubModel>) {
   const snapshot = model.latestContextEvent?.context_snapshot;
   if (!snapshot) return readUnifiedStatusMeta("idle").label;
-  if (snapshot.knowledge_digest || snapshot.memory_digest) return "已沉淀";
-  if (snapshot.session_summary || snapshot.reasoning_summary) return "有上下文";
-  return readUnifiedStatusMeta("idle").label;
+  return readUnifiedStatusMeta("completed").label;
 }
 
 function readWorkspaceRoot(model: ReturnType<typeof buildHubModel>) {
@@ -372,8 +376,26 @@ function readWorkspaceRoot(model: ReturnType<typeof buildHubModel>) {
 
 function readRiskStatus(model: ReturnType<typeof buildHubModel>) {
   if (model.confirmation) return readUnifiedStatusMeta("awaiting_confirmation").label;
+  if (model.latestMemoryEvent) return readUnifiedStatusMeta(readUnifiedStatusFromLabel(readMemoryGovernance(model.latestMemoryEvent))).label;
+  return readUnifiedStatusMeta("completed").label;
+}
+
+function readRiskOverview(model: ReturnType<typeof buildHubModel>) {
+  if (model.confirmation) return "待确认";
   if (model.latestMemoryEvent) return readMemoryGovernance(model.latestMemoryEvent);
   return "稳定";
+}
+
+function readRepoStatusDetail(model: ReturnType<typeof buildHubModel>) {
+  if (!model.latestRepoEvent) return "等待采集";
+  return model.latestRepoEvent.metadata?.repo_context_status === "degraded" ? "降级" : "就绪";
+}
+
+function readContextStatusDetail(snapshot?: RunEvent["context_snapshot"]) {
+  if (!snapshot) return "等待中";
+  if (snapshot.knowledge_digest || snapshot.memory_digest) return "已沉淀";
+  if (snapshot.session_summary || snapshot.reasoning_summary) return "有上下文";
+  return "等待中";
 }
 
 function readRiskLevelLabel(level: string) {
