@@ -22,10 +22,15 @@ type InspectorSectionKey = "task" | "action" | "context" | "repo" | "risk";
 export function ContextSidebar(props: ContextSidebarProps) {
   const model = buildHubModel(props);
   return (
-    <aside className="context-sidebar">
+    <aside className={readSidebarClass(props.variant)}>
       {buildInspectorSections(model).map(renderInspectorSection)}
     </aside>
   );
+}
+
+function readSidebarClass(variant: ContextSidebarProps["variant"]) {
+  if (variant === "task") return "context-sidebar context-sidebar-compact";
+  return "context-sidebar";
 }
 
 function buildHubModel(props: ContextSidebarProps) {
@@ -76,26 +81,34 @@ function createInspectorSection(key: InspectorSectionKey, model: ReturnType<type
 
 function readInspectorSectionOrder(variant: ContextSidebarProps["variant"]) {
   if (variant === "home") return ["task", "context", "risk"] as InspectorSectionKey[];
-  return ["task", "action", "context", "risk"] as InspectorSectionKey[];
+  return ["action", "context", "risk"] as InspectorSectionKey[];
 }
 
 function ActionGroup(props: { model: ReturnType<typeof buildHubModel> }) {
   return (
     <section className="sidebar-card inspector-card">
-      <InspectorHeader title="下一步与最近动作" status={readActionStatus(props.model)} />
+      <InspectorHeader title={readActionGroupTitle(props.model.variant)} status={readActionStatus(props.model)} />
       <InfoRows rows={buildActionRows(props.model)} />
       <ActionNotes model={props.model} />
     </section>
   );
 }
 
+function readActionGroupTitle(variant: ContextSidebarProps["variant"]) {
+  return variant === "task" ? "关键动作与下一步" : "下一步与最近动作";
+}
+
 function ContextGroup(props: { model: ReturnType<typeof buildHubModel> }) {
   return (
     <section className="sidebar-card inspector-card">
-      <InspectorHeader title="状态沉淀与续接依据" status={readContextStatus(props.model)} />
+      <InspectorHeader title={readContextGroupTitle(props.model.variant)} status={readContextStatus(props.model)} />
       <InfoRows rows={buildContextRows(props.model)} />
     </section>
   );
+}
+
+function readContextGroupTitle(variant: ContextSidebarProps["variant"]) {
+  return variant === "task" ? "状态沉淀" : "状态沉淀与续接依据";
 }
 
 function RepoGroup(props: { model: ReturnType<typeof buildHubModel> }) {
@@ -178,6 +191,9 @@ function InlineError(props: { title: string; body: string }) {
 
 function ActionNotes(props: { model: ReturnType<typeof buildHubModel> }) {
   const evidence = readActionEvidence(props.model);
+  if (props.model.variant === "task") {
+    return evidence ? <InlineNote title="最近收口依据" text={evidence} /> : null;
+  }
   return (
     <>
       <InlineNote title="建议先接这里" text={props.model.nextAction} />
@@ -213,6 +229,15 @@ function buildTaskRows(model: ReturnType<typeof buildHubModel>) {
 }
 
 function buildActionRows(model: ReturnType<typeof buildHubModel>) {
+  if (model.variant === "task") {
+    const rows = [
+      { label: "当前状态", value: readRunStateHeadline(model.runState, model.latestEvent) },
+      { label: "当前动作", value: readCurrentAction(model) },
+      { label: "下一步线索", value: model.nextAction },
+    ];
+    if (hasVerificationSummary(model)) rows.push({ label: "最近验证", value: readVerification(model) });
+    return rows;
+  }
   return [
     { label: "当前状态", value: readRunStateHeadline(model.runState, model.latestEvent) },
     { label: "当前阶段", value: model.latestEvent?.stage || "等待事件" },
@@ -233,6 +258,12 @@ function buildRepoRows(model: ReturnType<typeof buildHubModel>) {
 
 function buildContextRows(model: ReturnType<typeof buildHubModel>) {
   const snapshot = model.latestContextEvent?.context_snapshot;
+  if (model.variant === "task") {
+    return [
+      { label: "沉淀依据", value: readContextEvidence(snapshot) },
+      { label: "思考线索", value: snapshot?.reasoning_summary || snapshot?.assembly_profile || "当前没有额外思考线索。" },
+    ];
+  }
   return [
     { label: "会话续接", value: snapshot?.session_summary || "当前没有会话摘要。" },
     { label: "沉淀依据", value: readContextEvidence(snapshot) },
@@ -241,6 +272,14 @@ function buildContextRows(model: ReturnType<typeof buildHubModel>) {
 }
 
 function buildRiskRows(model: ReturnType<typeof buildHubModel>) {
+  if (model.variant === "task") {
+    const rows = [
+      { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
+      { label: "系统", value: readSystemState(model) },
+    ];
+    if (model.latestMemoryEvent) rows.push({ label: "最近记忆", value: readMemoryCopy(model) });
+    return rows;
+  }
   const rows = [
     { label: "当前阻塞", value: model.confirmation?.action_summary || "当前没有待确认项或显式阻塞。" },
     { label: "系统", value: readSystemState(model) },
@@ -348,6 +387,10 @@ function readActionEvidence(model: ReturnType<typeof buildHubModel>) {
 
 function readVerification(model: ReturnType<typeof buildHubModel>) {
   return model.latestEvent?.verification_snapshot?.summary || "当前没有验证摘要。";
+}
+
+function hasVerificationSummary(model: ReturnType<typeof buildHubModel>) {
+  return Boolean(model.latestEvent?.verification_snapshot?.summary);
 }
 
 function readArtifactPath(model: ReturnType<typeof buildHubModel>) {

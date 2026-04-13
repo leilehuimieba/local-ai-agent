@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 
-import { readRunStateNextStep } from "../chat/chatResultModel";
+import { readRunStateNextStep, readThreadStatusClass } from "../chat/chatResultModel";
 import { ChatPanel } from "../chat/ChatPanel";
 import { LogsPanel } from "../logs/LogsPanel";
 import {
@@ -129,7 +129,6 @@ export function renderWorkspaceContent(app: AppModel) {
 }
 
 export function renderTopBar(app: AppModel) {
-  if (app.view.currentView === "task") return null;
   return <TopBar {...getTopBarProps(app)} />;
 }
 
@@ -178,12 +177,62 @@ function renderLogsView(app: AppModel) {
 
 function renderTaskView(app: AppModel) {
   return (
-    <section className="single-view page-container task-chat-layout">
-      <TaskLeftNav app={app} />
-      <div className="task-chat-only">
+    <section className="single-view page-container home-layout agent-page">
+      <div className="task-main-column">
+        <TaskPageToolbar app={app} />
         <ChatPanel {...getChatPanelProps(app)} />
       </div>
+      <ContextSidebar {...getSidebarProps(app, "task")} />
     </section>
+  );
+}
+
+function TaskPageToolbar(props: { app: AppModel }) {
+  const hasConfirmation = Boolean(props.app.runtime.confirmation);
+  const actionLabel = readTaskToolbarActionLabel(hasConfirmation, props.app.view.bottomPanelOpen);
+  return (
+    <section className="task-page-toolbar">
+      <div className="task-page-toolbar-head">
+        <div className="task-page-toolbar-copy">
+          <span className="section-kicker">任务工作区</span>
+          <h2>{props.app.runtime.currentTaskTitle || "等待任务"}</h2>
+          <p>{readRunStateNextStep({ latestEvent: props.app.runtime.events[props.app.runtime.events.length - 1], runState: props.app.runtime.runState })}</p>
+        </div>
+        <span className={`status-badge ${readThreadStatusClass(props.app.runtime.runState)}`}>{props.app.statusLine}</span>
+      </div>
+      <div className="task-page-toolbar-meta">
+        <TaskMetaChip label="运行" value={props.app.runtime.currentRunId || "尚未开始"} />
+        <TaskMetaChip label="会话" value={props.app.runtime.sessionId || "尚未创建"} />
+        <TaskMetaChip label="工作区" value={props.app.settingsApi.settings?.workspace.name || "未加载"} />
+      </div>
+      <div className="task-page-toolbar-actions">
+        <button type="button" className="primary-action" onClick={() => handleTaskToolbarPrimary(props.app, hasConfirmation)}>{actionLabel}</button>
+        <button type="button" className="secondary-button" onClick={props.app.actions.openLogsPage}>查看记录页</button>
+        <button type="button" className="secondary-button" onClick={props.app.actions.openHomeStart}>新建任务</button>
+      </div>
+    </section>
+  );
+}
+
+function handleTaskToolbarPrimary(app: AppModel, hasConfirmation: boolean) {
+  if (hasConfirmation) {
+    app.actions.openTaskPageForConfirmation();
+    return;
+  }
+  app.view.setBottomPanelOpen(!app.view.bottomPanelOpen);
+}
+
+function readTaskToolbarActionLabel(hasConfirmation: boolean, isBottomPanelOpen: boolean) {
+  if (hasConfirmation) return "处理待确认";
+  return isBottomPanelOpen ? "收起调查层" : "展开调查层";
+}
+
+function TaskMetaChip(props: { label: string; value: string }) {
+  return (
+    <div className="summary-chip">
+      <span>{props.label}</span>
+      <strong>{props.value}</strong>
+    </div>
   );
 }
 
@@ -660,18 +709,41 @@ function buildResumeCard(app: Pick<AppModel, "runtime">): HomeViewModel["resumeC
 
 function buildResumeContextItems(snapshot?: RunEvent["context_snapshot"]) {
   return [
-    { label: "会话摘要", value: snapshot?.session_summary || "当前还没有会话摘要。" },
-    { label: "记忆摘要", value: snapshot?.memory_digest || "当前还没有记忆摘要。" },
-    { label: "知识摘要", value: snapshot?.knowledge_digest || "当前还没有知识摘要。" },
-    { label: "思考摘要", value: snapshot?.reasoning_summary || "当前还没有思考摘要。" },
+    {
+      label: "会话与记忆",
+      value: readCompactResumeValue(
+        snapshot?.session_summary,
+        snapshot?.memory_digest,
+        "当前还没有会话或记忆摘要。",
+      ),
+    },
+    {
+      label: "知识与思考",
+      value: readCompactResumeValue(
+        snapshot?.knowledge_digest,
+        snapshot?.reasoning_summary,
+        "当前还没有知识或思考线索。",
+      ),
+    },
   ];
 }
 
 function buildResumeEvidenceItems(event?: RunEvent) {
   return [
-    { label: "结果收口", value: event?.result_summary || event?.summary || "当前还没有结果收口摘要。" },
-    { label: "验证依据", value: event?.verification_summary || event?.verification_snapshot?.summary || "当前还没有验证依据。" },
+    {
+      label: "结果与验证",
+      value: readCompactResumeValue(
+        event?.result_summary || event?.summary,
+        event?.verification_summary || event?.verification_snapshot?.summary,
+        "当前还没有结果与验证摘要。",
+      ),
+    },
   ];
+}
+
+function readCompactResumeValue(primary?: string, secondary?: string, fallback?: string) {
+  if (primary && secondary) return `${primary} / ${secondary}`;
+  return primary || secondary || fallback || "暂无信息。";
 }
 
 function readResumeNextStep(runtime: Pick<RuntimeView, "confirmation" | "runState">, event?: RunEvent) {

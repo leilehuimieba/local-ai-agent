@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, KeyboardEvent } from "react";
 
 import { ConfirmationCard } from "../confirmations/ConfirmationCard";
 import {
@@ -13,6 +13,7 @@ import {
   readRunStateBody,
   readRunStateHeadline,
   readRunStateNextStep,
+  readThreadStatusClass,
   ResultSection,
   shouldShowMessageFailure,
   shouldShowConfirmationRecord,
@@ -68,10 +69,11 @@ function TaskThread(props: { props: ChatPanelProps }) {
 }
 
 function ThreadHeader(props: { props: ChatPanelProps }) {
+  const statusClass = readThreadStatusClass(props.props.runState);
   return (
     <div className="stream-header stream-header-simple">
-      <strong>聊天</strong>
-      <span className="chat-status-text">{props.props.statusLine}</span>
+      <strong>任务主线程</strong>
+      <span className={`status-badge ${statusClass}`}>{props.props.statusLine}</span>
     </div>
   );
 }
@@ -91,6 +93,9 @@ function ThreadContent(props: { props: ChatPanelProps }) {
   }
   if (shouldShowConfirmationRecord(props.props.runState, props.props.confirmation)) {
     return <ConfirmationOnlyState props={props.props} />;
+  }
+  if (props.props.messages.length === 0 && props.props.events.length > 0) {
+    return <EventOnlyState props={props.props} />;
   }
   if (props.props.messages.length === 0) {
     return <EmptyWorkbench />;
@@ -222,6 +227,32 @@ function EmptyWorkbench() {
   );
 }
 
+function EventOnlyState(props: { props: ChatPanelProps }) {
+  return (
+    <StateRecord
+      state={readEventOnlyState(props.props.runState)}
+      title={readRunStateHeadline(props.props.runState, props.props.latestFailureEvent)}
+      body={readRunStateBody({
+        currentTaskTitle: props.props.currentTaskTitle,
+        latestFailureEvent: props.props.latestFailureEvent,
+        runState: props.props.runState,
+        submitError: props.props.submitError,
+      })}
+      advice={readRunStateNextStep({
+        latestEvent: props.props.events[props.props.events.length - 1],
+        latestFailureEvent: props.props.latestFailureEvent,
+        runState: props.props.runState,
+      })}
+    />
+  );
+}
+
+function readEventOnlyState(runState: RunState) {
+  if (runState === "failed") return "failed";
+  if (runState === "completed") return "completed";
+  return "running";
+}
+
 function PendingMessageState(props: { taskTitle: string; runState: RunState; currentRunId: string }) {
   return (
     <div className="pending-thread">
@@ -298,19 +329,36 @@ function StateRecord(props: {
   advice: string;
 }) {
   const badge = readStateBadge(props.state);
+  const title = readCompactStateTitle(props.state);
+  const copy = readCompactStateCopy(props.body, props.advice);
   return (
     <article className={`thread-record state-record state-record-${props.state}`}>
       <div className="thread-record-head">
-        <span className="thread-record-role">{badge.label}</span>
+        <span className="thread-record-role">状态更新</span>
         <span className={`status-badge ${badge.className}`}>{badge.label}</span>
       </div>
       <div className="thread-record-copy">
-        <strong>{props.title}</strong>
-        <p>{props.body}</p>
-        <p>{props.advice}</p>
+        <strong>{title}</strong>
+        <p>{copy}</p>
       </div>
     </article>
   );
+}
+
+function readCompactStateTitle(state: "failed" | "running" | "completed") {
+  if (state === "failed") return "失败";
+  if (state === "completed") return "完成";
+  return "进行中";
+}
+
+function readCompactStateCopy(body: string, advice: string) {
+  const head = body.trim();
+  const tail = advice.trim();
+  if (!head) return tail;
+  if (!tail || head === tail) return head;
+  if (head.includes(tail)) return head;
+  if (tail.includes(head)) return tail;
+  return `${head} ${tail}`;
 }
 
 function WaitingForFirstEventRecord(props: {
@@ -331,11 +379,12 @@ function WaitingForFirstEventRecord(props: {
 function readStateBadge(state: "failed" | "running" | "completed") {
   if (state === "failed") return { className: "status-failed", label: "失败" };
   if (state === "completed") return { className: "status-completed", label: "完成" };
-  return { className: "status-running", label: "运行中" };
+  return { className: "status-running", label: "进行中" };
 }
 
 function TaskComposer(props: { props: ChatPanelProps }) {
-  const isDisabled = !props.props.settings || props.props.isRunning || !props.props.composeValue.trim();
+  const isDisabled = readComposerDisabled(props.props);
+  const hint = readComposerHint(props.props);
   return (
     <form className="composer composer-simple" onSubmit={props.props.onSubmit}>
       <div className="simple-composer-shell">
@@ -348,13 +397,48 @@ function TaskComposer(props: { props: ChatPanelProps }) {
           disabled={!props.props.settings || props.props.isRunning}
           placeholder="输入任务，按回车发送"
           onChange={(event) => props.props.onComposeValueChange(event.target.value)}
+          onKeyDown={(event) => handleComposerKeyDown(event, props.props.composeValue, props.props.onComposeValueChange)}
         />
-        <button className="primary-action" type="submit" disabled={isDisabled}>
-          {readSubmitLabel(props.props.isRunning)}
-        </button>
+        <ComposerActions props={props.props} isDisabled={isDisabled} />
       </div>
+      <p className="simple-composer-hint">{hint}</p>
     </form>
   );
+}
+
+function ComposerActions(props: { props: ChatPanelProps; isDisabled: boolean }) {
+  const showClear = shouldShowClearDraft(props.props);
+  return (
+    <div className="simple-composer-actions">
+      {showClear ? <button type="button" className="composer-clear" onClick={() => props.props.onComposeValueChange("")}>清空</button> : null}
+      <button className="primary-action" type="submit" disabled={props.isDisabled}>{readSubmitLabel(props.props.isRunning)}</button>
+    </div>
+  );
+}
+
+function readComposerDisabled(props: ChatPanelProps) {
+  return !props.settings || props.isRunning || !props.composeValue.trim();
+}
+
+function shouldShowClearDraft(props: ChatPanelProps) {
+  return Boolean(props.composeValue.trim() && !props.isRunning);
+}
+
+function handleComposerKeyDown(
+  event: KeyboardEvent<HTMLInputElement>,
+  value: string,
+  onChange: (value: string) => void,
+) {
+  if (event.key !== "Escape" || !value) return;
+  event.preventDefault();
+  onChange("");
+}
+
+function readComposerHint(props: ChatPanelProps) {
+  if (!props.settings) return "请先在设置页完成运行环境配置。";
+  if (props.isRunning) return "任务执行中，输入区暂时禁用。";
+  if (!props.composeValue.trim()) return "输入任务后按回车发送。";
+  return "按回车发送，按 Esc 清空草稿。";
 }
 
 function readSubmitLabel(isRunning: boolean) {

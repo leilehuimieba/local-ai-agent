@@ -32,10 +32,27 @@ export function buildAssistantResult(content: string, event?: RunEvent) {
 }
 
 export function buildResultFromFields(summary: string, fields: ResultField[]) {
+  const cleanFields = compactResultFields(fields, summary);
   return {
-    sections: orderResultSections(fields.filter(hasResultField).map(toFieldSection)),
+    sections: orderResultSections(cleanFields.map(toFieldSection)),
     summary: summary || "没有附带额外结果。",
   };
+}
+
+function compactResultFields(fields: ResultField[], summary: string) {
+  const used = new Set<string>();
+  const summaryKey = normalizeResultText(summary);
+  return fields.filter((field) => {
+    if (!hasResultField(field)) return false;
+    const key = normalizeResultText(field.text as string);
+    if (!key || key === summaryKey || used.has(key)) return false;
+    used.add(key);
+    return true;
+  });
+}
+
+function normalizeResultText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
 }
 
 export function readFailureTitle(event?: RunEvent) {
@@ -295,13 +312,13 @@ function readAssistantRoleLabel(mode: AssistantResultMode) {
 function readAssistantStatusTag(mode: AssistantResultMode) {
   if (mode === "recovery") return "恢复";
   if (mode === "system") return "说明";
-  return "正式";
+  return "";
 }
 
 function readAssistantSummaryLabel(mode: AssistantResultMode) {
-  if (mode === "recovery") return "恢复结果";
+  if (mode === "recovery") return "恢复结论";
   if (mode === "system") return "当前状态";
-  return "正式回答";
+  return "执行结论";
 }
 
 function readAssistantStateTitle(mode: AssistantResultMode) {

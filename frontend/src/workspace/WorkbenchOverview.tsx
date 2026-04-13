@@ -195,8 +195,6 @@ function ResumeContextSection(props: { props: WorkbenchOverviewProps }) {
         <Row label="最近任务" value={props.props.resumeCard.recentTask} />
         <Row label="当前阶段" value={props.props.resumeCard.recentStage} />
         <Row label="最近摘要" value={props.props.resumeCard.latestSummary} />
-        <Row label="当前运行" value={props.props.resumeCard.runId} />
-        <Row label="当前会话" value={props.props.resumeCard.sessionId} />
       </div>
       <ResumeDigestGrid items={props.props.resumeCard.contextItems} />
       <ResumeEvidenceSection items={props.props.resumeCard.evidenceItems} />
