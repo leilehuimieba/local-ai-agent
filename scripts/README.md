@@ -94,9 +94,9 @@
    - 默认输出：`tmp/stage-e-knowledge-recall-eval/latest.json`。
    - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-FixturePath`、`-AgentId`、`-OutputDir`。
 27. `cortex/cleanup-low-quality-memories.ps1`
-   - 用途：阶段 E `T26` 低质量条目清洗（失败结果、短噪声、无价值文本识别并删除）。
+   - 用途：阶段 E `T26` 低质量条目清洗（硬规则 + 评分模型：`confidence/source_trust/duplication`）。
    - 支持模式：`-DryRun` 仅识别不删除，默认执行删除。
-   - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-AgentId`、`-DryRun`、`-OutputPath`。
+   - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-AgentId`、`-DryRun`、`-OutputPath`、`-ScoreThreshold`、`-MinLength`。
 28. `cortex/run-external-memory-rollback-drill.ps1`
    - 用途：阶段 E `T28` 外部记忆回退演练（开关回退到 `enabled=false` 并验证本地主链路测试通过）。
    - 默认行为：先开后关执行一次回退，再跑本地写入/召回降级测试。
