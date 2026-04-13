@@ -81,6 +81,26 @@
    - 用途：把后端复核包报告转成发布/回滚统一告警审计记录（`pass/warn/blocked` 三态决策）。
    - 规则：`warn` 状态要求补齐 `Executor/TrackingId/DueAt`，否则 `ready_for_release=false`。
    - 证据输出：`tmp/stage-backend-reverify/warning-audit-*.json`。
+24. `export-knowledge-markdown.ps1`
+   - 用途：按时间窗批量导出主库知识为 Markdown 批次（含 frontmatter、wikilink、index.jsonl）。
+   - 默认路径：`data/exports/knowledge-markdown/<batch>/`。
+   - 入口参数：`-WorkspaceId`、`-StartAt`、`-EndAt`、`-ExportRoot`。
+25. `build-graphify-input.ps1`
+   - 用途：基于 Markdown 导出批次一键构建图谱输入（`graphify-input.json` + `nodes/edges.jsonl`）。
+   - 默认行为：未指定 `-BatchDir` 时自动选择最新导出批次。
+   - 入口参数：`-BatchDir`、`-ExportRoot`。
+26. `run-stage-e-knowledge-recall-eval.ps1`
+   - 用途：阶段 E `T25` 固定召回评测集批跑（CET4 样例 Top-5 命中率 + 失败原因统计）。
+   - 默认输出：`tmp/stage-e-knowledge-recall-eval/latest.json`。
+   - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-FixturePath`、`-AgentId`、`-OutputDir`。
+27. `cortex/cleanup-low-quality-memories.ps1`
+   - 用途：阶段 E `T26` 低质量条目清洗（失败结果、短噪声、无价值文本识别并删除）。
+   - 支持模式：`-DryRun` 仅识别不删除，默认执行删除。
+   - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-AgentId`、`-DryRun`、`-OutputPath`。
+28. `cortex/run-external-memory-rollback-drill.ps1`
+   - 用途：阶段 E `T28` 外部记忆回退演练（开关回退到 `enabled=false` 并验证本地主链路测试通过）。
+   - 默认行为：先开后关执行一次回退，再跑本地写入/召回降级测试。
+   - 入口参数：`-RepoRoot`、`-OutputPath`。
 
 ## 2. 同步命令示例
 

@@ -112,6 +112,12 @@ pub(crate) fn artifact_index_path(request: &RunRequest) -> PathBuf {
     data_root(request).join("artifacts").join("index.jsonl")
 }
 
+pub(crate) fn external_memory_audit_path(request: &RunRequest) -> PathBuf {
+    data_root(request)
+        .join("logs")
+        .join("external-memory-cortex.jsonl")
+}
+
 pub(crate) fn siyuan_root_dir(request: &RunRequest) -> Option<PathBuf> {
     request.context_hints.get("siyuan_root").map(PathBuf::from)
 }
