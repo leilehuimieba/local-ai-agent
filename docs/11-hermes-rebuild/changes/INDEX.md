@@ -8,8 +8,8 @@
 
 ## 当前活跃 change
 
-1. 见 [Hermes当前执行状态（单一事实源）](D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md)
-2. 当前主推进目录：严格按 `current-state.md` 指定；若显示“待指定”，则禁止在索引内自行声明当前活跃 change。
+1. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/`
 3. 历史说明：`E-frontend-experience-upgrade` 已迁入 `archive/2026-04-13/`。
 
 ## 保留观察项

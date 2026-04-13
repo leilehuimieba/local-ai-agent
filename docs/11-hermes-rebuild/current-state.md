@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 E（交互与网关统一）
 2. 当前 Gate：Gate-E（执行中，未做完成声明）
-3. 当前活跃 change：`待指定（E-frontend-experience-upgrade 已归档）`
-4. 当前活跃 change 路径：`待指定（已迁入 docs/11-hermes-rebuild/changes/archive/2026-04-13/）`
+3. 当前活跃 change：`E-settings-diagnostics-polish`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/`
 
 ## 2. 口径边界
 

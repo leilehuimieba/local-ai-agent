@@ -644,7 +644,14 @@ function readDiagnosticsInventorySummary(settings: SettingsResponse) {
 }
 
 function readDiagnosticsCheckTime(settings: SettingsResponse) {
-  return `最近检测：${settings.diagnostics.checked_at || "未提供"}`;
+  return `最近检测：${formatDiagnosticsTime(settings.diagnostics.checked_at)}`;
+}
+
+function formatDiagnosticsTime(value?: string) {
+  if (!value) return "未提供";
+  const time = new Date(value);
+  if (Number.isNaN(time.getTime())) return value;
+  return time.toLocaleString("zh-CN", { hour12: false });
 }
 
 function readSiyuanSummary(settings: SettingsResponse) {

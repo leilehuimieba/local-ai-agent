@@ -79,12 +79,8 @@ export async function exportSettingsSnapshot(settings: SettingsResponse) {
 }
 
 export async function openDiagnosticsSnapshot(settings: SettingsResponse) {
-  const blob = new Blob([JSON.stringify(settings.diagnostics, null, 2)], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  if (!opened) throw new Error("浏览器阻止了诊断窗口，请允许弹窗后重试。");
-  return "诊断摘要已在新窗口打开。";
+  await downloadJSON("diagnostics-snapshot.json", settings.diagnostics);
+  return "diagnostics-snapshot.json 已开始导出。";
 }
 
 export async function exportRunLogs() {
