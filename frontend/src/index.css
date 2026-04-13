@@ -1909,6 +1909,15 @@ textarea {
   gap: var(--space-3);
 }
 
+.bottom-panel-summary-meta {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .bottom-panel:not(.open) .bottom-panel-body {
   display: none;
 }
@@ -2390,6 +2399,36 @@ textarea {
     align-items: flex-start;
   }
 
+  .task-page-toolbar-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .task-page-toolbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    align-items: stretch;
+  }
+
+  .task-page-toolbar-actions .primary-action,
+  .task-page-toolbar-actions .secondary-button,
+  .panel-toggle {
+    min-height: 42px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bottom-panel-summary-meta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chat-panel-simple .state-record {
+    padding: 10px 11px;
+  }
+
   .logs-timeline-panel .investigation-list,
   .bottom-panel .investigation-list,
   .messages {
@@ -2491,6 +2530,15 @@ textarea {
 
   .messages {
     padding: 12px;
+  }
+
+  .task-page-toolbar-meta,
+  .task-page-toolbar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-panel-simple .state-record .thread-record-copy {
+    gap: 4px;
   }
 
   .thread-record,
