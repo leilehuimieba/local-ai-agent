@@ -91,6 +91,7 @@ function FirstUseForm(props: { props: WorkbenchOverviewProps }) {
       <label className="home-compose-label" htmlFor="home-task-input">输入任务</label>
       <textarea
         id="home-task-input"
+        name="home_task_input"
         className="composer-input home-compose-input"
         rows={4}
         value={props.props.composeValue}

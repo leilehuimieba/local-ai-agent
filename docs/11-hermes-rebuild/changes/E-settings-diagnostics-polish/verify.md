@@ -18,6 +18,8 @@
   5. 当前会话 DOM 检查脚本：`missingNameOrId=[]`、`passwordOutsideForm=[]`、`passwordAutocomplete=new-password`
   6. 当前会话记录页 DOM 检查脚本：`missingNameOrId=[]`（搜索框、3 个筛选下拉、2 个筛选开关已具备 `name/id`）
   7. 当前会话静态检查：`StatusCard.tsx` 与 `SettingsSections.tsx` 中不再出现 `已完成/处理中/空闲`，状态短词统一由 `readUnifiedStatusMeta` 输出。
+  8. 当前会话任务页 DOM 检查脚本：`missingNameOrId=[]`，任务输入框输出 `id=task-composer-input`、`name=task_composer_input`、`autocomplete=off`。
+  9. 当前会话源码巡检：`WorkbenchOverview/ConfirmationCard/workspaceViewModel` 对应输入控件已补齐稳定 `id/name`（首页任务输入、记住选择、任务导航搜索）。
 
 ## Gate 映射
 

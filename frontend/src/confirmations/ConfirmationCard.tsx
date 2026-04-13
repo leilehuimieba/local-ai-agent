@@ -87,9 +87,12 @@ function RememberChoice(props: {
   onRememberChoiceChange: (checked: boolean) => void;
 }) {
   if (props.confirmation.kind !== "workspace_access") return null;
+  const fieldId = `remember-choice-${props.confirmation.confirmation_id}`;
   return (
     <label className="remember-row">
       <input
+        id={fieldId}
+        name={fieldId}
         type="checkbox"
         checked={props.rememberChoice}
         disabled={props.disabled}

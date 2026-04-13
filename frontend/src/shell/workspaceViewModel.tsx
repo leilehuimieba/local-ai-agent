@@ -312,7 +312,7 @@ function TaskNavPanel(props: {
     <section className="task-nav-panel">
       <header className="task-nav-panel-head"><strong>任务</strong><span>会话导航</span></header>
       <button type="button" className="task-nav-primary" onClick={props.app.actions.openHomeStart}>新建任务</button>
-      <input className="task-nav-search" type="search" value={props.search} placeholder="搜索任务与历史" aria-label="搜索任务与历史" onChange={(event) => props.onSearchChange(event.target.value)} />
+      <input id="task_nav_search" name="task_nav_search" className="task-nav-search" type="search" value={props.search} placeholder="搜索任务与历史" aria-label="搜索任务与历史" autoComplete="off" onChange={(event) => props.onSearchChange(event.target.value)} />
       <TaskNavGroup title="置顶" empty="暂无置顶任务" items={props.pinnedItems} onPick={(value) => props.app.actions.openTaskPageWithDraft(value)} />
       <TaskNavGroup title="最近" empty="暂无历史记录" items={props.recentItems} onPick={(value) => props.app.actions.openTaskPageWithDraft(value)} />
     </section>

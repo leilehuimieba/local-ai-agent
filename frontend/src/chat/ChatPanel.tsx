@@ -384,8 +384,10 @@ function TaskComposer(props: { props: ChatPanelProps }) {
       <div className="simple-composer-shell">
         <input
           id="task-composer-input"
+          name="task_composer_input"
           className="simple-composer-input"
           aria-label="任务输入"
+          autoComplete="off"
           type="text"
           value={props.props.composeValue}
           disabled={!props.props.settings || props.props.isRunning}
