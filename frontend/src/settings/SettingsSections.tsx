@@ -93,7 +93,7 @@ function ProviderModule(props: { props: SettingsModulesProps }) {
 function RuntimeModule(props: { settings: SettingsResponse }) {
   return (
     <section className="settings-module control-module">
-      <ModuleHeader title="运行环境" badge={props.settings.runtime_status.ok ? "已完成" : "已断开"} />
+      <ModuleHeader title="运行环境" badge={props.settings.runtime_status.ok ? readUnifiedStatusMeta("completed").label : "已断开"} />
       <MetaGrid items={buildRuntimeRows(props.settings)} />
     </section>
   );
@@ -301,7 +301,7 @@ function ExternalConnectionItem(props: {
           disabled={pending}
           onClick={() => props.props.onRunExternalConnectionAction(props.slot.slot_id, model.action!)}
         >
-          {pending ? "处理中" : model.actionLabel}
+          {pending ? readUnifiedStatusMeta("running").label : model.actionLabel}
         </button>
       ) : null}
     </div>
@@ -710,8 +710,8 @@ function readNextStep(slot: ExternalConnectionSlot, fallback: string) {
 }
 
 function readToggleState(checked: boolean, isRunning: boolean) {
-  if (isRunning) return "处理中";
-  return checked ? "已完成" : "空闲";
+  if (isRunning) return readUnifiedStatusMeta("running").label;
+  return checked ? readUnifiedStatusMeta("completed").label : readUnifiedStatusMeta("idle").label;
 }
 
 function ActionHint(props: {
@@ -740,10 +740,10 @@ function matchActionFeedback(
 }
 
 function readControlBadge(props: SettingsModulesProps, actions: SettingsActionKind[]) {
-  if (matchActionFeedback(props.pendingAction, actions)) return "处理中";
+  if (matchActionFeedback(props.pendingAction, actions)) return readUnifiedStatusMeta("running").label;
   if (matchActionFeedback(props.actionError, actions)) return "失败";
-  if (matchActionFeedback(props.lastSuccess, actions)) return "已完成";
-  if (actions.includes("model") || actions.includes("mode")) return props.isRunning ? "处理中" : "空闲";
+  if (matchActionFeedback(props.lastSuccess, actions)) return readUnifiedStatusMeta("completed").label;
+  if (actions.includes("model") || actions.includes("mode")) return props.isRunning ? readUnifiedStatusMeta("running").label : readUnifiedStatusMeta("idle").label;
   return "就绪";
 }
 

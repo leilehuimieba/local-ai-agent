@@ -102,10 +102,10 @@ function readRuntimeLabel(settings: SettingsResponse) {
 
 function readOverallStatus(props: StatusCardProps) {
   if (props.bootstrapError || props.actionError) return "失败";
-  if (props.pendingAction) return "处理中";
-  if (props.lastSuccess) return "已完成";
-  if (!props.settings) return "空闲";
-  return props.settings.runtime_status.ok ? "已完成" : "已断开";
+  if (props.pendingAction) return readUnifiedStatusMeta("running").label;
+  if (props.lastSuccess) return readUnifiedStatusMeta("completed").label;
+  if (!props.settings) return readUnifiedStatusMeta("idle").label;
+  return props.settings.runtime_status.ok ? readUnifiedStatusMeta("completed").label : "已断开";
 }
 
 function readOverallStatusClass(status: string) {

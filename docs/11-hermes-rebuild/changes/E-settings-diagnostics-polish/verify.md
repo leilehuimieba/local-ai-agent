@@ -17,6 +17,7 @@
   4. 当前会话控制台检查：未再出现 `治理状态` 重复 key 报错
   5. 当前会话 DOM 检查脚本：`missingNameOrId=[]`、`passwordOutsideForm=[]`、`passwordAutocomplete=new-password`
   6. 当前会话记录页 DOM 检查脚本：`missingNameOrId=[]`（搜索框、3 个筛选下拉、2 个筛选开关已具备 `name/id`）
+  7. 当前会话静态检查：`StatusCard.tsx` 与 `SettingsSections.tsx` 中不再出现 `已完成/处理中/空闲`，状态短词统一由 `readUnifiedStatusMeta` 输出。
 
 ## Gate 映射
 
