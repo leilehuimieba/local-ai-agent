@@ -1,6 +1,8 @@
 # Hermes Change 工作区约定
 
 `docs/11-hermes-rebuild/changes/` 用于承接当前执行主线下的进行中变更。
+当前阶段、当前 Gate、当前活跃 change 的状态裁决统一以
+`docs/11-hermes-rebuild/current-state.md` 为准。
 
 ## 1. 何时创建 change
 
@@ -39,4 +41,5 @@
 3. 每次阶段性推进后更新 `status.md`。
 4. 进入验证或提审前补齐 `verify.md`。
 5. 当前主推进项要同步更新到 [INDEX.md](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/INDEX.md)。
-6. 如与阶段 Gate 冲突，以 [阶段计划总表](D:/newwork/本地智能体/docs/11-hermes-rebuild/stage-plans/阶段计划总表.md) 为准。
+6. 切换主推进项时，先更新 `current-state.md`，再更新 `INDEX.md`。
+7. 如与阶段 Gate 冲突，以 [阶段计划总表](D:/newwork/本地智能体/docs/11-hermes-rebuild/stage-plans/阶段计划总表.md) 为准。

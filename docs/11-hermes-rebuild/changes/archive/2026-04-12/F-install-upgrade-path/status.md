@@ -1,8 +1,8 @@
-# 当前状态
+﻿# 当前状态
 
 - 最近更新时间：2026-04-12
 - 状态：已完成（收口）
-- 当前阶段：阶段 F - Windows 产品化与发布（F-01）
+- 历史阶段：阶段 F - Windows 产品化与发布（F-01）
 - 已完成：
   - 新增 `install-local-agent.ps1`，实现安装/升级主路径。
   - 新增 `run-stage-f-install-acceptance.ps1`，并通过安装升级验收。

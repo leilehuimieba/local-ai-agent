@@ -2,7 +2,7 @@
 
 - 最近更新时间：2026-04-12
 - 状态：进行中
-- 当前阶段：阶段 D - 记忆与技能体系
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一见 `docs/11-hermes-rebuild/current-state.md`（本文件仅记录该 change 的任务进展）
 - 已完成：建立阶段 D 首条主推进 change，补齐五件套并纳入索引。
 - 已完成：`D-01` 三层记忆 schema v1 冻结，已在 `design.md` 收口字段表、检索口径、迁移草案与回退策略。
 - 已完成：`D-02` 迁移脚本最小实现与执行验证，脚本 `scripts/run-stage-d-migrate-acceptance.ps1` 已产出 `tmp/stage-d-migrate-acceptance/latest.json`（`status=passed`）。
@@ -13,4 +13,4 @@
 - 已完成：`D-G1` 7 天 Gate-D 批量验收准备，批量脚本阈值映射已冻结并通过（证据：`tmp/stage-d-batch/latest.json`，`gate_d.ready=true`）。
 - 进行中：无。
 - 阻塞点：无。
-- 下一步：切换主推进到阶段 E，优先执行 `E-03` 前端确认链字段消费改造。
+- 下一步：等待 `current-state.md` 指定新的主推进 change；本条仅作历史记录。

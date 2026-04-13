@@ -1,8 +1,8 @@
-# 当前状态
+﻿# 当前状态
 
 - 最近更新时间：2026-04-12
 - 状态：已完成（warning 协议接入后再次收口）
-- 当前阶段：阶段 F - Windows 产品化与发布（F-03）
+- 历史阶段：阶段 F - Windows 产品化与发布（F-03）
 - 已完成：
   - 发布清单文档 `release-checklist.md` 已补齐。
   - 回滚预案文档 `rollback-runbook.md` 已补齐。

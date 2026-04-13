@@ -1,8 +1,8 @@
-# 当前状态
+﻿# 当前状态
 
 - 最近更新时间：2026-04-12
 - 状态：已完成（收口）
-- 当前阶段：阶段 E/F 复核窗口
+- 历史阶段：阶段 E/F 复核窗口
 - 已完成：
   - 新增 `run-stage-backend-reverify-pack.ps1` 一键复核脚本。
   - 已完成 `-RefreshEvidence` 全刷新复核，`tmp/stage-backend-reverify/latest.json` 为 passed。

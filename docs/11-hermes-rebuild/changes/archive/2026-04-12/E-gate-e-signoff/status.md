@@ -1,8 +1,8 @@
-# 当前状态
+﻿# 当前状态
 
 - 最近更新时间：2026-04-12
 - 状态：已完成（收口）
-- 当前阶段：阶段 E - 交互与网关统一（E-G1）
+- 历史阶段：阶段 E - 交互与网关统一（E-G1）
 - 已完成：
   - 新增 `run-stage-e-gate-batch.ps1` 并完成 5 轮批量验收。
   - 批量报告 `tmp/stage-e-batch/latest.json` 生成且 `gate_e.ready=true`。

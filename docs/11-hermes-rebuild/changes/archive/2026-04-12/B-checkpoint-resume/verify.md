@@ -61,7 +61,7 @@
   - `POST /api/v1/chat/confirm` 使用同一个 `run_id` 审批通过后，恢复日志包含 `checkpoint_resumed`。
   - confirm 恢复日志未出现 `checkpoint_resume_skipped`。
   - confirm 恢复后继续出现 `analysis_ready`、`plan_ready`、`memory_recalled`、`action_requested`、`action_completed`、`verification_completed`、`memory_written`、`knowledge_write_skipped`、`checkpoint_written`、`run_finished` 等后续事件，说明审批通过后已重新接回统一主循环。
-  - 恢复后的 `context_snapshot.session_summary` 已写入 `当前计划：从 checkpoint 恢复：confirmation_required -> PausedForConfirmation` 与 `当前阶段：confirmation_resume`，证明短期状态恢复口径已生效。
+  - 恢复后的 `context_snapshot.session_summary` 已写入 `当前计划：从 checkpoint 恢复：confirmation_required -> PausedForConfirmation` 与 `恢复阶段：confirmation_resume`，证明短期状态恢复口径已生效。
   - 当前稳定样本命令为 `cmd: Remove-Item AGENTS.md -WhatIf`，既能稳定触发 `high_risk_action`，又不会真的改动工作区文件。
   - confirm 路径最终落到 `run_finished`，工具输出为 `WhatIf` 预演结果，说明当前样本可稳定复现“先确认、再恢复、再继续执行”的闭环。
 
