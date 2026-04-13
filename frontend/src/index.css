@@ -539,25 +539,41 @@
 }
 
 .chat-panel-simple .state-record {
-  padding: 13px 14px;
+  padding: 11px 12px;
   border-style: dashed;
   border-width: 1px;
-  border-radius: var(--radius-12);
+  border-radius: var(--radius-8);
+}
+
+.chat-panel-simple .state-record .thread-record-head {
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chat-panel-simple .state-record .thread-record-role {
+  font-size: 11px;
+  letter-spacing: 0.06em;
 }
 
 .chat-panel-simple .state-record .thread-record-copy strong {
   color: var(--text-primary);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
 }
 
 .chat-panel-simple .state-record .thread-record-copy {
-  gap: 8px;
+  gap: 6px;
 }
 
 .chat-panel-simple .state-record .thread-record-copy p {
   color: var(--text-secondary);
   font-size: var(--text-sm);
-  line-height: 1.62;
+  line-height: 1.5;
+}
+
+.chat-panel-simple .state-record .status-badge {
+  min-height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
 }
 
 .chat-empty-simple {
