@@ -429,6 +429,17 @@
 4. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 45）
+
+1. 阶段验收包文档落盘
+   - 已新增 `artifacts/主题45-状态词典收口阶段验收包.md`，覆盖“覆盖页、映射点、回归结果、已知遗留、下一阶段基线”五项内容。
+2. 覆盖页与映射点可复核
+   - 验收包已明确任务页、调查层、记录页、设置页的状态词汇与状态 class 映射入口。
+3. 阶段遗留与后续任务衔接清晰
+   - 验收包中已显式标注主题 46-48 作为后续推进项，避免在主题 45 内扩 scope。
+4. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -454,6 +465,7 @@
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/tasks.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/status.md`
   - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/verify.md`
+  - `docs/11-hermes-rebuild/changes/E-frontend-experience-upgrade/artifacts/主题45-状态词典收口阶段验收包.md`
 - 日志或截图：
   - 构建命令：`frontend/` 目录执行 `npm run build`。
   - 构建结果：`tsc -b && vite build` 执行成功，产物已生成到 `frontend/dist/`。
@@ -497,4 +509,5 @@
   - Wave 1 主题 42「记录页状态徽标映射收口补齐」已完成代码落地与构建验证。
   - Wave 1 主题 43「主线程状态卡密度二次压缩」已完成代码落地与构建验证。
   - Wave 1 主题 44「任务页移动端布局压测」已完成代码落地与构建验证。
+  - Wave 1 主题 45「状态词典收口阶段验收包」已完成文档落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。
