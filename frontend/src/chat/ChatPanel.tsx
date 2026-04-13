@@ -7,11 +7,9 @@ import {
   getStreamLiveLabel,
   readPendingAdvice,
   readPendingBody,
-  readPendingHeadline,
   readFailureAdvice,
   readFailureBody,
   readRunStateBody,
-  readRunStateHeadline,
   readRunStateNextStep,
   readThreadStatusClass,
   ResultSection,
@@ -231,7 +229,6 @@ function EventOnlyState(props: { props: ChatPanelProps }) {
   return (
     <StateRecord
       state={readEventOnlyState(props.props.runState)}
-      title={readRunStateHeadline(props.props.runState, props.props.latestFailureEvent)}
       body={readRunStateBody({
         currentTaskTitle: props.props.currentTaskTitle,
         latestFailureEvent: props.props.latestFailureEvent,
@@ -269,7 +266,6 @@ function PrimaryErrorState(props: { latestFailureEvent?: RunEvent; submitError?:
   return (
     <StateRecord
       state="failed"
-      title={readRunStateHeadline("failed", props.latestFailureEvent)}
       body={readFailureBody(props.latestFailureEvent, props.submitError)}
       advice={readFailureAdvice(props.latestFailureEvent)}
     />
@@ -281,7 +277,6 @@ function RecoveryRecord(props: { latestFailureEvent?: RunEvent; submitError?: st
   return (
     <StateRecord
       state="failed"
-      title={readRunStateHeadline("failed", props.latestFailureEvent)}
       body={readRunStateBody({ latestFailureEvent: props.latestFailureEvent, runState: "failed", submitError: props.submitError })}
       advice={readRunStateNextStep({ latestFailureEvent: props.latestFailureEvent, runState: "failed" })}
     />
@@ -293,7 +288,6 @@ function CompletionRecord(props: { props: ChatPanelProps }) {
   return (
     <StateRecord
       state="completed"
-      title={readRunStateHeadline("completed")}
       body={readRunStateBody({ runState: "completed" })}
       advice={readRunStateNextStep({ runState: "completed" })}
     />
@@ -324,7 +318,6 @@ function readThreadTailRecord(props: ChatPanelProps) {
 
 function StateRecord(props: {
   state: "failed" | "running" | "completed";
-  title: string;
   body: string;
   advice: string;
 }) {
@@ -367,7 +360,6 @@ function WaitingForFirstEventRecord(props: {
   return (
     <StateRecord
       state="running"
-      title={readPendingHeadline(props.runState)}
       body={readPendingBody({ currentRunId: props.currentRunId, taskTitle: props.taskTitle })}
       advice={readPendingAdvice(props.runState)}
     />

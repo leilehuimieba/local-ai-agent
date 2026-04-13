@@ -219,3 +219,21 @@
   完成判据：`readRunStateBody/readRunStateNextStep` 在 submitting/streaming/awaiting_confirmation/resuming/completed 场景改为更短表达，减少状态卡文案密度。
 - [x] 最小构建回归
   完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 20（主线程状态标题来源收口）
+
+- [x] 状态卡标题移除无效传参
+  完成判据：`ChatPanel` 的 `StateRecord` 移除未生效 `title` 传参，状态标题仅由统一状态映射生成。
+- [x] 状态标题函数去冗余
+  完成判据：`chatResultModel` 删除未被消费的 `readRunStateHeadline`，避免“函数存在但无渲染入口”漂移。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。
+
+## Wave 1 - 主题 21（全局状态徽标短词统一）
+
+- [x] `statusLine` 输出改为短词口径
+  完成判据：`runtime/state` 的 `getRunStateLabel` 统一输出短词状态（等待中/进行中/待确认/完成/失败），不再返回“等待首次任务/空闲/提交中”等并行口径。
+- [x] TopBar/检查器状态徽标自动对齐
+  完成判据：依赖 `statusLine` 的顶栏与检查器状态徽标自动对齐统一词典，无需额外分支改造。
+- [x] 最小构建回归
+  完成判据：在 `frontend/` 目录执行 `npm run build` 并通过。

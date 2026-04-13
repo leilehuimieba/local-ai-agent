@@ -208,6 +208,24 @@
 3. 最小构建回归
    - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
 
+## 本轮验证点（Wave 1 - 主题 20）
+
+1. 状态卡标题来源单一可见
+   - `ChatPanel` 的 `StateRecord` 不再接收未生效的 `title` 入参，标题完全由状态映射函数生成。
+2. 未消费标题函数已移除
+   - `chatResultModel` 中未被渲染层消费的 `readRunStateHeadline` 已删除，降低后续维护漂移风险。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
+## 本轮验证点（Wave 1 - 主题 21）
+
+1. `statusLine` 短词口径可见
+   - `runtime/state.ts` 的 `getRunStateLabel` 已收口到短词状态输出，不再返回“等待首次任务/空闲/提交中”等并行词汇。
+2. 顶栏与检查器状态徽标自动对齐
+   - 依赖 `statusLine` 的 TopBar 与检查器状态显示自动对齐到统一短词，无需新增页面内分支映射。
+3. 最小构建回归
+   - 在 `frontend/` 目录执行 `npm run build`，`tsc -b && vite build` 通过。
+
 ## 证据位置
 
 - 测试记录：
@@ -247,4 +265,6 @@
   - Wave 1 主题 17「检查器与调查层状态短词补齐」已完成代码落地与构建验证。
   - Wave 1 主题 18「主线程状态标题短词化」已完成代码落地与构建验证。
   - Wave 1 主题 19「主线程状态副文案压缩」已完成代码落地与构建验证。
+  - Wave 1 主题 20「主线程状态标题来源收口」已完成代码落地与构建验证。
+  - Wave 1 主题 21「全局状态徽标短词统一」已完成代码落地与构建验证。
   - Gate-E 仍处于执行中，后续按主题继续收口，不做整体完成声明。

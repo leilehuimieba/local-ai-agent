@@ -26,6 +26,8 @@
   - 检查器与调查层摘要状态短词已补齐：检查器“当前状态”字段与调查层摘要标题统一改为短词体系，避免“任务运行中/等待确认/任务已完成”并行口径。
   - 主线程状态标题短词化已补齐：`chatResultModel` 的状态标题函数改为统一短词输出，失败标题在有错误码时仍兼容展示。
   - 主线程状态副文案已压缩：`chatResultModel` 的 Pending/运行态正文与下一步建议改为短句表达，主线程状态卡更紧凑。
+  - 主线程状态标题来源已收口：`ChatPanel` 状态卡移除无效 `title` 传参，标题统一由状态映射函数生成；`chatResultModel` 去除未消费标题函数。
+  - 全局状态徽标短词已统一：`getRunStateLabel` 改为短词口径输出，TopBar 与检查器等 `statusLine` 消费位自动对齐统一词典。
   - 已完成接口样本字段复核落盘：`tmp/stage-e-audit-consumption/latest.json`。
   - 已完成最小构建回归：`frontend/` 下 `npm run build` 通过。
 - 进行中：

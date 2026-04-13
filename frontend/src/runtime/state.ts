@@ -105,14 +105,9 @@ export function isTerminalRunState(runState: RunState) {
 }
 
 export function getRunStateLabel(runState: RunState, eventCount: number) {
-  if (runState === "idle") return eventCount > 0 ? "空闲" : "等待首次任务";
-  if (runState === "submitting" || runState === "streaming" || runState === "resuming") {
-    return readUnifiedStatusMeta("running").label;
-  }
-  if (runState === "awaiting_confirmation") return readUnifiedStatusMeta("awaiting_confirmation").label;
-  if (runState === "completed") return readUnifiedStatusMeta("completed").label;
-  if (runState === "failed") return readUnifiedStatusMeta("failed").label;
-  return "已归档";
+  void eventCount;
+  if (runState === "archived") return "已归档";
+  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
 }
 
 export function getConnectionStateLabel(connectionState: ConnectionState) {

@@ -55,13 +55,6 @@ function normalizeResultText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
-export function readRunStateHeadline(runState: RunState | undefined, event?: RunEvent) {
-  void event;
-  if (!runState || runState === "idle") return "等待任务";
-  if (runState === "archived") return "已归档";
-  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(runState)).label;
-}
-
 export function readPendingHeadline(runState: RunState | undefined) {
   if (runState === "awaiting_confirmation") return readUnifiedStatusMeta("awaiting_confirmation").label;
   if (runState === "completed") return readUnifiedStatusMeta("completed").label;
