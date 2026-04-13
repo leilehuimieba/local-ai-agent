@@ -44,6 +44,14 @@ type SettingsModulesProps = {
 const SETTINGS_MODULE_ORDER = ["runtime", "model", "provider", "workspace", "risk", "resources", "diagnostics"] as const;
 type DiagnosticsActionKey = "logs" | "settings" | "snapshot";
 type DiagnosticsFeedback = { tone: "running" | "failed" | "completed"; detail: string };
+type DiagnosticsGroupKey = "status" | "impact" | "actions";
+type DiagnosticsGroupModel = {
+  key: DiagnosticsGroupKey;
+  title: string;
+  summary: string;
+  details: string[];
+  status: UnifiedStatusKey;
+};
 
 export function SettingsModules(props: SettingsModulesProps) {
   return <div className="settings-stack">{buildSettingsModules(props).map((item) => item.node)}</div>;
@@ -304,9 +312,8 @@ function DiagnosticsModule(props: { props: SettingsModulesProps }) {
   return (
     <section className="settings-module control-module">
       <ModuleHeader title="诊断与导出" badge={readDiagnosticsBadge(props.props)} />
-      <DiagnosticsHealthSummary settings={props.props.settings} />
+      <DiagnosticsGroupedSummary settings={props.props.settings} />
       <DiagnosticsActions props={props.props} />
-      <MetaGrid items={buildDiagnosticsRows(props.props.settings)} />
       <DiagnosticsAlerts settings={props.props.settings} />
       <DiagnosticsPathCard settings={props.props.settings} />
     </section>
@@ -360,6 +367,31 @@ async function runDiagnosticsAction(
   } finally {
     setPendingAction("");
   }
+}
+
+function DiagnosticsGroupedSummary(props: { settings: SettingsResponse }) {
+  const groups = buildDiagnosticsGroupModels(props.settings);
+  return (
+    <div className="settings-diagnostics-grid">
+      {groups.map((group) => <DiagnosticsGroupCard key={group.key} group={group} />)}
+    </div>
+  );
+}
+
+function DiagnosticsGroupCard(props: { group: DiagnosticsGroupModel }) {
+  const status = readUnifiedStatusMeta(props.group.status);
+  return (
+    <section className="detail-card muted-card diagnostics-group-card">
+      <div className="diagnostics-group-head">
+        <strong>{props.group.title}</strong>
+        <StatusPill className={status.className} label={status.label} />
+      </div>
+      <p>{props.group.summary}</p>
+      <ul className="diagnostics-group-list">
+        {props.group.details.map((item) => <li key={`${props.group.key}-${item}`}>{item}</li>)}
+      </ul>
+    </section>
+  );
 }
 
 function DiagnosticsHealthSummary(props: { settings: SettingsResponse }) {
@@ -505,6 +537,102 @@ function buildDiagnosticsRows(settings: SettingsResponse) {
   ];
 }
 
+function buildDiagnosticsGroupModels(settings: SettingsResponse): DiagnosticsGroupModel[] {
+  return [
+    buildDiagnosticsStatusGroup(settings),
+    buildDiagnosticsImpactGroup(settings),
+    buildDiagnosticsActionGroup(settings),
+  ];
+}
+
+function buildDiagnosticsStatusGroup(settings: SettingsResponse): DiagnosticsGroupModel {
+  const warnings = (settings.diagnostics.warnings || []).length;
+  const errors = (settings.diagnostics.errors || []).length;
+  return {
+    key: "status",
+    title: "当前状态",
+    summary: readDiagnosticsRuntimeSummary(settings),
+    details: [
+      readDiagnosticsCheckTime(settings),
+      `警告 ${warnings} 条`,
+      `错误 ${errors} 条`,
+      `运行时版本：${settings.diagnostics.runtime_version || "未提供"}`,
+    ],
+    status: readDiagnosticsOverallStatusKey(settings),
+  };
+}
+
+function buildDiagnosticsImpactGroup(settings: SettingsResponse): DiagnosticsGroupModel {
+  const diagnostics = settings.diagnostics;
+  return {
+    key: "impact",
+    title: "影响范围",
+    summary: "本次诊断覆盖运行时连通性、配置落点、模型与工作区库存。",
+    details: [
+      `服务方 ${diagnostics.provider_count} 个 / 模型 ${diagnostics.model_count} 个`,
+      `工作区 ${diagnostics.workspace_count} 个 / 授权目录 ${diagnostics.approved_directory_count} 个`,
+      `设置文件：${diagnostics.settings_path || "未提供"}`,
+      `运行日志：${diagnostics.run_log_path || "未提供"}`,
+    ],
+    status: readDiagnosticsImpactStatusKey(settings),
+  };
+}
+
+function buildDiagnosticsActionGroup(settings: SettingsResponse): DiagnosticsGroupModel {
+  return {
+    key: "actions",
+    title: "建议动作",
+    summary: readDiagnosticsActionSummary(settings),
+    details: buildDiagnosticsActionItems(settings),
+    status: readDiagnosticsActionStatusKey(settings),
+  };
+}
+
+function readDiagnosticsActionSummary(settings: SettingsResponse) {
+  const errors = (settings.diagnostics.errors || []).length;
+  if (errors > 0) return "存在诊断错误，建议先处理高优先级阻塞项。";
+  if (!settings.diagnostics.runtime_reachable) return "运行时不可达，建议先恢复连接链路。";
+  if ((settings.diagnostics.warnings || []).length > 0) return "存在警告，建议按风险顺序逐项核对。";
+  return "诊断链路整体稳定，建议保持当前配置并定期复检。";
+}
+
+function buildDiagnosticsActionItems(settings: SettingsResponse) {
+  const diagnostics = settings.diagnostics;
+  const items = collectDiagnosticsActionItems(diagnostics);
+  items.push("处理后点击“重新检测”，确认状态回到完成态。");
+  return items;
+}
+
+function collectDiagnosticsActionItems(diagnostics: SettingsResponse["diagnostics"]) {
+  const items: string[] = [];
+  if (!diagnostics.runtime_reachable) items.push("恢复运行时可达性，再执行导出与外部连接校验。");
+  diagnostics.errors?.slice(0, 2).forEach((item) => items.push(`优先处理错误：${item}`));
+  diagnostics.warnings?.slice(0, 2).forEach((item) => items.push(`排查警告：${item}`));
+  if (!diagnostics.siyuan_auto_write_enabled) items.push("如需自动沉淀，启用思源自动写入并重新检测。");
+  if (items.length === 0) items.push("当前无需额外处置，可继续按常规节奏复检。");
+  return items;
+}
+
+function readDiagnosticsOverallStatusKey(settings: SettingsResponse): UnifiedStatusKey {
+  if (!settings.diagnostics.runtime_reachable) return "failed";
+  if ((settings.diagnostics.errors || []).length > 0) return "failed";
+  if ((settings.diagnostics.warnings || []).length > 0) return "awaiting_confirmation";
+  return "completed";
+}
+
+function readDiagnosticsImpactStatusKey(settings: SettingsResponse): UnifiedStatusKey {
+  if ((settings.diagnostics.errors || []).length > 0) return "failed";
+  if ((settings.diagnostics.warnings || []).length > 0) return "awaiting_confirmation";
+  return "completed";
+}
+
+function readDiagnosticsActionStatusKey(settings: SettingsResponse): UnifiedStatusKey {
+  if (!settings.diagnostics.runtime_reachable) return "failed";
+  if ((settings.diagnostics.errors || []).length > 0) return "failed";
+  if ((settings.diagnostics.warnings || []).length > 0) return "awaiting_confirmation";
+  return "completed";
+}
+
 function readDiagnosticsRuntimeSummary(settings: SettingsResponse) {
   const status = settings.diagnostics.runtime_reachable ? "运行时当前可达" : "运行时当前不可达";
   return `${status}，版本 ${settings.diagnostics.runtime_version || "未提供"}。`;
@@ -624,9 +752,8 @@ function readMemoryActionState(props: SettingsModulesProps) {
 }
 
 function readDiagnosticsBadge(props: SettingsModulesProps) {
-  if (props.isActionPending("diagnosticsCheck")) return "处理中";
-  if ((props.settings.diagnostics.errors || []).length > 0) return "失败";
-  return "就绪";
+  if (props.isActionPending("diagnosticsCheck")) return readUnifiedStatusMeta("running").label;
+  return readUnifiedStatusMeta(readDiagnosticsOverallStatusKey(props.settings)).label;
 }
 
 function readExternalConnectionAction(slot: ExternalConnectionSlot) {
