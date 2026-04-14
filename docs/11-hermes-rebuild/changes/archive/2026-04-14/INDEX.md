@@ -7,6 +7,7 @@
 ## 本批次归档清单
 
 1. [E-claudecode-shell-alignment](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/E-claudecode-shell-alignment/status.md)
+2. [E-sensitive-pattern-expansion](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/E-sensitive-pattern-expansion/status.md)
 
 ## 归档说明
 

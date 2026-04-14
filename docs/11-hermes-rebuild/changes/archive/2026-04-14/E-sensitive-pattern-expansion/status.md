@@ -1,7 +1,7 @@
 # 当前状态
 
-- 最近更新时间：2026-04-13
-- 状态：已完成（本刀收口）
+- 最近更新时间：2026-04-14
+- 状态：已归档（2026-04-14）
 - 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 - 已完成：
   1. 新 change 建立并切换为当前活跃 change。
@@ -13,4 +13,5 @@
 - 阻塞点：
   无。
 - 下一步：
-  1. 本 change 已完成并提交，待你确认是否切换到下一个主推进 change。
+  1. 如需复核，优先查看 `verify.md`。
+  2. 如需恢复推进，迁回 `changes/` 根目录后再更新 `current-state.md` 与 `changes/INDEX.md`。
