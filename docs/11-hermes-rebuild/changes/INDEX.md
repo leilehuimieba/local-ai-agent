@@ -19,6 +19,7 @@
 ## 保留观察项
 
 1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（历史进行中状态，当前不作为主推进）
+2. [E-claudecode-shell-alignment](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-claudecode-shell-alignment/status.md)（`T04-T07` 已完成，已形成验证证据，未做 Gate-E 完成声明）
 
 ## 归档入口
 
