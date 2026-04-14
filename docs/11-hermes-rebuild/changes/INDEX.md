@@ -8,18 +8,20 @@
 
 ## 当前活跃 change
 
-1. [F-install-upgrade-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/status.md)
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/`
-3. [E-gate-e-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gate-e-signoff-20260414/status.md)（Gate-E 签收变更）
-4. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（上一轮已收口）
-5. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（历史已收口）
-6. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
-7. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
-8. 历史说明：`E-sensitive-pattern-expansion` 与 `E-frontend-experience-upgrade` 已迁入归档目录。
+1. [F-doctor-core-checks-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-doctor-core-checks-20260414/status.md)
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/F-doctor-core-checks-20260414/`
+3. [F-install-upgrade-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/status.md)（`F-01` 已收口）
+4. [E-gate-e-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gate-e-signoff-20260414/status.md)（Gate-E 签收变更）
+5. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（上一轮已收口）
+6. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（历史已收口）
+7. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
+8. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
+9. 历史说明：`E-sensitive-pattern-expansion` 与 `E-frontend-experience-upgrade` 已迁入归档目录。
 
 ## 保留观察项
 
 1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（历史进行中状态，当前不作为主推进）
+2. [F-memory-progressive-disclosure-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-memory-progressive-disclosure-20260414/status.md)（并行规划专项，未切主推进）
 
 ## 归档入口
 
