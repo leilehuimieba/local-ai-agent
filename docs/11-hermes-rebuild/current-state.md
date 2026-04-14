@@ -1,6 +1,6 @@
 # Hermes 当前执行状态（单一事实源）
 
-更新时间：2026-04-13  
+更新时间：2026-04-14  
 状态：`当前有效`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于“当前阶段 / 当前 Gate / 当前活跃 change”的唯一权威记录。
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 E（交互与网关统一）
 2. 当前 Gate：Gate-E（执行中，未做完成声明）
-3. 当前活跃 change：`E-sensitive-pattern-expansion`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/E-sensitive-pattern-expansion/`
+3. 当前活跃 change：`E-gate-e-signoff-20260414`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/E-gate-e-signoff-20260414/`
 
 ## 2. 口径边界
 
