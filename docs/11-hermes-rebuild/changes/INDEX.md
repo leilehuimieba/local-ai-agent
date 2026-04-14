@@ -1,6 +1,6 @@
 ﻿# Hermes Change 索引
 
-更新时间：2026-04-13
+更新时间：2026-04-14
 
 这个文件用于提供 change 目录导航。
 “当前阶段 / 当前 Gate / 当前活跃 change” 的状态裁决统一由
@@ -19,12 +19,12 @@
 ## 保留观察项
 
 1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（历史进行中状态，当前不作为主推进）
-2. [E-claudecode-shell-alignment](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-claudecode-shell-alignment/status.md)（`T04-T07` 已完成，已形成验证证据，未做 Gate-E 完成声明）
 
 ## 归档入口
 
-1. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
-2. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（历史已收口 change 归档）
+1. [archive/2026-04-14/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment` 归档入口）
+2. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
+3. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（历史已收口 change 归档）
 
 ## 选择规则
 

@@ -1,7 +1,7 @@
 # 当前状态
 
 - 最近更新时间：2026-04-14
-- 状态：进行中（`T04-T08` 已完成，等待归档或继续观察决策）
+- 状态：已归档（2026-04-14）
 - 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 - 已完成：
   1. 完成 `ClaudeCodeRev` 关键源码机制抓取与证据定位。
@@ -21,5 +21,5 @@
 - 阻塞点：
   1. 无硬阻塞。
 - 下一步：
-  1. 由你确认本 change 保持“保留观察项”还是转入归档目录。
-  2. 无论是否归档，均不做 Gate-E 完成声明，阶段状态仍以 `current-state.md` 为准。
+  1. 如需复核，优先查看 `verify.md` 与 `review.md`。
+  2. 如需恢复推进，迁回 `changes/` 根目录后再更新 `current-state.md` 与 `changes/INDEX.md`。
