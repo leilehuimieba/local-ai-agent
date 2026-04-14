@@ -1,0 +1,26 @@
+﻿{
+    "generated_at":  "2026-04-14T23:48:46.8862658+08:00",
+    "source_report":  "D:\\newwork\\本地智能体\\tmp\\stage-backend-reverify\\latest.json",
+    "decision":  "pass",
+    "ready_for_release":  true,
+    "must_record_warning":  false,
+    "review":  {
+                   "checked_at":  "2026-04-14T23:48:44.2096666+08:00",
+                   "status":  "passed",
+                   "identity_diff_severity":  "ok",
+                   "failed_checks_count":  0,
+                   "non_blocking_warning_count":  0
+               },
+    "warning_codes":  [
+
+                      ],
+    "warning_details":  [
+
+                        ],
+    "audit_owner":  "g-duty",
+    "tracking_id":  "G01-20260414-002",
+    "due_at":  "2026-04-15T10:30:00+08:00",
+    "validation_errors":  [
+
+                          ]
+}
