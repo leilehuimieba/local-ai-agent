@@ -3,6 +3,7 @@ import { KeyboardEvent, useEffect, useMemo, useRef } from "react";
 import { RunEvent, RuntimeContextSnapshot } from "../shared/contracts";
 import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
+import { isPermissionAwaiting, isPermissionBlocked, isPermissionResolved, readPermissionSummary } from "../shared/permissionFlow";
 
 type EventTimelineProps = {
   autoFollow?: boolean;
@@ -146,9 +147,11 @@ function EventTagRow(props: { event: RunEvent }) {
 
 function buildEventDetails(event: RunEvent) {
   const details = snapshotDetails(event);
+  const permissionSummary = readPermissionSummary(event);
   return compactDetails([
     { key: "detail", text: readPrimaryDetail(event) },
     { key: "action", text: readActionDetail(event) },
+    { key: "permission", text: permissionSummary },
     { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
     { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
     { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
@@ -177,10 +180,14 @@ function snapshotDetails(event: RunEvent) {
 }
 
 function readPrimaryDetail(event: RunEvent) {
+  const permissionSummary = readPermissionSummary(event);
   if (event.event_type === "run_failed") return event.detail || event.metadata?.result_summary || "运行失败。";
-  if (event.event_type === "confirmation_required") return event.detail || "当前动作需要确认后继续。";
+  if (event.event_type === "confirmation_required") {
+    return permissionSummary || event.detail || "当前动作需要确认后继续。";
+  }
   if (event.event_type === "memory_recalled") return event.result_summary || event.detail || "已召回相关记忆。";
   if (event.event_type === "memory_write_skipped") return event.detail || event.summary || "本次记忆写入已跳过。";
+  if (permissionSummary) return permissionSummary;
   return event.result_summary || event.metadata?.result_summary || event.detail || "";
 }
 
@@ -213,15 +220,21 @@ function readEventStatusKey(event: RunEvent): UnifiedStatusKey {
 }
 
 function hasFailedSignal(event: RunEvent) {
-  return event.event_type === "run_failed" || event.completion_status === "failed" || Boolean(event.metadata?.error_code);
+  return event.event_type === "run_failed"
+    || event.completion_status === "failed"
+    || Boolean(event.metadata?.error_code)
+    || isPermissionBlocked(event);
 }
 
 function hasAwaitingSignal(event: RunEvent) {
-  return event.event_type === "confirmation_required" || event.completion_status === "confirmation_required";
+  if (isPermissionResolved(event) || hasCompletedSignal(event)) return false;
+  return isPermissionAwaiting(event);
 }
 
 function hasCompletedSignal(event: RunEvent) {
-  return event.completion_status === "completed" || event.event_type === "run_finished";
+  return event.completion_status === "completed"
+    || event.event_type === "run_finished"
+    || isPermissionResolved(event);
 }
 
 function cacheDetail(context?: RuntimeContextSnapshot) {

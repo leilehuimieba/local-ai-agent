@@ -181,6 +181,7 @@ func registerSettingsAndLogsRoutes(
 	mux.HandleFunc("/api/v1/settings/external-connections/action", externalConnectionActionHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/system/info", systemInfoHandler(repoRoot, cfg.RuntimePort))
 	mux.HandleFunc("/api/v1/logs", logsHandler(eventBus))
+	mux.HandleFunc("/api/v1/artifacts/content", artifactContentHandler(repoRoot))
 }
 
 func registerMemoryRoutes(mux *http.ServeMux, deps memoryRouteDeps) {

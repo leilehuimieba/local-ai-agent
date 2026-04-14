@@ -52,6 +52,7 @@ mod run_resume_testkit;
 mod run_resume_tests;
 mod run_resume_verification;
 mod run_risk_flow;
+mod run_risk_flow_tests;
 mod run_runtime_state;
 mod run_snapshot_action;
 mod run_state_builder;

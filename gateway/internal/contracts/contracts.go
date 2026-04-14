@@ -187,6 +187,8 @@ type RunEvent struct {
 	OutputKind           string                  `json:"output_kind,omitempty"`
 	ResultSummary        string                  `json:"result_summary,omitempty"`
 	ArtifactPath         string                  `json:"artifact_path,omitempty"`
+	DetailPreview        string                  `json:"detail_preview,omitempty"`
+	RawOutputRef         string                  `json:"raw_output_ref,omitempty"`
 	RiskLevel            string                  `json:"risk_level,omitempty"`
 	ConfirmationID       string                  `json:"confirmation_id,omitempty"`
 	FinalAnswer          string                  `json:"final_answer,omitempty"`
@@ -245,6 +247,8 @@ type LogEntry struct {
 	OutputKind           string                  `json:"output_kind,omitempty"`
 	ResultSummary        string                  `json:"result_summary,omitempty"`
 	ArtifactPath         string                  `json:"artifact_path,omitempty"`
+	DetailPreview        string                  `json:"detail_preview,omitempty"`
+	RawOutputRef         string                  `json:"raw_output_ref,omitempty"`
 	RiskLevel            string                  `json:"risk_level,omitempty"`
 	ConfirmationID       string                  `json:"confirmation_id,omitempty"`
 	FinalAnswer          string                  `json:"final_answer,omitempty"`

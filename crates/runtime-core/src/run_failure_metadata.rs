@@ -54,6 +54,15 @@ fn append_tool_outcome(
     trace: &crate::capabilities::ToolExecutionTrace,
 ) {
     metadata.insert("result_summary".to_string(), trace.result.summary.clone());
+    if trace.tool.tool_name == "run_command" {
+        metadata.insert(
+            "detail_preview".to_string(),
+            trace.result.detail_preview.clone(),
+        );
+        if let Some(value) = trace.result.raw_output_ref.clone() {
+            metadata.insert("raw_output_ref".to_string(), value);
+        }
+    }
     metadata.insert(
         "tool_elapsed_ms".to_string(),
         trace.result.elapsed_ms.to_string(),
@@ -63,6 +72,7 @@ fn append_tool_outcome(
         "reasoning_summary".to_string(),
         trace.result.reasoning_summary.clone(),
     );
+    append_tool_result_budget(metadata, trace);
     metadata.insert(
         "failure_recovery_hint".to_string(),
         tool_failure_hint(trace.tool.tool_name.as_str()),
@@ -91,5 +101,31 @@ fn tool_failure_hint(tool_name: &str) -> String {
         "workspace_read" => "建议先确认目标文件存在且路径位于当前工作区。".to_string(),
         "project_answer" => "建议先检查项目文档命中情况，必要时补充上下文后再追问。".to_string(),
         _ => "建议先查看错误摘要与验证结果，再决定是否重试当前动作。".to_string(),
+    }
+}
+
+fn append_tool_result_budget(
+    metadata: &mut BTreeMap<String, String>,
+    trace: &crate::capabilities::ToolExecutionTrace,
+) {
+    metadata.insert(
+        "result_chars".to_string(),
+        trace.result.result_chars.to_string(),
+    );
+    metadata.insert(
+        "single_result_budget_chars".to_string(),
+        trace.result.single_result_budget_chars.to_string(),
+    );
+    metadata.insert(
+        "single_result_budget_hit".to_string(),
+        bool_string(trace.result.single_result_budget_hit),
+    );
+}
+
+fn bool_string(value: bool) -> String {
+    if value {
+        "true".to_string()
+    } else {
+        "false".to_string()
     }
 }

@@ -99,6 +99,7 @@ fn blocked_verify_metadata(state: &RuntimeRunState, message: &str) -> BTreeMap<S
         ("result_mode".to_string(), "system".to_string()),
         ("final_answer".to_string(), message.to_string()),
     ]);
+    append_permission_metadata(&mut metadata, state);
     metadata.extend(repo_context_metadata(&state.envelope.repo_context));
     metadata
 }
@@ -150,6 +151,7 @@ fn blocked_finish_metadata(state: &RuntimeRunState, message: &str) -> BTreeMap<S
         ("final_answer".to_string(), message.to_string()),
         ("result_mode".to_string(), "system".to_string()),
     ]);
+    append_permission_metadata(&mut metadata, state);
     metadata.extend(repo_context_metadata(&state.envelope.repo_context));
     metadata
 }
@@ -199,6 +201,12 @@ fn push_confirmation_plan_event(
     let mut metadata = BTreeMap::new();
     metadata.insert("task_title".to_string(), state.task_title.clone());
     metadata.insert("next_step".to_string(), "等待用户确认后再继续".to_string());
+    append_permission_metadata(&mut metadata, state);
+    metadata.insert("confirmation_chain_step".to_string(), "required".to_string());
+    metadata.insert(
+        "confirmation_decision_source".to_string(),
+        "runtime_risk_gate".to_string(),
+    );
     append_context_metadata(&mut metadata, &state.envelope.context_envelope);
     metadata.extend(repo_context_metadata(&state.envelope.repo_context));
     events.push(make_event(
@@ -240,6 +248,51 @@ fn confirmation_error(confirmation: &ConfirmationRequest) -> ErrorInfo {
         retryable: true,
         source: "runtime".to_string(),
         stage: "PausedForConfirmation".to_string(),
-        metadata: BTreeMap::new(),
+        metadata: confirmation_error_metadata(confirmation),
+    }
+}
+
+fn confirmation_error_metadata(confirmation: &ConfirmationRequest) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        ("confirmation_id".to_string(), confirmation.confirmation_id.clone()),
+        ("confirmation_chain_step".to_string(), "required".to_string()),
+        ("confirmation_decision_source".to_string(), "runtime_risk_gate".to_string()),
+        ("permission_decision".to_string(), "require_confirmation".to_string()),
+        (
+            "permission_rule_layer".to_string(),
+            permission_rule_layer_from_confirmation(confirmation).to_string(),
+        ),
+    ])
+}
+
+fn append_permission_metadata(metadata: &mut BTreeMap<String, String>, state: &RuntimeRunState) {
+    match &state.risk_outcome {
+        RiskOutcome::Blocked(_) => {
+            metadata.insert("permission_decision".to_string(), "blocked".to_string());
+            metadata.insert("permission_flow_step".to_string(), "rule_blocked".to_string());
+            metadata.insert("permission_rule_layer".to_string(), "mode_guard".to_string());
+            metadata.insert("confirmation_chain_step".to_string(), "rule_blocked".to_string());
+        }
+        RiskOutcome::RequireConfirmation(confirmation) => {
+            metadata.insert("permission_decision".to_string(), "require_confirmation".to_string());
+            metadata.insert("permission_flow_step".to_string(), "ask_required".to_string());
+            metadata.insert(
+                "permission_rule_layer".to_string(),
+                permission_rule_layer_from_confirmation(confirmation).to_string(),
+            );
+        }
+        RiskOutcome::Proceed => {
+            metadata.insert("permission_decision".to_string(), "proceed".to_string());
+            metadata.insert("permission_flow_step".to_string(), "rule_passed".to_string());
+            metadata.insert("permission_rule_layer".to_string(), "none".to_string());
+        }
+    }
+}
+
+fn permission_rule_layer_from_confirmation(confirmation: &ConfirmationRequest) -> &'static str {
+    match confirmation.kind.as_str() {
+        "workspace_access" => "workspace_guard",
+        "high_risk_action" => "high_risk_guard",
+        _ => "risk_guard",
     }
 }

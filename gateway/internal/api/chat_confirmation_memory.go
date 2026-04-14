@@ -89,6 +89,7 @@ func rejectionMetadata(
 		"source_type":       "gateway",
 		"next_step":         "任务已结束",
 	}
+	appendPermissionDecisionMetadata(metadata, decision.Decision, pending, "closed")
 	for key, value := range confirmationAuditMetadata(pending) {
 		metadata[key] = value
 	}
@@ -273,6 +274,7 @@ func confirmationMemoryMetadata(
 		"source_artifact_path": entry.SourceArtifactPath,
 		"archive_reason":       entry.ArchiveReason,
 	}
+	appendPermissionDecisionMetadata(metadata, decision.Decision, pending, "closed")
 	for key, value := range confirmationAuditMetadata(pending) {
 		metadata[key] = value
 	}

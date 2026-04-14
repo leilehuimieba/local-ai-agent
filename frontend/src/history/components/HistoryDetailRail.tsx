@@ -5,6 +5,15 @@ import { buildLogResult, getFocusLogDetails, getHistoryNextSteps, getLearningCon
 import { EmptyStateBlock, MetaGrid, SectionHeader } from "../../ui/primitives";
 import { readLogType, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel } from "../logType";
 import { HistoryDetailFocusSection } from "../useHistoryReview";
+import { ArtifactOutputSection } from "./ArtifactOutputSection";
+import {
+  readChainStepLabel,
+  readPermissionDecisionLabel,
+  readPermissionFlowLabel,
+  readPermissionRuleLabel,
+  readPermissionSummary,
+  readPermissionTag,
+} from "../../shared/permissionFlow";
 
 const DETAIL_SECTION_ORDER = ["basic", "summary", "learning", "replay", "risk", "metadata", "context", "verification"] as const;
 
@@ -121,6 +130,7 @@ function MetadataSection(props: { focusLog: LogEntry | null }) {
       <strong>关键 Metadata</strong>
       <MetaGrid items={buildMetadataRows(props.focusLog)} />
       {buildMetadataParagraphs(props.focusLog).map((item) => <p key={item} className="timeline-detail">{item}</p>)}
+      <ArtifactOutputSection focusLog={props.focusLog} />
     </section>
   );
 }
@@ -184,6 +194,7 @@ function buildRiskRows(log: LogEntry) {
     { label: "级别", value: log.level },
     { label: "风险等级", value: log.risk_level || "无" },
     { label: "确认", value: log.confirmation_id || "无" },
+    { label: "权限标签", value: readPermissionTag(log) || "未附带" },
     { label: "来源", value: log.source || "runtime" },
   ];
 }
@@ -206,22 +217,44 @@ function buildMetadataRows(log: LogEntry) {
     { label: "最近动作", value: readDetailMemoryActivity(log) },
     { label: "来源事件", value: log.event_type || "未附带" },
     { label: "证据路径", value: log.artifact_path || "未附带" },
-    { label: "确认链步骤", value: readMetadataValue(log, "confirmation_chain_step") },
-    { label: "确认决策", value: readMetadataValue(log, "confirmation_decision") },
-    { label: "恢复策略", value: readMetadataValue(log, "confirmation_resume_strategy") },
-    { label: "Checkpoint", value: readMetadataValue(log, "checkpoint_id") },
-    { label: "工具耗时(ms)", value: readMetadataValue(log, "tool_elapsed_ms") },
-    { label: "治理版本", value: readMetadataValue(log, "governance_version") },
-    { label: "治理来源", value: readMetadataValue(log, "governance_source") },
-    { label: "治理状态", value: readMetadataValue(log, "governance_status") },
-    { label: "治理时间", value: readMetadataValue(log, "governance_at") },
+    { label: "原文引用", value: log.raw_output_ref || "未附带" },
+    ...buildPermissionRows(log),
+    ...buildGovernanceRows(log),
     { label: "记录来源", value: readLogSource(log) },
     { label: "记录时间", value: log.timestamp },
   ];
 }
 
+function buildPermissionRows(log: LogEntry) {
+  const decision = readMetadataValue(log, "permission_decision", false);
+  const flowStep = readMetadataValue(log, "permission_flow_step", false);
+  const ruleLayer = readMetadataValue(log, "permission_rule_layer", false);
+  const chainStep = readMetadataValue(log, "confirmation_chain_step", false);
+  return [
+    { label: "权限决策", value: decision ? readPermissionDecisionLabel(decision) : "未附带" },
+    { label: "权限流程", value: flowStep ? readPermissionFlowLabel(flowStep) : "未附带" },
+    { label: "规则层", value: ruleLayer ? readPermissionRuleLabel(ruleLayer) : "未附带" },
+    { label: "确认链步骤", value: chainStep ? readChainStepLabel(chainStep) : "未附带" },
+    { label: "确认决策", value: readMetadataValue(log, "confirmation_decision") },
+    { label: "决策来源", value: readMetadataValue(log, "confirmation_decision_source") },
+    { label: "恢复策略", value: readMetadataValue(log, "confirmation_resume_strategy") },
+    { label: "Checkpoint", value: readMetadataValue(log, "checkpoint_id") },
+    { label: "工具耗时(ms)", value: readMetadataValue(log, "tool_elapsed_ms") },
+  ];
+}
+
+function buildGovernanceRows(log: LogEntry) {
+  return [
+    { label: "治理版本", value: readMetadataValue(log, "governance_version") },
+    { label: "治理来源", value: readMetadataValue(log, "governance_source") },
+    { label: "治理状态", value: readMetadataValue(log, "governance_status") },
+    { label: "治理时间", value: readMetadataValue(log, "governance_at") },
+  ];
+}
+
 function buildMetadataParagraphs(log: LogEntry) {
   return [
+    readPermissionSummary(log),
     readAuditChainSummary(log),
     readMetadataValue(log, "governance_reason", false),
     readMetadataValue(log, "archive_reason", false),
@@ -293,11 +326,13 @@ function readMetadataValue(log: LogEntry, key: string, withFallback = true) {
 
 function readAuditChainSummary(log: LogEntry) {
   const step = readMetadataValue(log, "confirmation_chain_step", false);
-  if (!step) return "";
   const decision = readMetadataValue(log, "confirmation_decision", false);
   const strategy = readMetadataValue(log, "confirmation_resume_strategy", false);
+  const source = readMetadataValue(log, "confirmation_decision_source", false);
   const checkpoint = readMetadataValue(log, "checkpoint_id", false);
-  return `确认链：步骤=${step}；决策=${decision || "未附带"}；策略=${strategy || "未附带"}；checkpoint=${checkpoint || "未附带"}`;
+  if (!step && !decision && !strategy && !source && !checkpoint) return "";
+  const stepLabel = step ? readChainStepLabel(step) : "未附带";
+  return `确认链：步骤=${stepLabel}；决策=${decision || "未附带"}；策略=${strategy || "未附带"}；来源=${source || "未附带"}；checkpoint=${checkpoint || "未附带"}`;
 }
 
 function readLessonHint(log: LogEntry) {

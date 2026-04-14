@@ -837,6 +837,11 @@ mod tests {
             summary: summary.to_string(),
             final_answer: final_answer.to_string(),
             artifact_path: None,
+            detail_preview: summary.to_string(),
+            raw_output_ref: None,
+            result_chars: summary.chars().count(),
+            single_result_budget_chars: 30_000,
+            single_result_budget_hit: false,
             error_code: None,
             elapsed_ms: 10,
             retryable: false,
@@ -859,6 +864,9 @@ mod tests {
                 next_step: "继续".to_string(),
             },
             tool_elapsed_ms: 10,
+            result_chars: 0,
+            single_result_budget_chars: 30_000,
+            single_result_budget_hit: false,
         }
     }
 }

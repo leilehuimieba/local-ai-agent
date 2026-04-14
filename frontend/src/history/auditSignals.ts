@@ -1,4 +1,5 @@
 import { LogEntry } from "../shared/contracts";
+import { hasPermissionSignal, readPermissionTag } from "../shared/permissionFlow";
 
 export type AuditFilter = "all" | "confirmation_chain" | "tool_elapsed" | "governance";
 
@@ -15,7 +16,7 @@ export function hasConfirmationChainSignal(log: LogEntry) {
       || readMetadata(log, "confirmation_decision")
       || readMetadata(log, "confirmation_resume_strategy")
       || readMetadata(log, "checkpoint_id"),
-  );
+  ) || hasPermissionSignal(log);
 }
 
 export function hasToolElapsedSignal(log: LogEntry) {
@@ -33,6 +34,7 @@ export function hasGovernanceSignal(log: LogEntry) {
 
 export function readAuditTags(log: LogEntry) {
   return compactTags([
+    readPermissionTag(log),
     readToolElapsedTag(log),
     readConfirmationTag(log),
     readGovernanceTag(log),
@@ -52,6 +54,7 @@ function readConfirmationTag(log: LogEntry) {
 
 function readConfirmationStep(log: LogEntry) {
   return readMetadata(log, "confirmation_chain_step")
+    || readMetadata(log, "permission_flow_step")
     || readMetadata(log, "confirmation_resume_strategy")
     || "";
 }

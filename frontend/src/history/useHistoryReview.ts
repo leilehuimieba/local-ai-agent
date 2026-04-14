@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { LogEntry } from "../shared/contracts";
 import { AuditFilter, hasAuditSignal } from "./auditSignals";
 import { readLogType, readReviewTypeLabel } from "./logType";
+import { hasPermissionSignal } from "../shared/permissionFlow";
 
 export type HistoryStats = {
   confirmationCount: number;
@@ -244,8 +245,12 @@ function readErrorSearchFields(log: LogEntry) {
 
 function readAuditSearchFields(log: LogEntry) {
   return [
+    log.metadata?.permission_decision,
+    log.metadata?.permission_flow_step,
+    log.metadata?.permission_rule_layer,
     log.metadata?.confirmation_chain_step,
     log.metadata?.confirmation_decision,
+    log.metadata?.confirmation_decision_source,
     log.metadata?.confirmation_resume_strategy,
     log.metadata?.checkpoint_id,
     log.metadata?.tool_elapsed_ms,
@@ -284,7 +289,8 @@ function hasResultFocus(log: LogEntry) {
 function hasRiskFocus(log: LogEntry) {
   return readLogType(log) === "error"
     || readLogType(log) === "confirmation"
-    || Boolean(log.error || log.risk_level || log.confirmation_id || log.metadata?.failure_recovery_hint);
+    || Boolean(log.error || log.risk_level || log.confirmation_id || log.metadata?.failure_recovery_hint)
+    || hasPermissionSignal(log);
 }
 
 function hasVerificationFocus(log: LogEntry) {

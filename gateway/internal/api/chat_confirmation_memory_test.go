@@ -26,6 +26,10 @@ func TestPublishConfirmationClosureRejectWritesRunFinishedEvent(t *testing.T) {
 	require.Equal(t, "confirm-1", events[1].ConfirmationID)
 	require.Equal(t, "closed", events[1].Metadata["confirmation_chain_step"])
 	require.Equal(t, "after_confirmation", events[1].Metadata["confirmation_resume_strategy"])
+	require.Equal(t, "blocked", events[1].Metadata["permission_decision"])
+	require.Equal(t, "ask_reject", events[1].Metadata["permission_flow_step"])
+	require.Equal(t, "high_risk_guard", events[1].Metadata["permission_rule_layer"])
+	require.Equal(t, "user_confirm_api", events[1].Metadata["confirmation_decision_source"])
 	require.Equal(t, "cp-1", events[1].Metadata["checkpoint_id"])
 }
 
@@ -46,6 +50,10 @@ func TestPublishConfirmationClosureCancelWritesRunFinishedEvent(t *testing.T) {
 	require.Equal(t, "confirm-2", events[1].ConfirmationID)
 	require.Equal(t, "closed", events[1].Metadata["confirmation_chain_step"])
 	require.Equal(t, "after_confirmation", events[1].Metadata["confirmation_resume_strategy"])
+	require.Equal(t, "blocked", events[1].Metadata["permission_decision"])
+	require.Equal(t, "ask_cancel", events[1].Metadata["permission_flow_step"])
+	require.Equal(t, "high_risk_guard", events[1].Metadata["permission_rule_layer"])
+	require.Equal(t, "user_confirm_api", events[1].Metadata["confirmation_decision_source"])
 	require.Equal(t, "cp-1", events[1].Metadata["checkpoint_id"])
 }
 

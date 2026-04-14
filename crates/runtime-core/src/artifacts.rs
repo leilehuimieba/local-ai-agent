@@ -28,6 +28,19 @@ pub(crate) fn externalize_text_artifact(
     create_artifact_record(request, kind, content, path).ok()
 }
 
+pub(crate) fn externalize_text_artifact_always(
+    request: &RunRequest,
+    kind: &str,
+    content: &str,
+) -> Option<ArtifactRecord> {
+    if content.trim().is_empty() {
+        return None;
+    }
+    let file_name = format!("{}-{}.txt", kind, timestamp_now());
+    let path = artifact_dir(request).join(PathBuf::from(file_name));
+    create_artifact_record(request, kind, content, path).ok()
+}
+
 pub(crate) fn externalize_json_artifact<T>(
     request: &RunRequest,
     kind: &str,

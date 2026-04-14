@@ -43,7 +43,13 @@ func (h *ChatHandler) approveConfirmation(
 	decision contracts.ConfirmationDecision,
 	pending state.PendingConfirmation,
 ) {
-	h.confirmationStore.Delete(decision.ConfirmationID)
+	taken, ok := h.confirmationStore.Take(decision.ConfirmationID)
+	if !ok {
+		http.Error(w, "confirmation already handled", http.StatusConflict)
+		return
+	}
+	pending = taken
+	h.publishConfirmationApproved(decision, pending)
 	if pending.Confirmation.Kind == "workspace_access" && decision.Remember {
 		h.settingsStore.ApproveWorkspace(pending.Request.WorkspaceRef.WorkspaceID)
 	}

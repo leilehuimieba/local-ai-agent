@@ -110,6 +110,8 @@ export type RunEvent = {
   output_kind?: string;
   result_summary?: string;
   artifact_path?: string;
+  detail_preview?: string;
+  raw_output_ref?: string;
   risk_level?: string;
   confirmation_id?: string;
   final_answer?: string;
@@ -145,6 +147,8 @@ export type LogEntry = {
   output_kind?: string;
   result_summary?: string;
   artifact_path?: string;
+  detail_preview?: string;
+  raw_output_ref?: string;
   risk_level?: string;
   confirmation_id?: string;
   final_answer?: string;

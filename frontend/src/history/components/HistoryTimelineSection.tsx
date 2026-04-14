@@ -5,6 +5,7 @@ import { EmptyStateBlock, SectionHeader, StatusPill } from "../../ui/primitives"
 import { readAuditTags } from "../auditSignals";
 import { readLogType, readReviewTypeLabel } from "../logType";
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../../runtime/state";
+import { isPermissionAwaiting, isPermissionBlocked, isPermissionResolved, readPermissionSummary } from "../../shared/permissionFlow";
 
 type HistoryTimelineSectionProps = {
   logs: LogEntry[];
@@ -125,8 +126,13 @@ function readRiskTag(log: LogEntry) {
 }
 
 function readKeyDetail(log: LogEntry) {
+  const permissionSummary = readPermissionSummary(log);
   if (log.error) return `${log.error.error_code} / ${log.error.message}`;
-  if (readLogType(log) === "confirmation") return log.metadata?.reason || log.detail || "当前记录要求人工确认后才能继续。";
+  if (readLogType(log) === "confirmation") {
+    return permissionSummary || log.metadata?.reason || log.detail || "当前记录要求人工确认后才能继续。";
+  }
+  if (log.detail_preview) return log.detail_preview;
+  if (permissionSummary) return permissionSummary;
   if (log.metadata?.confirmation_chain_step) return `确认链：${log.metadata.confirmation_chain_step}`;
   if (log.metadata?.tool_elapsed_ms) return `工具耗时：${log.metadata.tool_elapsed_ms}ms`;
   return log.result_summary || log.verification_snapshot?.summary || log.detail || "";
@@ -150,15 +156,24 @@ function readHistoryStatusKey(log: LogEntry): UnifiedStatusKey {
 }
 
 function hasHistoryFailedSignal(log: LogEntry) {
-  return readLogType(log) === "error" || log.completion_status === "failed" || Boolean(log.error || log.metadata?.error_code);
+  return readLogType(log) === "error"
+    || log.completion_status === "failed"
+    || Boolean(log.error || log.metadata?.error_code)
+    || isPermissionBlocked(log);
 }
 
 function hasHistoryAwaitingSignal(log: LogEntry) {
-  return readLogType(log) === "confirmation" || log.completion_status === "confirmation_required" || Boolean(log.confirmation_id);
+  if (isPermissionAwaiting(log)) return true;
+  if (isPermissionResolved(log) || hasHistoryCompletedSignal(log)) return false;
+  return readLogType(log) === "confirmation"
+    || log.completion_status === "confirmation_required"
+    || Boolean(log.confirmation_id);
 }
 
 function hasHistoryCompletedSignal(log: LogEntry) {
-  return log.completion_status === "completed" || Boolean(log.final_answer);
+  return log.completion_status === "completed"
+    || Boolean(log.final_answer)
+    || isPermissionResolved(log);
 }
 
 function handleHistoryItemKeyDown(

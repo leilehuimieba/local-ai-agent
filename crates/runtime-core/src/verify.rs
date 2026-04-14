@@ -16,6 +16,9 @@ pub(crate) struct VerificationOutcome {
 pub(crate) struct VerificationReport {
     pub outcome: VerificationOutcome,
     pub tool_elapsed_ms: u64,
+    pub result_chars: usize,
+    pub single_result_budget_chars: usize,
+    pub single_result_budget_hit: bool,
 }
 
 pub(crate) fn verify_tool_execution(
@@ -34,6 +37,9 @@ pub(crate) fn verify_tool_execution(
     VerificationReport {
         outcome,
         tool_elapsed_ms: trace.result.elapsed_ms,
+        result_chars: trace.result.result_chars,
+        single_result_budget_chars: trace.result.single_result_budget_chars,
+        single_result_budget_hit: trace.result.single_result_budget_hit,
     }
 }
 
@@ -116,6 +122,18 @@ fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
     evidence.push(format!(
         "reasoning={}",
         summarize_text(&trace.result.reasoning_summary)
+    ));
+    evidence.push(format!(
+        "result_chars={}",
+        trace.result.result_chars
+    ));
+    evidence.push(format!(
+        "single_result_budget_chars={}",
+        trace.result.single_result_budget_chars
+    ));
+    evidence.push(format!(
+        "single_result_budget_hit={}",
+        if trace.result.single_result_budget_hit { "true" } else { "false" }
     ));
     if let Some(path) = trace.result.artifact_path.as_ref() {
         evidence.push(format!("artifact={path}"));
