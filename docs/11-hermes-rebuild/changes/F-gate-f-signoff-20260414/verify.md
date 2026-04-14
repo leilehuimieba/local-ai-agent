@@ -28,4 +28,5 @@
 - 当前覆盖情况：
   1. `gate_f.install_ready=true`、`doctor_ready=true`、`release_candidate_ready=true`、`windows_10min_ready=true`。
   2. `gate_f.no_open_p0_p1=true`、`gate_f.ready=true`。
-  3. 本 change 已完成本轮 Gate-F 提审签收，不做下一阶段实现声明。
+  3. 阶段切换评审结论为“暂不切到下一阶段”，依据见 `review.md`。
+  4. 本 change 已完成本轮 Gate-F 提审签收，不做下一阶段实现声明。
