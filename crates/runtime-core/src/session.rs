@@ -129,7 +129,7 @@ pub(crate) fn session_prompt_summary(session: &SessionMemory) -> String {
     if parts.is_empty() {
         return "当前会话还没有可复用的压缩摘要。".to_string();
     }
-    summarize_text(&parts.join(" || "))
+    parts.join(" || ")
 }
 
 fn build_compressed_summary(turns: &[SessionTurn]) -> String {
@@ -356,7 +356,7 @@ fn push_part(parts: &mut Vec<String>, label: &str, value: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::{SessionMemory, record_planning_memory};
+    use super::{SessionMemory, record_planning_memory, session_prompt_summary};
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::risk::RiskOutcome;
     use std::collections::BTreeMap;
@@ -424,6 +424,18 @@ mod tests {
             session.short_term.handoff_artifact_path,
             "D:/repo/handoff.json"
         );
+    }
+
+    #[test]
+    fn keeps_compaction_boundary_hint_visible_in_session_prompt_summary() {
+        let mut session = SessionMemory::default();
+        session.compressed_summary = format!(
+            "{}边界提示：已省略更早 2 轮（聚合预算 900 字符）。",
+            "前文".repeat(180)
+        );
+        let summary = session_prompt_summary(&session);
+        assert!(summary.contains("边界提示"));
+        assert!(summary.contains("聚合预算 900 字符"));
     }
 
     fn sample_request(strategy: &str) -> RunRequest {

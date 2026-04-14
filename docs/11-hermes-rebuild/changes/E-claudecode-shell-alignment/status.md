@@ -11,7 +11,8 @@
   5. 完成 `T05`：新增网关产物内容读取接口，前端支持基于 `raw_output_ref/artifact_path` 展开命令原文输出，时间线详情优先显示 `detail_preview`。
   6. 完成 `T06`：ask 链路补齐 `confirmation_approved` 事件与统一审计元数据，前端/日志消费侧完成 `permission_* + confirmation_*` 展示收口与状态判定校准（确认通过不再误判为“待确认”）。
   7. 完成 `T07`：会话压缩补齐聚合预算边界（900 字符 / 最近 4 轮），`run_command` 补齐单结果预算阈值（30,000 字符），并把预算命中证据写入可回放 metadata（`result_chars/single_result_budget_*`）。
-  8. 已完成实现提交：
+  8. 完成 `T07` 补刀：`session_prompt_summary` 去除二次 `summarize_text` 截断，避免将 900 字符聚合预算再次压缩到 240；新增会话层测试确保“边界提示”可见。
+  9. 已完成实现提交：
      - 文档提交：`10d1f15`（仅 docs）。
      - 代码提交：`88b7172`（runtime/gateway/frontend 对齐实现 + 测试补齐）。
 - 进行中：

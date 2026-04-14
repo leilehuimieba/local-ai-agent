@@ -3,7 +3,7 @@
 ## 验证方式
 
 - 单元测试：
-  1. `cargo test -p runtime-core`（2026-04-14 复验：112/112 通过）。
+  1. `cargo test -p runtime-core`（2026-04-14 复验：113/113 通过，含 `session::tests::keeps_compaction_boundary_hint_visible_in_session_prompt_summary`）。
   2. `go test ./...`（`gateway` 全部通过，2026-04-14 复验通过）。
 - 集成测试：
   1. `npm run build`（前端 `tsc + vite build`，2026-04-14 复验通过）。
@@ -28,6 +28,8 @@
   18. 核对单结果预算阈值：`run_command` 输出新增单结果预算（30,000 字符），超限时 `detail_preview` 明确“原文已外置”，避免主链路回灌大块输出。
   19. 核对预算命中回放：`verification_completed/run_finished/run_failed` metadata 可回放 `result_chars/single_result_budget_chars/single_result_budget_hit`。
   20. 核对预算单测：新增 `executors::command` 预算判定测试与 `run_verification_metadata` 预算字段写入测试。
+  21. 核对会话摘要链路：`session_prompt_summary` 不再对 `compressed_summary` 做二次 `summarize_text` 截断，保证 `compaction` 的聚合预算与边界提示不被吞。
+  22. 核对会话层新增测试：`session::tests::keeps_compaction_boundary_hint_visible_in_session_prompt_summary` 覆盖“边界提示可见”断言。
 
 ## 证据位置
 
@@ -69,6 +71,7 @@
   31. `crates/runtime-core/src/compaction.rs`
   32. `crates/runtime-core/src/verify.rs`
   33. `crates/runtime-core/src/run_verification_metadata.rs`
+  34. `crates/runtime-core/src/session.rs`
 
 ## Gate 映射
 
@@ -78,6 +81,7 @@
   1. 本次已覆盖 `T04-T07` 完成判据，不做 Gate-E 完成声明。
   2. `T06` 已完成三刀收口（规则分层 + ask 审计编排 + 前端/日志消费展示校验）。
   3. `T07` 已完成两刀收口（会话聚合预算边界 + 单结果预算阈值 + 预算命中 metadata 回放）。
+  4. `T07` 补刀已完成（去除会话摘要二次截断 + 会话层可见性测试）。
 
 ## 提交记录
 
