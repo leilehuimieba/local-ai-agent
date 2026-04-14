@@ -28,4 +28,4 @@
   1. Gate-E（执行中）
 - 当前覆盖情况：
   1. `entry_rate/consistency_rate/failure_closure_rate` 本轮均为 `1.0`，`gate_e.ready=true`。
-  2. 当前为阶段内提审收口，不做 Gate-E 完成声明。
+  2. 已完成 Gate-E 阶段切换评审并签收，通过结论见 `review.md`。
