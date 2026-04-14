@@ -3,10 +3,10 @@
 ## 验证方式
 
 - 单元测试：
-  1. `cargo test -p runtime-core`（112/112 通过）。
-  2. `go test ./...`（`gateway` 全部通过）。
+  1. `cargo test -p runtime-core`（2026-04-14 复验：112/112 通过）。
+  2. `go test ./...`（`gateway` 全部通过，2026-04-14 复验通过）。
 - 集成测试：
-  1. `npm run build`（前端 `tsc + vite build` 通过）。
+  1. `npm run build`（前端 `tsc + vite build`，2026-04-14 复验通过）。
 - 人工验证：
   1. 核对 `run_command` 执行链：`ActionExecution.detail_preview/raw_output -> ToolCallResult.detail_preview/raw_output_ref`。
   2. 核对 runtime 事件映射：`RunEvent.detail_preview/raw_output_ref` 从 metadata 透传，并提供 `result_summary/artifact_path` 回退。
@@ -32,9 +32,9 @@
 ## 证据位置
 
 - 测试记录：
-  1. `cargo test -p runtime-core`
-  2. `go test ./...`（`gateway/`）
-  3. `npm run build`（`frontend/`）
+  1. `cargo test -p runtime-core`（2026-04-14）
+  2. `go test ./...`（`gateway/`，2026-04-14）
+  3. `npm run build`（`frontend/`，2026-04-14）
 - 日志或截图：
   1. `crates/runtime-core/src/executors/command.rs`
   2. `crates/runtime-core/src/execution.rs`
@@ -78,3 +78,8 @@
   1. 本次已覆盖 `T04-T07` 完成判据，不做 Gate-E 完成声明。
   2. `T06` 已完成三刀收口（规则分层 + ask 审计编排 + 前端/日志消费展示校验）。
   3. `T07` 已完成两刀收口（会话聚合预算边界 + 单结果预算阈值 + 预算命中 metadata 回放）。
+
+## 提交记录
+
+1. 文档提交：`10d1f15`（`E-claudecode-shell-alignment` 文档与索引同步）。
+2. 代码提交：`88b7172`（`T04-T07` 对应实现与测试补齐）。
