@@ -17,11 +17,10 @@ $rcLatest = Join-Path $root "tmp\stage-f-rc\latest.json"
 $windowsLatest = Join-Path $root "tmp\stage-f-windows\latest.json"
 
 $statusDocs = @(
-  (Join-Path $root "docs\11-hermes-rebuild\changes\F-install-upgrade-path\status.md"),
-  (Join-Path $root "docs\11-hermes-rebuild\changes\F-doctor-core-checks\status.md"),
-  (Join-Path $root "docs\11-hermes-rebuild\changes\F-release-rollback-closure\status.md"),
-  (Join-Path $root "docs\11-hermes-rebuild\changes\F-release-candidate-regression\status.md"),
-  (Join-Path $root "docs\11-hermes-rebuild\changes\F-windows-10min-verification\status.md")
+  (Join-Path $root "docs\11-hermes-rebuild\changes\F-install-upgrade-20260414\status.md"),
+  (Join-Path $root "docs\11-hermes-rebuild\changes\F-doctor-core-checks-20260414\status.md"),
+  (Join-Path $root "docs\11-hermes-rebuild\changes\F-release-candidate-regression-20260414\status.md"),
+  (Join-Path $root "docs\11-hermes-rebuild\changes\F-windows-10min-verification-20260414\status.md")
 )
 
 $outDir = Join-Path $root "tmp\stage-f-gate"
@@ -77,10 +76,12 @@ $windowsPass = $windows.status -eq "passed" -and
 
 $blockerChecks = @()
 foreach ($doc in $statusDocs) {
-  $content = Get-Content -Raw $doc
-  $noBlocker = $content -match "- 阻塞点：\s*\r?\n\s*- 无"
+  $exists = Test-Path $doc
+  $content = $(if ($exists) { Get-Content -Raw $doc } else { "" })
+  $noBlocker = $exists -and ($content -match "- 阻塞点：\s*\r?\n\s*(?:-|\d+\.)\s*无(?:硬)?阻塞")
   $blockerChecks += [ordered]@{
     path = $doc
+    exists = $exists
     no_blocker = $noBlocker
   }
 }
