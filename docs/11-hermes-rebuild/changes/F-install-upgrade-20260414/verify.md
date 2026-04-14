@@ -16,11 +16,13 @@
 - 日志或截图：
   1. `scripts/install-local-agent.ps1`
   2. `scripts/run-stage-f-install-acceptance.ps1`
-  3. `docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/review.md`（后续提审时补）
+  3. `docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/artifacts/T02-install-chain-inventory-20260414.md`
+  4. `docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/review.md`（后续提审时补）
 
 ## Gate 映射
 
 - 对应阶段 Gate：
   1. Gate-F（执行中）
 - 当前覆盖情况：
-  1. 当前仅完成阶段切换与变更初始化，不做 Gate-F 完成声明。
+  1. 当前已完成阶段切换与 `T02` 盘点/最小修复，不做 Gate-F 完成声明。
+  2. 代码层已完成 `scripts/install-local-agent.ps1` 语法校验：`parse-ok`。

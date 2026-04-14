@@ -38,16 +38,27 @@ function Invoke-LoggedCommand {
   $prev = $ErrorActionPreference
   $ErrorActionPreference = "Continue"
   Push-Location $WorkDir
-  & $File @Arguments 1> $OutPath 2> $ErrPath
-  Pop-Location
+  try {
+    & $File @Arguments 1> $OutPath 2> $ErrPath
+  } finally {
+    Pop-Location
+  }
   $ErrorActionPreference = $prev
   if ($LASTEXITCODE -ne 0) { throw "$File failed: $($Arguments -join ' ')" }
+}
+
+function Assert-CommandAvailable {
+  param([string]$Name)
+  if (-not (Get-Command -Name $Name -ErrorAction SilentlyContinue)) {
+    throw "missing required command: $Name"
+  }
 }
 
 function Prepare-FrontendDist {
   param([string]$Root, [string]$LogRoot)
   $distIndex = Join-Path $Root "frontend\dist\index.html"
   if (Test-Path $distIndex) { return }
+  Assert-CommandAvailable -Name "npm"
   $frontend = Join-Path $Root "frontend"
   Invoke-LoggedCommand -WorkDir $frontend -OutPath (Join-Path $LogRoot "frontend-install.stdout.log") -ErrPath (Join-Path $LogRoot "frontend-install.stderr.log") -File "npm" -Arguments @("install")
   Invoke-LoggedCommand -WorkDir $frontend -OutPath (Join-Path $LogRoot "frontend-build.stdout.log") -ErrPath (Join-Path $LogRoot "frontend-build.stderr.log") -File "npm" -Arguments @("run", "build")
@@ -55,6 +66,8 @@ function Prepare-FrontendDist {
 
 function Build-ReleaseBinaries {
   param([string]$Root, [string]$BuildRoot, [string]$StageRoot, [string]$LogRoot)
+  Assert-CommandAvailable -Name "cargo"
+  Assert-CommandAvailable -Name "go"
   $runtimeTarget = Join-Path $BuildRoot "cargo-target"
   $runtimeExe = Join-Path $runtimeTarget "debug\runtime-host.exe"
   Invoke-LoggedCommand -WorkDir $Root -OutPath (Join-Path $LogRoot "runtime-build.stdout.log") -ErrPath (Join-Path $LogRoot "runtime-build.stderr.log") -File "cargo" -Arguments @("build", "-p", "runtime-host", "--target-dir", $runtimeTarget)
@@ -77,12 +90,12 @@ function Write-StartScript {
 }
 
 function Write-RunReadme {
-  param([string]$StageRoot)
+  param([string]$StageRoot, [int]$GatewayPort)
   $lines = @(
     '# Run Guide',
     '',
     '1. Run `start-agent.ps1` from PowerShell.',
-    '2. Visit `http://127.0.0.1:{gateway_port}` after startup.',
+    "2. Visit `http://127.0.0.1:$GatewayPort` after startup.",
     '3. If upgrade fails, switch to the previous folder under `backups`.'
   )
   Set-Content -Path (Join-Path $StageRoot "README-run.md") -Value $lines -Encoding UTF8
@@ -126,7 +139,7 @@ Copy-Item -Recurse -Force -Path (Join-Path $repoRoot "frontend\dist\*") -Destina
 Copy-Item -Force -Path (Join-Path $repoRoot "config\app.json") -Destination (Join-Path $releaseDir "config\app.json")
 Copy-Item -Force -Path (Join-Path $repoRoot "gateway\go.mod") -Destination (Join-Path $releaseDir "gateway\go.mod")
 Write-StartScript -StageRoot $releaseDir
-Write-RunReadme -StageRoot $releaseDir
+Write-RunReadme -StageRoot $releaseDir -GatewayPort $GatewayPort
 Update-AppConfig -ConfigPath (Join-Path $releaseDir "config\app.json") -Root $releaseDir -Gateway $GatewayPort -Runtime $RuntimePort
 
 $backupDir = ""
