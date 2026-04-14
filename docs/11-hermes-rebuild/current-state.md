@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 F（Windows 产品化与发布）
 2. 当前 Gate：Gate-F（执行中）
-3. 当前活跃 change：`F-doctor-core-checks-20260414`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/F-doctor-core-checks-20260414/`
+3. 当前活跃 change：`F-release-candidate-regression-20260414`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/F-release-candidate-regression-20260414/`
 
 ## 2. 口径边界
 
