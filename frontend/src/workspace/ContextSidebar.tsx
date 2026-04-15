@@ -41,7 +41,7 @@ function buildHubModel(props: ContextSidebarProps) {
   const latestRepoEvent = findLatest(props.events, hasRepoSignal);
   return {
     ...props,
-    currentTask: latestEvent?.metadata?.task_title || latestEvent?.summary || "等待任务",
+    currentTask: latestEvent?.task_title || latestEvent?.metadata?.task_title || latestEvent?.summary || "等待任务",
     docPaths: splitLines(latestRepoEvent?.metadata?.doc_paths),
     latestContextEvent,
     latestEvent,
@@ -232,7 +232,9 @@ function buildActionRows(model: ReturnType<typeof buildHubModel>) {
   if (model.variant === "task") {
     const rows = [
       { label: "当前状态", value: readTaskStatusLabel(model) },
+      { label: "执行态", value: readActivityState(model.latestEvent) },
       { label: "当前动作", value: readCurrentAction(model) },
+      { label: "等待原因", value: readWaitingReason(model.latestEvent) },
       { label: "下一步线索", value: model.nextAction },
     ];
     if (hasVerificationSummary(model)) rows.push({ label: "最近验证", value: readVerification(model) });
@@ -241,6 +243,8 @@ function buildActionRows(model: ReturnType<typeof buildHubModel>) {
   return [
     { label: "当前状态", value: readTaskStatusLabel(model) },
     { label: "当前阶段", value: model.latestEvent?.stage || "等待事件" },
+    { label: "执行态", value: readActivityState(model.latestEvent) },
+    { label: "等待原因", value: readWaitingReason(model.latestEvent) },
     { label: "下一步线索", value: model.nextAction },
     { label: "验证依据", value: readVerification(model) },
     { label: "当前动作", value: readCurrentAction(model) },
@@ -337,7 +341,17 @@ function getNextAction(runState: RunState, event?: RunEvent, confirmation?: Conf
   if (runState === "streaming" || runState === "resuming") return readRunStateNextStep({ latestEvent: event, runState });
   if (runState === "completed") return readRunStateNextStep({ latestEvent: event, runState });
   if (runState === "failed") return readRunStateNextStep({ latestFailureEvent: event, runState });
-  return event.metadata?.next_step || readRunStateNextStep({ latestEvent: event, runState });
+  return event.next_action_hint || event.metadata?.next_step || readRunStateNextStep({ latestEvent: event, runState });
+}
+
+function readActivityState(event?: RunEvent) {
+  if (!event) return "未知";
+  return event.activity_state || "running";
+}
+
+function readWaitingReason(event?: RunEvent) {
+  if (!event) return "无";
+  return event.waiting_reason || "无";
 }
 
 function readRecentSummary(model: ReturnType<typeof buildHubModel>) {

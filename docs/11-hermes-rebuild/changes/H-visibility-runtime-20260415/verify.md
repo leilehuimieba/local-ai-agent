@@ -22,6 +22,7 @@
 | 失败可接管 | 失败事件含“原因+下一步建议”比例 | = 100% | 待回填（未执行失败分流专项） | `tmp/stage-h-visibility/failure-route.json` |
 | 合同一致性 | 三端字段一致性 | = 100% | 100%（H01-02/H01-03 范围） | `tmp/stage-h-visibility/contracts.json` |
 | 回退可用 | 关闭 visibility_v1 后可回退旧展示 | = 100% | 待回填 | `tmp/stage-h-visibility/rollback.json` |
+| 前端最小消费 | 任务卡可显示 `task_title/activity_state/waiting_reason/next_action_hint` | = 100% | 100%（成功链路样本） | `tmp/stage-h-visibility/ui-state.json` |
 
 ## 3. 证据位置
 

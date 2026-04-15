@@ -27,6 +27,7 @@
    - `tmp/stage-h-visibility/runtime.json`
    - `tmp/stage-h-visibility/gateway.json`
    - `tmp/stage-h-visibility/contracts.json`
+   - `tmp/stage-h-visibility/ui-state.json`
 3. 实现证据（待回填）：
    - `tmp/stage-h-visibility/ui-state.json`
    - `tmp/stage-h-visibility/ui-detail.json`
@@ -43,15 +44,16 @@
 | runtime 可视化字段覆盖 | >= 98% | 100%（12/12） | PASS |
 | gateway 透传一致性 | = 100% | 100%（event/log 同步） | PASS |
 | 实现证据就绪度 | >= 1 条链路 | 2（runtime+gateway） | PASS |
-| 签收条件达成度 | = 100% | 前端与专项验证未补齐 | 待判定 |
+| 前端最小消费 | = 100% | 100%（成功链路样本） | PASS |
+| 签收条件达成度 | = 100% | 专项验证未补齐 | 待判定 |
 
 ## 4. 评审结论
 
 1. 本轮结果：`status=warning`
 2. H-01 当前就绪度：`h01.ready=false`
 3. 结论说明：
-   - 文档基线、runtime 与 gateway 合同链路已完成并有证据；
-   - 前端样本、stall/失败分流/回退专项尚未补齐，暂不签收。
+   - 文档基线、runtime、gateway 与前端最小消费链路已完成并有证据；
+   - stall/失败分流/回退专项尚未补齐，暂不签收。
 
 ## 5. 风险与回退
 

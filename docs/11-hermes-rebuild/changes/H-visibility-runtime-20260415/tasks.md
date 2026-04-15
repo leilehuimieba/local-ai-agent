@@ -8,7 +8,7 @@
 | H01-01 | 冻结透明执行合同字段与事件映射 | 设计 | done | 字段与映射冻结并文档化 | `design.md` |
 | H01-02 | runtime 事件补齐 `stage/activity/heartbeat` | 实现 | done | 事件含最小字段集合 | `tmp/stage-h-visibility/runtime.json` |
 | H01-03 | gateway 合同映射与透传 | 实现 | done | API/stream/logs 字段一致 | `tmp/stage-h-visibility/gateway.json` + `tmp/stage-h-visibility/contracts.json` |
-| H01-04 | 前端状态条+任务卡 | 实现 | doing | 可显示阶段/任务/等待原因 | `tmp/stage-h-visibility/ui-state.json`（待补） |
+| H01-04 | 前端状态条+任务卡 | 实现 | done | 可显示阶段/任务/等待原因 | `tmp/stage-h-visibility/ui-state.json` |
 | H01-05 | 工具详情抽屉（预览+原文引用） | 实现 | todo | 可跳转 raw_output_ref/artifact_path | `tmp/stage-h-visibility/ui-detail.json` |
 | H01-06 | 卡住检测与提示策略 | 实现 | todo | 30/60/120s 阈值行为正确 | `tmp/stage-h-visibility/stall.json` |
 | H01-07 | 失败分流可视化 | 实现 | todo | retry/manual/stop 可见 | `tmp/stage-h-visibility/failure-route.json` |
