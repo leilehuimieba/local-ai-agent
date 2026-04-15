@@ -123,17 +123,18 @@ fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
         "reasoning={}",
         summarize_text(&trace.result.reasoning_summary)
     ));
-    evidence.push(format!(
-        "result_chars={}",
-        trace.result.result_chars
-    ));
+    evidence.push(format!("result_chars={}", trace.result.result_chars));
     evidence.push(format!(
         "single_result_budget_chars={}",
         trace.result.single_result_budget_chars
     ));
     evidence.push(format!(
         "single_result_budget_hit={}",
-        if trace.result.single_result_budget_hit { "true" } else { "false" }
+        if trace.result.single_result_budget_hit {
+            "true"
+        } else {
+            "false"
+        }
     ));
     if let Some(path) = trace.result.artifact_path.as_ref() {
         evidence.push(format!("artifact={path}"));

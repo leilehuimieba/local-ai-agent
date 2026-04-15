@@ -504,7 +504,11 @@ fn build_stream_tool_calls(
         .into_iter()
         .filter_map(|(index, item)| to_tool_call(index, item))
         .collect();
-    if calls.is_empty() { None } else { Some(calls) }
+    if calls.is_empty() {
+        None
+    } else {
+        Some(calls)
+    }
 }
 
 fn to_tool_call(index: usize, item: StreamToolCallBuilder) -> Option<ToolCall> {
@@ -541,7 +545,7 @@ struct StreamToolCallBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{ModelRequest, parse_model_response};
+    use super::{parse_model_response, ModelRequest};
 
     #[test]
     fn parse_model_response_reads_provider_error() {
@@ -566,11 +570,9 @@ mod tests {
         let body = br#"{"choices":[{"message":{"content":"ok","tool_calls":[]}}]}"#;
         let response = parse_model_response(&request, body).expect("should parse");
         assert_eq!(response.content, "ok");
-        assert!(
-            response
-                .tool_calls
-                .as_ref()
-                .is_some_and(|calls| calls.is_empty())
-        );
+        assert!(response
+            .tool_calls
+            .as_ref()
+            .is_some_and(|calls| calls.is_empty()));
     }
 }

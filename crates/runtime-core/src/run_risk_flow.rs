@@ -202,7 +202,10 @@ fn push_confirmation_plan_event(
     metadata.insert("task_title".to_string(), state.task_title.clone());
     metadata.insert("next_step".to_string(), "等待用户确认后再继续".to_string());
     append_permission_metadata(&mut metadata, state);
-    metadata.insert("confirmation_chain_step".to_string(), "required".to_string());
+    metadata.insert(
+        "confirmation_chain_step".to_string(),
+        "required".to_string(),
+    );
     metadata.insert(
         "confirmation_decision_source".to_string(),
         "runtime_risk_gate".to_string(),
@@ -254,10 +257,22 @@ fn confirmation_error(confirmation: &ConfirmationRequest) -> ErrorInfo {
 
 fn confirmation_error_metadata(confirmation: &ConfirmationRequest) -> BTreeMap<String, String> {
     BTreeMap::from([
-        ("confirmation_id".to_string(), confirmation.confirmation_id.clone()),
-        ("confirmation_chain_step".to_string(), "required".to_string()),
-        ("confirmation_decision_source".to_string(), "runtime_risk_gate".to_string()),
-        ("permission_decision".to_string(), "require_confirmation".to_string()),
+        (
+            "confirmation_id".to_string(),
+            confirmation.confirmation_id.clone(),
+        ),
+        (
+            "confirmation_chain_step".to_string(),
+            "required".to_string(),
+        ),
+        (
+            "confirmation_decision_source".to_string(),
+            "runtime_risk_gate".to_string(),
+        ),
+        (
+            "permission_decision".to_string(),
+            "require_confirmation".to_string(),
+        ),
         (
             "permission_rule_layer".to_string(),
             permission_rule_layer_from_confirmation(confirmation).to_string(),
@@ -269,13 +284,28 @@ fn append_permission_metadata(metadata: &mut BTreeMap<String, String>, state: &R
     match &state.risk_outcome {
         RiskOutcome::Blocked(_) => {
             metadata.insert("permission_decision".to_string(), "blocked".to_string());
-            metadata.insert("permission_flow_step".to_string(), "rule_blocked".to_string());
-            metadata.insert("permission_rule_layer".to_string(), "mode_guard".to_string());
-            metadata.insert("confirmation_chain_step".to_string(), "rule_blocked".to_string());
+            metadata.insert(
+                "permission_flow_step".to_string(),
+                "rule_blocked".to_string(),
+            );
+            metadata.insert(
+                "permission_rule_layer".to_string(),
+                "mode_guard".to_string(),
+            );
+            metadata.insert(
+                "confirmation_chain_step".to_string(),
+                "rule_blocked".to_string(),
+            );
         }
         RiskOutcome::RequireConfirmation(confirmation) => {
-            metadata.insert("permission_decision".to_string(), "require_confirmation".to_string());
-            metadata.insert("permission_flow_step".to_string(), "ask_required".to_string());
+            metadata.insert(
+                "permission_decision".to_string(),
+                "require_confirmation".to_string(),
+            );
+            metadata.insert(
+                "permission_flow_step".to_string(),
+                "ask_required".to_string(),
+            );
             metadata.insert(
                 "permission_rule_layer".to_string(),
                 permission_rule_layer_from_confirmation(confirmation).to_string(),
@@ -283,7 +313,10 @@ fn append_permission_metadata(metadata: &mut BTreeMap<String, String>, state: &R
         }
         RiskOutcome::Proceed => {
             metadata.insert("permission_decision".to_string(), "proceed".to_string());
-            metadata.insert("permission_flow_step".to_string(), "rule_passed".to_string());
+            metadata.insert(
+                "permission_flow_step".to_string(),
+                "rule_passed".to_string(),
+            );
             metadata.insert("permission_rule_layer".to_string(), "none".to_string());
         }
     }

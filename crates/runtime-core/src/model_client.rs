@@ -1,6 +1,6 @@
 use crate::contracts::RunRequest;
 use crate::model_adapter::{
-    ModelAdapter, ModelError, ModelRequest, ModelResponse, OpenAiCompatibleAdapter, provider_config,
+    provider_config, ModelAdapter, ModelError, ModelRequest, ModelResponse, OpenAiCompatibleAdapter,
 };
 use serde::Serialize;
 use std::fs;

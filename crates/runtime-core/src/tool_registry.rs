@@ -1,10 +1,10 @@
 use crate::capabilities::{
-    ExternalConnectionSlot, ToolDefinition, capability_spec, connector_slot_spec,
-    external_connection_slots, resolve_tool, visible_tools,
+    capability_spec, connector_slot_spec, external_connection_slots, resolve_tool, visible_tools,
+    ExternalConnectionSlot, ToolDefinition,
 };
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::{CapabilitySpec, ConnectorSlotSpec};
-use crate::planner::{PlannedAction, plan_action_with_context};
+use crate::planner::{plan_action_with_context, PlannedAction};
 use serde_json::json;
 
 #[derive(Clone, Debug)]

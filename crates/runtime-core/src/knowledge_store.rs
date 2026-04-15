@@ -114,10 +114,7 @@ fn record_contains_sensitive_data(record: &KnowledgeRecord) -> bool {
     contains_sensitive_text(&record.title)
         || contains_sensitive_text(&record.summary)
         || contains_sensitive_text(&record.content)
-        || record
-            .tags
-            .iter()
-            .any(|tag| contains_sensitive_text(tag))
+        || record.tags.iter().any(|tag| contains_sensitive_text(tag))
 }
 
 pub(crate) fn should_skip_knowledge_record(record: &KnowledgeRecord) -> Option<KnowledgeSkip> {
@@ -239,7 +236,13 @@ fn post_cortex_ingest(
     let started = Instant::now();
     let result = retry_cortex_ingest(&server_url, token, &body_path);
     let _ = fs::remove_file(body_path);
-    write_cortex_ingest_audit(request, &agent_id, record, started.elapsed().as_millis(), &result);
+    write_cortex_ingest_audit(
+        request,
+        &agent_id,
+        record,
+        started.elapsed().as_millis(),
+        &result,
+    );
     result.map(|_| ())
 }
 
@@ -319,7 +322,9 @@ fn run_cortex_curl(server_url: &str, token: &str, body_path: &Path) -> Result<()
         return Ok(());
     }
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    Err(format!("cortex ingest failed, status={code}, stderr={stderr}"))
+    Err(format!(
+        "cortex ingest failed, status={code}, stderr={stderr}"
+    ))
 }
 
 fn curl_bin() -> &'static str {
@@ -340,11 +345,11 @@ fn null_sink() -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use crate::paths::external_memory_audit_path;
     use super::{
-        KnowledgeRecord, append_knowledge_record, retry_cortex_ingest_operation,
-        search_knowledge_records, should_skip_knowledge_record, should_sync_to_cortex,
+        append_knowledge_record, retry_cortex_ingest_operation, search_knowledge_records,
+        should_skip_knowledge_record, should_sync_to_cortex, KnowledgeRecord,
     };
+    use crate::paths::external_memory_audit_path;
 
     #[test]
     fn sync_enabled_for_agent_resolve_workflow_pattern() {
@@ -396,12 +401,23 @@ mod tests {
             .map(|item| item.as_millis())
             .unwrap_or_default();
         let repo_root = std::env::temp_dir().join(format!("runtime-core-ingest-audit-{stamp}"));
-        request.context_hints.insert("repo_root".to_string(), repo_root.display().to_string());
+        request
+            .context_hints
+            .insert("repo_root".to_string(), repo_root.display().to_string());
         let record = KnowledgeRecord {
-            id: "k3".to_string(), knowledge_type: "workflow_pattern".to_string(), title: "title".to_string(),
-            summary: "summary long enough for ingest audit".to_string(), content: "content".to_string(),
-            tags: vec!["agent_resolve".to_string()], source: "run:99".to_string(), source_type: "runtime".to_string(),
-            verified: true, workspace_id: "main".to_string(), priority: 0, archived: false, created_at: "1".to_string(),
+            id: "k3".to_string(),
+            knowledge_type: "workflow_pattern".to_string(),
+            title: "title".to_string(),
+            summary: "summary long enough for ingest audit".to_string(),
+            content: "content".to_string(),
+            tags: vec!["agent_resolve".to_string()],
+            source: "run:99".to_string(),
+            source_type: "runtime".to_string(),
+            verified: true,
+            workspace_id: "main".to_string(),
+            priority: 0,
+            archived: false,
+            created_at: "1".to_string(),
             updated_at: "1".to_string(),
         };
         super::write_cortex_ingest_audit(&request, "default", &record, 15, &Ok(2));
@@ -443,10 +459,13 @@ mod tests {
             .map(|item| item.as_millis())
             .unwrap_or_default();
         let repo_root = std::env::temp_dir().join(format!("runtime-core-ingest-fallback-{stamp}"));
-        request.context_hints.insert("repo_root".to_string(), repo_root.display().to_string());
+        request
+            .context_hints
+            .insert("repo_root".to_string(), repo_root.display().to_string());
         let settings_dir = repo_root.join("data").join("settings");
         let _ = std::fs::create_dir_all(&settings_dir);
-        let flag = "{\"enabled\":true,\"server_url\":\"http://127.0.0.1:65535\",\"agent_id\":\"default\"}";
+        let flag =
+            "{\"enabled\":true,\"server_url\":\"http://127.0.0.1:65535\",\"agent_id\":\"default\"}";
         let _ = std::fs::write(settings_dir.join("external-memory-cortex.json"), flag);
         let record = runtime_record("k4", "fallback record summary for local write path");
         assert!(append_knowledge_record(&request, &record).is_ok());

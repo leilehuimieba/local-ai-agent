@@ -1,10 +1,11 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::{MemoryEntry, normalized_memory_entry};
+use crate::memory::{normalized_memory_entry, MemoryEntry};
+use crate::observation::ObservationRecord;
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use serde_json::{from_str, to_string};
 use std::collections::BTreeSet;
 use std::fs;
@@ -36,6 +37,15 @@ pub(crate) fn write_runtime_checkpoint_sqlite(
     checkpoint: &RunCheckpoint,
 ) -> Result<(), String> {
     with_connection(request, |conn| insert_runtime_checkpoint(conn, checkpoint))
+}
+
+pub(crate) fn insert_observation_record(
+    request: &RunRequest,
+    record: &ObservationRecord,
+) -> Result<(), String> {
+    with_connection(request, |conn| {
+        insert_observation_row(conn, request, record)
+    })
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -434,7 +444,11 @@ fn decode_tags(value: String) -> Vec<String> {
 }
 
 fn bool_flag(value: bool) -> i32 {
-    if value { 1 } else { 0 }
+    if value {
+        1
+    } else {
+        0
+    }
 }
 
 fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
@@ -499,7 +513,7 @@ fn is_legacy_preference_noise(item: &MemoryEntry) -> bool {
     item.kind == "preference" && item.title.trim().is_empty() && !item.verified
 }
 
-const SCHEMA_STATEMENTS: [&str; 10] = [
+const SCHEMA_STATEMENTS: [&str; 16] = [
     "create table if not exists long_term_memory (
         id text primary key,
         workspace_id text not null,
@@ -567,6 +581,35 @@ const SCHEMA_STATEMENTS: [&str; 10] = [
         created_at text not null
     )",
     "create index if not exists idx_checkpoint_run on runtime_checkpoints (run_id, created_at)",
+    "create table if not exists runtime_observations (
+        id integer primary key autoincrement,
+        workspace_id text not null,
+        session_id text not null,
+        run_id text not null,
+        trace_id text not null,
+        event_type text not null,
+        observation_kind text not null,
+        stage text not null,
+        summary text not null,
+        tool_name text not null default '',
+        artifact_ref text not null default '',
+        created_at text not null
+    )",
+    "create index if not exists idx_runtime_observations_workspace_created on runtime_observations (workspace_id, created_at)",
+    "create index if not exists idx_runtime_observations_workspace_run on runtime_observations (workspace_id, run_id)",
+    "create table if not exists observation_pending_queue (
+        id integer primary key autoincrement,
+        workspace_id text not null,
+        event_type text not null,
+        observation_kind text not null,
+        payload_json text not null,
+        status text not null,
+        retry_count integer not null default 0,
+        last_error text not null default '',
+        updated_at text not null
+    )",
+    "create index if not exists idx_observation_pending_queue_workspace_status on observation_pending_queue (workspace_id, status)",
+    "create index if not exists idx_observation_pending_queue_workspace_updated on observation_pending_queue (workspace_id, updated_at)",
 ];
 
 const MEMORY_MIGRATIONS: [&str; 11] = [
@@ -596,6 +639,34 @@ fn insert_runtime_checkpoint(conn: &Connection, checkpoint: &RunCheckpoint) -> R
             checkpoint.workspace_id, checkpoint.status, checkpoint.final_stage,
             bool_flag(checkpoint.resumable), checkpoint.resume_reason, checkpoint.resume_stage,
             checkpoint.event_count, request_payload, response_payload, checkpoint.created_at
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn insert_observation_row(
+    conn: &Connection,
+    request: &RunRequest,
+    record: &ObservationRecord,
+) -> Result<(), String> {
+    conn.execute(
+        "insert into runtime_observations (
+            workspace_id, session_id, run_id, trace_id, event_type, observation_kind, stage,
+            summary, tool_name, artifact_ref, created_at
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        params![
+            request.workspace_ref.workspace_id.clone(),
+            record.session_id.clone(),
+            record.run_id.clone(),
+            record.trace_id.clone(),
+            record.event_type.clone(),
+            record.observation_kind.clone(),
+            record.stage.clone(),
+            record.summary.clone(),
+            record.tool_name.clone(),
+            record.artifact_ref.clone(),
+            crate::events::timestamp_now()
         ],
     )
     .map(|_| ())

@@ -118,6 +118,13 @@ pub(crate) fn external_memory_audit_path(request: &RunRequest) -> PathBuf {
         .join("external-memory-cortex.jsonl")
 }
 
+pub(crate) fn observation_audit_file_path(request: &RunRequest) -> PathBuf {
+    data_root(request).join("logs").join(format!(
+        "observations-{}.jsonl",
+        safe_name(&request.workspace_ref.workspace_id)
+    ))
+}
+
 pub(crate) fn siyuan_root_dir(request: &RunRequest) -> Option<PathBuf> {
     request.context_hints.get("siyuan_root").map(PathBuf::from)
 }

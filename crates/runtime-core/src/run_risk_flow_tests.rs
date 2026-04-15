@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::contracts::{
-        ModelRef, ProviderRef, RunRequest, WorkspaceRef,
-    };
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::query_engine::bootstrap_run;
     use crate::run_risk_flow::handle_risk_outcome;
     use std::collections::BTreeMap;
@@ -26,11 +24,15 @@ mod tests {
             Some("require_confirmation")
         );
         assert_eq!(
-            plan.metadata.get("permission_rule_layer").map(String::as_str),
+            plan.metadata
+                .get("permission_rule_layer")
+                .map(String::as_str),
             Some("high_risk_guard")
         );
         assert_eq!(
-            plan.metadata.get("confirmation_chain_step").map(String::as_str),
+            plan.metadata
+                .get("confirmation_chain_step")
+                .map(String::as_str),
             Some("required")
         );
         let result_error = response.result.error.expect("error info");
@@ -65,15 +67,24 @@ mod tests {
             .find(|item| item.event_type == "verification_completed")
             .expect("verification event");
         assert_eq!(
-            verify.metadata.get("permission_decision").map(String::as_str),
+            verify
+                .metadata
+                .get("permission_decision")
+                .map(String::as_str),
             Some("blocked")
         );
         assert_eq!(
-            verify.metadata.get("permission_rule_layer").map(String::as_str),
+            verify
+                .metadata
+                .get("permission_rule_layer")
+                .map(String::as_str),
             Some("mode_guard")
         );
         assert_eq!(
-            verify.metadata.get("confirmation_chain_step").map(String::as_str),
+            verify
+                .metadata
+                .get("confirmation_chain_step")
+                .map(String::as_str),
             Some("rule_blocked")
         );
     }

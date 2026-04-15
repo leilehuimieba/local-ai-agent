@@ -356,7 +356,7 @@ fn push_part(parts: &mut Vec<String>, label: &str, value: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::{SessionMemory, record_planning_memory, session_prompt_summary};
+    use super::{record_planning_memory, session_prompt_summary, SessionMemory};
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::risk::RiskOutcome;
     use std::collections::BTreeMap;

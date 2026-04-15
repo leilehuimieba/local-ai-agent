@@ -24,6 +24,7 @@ mod memory_router;
 mod memory_schema;
 mod model_adapter;
 mod model_client;
+mod observation;
 mod paths;
 mod planner;
 mod prompt;
@@ -58,9 +59,10 @@ mod run_snapshot_action;
 mod run_state_builder;
 mod run_tool_metadata;
 mod run_verification_metadata;
+mod run_visibility;
+mod sensitive_data;
 mod session;
 mod skill_catalog;
-mod sensitive_data;
 mod sqlite_store;
 mod storage;
 mod storage_migration;
@@ -86,16 +88,33 @@ use crate::run_metadata::{
     append_context_metadata, append_tool_spec_metadata, append_verification_metadata,
 };
 use crate::run_risk_flow::handle_risk_outcome;
+use crate::run_visibility::apply_visibility_metadata;
 use crate::session::{persist_handoff_path, persist_session_outputs};
 use crate::task_title::derive_task_title;
 use crate::verify::verify_tool_execution;
 use std::collections::BTreeMap;
 
+pub use crate::observation::{
+    dedupe_lifecycle_observations, get_observations, lifecycle_mapping_snapshot,
+    lifecycle_target_event_types, observation_from_event, observation_kind_for_event_type,
+    observation_queue_health, observation_timeline, persist_lifecycle_observations,
+    rank_observations, run_observation_queue_flow, run_observation_retry_flow,
+    search_observations, build_layered_injection, compare_layered_vs_full,
+    LifecycleMappingSnapshot, ObservationAbTestReport, ObservationDedupeReport,
+    ObservationDetailItem, ObservationGetReport, ObservationLayeredInjectionReport,
+    ObservationPersistenceReport, ObservationQueueFlowReport, ObservationQueueHealthReport,
+    ObservationPrivateSkipReport, ObservationPrivacyRedactReport, ObservationRankItem,
+    ObservationRankReport, ObservationRecord, ObservationRetryReport, ObservationRollbackReport,
+    ObservationSearchItem, ObservationSearchReport, ObservationTimelineItem,
+    ObservationTimelineReport, observation_privacy_redact_flow, observation_private_skip_flow,
+    observation_rollback_flow,
+};
+
 pub use crate::contracts::{
     CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest,
     ConnectorListResponse, ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
-    RUNTIME_NAME, RUNTIME_VERSION, RepoContextSnapshot, RunEvent, RunRequest, RunResult,
-    RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef,
+    ProviderRef, RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse,
+    RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef, RUNTIME_NAME, RUNTIME_VERSION,
 };
 
 pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
@@ -115,7 +134,9 @@ pub fn simulate_run_with_runtime_events(request: &RunRequest) -> RuntimeRunRespo
     let response = simulate_run(request);
     let response = with_runtime_memory_recall_event(request, response);
     let response = with_checkpoint_resume_event(response, resume_event);
-    with_runtime_checkpoint(request, response)
+    let mut response = with_runtime_checkpoint(request, response);
+    apply_visibility_metadata(&mut response.events);
+    response
 }
 
 pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {

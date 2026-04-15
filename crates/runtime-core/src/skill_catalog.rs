@@ -53,7 +53,10 @@ pub(crate) fn load_skill_catalog(request: &RunRequest) -> SkillCatalog {
             catalog
         }
         Err(error) => {
-            catalog.skipped.push(SkillSkipRecord { skill_id: "_manifest".to_string(), reason: error });
+            catalog.skipped.push(SkillSkipRecord {
+                skill_id: "_manifest".to_string(),
+                reason: error,
+            });
             catalog
         }
     }
@@ -63,7 +66,12 @@ pub(crate) fn skill_catalog_brief(catalog: &SkillCatalog) -> String {
     let loaded = catalog
         .loaded
         .iter()
-        .map(|item| format!("{}@{}@{}@{}", item.skill_id, item.version, item.entry_path, item.isolation_scope))
+        .map(|item| {
+            format!(
+                "{}@{}@{}@{}",
+                item.skill_id, item.version, item.entry_path, item.isolation_scope
+            )
+        })
         .collect::<Vec<_>>()
         .join(",");
     let skipped = catalog
@@ -74,7 +82,10 @@ pub(crate) fn skill_catalog_brief(catalog: &SkillCatalog) -> String {
         .join(",");
     format!(
         "loaded_count={},skipped_count={},loaded=[{}],skipped=[{}]",
-        catalog.loaded.len(), catalog.skipped.len(), loaded, skipped
+        catalog.loaded.len(),
+        catalog.skipped.len(),
+        loaded,
+        skipped
     )
 }
 
@@ -82,16 +93,22 @@ fn skill_manifest_path(request: &RunRequest) -> PathBuf {
     if let Some(path) = request.context_hints.get("skill_manifest_path") {
         return PathBuf::from(path);
     }
-    repo_root(request)
-        .join("data")
-        .join("skills")
-        .join(format!("{}.json", safe_id(&request.workspace_ref.workspace_id)))
+    repo_root(request).join("data").join("skills").join(format!(
+        "{}.json",
+        safe_id(&request.workspace_ref.workspace_id)
+    ))
 }
 
 fn safe_id(value: &str) -> String {
     value
         .chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' { ch } else { '_' })
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -133,7 +150,11 @@ fn apply_manifest_item(
         return;
     }
     let Some(current) = semver_tuple(&item.version) else {
-        push_skip(catalog, &item.skill_id, "版本格式非法，要求 major.minor.patch。");
+        push_skip(
+            catalog,
+            &item.skill_id,
+            "版本格式非法，要求 major.minor.patch。",
+        );
         return;
     };
     if !pin_matches(pins, &item.skill_id, &item.version) {
@@ -141,7 +162,11 @@ fn apply_manifest_item(
         return;
     }
     let Some(entry_path) = isolated_entry_path(request, &item.entry) else {
-        push_skip(catalog, &item.skill_id, "技能入口路径越界，未通过隔离校验。");
+        push_skip(
+            catalog,
+            &item.skill_id,
+            "技能入口路径越界，未通过隔离校验。",
+        );
         return;
     };
     catalog.loaded.push(SkillDescriptor {
@@ -260,9 +285,18 @@ mod tests {
             trace_id: "trace-1".to_string(),
             user_input: "test".to_string(),
             mode: "standard".to_string(),
-            model_ref: ModelRef { provider_id: "provider".to_string(), model_id: "model".to_string(), display_name: "Model".to_string() },
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
             provider_ref: ProviderRef::default(),
-            workspace_ref: WorkspaceRef { workspace_id: "workspace-1".to_string(), name: "Workspace".to_string(), root_path: root.join("workspace").display().to_string(), is_active: true },
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: root.join("workspace").display().to_string(),
+                is_active: true,
+            },
             context_hints,
             resume_from_checkpoint_id: String::new(),
             resume_strategy: String::new(),

@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::memory_schema::{MEMORY_GOVERNANCE_VERSION, StructuredMemoryEntry, canonical_kind};
+use crate::memory_schema::{canonical_kind, StructuredMemoryEntry, MEMORY_GOVERNANCE_VERSION};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
 use crate::sqlite_store::{list_memory_entries_sqlite, write_memory_entry_sqlite};
 use crate::storage::{append_jsonl, read_jsonl};
@@ -568,9 +568,18 @@ mod tests {
             trace_id: "trace-test".to_string(),
             user_input: "test".to_string(),
             mode: "standard".to_string(),
-            model_ref: ModelRef { provider_id: "p".to_string(), model_id: "m".to_string(), display_name: "model".to_string() },
+            model_ref: ModelRef {
+                provider_id: "p".to_string(),
+                model_id: "m".to_string(),
+                display_name: "model".to_string(),
+            },
             provider_ref: ProviderRef::default(),
-            workspace_ref: WorkspaceRef { workspace_id: "workspace-test".to_string(), name: "workspace".to_string(), root_path: "D:/repo".to_string(), is_active: true },
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-test".to_string(),
+                name: "workspace".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
             context_hints: BTreeMap::new(),
             resume_from_checkpoint_id: String::new(),
             resume_strategy: String::new(),
@@ -580,12 +589,32 @@ mod tests {
 
     fn sample_entry(id: &str, kind: &str, summary: &str, priority: i32) -> MemoryEntry {
         MemoryEntry {
-            id: id.to_string(), kind: kind.to_string(), title: summary.to_string(), summary: summary.to_string(), content: summary.to_string(),
-            scope: "workspace".to_string(), workspace_id: "workspace-test".to_string(), session_id: "session-test".to_string(),
-            source_run_id: "run-test".to_string(), source: "run:run-test".to_string(), source_type: "runtime".to_string(), source_title: summary.to_string(),
-            source_event_type: "run_finished".to_string(), source_artifact_path: String::new(), governance_version: String::new(), governance_reason: String::new(),
-            governance_source: String::new(), governance_at: "1".to_string(), archive_reason: String::new(), verified: true, priority, archived: false,
-            archived_at: String::new(), created_at: "1".to_string(), updated_at: "1".to_string(), timestamp: "1".to_string(),
+            id: id.to_string(),
+            kind: kind.to_string(),
+            title: summary.to_string(),
+            summary: summary.to_string(),
+            content: summary.to_string(),
+            scope: "workspace".to_string(),
+            workspace_id: "workspace-test".to_string(),
+            session_id: "session-test".to_string(),
+            source_run_id: "run-test".to_string(),
+            source: "run:run-test".to_string(),
+            source_type: "runtime".to_string(),
+            source_title: summary.to_string(),
+            source_event_type: "run_finished".to_string(),
+            source_artifact_path: String::new(),
+            governance_version: String::new(),
+            governance_reason: String::new(),
+            governance_source: String::new(),
+            governance_at: "1".to_string(),
+            archive_reason: String::new(),
+            verified: true,
+            priority,
+            archived: false,
+            archived_at: String::new(),
+            created_at: "1".to_string(),
+            updated_at: "1".to_string(),
+            timestamp: "1".to_string(),
         }
     }
 }

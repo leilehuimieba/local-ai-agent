@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::knowledge_store::{KnowledgeRecord, search_knowledge_records};
+use crate::knowledge_store::{search_knowledge_records, KnowledgeRecord};
 use crate::paths::{external_memory_audit_path, repo_root, siyuan_root_dir, siyuan_sync_enabled};
 use crate::sensitive_data::contains_sensitive_text;
 use crate::storage::append_jsonl;
@@ -169,7 +169,13 @@ fn search_external_knowledge(request: &RunRequest, query: &str, limit: usize) ->
     if fallback_query == query {
         return primary;
     }
-    cortex_result_or_empty(recall_cortex_hits(request, &flag, &token, &fallback_query, limit))
+    cortex_result_or_empty(recall_cortex_hits(
+        request,
+        &flag,
+        &token,
+        &fallback_query,
+        limit,
+    ))
 }
 
 fn cortex_result_or_empty(result: Result<Vec<KnowledgeHit>, String>) -> Vec<KnowledgeHit> {
@@ -201,11 +207,22 @@ fn recall_cortex_hits(
         .unwrap_or(CORTEX_RETRY_ATTEMPTS);
     let result = retry.and_then(|(body, _)| parse_cortex_recall_hits(&body));
     let _ = fs::remove_file(body_path);
-    write_cortex_recall_audit(request, flag, query, started.elapsed().as_millis(), attempts, &result);
+    write_cortex_recall_audit(
+        request,
+        flag,
+        query,
+        started.elapsed().as_millis(),
+        attempts,
+        &result,
+    );
     result
 }
 
-fn retry_cortex_recall(flag: &CortexFlag, token: &str, body_path: &Path) -> Result<(String, u8), String> {
+fn retry_cortex_recall(
+    flag: &CortexFlag,
+    token: &str,
+    body_path: &Path,
+) -> Result<(String, u8), String> {
     let mut last_error = String::new();
     for attempt in 1..=CORTEX_RETRY_ATTEMPTS {
         match run_cortex_recall(flag, token, body_path) {
@@ -250,7 +267,8 @@ fn sensitive_query_marker(text: &str) -> bool {
 }
 
 fn contains_cjk(text: &str) -> bool {
-    text.chars().any(|ch| ('\u{4E00}'..='\u{9FFF}').contains(&ch))
+    text.chars()
+        .any(|ch| ('\u{4E00}'..='\u{9FFF}').contains(&ch))
 }
 
 fn chinese_recall_fallback_query(query: &str) -> Option<String> {
@@ -324,7 +342,10 @@ fn run_cortex_recall(flag: &CortexFlag, token: &str, body_path: &Path) -> Result
         .output()
         .map_err(|error| error.to_string())?;
     if !output.status.success() {
-        return Err(format!("cortex recall failed, stderr={}", String::from_utf8_lossy(&output.stderr).trim()));
+        return Err(format!(
+            "cortex recall failed, stderr={}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -603,11 +624,11 @@ fn collect_search_files(
 
 #[cfg(test)]
 mod tests {
-    use crate::paths::external_memory_audit_path;
     use super::{
-        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits,
-        merge_knowledge_hits, parse_cortex_recall_hits, recall_source,
+        chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits, merge_knowledge_hits,
+        parse_cortex_recall_hits, recall_source, KnowledgeHit,
     };
+    use crate::paths::external_memory_audit_path;
 
     #[test]
     fn maps_cortex_recall_payload_to_hits() {
@@ -684,8 +705,14 @@ mod tests {
             .map(|item| item.as_millis())
             .unwrap_or_default();
         let repo_root = std::env::temp_dir().join(format!("runtime-core-audit-{stamp}"));
-        request.context_hints.insert("repo_root".to_string(), repo_root.display().to_string());
-        let flag = super::CortexFlag { enabled: true, server_url: String::new(), agent_id: "default".to_string() };
+        request
+            .context_hints
+            .insert("repo_root".to_string(), repo_root.display().to_string());
+        let flag = super::CortexFlag {
+            enabled: true,
+            server_url: String::new(),
+            agent_id: "default".to_string(),
+        };
         super::write_cortex_recall_audit(&request, &flag, "cet4 listening", 12, 2, &Ok(Vec::new()));
         let log = std::fs::read_to_string(external_memory_audit_path(&request)).expect("audit log");
         assert!(log.contains("\"trace_id\":\"trace-1\""));
@@ -736,7 +763,10 @@ mod tests {
 
     #[test]
     fn recall_merge_prefers_local_when_limit_is_full() {
-        let local = vec![test_hit("run:1", "local one"), test_hit("run:2", "local two")];
+        let local = vec![
+            test_hit("run:1", "local one"),
+            test_hit("run:2", "local two"),
+        ];
         let external = vec![test_hit("cortex://1", "external one")];
         let hits = merge_knowledge_hits(local, external, 2);
         assert_eq!(hits.len(), 2);

@@ -235,30 +235,64 @@ fn pick_verification_summary(
 
 fn context_snapshot(metadata: &BTreeMap<String, String>) -> Option<RuntimeContextSnapshot> {
     let prompts = prompt_snapshot_parts(metadata);
-    let snapshot = RuntimeContextSnapshot {
-        workspace_root: metadata_value(metadata, "context_workspace_root"),
-        mode: metadata_value(metadata, "context_mode"),
-        session_summary: metadata_value(metadata, "session_summary"),
-        memory_digest: metadata_value(metadata, "memory_digest"),
-        knowledge_digest: metadata_value(metadata, "knowledge_digest"),
-        tool_preview: metadata_value(metadata, "tool_preview"),
-        reasoning_summary: metadata_value(metadata, "reasoning_summary"),
-        cache_status: metadata_value(metadata, "cache_status"),
-        cache_reason: metadata_value(metadata, "cache_reason"),
-        assembly_profile: metadata_value(metadata, "assembly_profile"),
-        includes_session: metadata_flag(metadata, "includes_session"),
-        includes_memory: metadata_flag(metadata, "includes_memory"),
-        includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
-        includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
-        phase_label: metadata_value(metadata, "phase_label"),
-        selection_reason: metadata_value(metadata, "selection_reason"),
-        prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),
-        artifact_hint: metadata_value(metadata, "artifact_hint"),
-        prompt_static: prompts.0,
-        prompt_project: prompts.1,
-        prompt_dynamic: prompts.2,
-    };
+    let observation = observation_snapshot(metadata);
+    let snapshot = build_context_snapshot(metadata, prompts, observation);
     has_context_snapshot(&snapshot).then_some(snapshot)
+}
+
+fn build_context_snapshot(
+    metadata: &BTreeMap<String, String>,
+    prompts: (String, String, String),
+    observation: (String, String, usize, usize, bool, usize, usize, bool),
+) -> RuntimeContextSnapshot {
+    let mut snapshot = RuntimeContextSnapshot::default();
+    fill_context_core(&mut snapshot, metadata);
+    fill_context_policy(&mut snapshot, metadata);
+    fill_context_observation(&mut snapshot, observation);
+    snapshot.prompt_static = prompts.0;
+    snapshot.prompt_project = prompts.1;
+    snapshot.prompt_dynamic = prompts.2;
+    snapshot
+}
+
+fn fill_context_core(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<String, String>) {
+    snapshot.workspace_root = metadata_value(metadata, "context_workspace_root");
+    snapshot.mode = metadata_value(metadata, "context_mode");
+    snapshot.session_summary = metadata_value(metadata, "session_summary");
+    snapshot.memory_digest = metadata_value(metadata, "memory_digest");
+    snapshot.knowledge_digest = metadata_value(metadata, "knowledge_digest");
+    snapshot.tool_preview = metadata_value(metadata, "tool_preview");
+    snapshot.artifact_hint = metadata_value(metadata, "artifact_hint");
+    snapshot.reasoning_summary = metadata_value(metadata, "reasoning_summary");
+    snapshot.cache_status = metadata_value(metadata, "cache_status");
+    snapshot.cache_reason = metadata_value(metadata, "cache_reason");
+}
+
+fn fill_context_policy(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<String, String>) {
+    snapshot.assembly_profile = metadata_value(metadata, "assembly_profile");
+    snapshot.includes_session = metadata_flag(metadata, "includes_session");
+    snapshot.includes_memory = metadata_flag(metadata, "includes_memory");
+    snapshot.includes_knowledge = metadata_flag(metadata, "includes_knowledge");
+    snapshot.includes_tool_preview = metadata_flag(metadata, "includes_tool_preview");
+    snapshot.phase_label = metadata_value(metadata, "phase_label");
+    snapshot.selection_reason = metadata_value(metadata, "selection_reason");
+    snapshot.prefers_artifact_context = metadata_flag(metadata, "prefers_artifact_context");
+}
+
+fn fill_context_observation(
+    snapshot: &mut RuntimeContextSnapshot,
+    observation: (String, String, usize, usize, bool, usize, usize, bool),
+) {
+    let (injection, references, total, used, hit, total_tokens, used_tokens, hit_tokens) =
+        observation;
+    snapshot.observation_injection = injection;
+    snapshot.observation_references = references;
+    snapshot.observation_budget_total = total;
+    snapshot.observation_budget_used = used;
+    snapshot.observation_budget_hit = hit;
+    snapshot.observation_budget_total_tokens = total_tokens;
+    snapshot.observation_budget_used_tokens = used_tokens;
+    snapshot.observation_budget_hit_tokens = hit_tokens;
 }
 
 fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
@@ -275,6 +309,14 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.phase_label.is_empty()
         || !snapshot.selection_reason.is_empty()
         || !snapshot.artifact_hint.is_empty()
+        || !snapshot.observation_injection.is_empty()
+        || !snapshot.observation_references.is_empty()
+        || snapshot.observation_budget_total > 0
+        || snapshot.observation_budget_used > 0
+        || snapshot.observation_budget_hit
+        || snapshot.observation_budget_total_tokens > 0
+        || snapshot.observation_budget_used_tokens > 0
+        || snapshot.observation_budget_hit_tokens
         || !snapshot.prompt_static.is_empty()
         || !snapshot.prompt_project.is_empty()
         || !snapshot.prompt_dynamic.is_empty()
@@ -409,6 +451,28 @@ fn metadata_flag(metadata: &BTreeMap<String, String>, key: &str) -> bool {
     metadata.get(key).is_some_and(|value| value == "true")
 }
 
+fn observation_snapshot(
+    metadata: &BTreeMap<String, String>,
+) -> (String, String, usize, usize, bool, usize, usize, bool) {
+    (
+        metadata_value(metadata, "observation_injection"),
+        metadata_value(metadata, "observation_references"),
+        metadata_usize(metadata, "observation_budget_total"),
+        metadata_usize(metadata, "observation_budget_used"),
+        metadata_flag(metadata, "observation_budget_hit"),
+        metadata_usize(metadata, "observation_budget_total_tokens"),
+        metadata_usize(metadata, "observation_budget_used_tokens"),
+        metadata_flag(metadata, "observation_budget_hit_tokens"),
+    )
+}
+
+fn metadata_usize(metadata: &BTreeMap<String, String>, key: &str) -> usize {
+    metadata
+        .get(key)
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or_default()
+}
+
 fn prompt_user_input(metadata: &BTreeMap<String, String>) -> String {
     metadata
         .get("user_input")
@@ -438,7 +502,8 @@ fn prompt_project_block(
 fn prompt_dynamic_block(
     metadata: &BTreeMap<String, String>,
 ) -> crate::context_builder::DynamicPromptBlock {
-    crate::context_builder::DynamicPromptBlock {
+    let observation = observation_snapshot(metadata);
+    let mut block = crate::context_builder::DynamicPromptBlock {
         user_input: prompt_user_input(metadata),
         assembly_profile: metadata_value(metadata, "assembly_profile"),
         includes_session: metadata_flag(metadata, "includes_session"),
@@ -453,10 +518,27 @@ fn prompt_dynamic_block(
         knowledge_digest: metadata_value(metadata, "knowledge_digest"),
         tool_preview: metadata_value(metadata, "tool_preview"),
         artifact_hint: metadata_value(metadata, "artifact_hint"),
+        observation_budget_total_tokens: observation.5,
+        observation_budget_used_tokens: observation.6,
+        observation_budget_hit_tokens: observation.7,
         reasoning_summary: metadata_value(metadata, "reasoning_summary"),
         cache_status: metadata_value(metadata, "cache_status"),
         cache_reason: metadata_value(metadata, "cache_reason"),
-    }
+        ..Default::default()
+    };
+    apply_observation_prompt_fields(&mut block, observation);
+    block
+}
+
+fn apply_observation_prompt_fields(
+    block: &mut crate::context_builder::DynamicPromptBlock,
+    observation: (String, String, usize, usize, bool, usize, usize, bool),
+) {
+    block.observation_injection = observation.0;
+    block.observation_references = observation.1;
+    block.observation_budget_total = observation.2;
+    block.observation_budget_used = observation.3;
+    block.observation_budget_hit = observation.4;
 }
 
 fn resequence_events(events: &mut [RunEvent]) {

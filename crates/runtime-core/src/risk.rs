@@ -1,6 +1,6 @@
 use crate::contracts::{ConfirmationRequest, RunRequest};
 use crate::paths::resolve_workspace_path;
-use crate::planner::{PlannedAction, normalize_mode};
+use crate::planner::{normalize_mode, PlannedAction};
 
 #[derive(Clone, Debug)]
 pub(crate) enum RiskOutcome {
@@ -72,9 +72,12 @@ fn high_risk_outcome(request: &RunRequest, action: &PlannedAction) -> Option<Ris
 }
 
 fn confirmation_approved(request: &RunRequest, expected_id: &str) -> bool {
-    request.confirmation_decision.as_ref().is_some_and(|decision| {
-        decision.decision == "approve" && decision.confirmation_id == expected_id
-    })
+    request
+        .confirmation_decision
+        .as_ref()
+        .is_some_and(|decision| {
+            decision.decision == "approve" && decision.confirmation_id == expected_id
+        })
 }
 
 fn high_risk_confirmation(
@@ -155,7 +158,7 @@ fn is_dangerous_command(command: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{RiskOutcome, assess_risk};
+    use super::{assess_risk, RiskOutcome};
     use crate::contracts::{ConfirmationDecision, ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::planner::PlannedAction;
     use std::collections::BTreeMap;
@@ -163,7 +166,9 @@ mod tests {
     #[test]
     fn requires_workspace_confirmation_on_first_seen_workspace() {
         let mut request = sample_request("standard");
-        request.context_hints.insert("workspace_first_seen".to_string(), "true".to_string());
+        request
+            .context_hints
+            .insert("workspace_first_seen".to_string(), "true".to_string());
         let outcome = assess_risk(&request, &PlannedAction::ListFiles { path: None });
         assert!(matches!(outcome, RiskOutcome::RequireConfirmation(_)));
     }
@@ -171,7 +176,9 @@ mod tests {
     #[test]
     fn blocks_mutating_action_in_observe_mode_before_confirmation_flow() {
         let request = sample_request("observe");
-        let action = PlannedAction::RunCommand { command: "rm test.txt".to_string() };
+        let action = PlannedAction::RunCommand {
+            command: "rm test.txt".to_string(),
+        };
         let outcome = assess_risk(&request, &action);
         assert!(matches!(outcome, RiskOutcome::Blocked(_)));
     }
@@ -186,7 +193,9 @@ mod tests {
             note: String::new(),
             remember: false,
         });
-        let action = PlannedAction::RunCommand { command: "rm test.txt".to_string() };
+        let action = PlannedAction::RunCommand {
+            command: "rm test.txt".to_string(),
+        };
         let outcome = assess_risk(&request, &action);
         assert!(matches!(outcome, RiskOutcome::Proceed));
     }
@@ -199,9 +208,18 @@ mod tests {
             trace_id: "trace-1".to_string(),
             user_input: "test".to_string(),
             mode: mode.to_string(),
-            model_ref: ModelRef { provider_id: "p".to_string(), model_id: "m".to_string(), display_name: "model".to_string() },
+            model_ref: ModelRef {
+                provider_id: "p".to_string(),
+                model_id: "m".to_string(),
+                display_name: "model".to_string(),
+            },
             provider_ref: ProviderRef::default(),
-            workspace_ref: WorkspaceRef { workspace_id: "w1".to_string(), name: "ws".to_string(), root_path: "D:/repo".to_string(), is_active: true },
+            workspace_ref: WorkspaceRef {
+                workspace_id: "w1".to_string(),
+                name: "ws".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
             context_hints: BTreeMap::new(),
             resume_from_checkpoint_id: String::new(),
             resume_strategy: String::new(),

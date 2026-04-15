@@ -120,7 +120,7 @@ fn render_dynamic_prompt(
     task_hint: &str,
     answer_style: &str,
 ) -> String {
-    format!(
+    let base = format!(
         "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
         task_hint,
         envelope.dynamic_block.phase_label,
@@ -132,6 +132,22 @@ fn render_dynamic_prompt(
         envelope.dynamic_block.tool_preview,
         envelope.dynamic_block.artifact_hint,
         answer_style
+    );
+    let observation = observation_prompt_block(envelope);
+    format!("{base}\n{observation}")
+}
+
+fn observation_prompt_block(envelope: &RuntimeContextEnvelope) -> String {
+    format!(
+        "Observation注入：{}\nObservation引用：{}\nObservation预算(chars)：{}/{}（hit={}）\nObservation预算(tokens, est)：{}/{}（hit={}）",
+        envelope.dynamic_block.observation_injection,
+        envelope.dynamic_block.observation_references,
+        envelope.dynamic_block.observation_budget_used,
+        envelope.dynamic_block.observation_budget_total,
+        envelope.dynamic_block.observation_budget_hit,
+        envelope.dynamic_block.observation_budget_used_tokens,
+        envelope.dynamic_block.observation_budget_total_tokens,
+        envelope.dynamic_block.observation_budget_hit_tokens
     )
 }
 

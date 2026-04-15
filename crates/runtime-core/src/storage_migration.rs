@@ -1,7 +1,7 @@
 use crate::contracts::RunRequest;
 use crate::knowledge::is_recursive_record;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::{MemoryEntry, normalized_memory_entry};
+use crate::memory::{normalized_memory_entry, MemoryEntry};
 use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{

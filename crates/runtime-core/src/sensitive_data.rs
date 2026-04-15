@@ -5,6 +5,35 @@ pub(crate) fn contains_sensitive_text(text: &str) -> bool {
         || contains_cn_id_card(text)
 }
 
+pub(crate) fn redact_sensitive_text(text: &str) -> String {
+    let mut output = String::new();
+    let mut token = String::new();
+    for ch in text.chars() {
+        if redaction_delimiter(ch) {
+            output.push_str(&redact_token(&token));
+            token.clear();
+            output.push(ch);
+            continue;
+        }
+        token.push(ch);
+    }
+    output.push_str(&redact_token(&token));
+    output
+}
+
+pub(crate) fn contains_private_marker(text: &str) -> bool {
+    let lower = text.to_ascii_lowercase();
+    [
+        "[private]",
+        "privacy:private",
+        "private=true",
+        "private_content",
+        "仅自己可见",
+    ]
+    .iter()
+    .any(|marker| lower.contains(marker))
+}
+
 fn contains_secret_marker(text: &str) -> bool {
     let lower = text.to_ascii_lowercase();
     let markers = [
@@ -17,6 +46,43 @@ fn contains_secret_marker(text: &str) -> bool {
         "ak-",
     ];
     markers.iter().any(|marker| lower.contains(marker))
+}
+
+fn redaction_delimiter(ch: char) -> bool {
+    ch.is_whitespace()
+        || matches!(
+            ch,
+            '"' | '\'' | '<' | '>' | '(' | ')' | '[' | ']' | '{' | '}' | ',' | ';'
+        )
+}
+
+fn redact_token(token: &str) -> String {
+    if token.is_empty() {
+        return String::new();
+    }
+    if is_secret_token(token) || is_email_candidate(token) || is_cn_mobile_token(token) {
+        return "[REDACTED]".to_string();
+    }
+    if is_cn_id_candidate(token) {
+        return "[REDACTED]".to_string();
+    }
+    token.to_string()
+}
+
+fn is_secret_token(token: &str) -> bool {
+    let lower = token.to_ascii_lowercase();
+    lower.contains("authorization:")
+        || lower.contains("api_key")
+        || lower.contains("token=")
+        || lower.contains("password=")
+        || lower.contains("secret=")
+        || lower.starts_with("sk-")
+        || lower.starts_with("ak-")
+}
+
+fn is_cn_mobile_token(token: &str) -> bool {
+    let digits: String = token.chars().filter(|ch| ch.is_ascii_digit()).collect();
+    is_cn_mobile_digits(&digits)
 }
 
 fn contains_email(text: &str) -> bool {
@@ -109,16 +175,20 @@ fn is_cn_id_candidate(token: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::contains_sensitive_text;
+    use super::{contains_private_marker, contains_sensitive_text, redact_sensitive_text};
 
     #[test]
     fn detects_secret_markers() {
-        assert!(contains_sensitive_text("authorization: bearer sk-test-token"));
+        assert!(contains_sensitive_text(
+            "authorization: bearer sk-test-token"
+        ));
     }
 
     #[test]
     fn detects_email_patterns() {
-        assert!(contains_sensitive_text("请联系 test.user+ops@example.com 获取详情"));
+        assert!(contains_sensitive_text(
+            "请联系 test.user+ops@example.com 获取详情"
+        ));
     }
 
     #[test]
@@ -134,6 +204,23 @@ mod tests {
 
     #[test]
     fn ignores_normal_text() {
-        assert!(!contains_sensitive_text("这是一条正常学习计划总结，没有隐私字段"));
+        assert!(!contains_sensitive_text(
+            "这是一条正常学习计划总结，没有隐私字段"
+        ));
+    }
+
+    #[test]
+    fn redacts_sensitive_tokens() {
+        let text = "token=abc123 和邮箱 test@example.com";
+        let redacted = redact_sensitive_text(text);
+        assert!(redacted.contains("[REDACTED]"));
+        assert!(!redacted.contains("abc123"));
+        assert!(!redacted.contains("test@example.com"));
+    }
+
+    #[test]
+    fn detects_private_markers() {
+        assert!(contains_private_marker("[PRIVATE] 仅自己可见"));
+        assert!(contains_private_marker("privacy:private"));
     }
 }

@@ -1,7 +1,7 @@
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::execution::ActionExecution;
-use crate::memory::{MemoryEntry, append_memory_entry, search_memory_entries};
+use crate::memory::{append_memory_entry, search_memory_entries, MemoryEntry};
 use crate::text::summarize_text;
 
 const CACHE_WRITE_REASON: &str = "记忆写入属于实时副作用动作，不使用回答缓存。";

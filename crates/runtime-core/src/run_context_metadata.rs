@@ -24,6 +24,15 @@ fn append_context_dynamic_metadata(
     metadata: &mut BTreeMap<String, String>,
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
+    append_context_digest_metadata(metadata, context);
+    append_observation_metadata(metadata, context);
+    append_runtime_feedback_metadata(metadata, context);
+}
+
+fn append_context_digest_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
     metadata.insert("user_input".to_string(), context.user_input.clone());
     metadata.insert(
         "session_summary".to_string(),
@@ -45,6 +54,71 @@ fn append_context_dynamic_metadata(
         "artifact_hint".to_string(),
         context.dynamic_block.artifact_hint.clone(),
     );
+}
+
+fn append_observation_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    append_observation_identity_metadata(metadata, context);
+    append_observation_budget_metadata(metadata, context);
+    append_observation_token_budget_metadata(metadata, context);
+}
+
+fn append_observation_identity_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert(
+        "observation_injection".to_string(),
+        context.dynamic_block.observation_injection.clone(),
+    );
+    metadata.insert(
+        "observation_references".to_string(),
+        context.dynamic_block.observation_references.clone(),
+    );
+}
+
+fn append_observation_budget_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert(
+        "observation_budget_total".to_string(),
+        context.dynamic_block.observation_budget_total.to_string(),
+    );
+    metadata.insert(
+        "observation_budget_used".to_string(),
+        context.dynamic_block.observation_budget_used.to_string(),
+    );
+    metadata.insert(
+        "observation_budget_hit".to_string(),
+        bool_string(context.dynamic_block.observation_budget_hit),
+    );
+}
+
+fn append_observation_token_budget_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
+    metadata.insert(
+        "observation_budget_total_tokens".to_string(),
+        context.dynamic_block.observation_budget_total_tokens.to_string(),
+    );
+    metadata.insert(
+        "observation_budget_used_tokens".to_string(),
+        context.dynamic_block.observation_budget_used_tokens.to_string(),
+    );
+    metadata.insert(
+        "observation_budget_hit_tokens".to_string(),
+        bool_string(context.dynamic_block.observation_budget_hit_tokens),
+    );
+}
+
+fn append_runtime_feedback_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    context: &crate::context_builder::RuntimeContextEnvelope,
+) {
     metadata.insert(
         "reasoning_summary".to_string(),
         context.dynamic_block.reasoning_summary.clone(),

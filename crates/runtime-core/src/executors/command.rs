@@ -26,7 +26,8 @@ pub(crate) fn execute_command(request: &RunRequest, command: &str) -> ActionExec
             );
         }
     };
-    let (summary, final_answer, detail_preview, raw_output) = output_answer(request, command, &output);
+    let (summary, final_answer, detail_preview, raw_output) =
+        output_answer(request, command, &output);
     let execution = ActionExecution::bypass(
         format!(
             "在工作区 `{}` 中执行命令：{}",
@@ -184,7 +185,11 @@ fn budget_preview(detail_preview: String, budget: &CommandBudget) -> String {
     if !budget.hit {
         return detail_preview;
     }
-    let base = if detail_preview.is_empty() { "无可显示内容。".to_string() } else { detail_preview };
+    let base = if detail_preview.is_empty() {
+        "无可显示内容。".to_string()
+    } else {
+        detail_preview
+    };
     format!(
         "输出较长（{} 字符，超出单结果预算 {}），完整原文已外置。摘要：{}",
         budget.result_chars, budget.budget_chars, base

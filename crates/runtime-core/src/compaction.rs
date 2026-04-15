@@ -55,7 +55,11 @@ fn compact_turn(index: usize, turn: &SessionTurn) -> String {
 }
 
 fn separator_cost(current_len: usize) -> usize {
-    if current_len == 0 { 0 } else { 4 }
+    if current_len == 0 {
+        0
+    } else {
+        4
+    }
 }
 
 fn append_boundary_hint(summary: String, dropped: usize) -> String {

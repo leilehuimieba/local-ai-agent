@@ -4,8 +4,8 @@ use crate::llm::complete_text;
 use crate::paths::resolve_workspace_path;
 use crate::planner::PlannedAction;
 use crate::prompt::render_agent_resolve_prompt;
-use crate::session::SessionMemory;
 use crate::session::session_prompt_summary;
+use crate::session::SessionMemory;
 use std::fs;
 
 const CACHE_REASON: &str = "Agent 调用依赖实时模型输出，不使用回答缓存。";

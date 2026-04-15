@@ -3,8 +3,9 @@ use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
 use crate::memory_recall::recall_memory_digest;
-use crate::repo_context::{RepoContextLoadResult, repo_context_summary};
-use crate::session::{SessionMemory, session_prompt_summary};
+use crate::observation::{build_layered_injection, ObservationLayeredInjectionReport};
+use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
+use crate::session::{session_prompt_summary, SessionMemory};
 use crate::text::summarize_text;
 
 #[derive(Clone, Debug)]
@@ -20,7 +21,7 @@ pub(crate) struct ProjectPromptBlock {
     pub doc_summary: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct DynamicPromptBlock {
     pub user_input: String,
     pub assembly_profile: String,
@@ -36,6 +37,14 @@ pub(crate) struct DynamicPromptBlock {
     pub knowledge_digest: String,
     pub tool_preview: String,
     pub artifact_hint: String,
+    pub observation_injection: String,
+    pub observation_references: String,
+    pub observation_budget_total: usize,
+    pub observation_budget_used: usize,
+    pub observation_budget_hit: bool,
+    pub observation_budget_total_tokens: usize,
+    pub observation_budget_used_tokens: usize,
+    pub observation_budget_hit_tokens: bool,
     pub reasoning_summary: String,
     pub cache_status: String,
     pub cache_reason: String,
@@ -124,32 +133,103 @@ fn dynamic_prompt_block(
     let session_summary = selected_session_summary(session_context, policy);
     let memory_digest = selected_memory_digest(request, policy);
     let knowledge_digest = selected_knowledge_digest(request, policy);
+    let tool_preview = selected_tool_preview(visible_tools, policy);
     let artifact_hint = selected_artifact_hint(session_context, policy);
-    DynamicPromptBlock {
-        user_input: request.user_input.clone(),
-        assembly_profile: policy.profile.clone(),
-        includes_session: policy.include_session,
-        includes_memory: policy.include_memory,
-        includes_knowledge: policy.include_knowledge,
-        includes_tool_preview: policy.include_tool_preview,
-        phase_label: policy.phase_label.clone(),
-        selection_reason: policy.selection_reason.clone(),
-        prefers_artifact_context: policy.prefer_artifact_context,
-        session_summary: session_summary.clone(),
-        memory_digest: memory_digest.clone(),
-        knowledge_digest: knowledge_digest.clone(),
-        tool_preview: selected_tool_preview(visible_tools, policy),
-        artifact_hint: artifact_hint.clone(),
-        reasoning_summary: reasoning_summary(
-            &session_summary,
-            &memory_digest,
-            &knowledge_digest,
-            &policy.selection_reason,
-            &artifact_hint,
-        ),
-        cache_status: cache_status.to_string(),
-        cache_reason: cache_reason.to_string(),
-    }
+    let observation = observation_injection(request, policy);
+    build_dynamic_block(
+        request,
+        policy,
+        cache_status,
+        cache_reason,
+        PromptParts {
+            session_summary,
+            memory_digest,
+            knowledge_digest,
+            tool_preview,
+            artifact_hint,
+            observation,
+        },
+    )
+}
+
+struct PromptParts {
+    session_summary: String,
+    memory_digest: String,
+    knowledge_digest: String,
+    tool_preview: String,
+    artifact_hint: String,
+    observation: ObservationLayeredInjectionReport,
+}
+
+fn build_dynamic_block(
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+    cache_status: &str,
+    cache_reason: &str,
+    parts: PromptParts,
+) -> DynamicPromptBlock {
+    let mut block = DynamicPromptBlock::default();
+    fill_identity_fields(&mut block, request, policy);
+    fill_digest_fields(&mut block, &parts);
+    fill_observation_fields(&mut block, &parts.observation);
+    fill_runtime_fields(&mut block, cache_status, cache_reason, &parts);
+    block
+}
+
+fn fill_identity_fields(
+    block: &mut DynamicPromptBlock,
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+) {
+    block.user_input = request.user_input.clone();
+    block.assembly_profile = policy.profile.clone();
+    block.includes_session = policy.include_session;
+    block.includes_memory = policy.include_memory;
+    block.includes_knowledge = policy.include_knowledge;
+    block.includes_tool_preview = policy.include_tool_preview;
+    block.phase_label = policy.phase_label.clone();
+    block.selection_reason = policy.selection_reason.clone();
+    block.prefers_artifact_context = policy.prefer_artifact_context;
+}
+
+fn fill_digest_fields(block: &mut DynamicPromptBlock, parts: &PromptParts) {
+    block.session_summary = parts.session_summary.clone();
+    block.memory_digest = parts.memory_digest.clone();
+    block.knowledge_digest = parts.knowledge_digest.clone();
+    block.tool_preview = parts.tool_preview.clone();
+    block.artifact_hint = parts.artifact_hint.clone();
+}
+
+fn fill_observation_fields(
+    block: &mut DynamicPromptBlock,
+    observation: &ObservationLayeredInjectionReport,
+) {
+    block.observation_injection = observation.injected_text.clone();
+    block.observation_references = observation.references.join(",");
+    block.observation_budget_total = observation.budget_total_chars;
+    block.observation_budget_used = observation.used_chars;
+    block.observation_budget_hit = observation.budget_hit;
+    block.observation_budget_total_tokens = observation.budget_total_tokens;
+    block.observation_budget_used_tokens = observation.used_tokens;
+    block.observation_budget_hit_tokens = observation.budget_hit_tokens;
+}
+
+fn fill_runtime_fields(
+    block: &mut DynamicPromptBlock,
+    cache_status: &str,
+    cache_reason: &str,
+    parts: &PromptParts,
+) {
+    block.reasoning_summary = reasoning_summary(
+        &parts.session_summary,
+        &parts.memory_digest,
+        &parts.knowledge_digest,
+        &parts.observation.injected_text,
+        &block.selection_reason,
+        &parts.artifact_hint,
+    );
+    block.cache_status = cache_status.to_string();
+    block.cache_reason = cache_reason.to_string();
 }
 
 fn session_summary(session_context: &SessionMemory) -> String {
@@ -241,15 +321,26 @@ fn selected_artifact_hint(
     "当前阶段未注入交接包提示。".to_string()
 }
 
+fn observation_injection(
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+) -> ObservationLayeredInjectionReport {
+    if policy.include_memory || policy.include_knowledge {
+        return build_layered_injection(request, &request.user_input, 1200);
+    }
+    build_layered_injection(request, "", 300)
+}
+
 fn reasoning_summary(
     session_summary: &str,
     memory_digest: &str,
     knowledge_digest: &str,
+    observation_injection: &str,
     selection_reason: &str,
     artifact_hint: &str,
 ) -> String {
     summarize_text(&format!(
-        "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆与本地知识命中结果组织回答。会话：{} || 记忆：{} || 知识：{} || Artifact：{}",
-        selection_reason, session_summary, memory_digest, knowledge_digest, artifact_hint
+        "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆、本地知识与 observation 分层注入组织回答。会话：{} || 记忆：{} || 知识：{} || Observation：{} || Artifact：{}",
+        selection_reason, session_summary, memory_digest, knowledge_digest, observation_injection, artifact_hint
     ))
 }

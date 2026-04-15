@@ -611,12 +611,10 @@ mod tests {
         let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
         let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
         assert!(!checkpoint_id.is_empty());
-        assert!(
-            response
-                .events
-                .iter()
-                .any(|item| item.event_type == "checkpoint_written")
-        );
+        assert!(response
+            .events
+            .iter()
+            .any(|item| item.event_type == "checkpoint_written"));
         assert_eq!(
             response.events.last().map(|item| item.event_type.as_str()),
             Some("run_finished")
@@ -661,16 +659,12 @@ mod tests {
         let checkpoint_id = response.result.checkpoint_id.clone().unwrap_or_default();
         let loaded = load_runtime_checkpoint(&request, &checkpoint_id).unwrap_or(None);
         assert!(loaded.as_ref().is_some_and(|item| item.resumable));
-        assert!(
-            loaded
-                .as_ref()
-                .is_some_and(|item| item.resume_reason == "retryable_failure")
-        );
-        assert!(
-            loaded
-                .as_ref()
-                .is_some_and(|item| item.resume_stage == "Execute")
-        );
+        assert!(loaded
+            .as_ref()
+            .is_some_and(|item| item.resume_reason == "retryable_failure"));
+        assert!(loaded
+            .as_ref()
+            .is_some_and(|item| item.resume_stage == "Execute"));
         let _ = fs::remove_dir_all(root);
     }
 

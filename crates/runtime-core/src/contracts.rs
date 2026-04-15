@@ -223,6 +223,22 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub artifact_hint: String,
     #[serde(default)]
+    pub observation_injection: String,
+    #[serde(default)]
+    pub observation_references: String,
+    #[serde(default)]
+    pub observation_budget_total: usize,
+    #[serde(default)]
+    pub observation_budget_used: usize,
+    #[serde(default)]
+    pub observation_budget_hit: bool,
+    #[serde(default)]
+    pub observation_budget_total_tokens: usize,
+    #[serde(default)]
+    pub observation_budget_used_tokens: usize,
+    #[serde(default)]
+    pub observation_budget_hit_tokens: bool,
+    #[serde(default)]
     pub prompt_static: String,
     #[serde(default)]
     pub prompt_project: String,

@@ -659,7 +659,7 @@ fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{PlannedAction, plan_action_with_context};
+    use super::{plan_action_with_context, PlannedAction};
     use crate::context_builder::{
         DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
     };
@@ -682,22 +682,11 @@ mod tests {
     fn dynamic_block(user_input: &str, session_summary: &str) -> DynamicPromptBlock {
         DynamicPromptBlock {
             user_input: user_input.to_string(),
+            session_summary: session_summary.to_string(),
             assembly_profile: "test".to_string(),
             includes_session: true,
-            includes_memory: false,
-            includes_knowledge: false,
-            includes_tool_preview: false,
-            phase_label: "test".to_string(),
-            selection_reason: "test".to_string(),
-            prefers_artifact_context: false,
-            session_summary: session_summary.to_string(),
-            memory_digest: String::new(),
-            knowledge_digest: String::new(),
-            tool_preview: String::new(),
-            artifact_hint: String::new(),
-            reasoning_summary: String::new(),
             cache_status: "cold".to_string(),
-            cache_reason: String::new(),
+            ..Default::default()
         }
     }
 

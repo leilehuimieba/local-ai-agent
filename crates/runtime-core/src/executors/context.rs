@@ -786,7 +786,11 @@ fn next_step_text(short: &crate::session::ShortTermMemory) -> &str {
 }
 
 fn blank_fallback<'a>(value: &'a str, fallback: &'a str) -> &'a str {
-    if value.is_empty() { fallback } else { value }
+    if value.is_empty() {
+        fallback
+    } else {
+        value
+    }
 }
 
 fn probe_context_cache(
