@@ -195,6 +195,16 @@ type RunEvent struct {
 	CompletionStatus     string                  `json:"completion_status,omitempty"`
 	CompletionReason     string                  `json:"completion_reason,omitempty"`
 	VerificationSummary  string                  `json:"verification_summary,omitempty"`
+	ActivityState        string                  `json:"activity_state,omitempty"`
+	HeartbeatAt          string                  `json:"heartbeat_at,omitempty"`
+	StallSeconds         string                  `json:"stall_seconds,omitempty"`
+	WaitingReason        string                  `json:"waiting_reason,omitempty"`
+	NextActionHint       string                  `json:"next_action_hint,omitempty"`
+	FailureRoute         string                  `json:"failure_route,omitempty"`
+	UpdatedAt            string                  `json:"updated_at,omitempty"`
+	TaskTitle            string                  `json:"task_title,omitempty"`
+	ActiveTool           string                  `json:"active_tool,omitempty"`
+	EvidenceRef          string                  `json:"evidence_ref,omitempty"`
 	CheckpointWritten    bool                    `json:"checkpoint_written,omitempty"`
 	ContextSnapshot      *RuntimeContextSnapshot `json:"context_snapshot,omitempty"`
 	ToolCallSnapshot     *ToolCallSnapshot       `json:"tool_call_snapshot,omitempty"`
@@ -255,6 +265,16 @@ type LogEntry struct {
 	CompletionStatus     string                  `json:"completion_status,omitempty"`
 	CompletionReason     string                  `json:"completion_reason,omitempty"`
 	VerificationSummary  string                  `json:"verification_summary,omitempty"`
+	ActivityState        string                  `json:"activity_state,omitempty"`
+	HeartbeatAt          string                  `json:"heartbeat_at,omitempty"`
+	StallSeconds         string                  `json:"stall_seconds,omitempty"`
+	WaitingReason        string                  `json:"waiting_reason,omitempty"`
+	NextActionHint       string                  `json:"next_action_hint,omitempty"`
+	FailureRoute         string                  `json:"failure_route,omitempty"`
+	UpdatedAt            string                  `json:"updated_at,omitempty"`
+	TaskTitle            string                  `json:"task_title,omitempty"`
+	ActiveTool           string                  `json:"active_tool,omitempty"`
+	EvidenceRef          string                  `json:"evidence_ref,omitempty"`
 	ContextSnapshot      *RuntimeContextSnapshot `json:"context_snapshot,omitempty"`
 	ToolCallSnapshot     *ToolCallSnapshot       `json:"tool_call_snapshot,omitempty"`
 	VerificationSnapshot *VerificationSnapshot   `json:"verification_snapshot,omitempty"`
