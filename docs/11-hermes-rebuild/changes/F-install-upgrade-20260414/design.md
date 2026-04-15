@@ -30,3 +30,21 @@
 - 回退方式：
   1. 安装脚本失败时回退到上一稳定 tag 对应安装步骤，保持人工安装可用。
   2. 验收不通过时冻结当前脚本改动，仅保留诊断信息回写与失败样本。
+
+## 并行执行边界（与 F-memory-progressive-disclosure 协同）
+
+1. 本 change 仅处理安装与首启验收链路：
+   - `scripts/install-local-agent.ps1`
+   - `scripts/run-stage-f-install-acceptance.ps1`
+   - `scripts/doctor.ps1`（必要联动范围）
+   - `docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/*`
+   - `tmp/stage-f-install/*`
+2. 本 change 不进入 memory 专项实现范围：
+   - 不修改 `crates/runtime-core/src/memory*`、`observation*`、`context_builder*`、`sqlite_store*`
+   - 不写入 `tmp/stage-mem-*` 目录
+3. 锁文件策略：
+   - `docs/11-hermes-rebuild/current-state.md`
+   - `docs/11-hermes-rebuild/changes/INDEX.md`
+   由主推进串行维护，避免并行写入导致状态漂移。
+4. 冲突处理：
+   - 如安装链路必须依赖 memory 专项未发布变更，先记录依赖并回退到当前稳定路径，不跨线改 runtime。
