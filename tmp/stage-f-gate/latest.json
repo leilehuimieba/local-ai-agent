@@ -1,0 +1,40 @@
+﻿{
+    "checked_at":  "2026-04-15T11:44:23.4405166+08:00",
+    "status":  "passed",
+    "gate_f":  {
+                   "install_ready":  true,
+                   "doctor_ready":  true,
+                   "release_candidate_ready":  true,
+                   "windows_10min_ready":  true,
+                   "no_open_p0_p1":  true,
+                   "ready":  true
+               },
+    "evidence":  {
+                     "install_latest":  "D:\\newwork\\本地智能体\\tmp\\stage-f-install\\latest.json",
+                     "doctor_latest":  "D:\\newwork\\本地智能体\\tmp\\stage-f-doctor\\latest.json",
+                     "release_candidate_latest":  "D:\\newwork\\本地智能体\\tmp\\stage-f-rc\\latest.json",
+                     "windows_latest":  "D:\\newwork\\本地智能体\\tmp\\stage-f-windows\\latest.json"
+                 },
+    "blocker_checks":  [
+                           {
+                               "path":  "D:\\newwork\\本地智能体\\docs\\11-hermes-rebuild\\changes\\F-install-upgrade-20260414\\status.md",
+                               "exists":  true,
+                               "no_blocker":  true
+                           },
+                           {
+                               "path":  "D:\\newwork\\本地智能体\\docs\\11-hermes-rebuild\\changes\\F-doctor-core-checks-20260414\\status.md",
+                               "exists":  true,
+                               "no_blocker":  true
+                           },
+                           {
+                               "path":  "D:\\newwork\\本地智能体\\docs\\11-hermes-rebuild\\changes\\F-release-candidate-regression-20260414\\status.md",
+                               "exists":  true,
+                               "no_blocker":  true
+                           },
+                           {
+                               "path":  "D:\\newwork\\本地智能体\\docs\\11-hermes-rebuild\\changes\\F-windows-10min-verification-20260414\\status.md",
+                               "exists":  true,
+                               "no_blocker":  true
+                           }
+                       ]
+}

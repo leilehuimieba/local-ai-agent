@@ -1,11 +1,11 @@
 ﻿{
-    "checked_at":  "2026-04-15T11:02:06.8315918+08:00",
+    "checked_at":  "2026-04-15T11:44:34.0759697+08:00",
     "status":  "passed",
     "mode":  "snapshot_verify",
     "summary":  {
-                    "rounds":  1,
-                    "total_runs":  1,
-                    "pass_count":  1,
+                    "rounds":  3,
+                    "total_runs":  3,
+                    "pass_count":  3,
                     "pass_rate":  100,
                     "threshold":  95,
                     "ready":  true
@@ -19,8 +19,44 @@
     "runs":  [
                  {
                      "round":  1,
-                     "started_at":  "2026-04-15T11:01:53.6624985+08:00",
-                     "ended_at":  "2026-04-15T11:02:06.8175915+08:00",
+                     "started_at":  "2026-04-15T11:43:53.9565662+08:00",
+                     "ended_at":  "2026-04-15T11:44:07.3980090+08:00",
+                     "passed":  true,
+                     "route":  [
+                                   "none"
+                               ],
+                     "evidence":  {
+                                      "e01_history":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-history\\latest.json",
+                                      "e01_cancel":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-cancel\\latest.json",
+                                      "e04_consistency":  "D:\\newwork\\本地智能体\\tmp\\stage-e-consistency\\latest.json",
+                                      "f_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-f-gate\\latest.json",
+                                      "g_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-g-gate\\latest.json",
+                                      "g_freshness":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",
+                                      "g_ops":  "D:\\newwork\\本地智能体\\tmp\\stage-g-ops\\latest.json"
+                                  }
+                 },
+                 {
+                     "round":  2,
+                     "started_at":  "2026-04-15T11:44:07.4000085+08:00",
+                     "ended_at":  "2026-04-15T11:44:21.3705648+08:00",
+                     "passed":  true,
+                     "route":  [
+                                   "none"
+                               ],
+                     "evidence":  {
+                                      "e01_history":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-history\\latest.json",
+                                      "e01_cancel":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-cancel\\latest.json",
+                                      "e04_consistency":  "D:\\newwork\\本地智能体\\tmp\\stage-e-consistency\\latest.json",
+                                      "f_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-f-gate\\latest.json",
+                                      "g_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-g-gate\\latest.json",
+                                      "g_freshness":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",
+                                      "g_ops":  "D:\\newwork\\本地智能体\\tmp\\stage-g-ops\\latest.json"
+                                  }
+                 },
+                 {
+                     "round":  3,
+                     "started_at":  "2026-04-15T11:44:21.3713115+08:00",
+                     "ended_at":  "2026-04-15T11:44:34.0679626+08:00",
                      "passed":  true,
                      "route":  [
                                    "none"
