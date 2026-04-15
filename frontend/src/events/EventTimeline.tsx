@@ -157,8 +157,12 @@ function buildEventDetails(event: RunEvent) {
     { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
     { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
     { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
+    { key: "raw-output", text: readRawOutputRef(event) },
+    { key: "evidence-ref", text: readEvidenceRef(event) },
     { key: "activity-state", text: event.activity_state ? `执行态：${event.activity_state}` : "" },
+    { key: "stall", text: readStallDetail(event) },
     { key: "waiting-reason", text: event.waiting_reason ? `等待原因：${event.waiting_reason}` : "" },
+    { key: "failure-route", text: readFailureRoute(event) },
     { key: "workspace", text: details.workspace ? `工作区：${details.workspace}` : "" },
     { key: "verification", text: details.verification ? `验证：${details.verification}` : "" },
     { key: "next", text: readNextActionHint(event) },
@@ -180,7 +184,36 @@ function readNextActionHint(event: RunEvent) {
 }
 
 function compactDetails(details: EventDetail[]) {
-  return details.filter((detail) => detail.text).slice(0, 4);
+  return details.filter((detail) => detail.text).slice(0, 8);
+}
+
+function readRawOutputRef(event: RunEvent) {
+  const value = event.raw_output_ref || event.metadata?.raw_output_ref || "";
+  return value ? `原文引用：${value}` : "";
+}
+
+function readEvidenceRef(event: RunEvent) {
+  const value = event.evidence_ref || event.metadata?.evidence_ref || "";
+  return value ? `证据引用：${value}` : "";
+}
+
+function readStallDetail(event: RunEvent) {
+  const stall = parseStallSeconds(event.stall_seconds);
+  if (stall < 30) return "";
+  if (stall >= 120) return `卡住检测：${stall}s（需人工接管）`;
+  if (stall >= 60) return `卡住检测：${stall}s（可能卡住）`;
+  return `卡住检测：${stall}s（处理中）`;
+}
+
+function parseStallSeconds(value?: string) {
+  const parsed = Number(value || "0");
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function readFailureRoute(event: RunEvent) {
+  const route = event.failure_route || event.metadata?.failure_route || "";
+  if (!route) return "";
+  return `失败分流：${route}`;
 }
 
 function snapshotDetails(event: RunEvent) {

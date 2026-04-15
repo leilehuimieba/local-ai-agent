@@ -326,7 +326,13 @@ function buildInspectionMeta(events: RunEvent[], focusEvent: RunEvent) {
     { label: "动作", value: readToolLabel(focusEvent) },
     { label: "摘要", value: focusEvent.result_summary || "未附带" },
     { label: "验证", value: focusEvent.verification_snapshot?.summary || "未附带" },
+    { label: "执行态", value: focusEvent.activity_state || "未附带" },
+    { label: "等待原因", value: focusEvent.waiting_reason || "未附带" },
+    { label: "失败分流", value: focusEvent.failure_route || "未附带" },
+    { label: "卡住秒数", value: focusEvent.stall_seconds || "0" },
     { label: "产物", value: focusEvent.artifact_path || "未附带" },
+    { label: "原文引用", value: focusEvent.raw_output_ref || "未附带" },
+    { label: "证据引用", value: focusEvent.evidence_ref || "未附带" },
     { label: "Run ID", value: focusEvent.run_id },
     { label: "事件数", value: String(events.length) },
   ];

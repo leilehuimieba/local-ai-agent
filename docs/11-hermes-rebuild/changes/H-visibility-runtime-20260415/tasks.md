@@ -9,10 +9,10 @@
 | H01-02 | runtime 事件补齐 `stage/activity/heartbeat` | 实现 | done | 事件含最小字段集合 | `tmp/stage-h-visibility/runtime.json` |
 | H01-03 | gateway 合同映射与透传 | 实现 | done | API/stream/logs 字段一致 | `tmp/stage-h-visibility/gateway.json` + `tmp/stage-h-visibility/contracts.json` |
 | H01-04 | 前端状态条+任务卡 | 实现 | done | 可显示阶段/任务/等待原因 | `tmp/stage-h-visibility/ui-state.json` |
-| H01-05 | 工具详情抽屉（预览+原文引用） | 实现 | todo | 可跳转 raw_output_ref/artifact_path | `tmp/stage-h-visibility/ui-detail.json` |
-| H01-06 | 卡住检测与提示策略 | 实现 | todo | 30/60/120s 阈值行为正确 | `tmp/stage-h-visibility/stall.json` |
-| H01-07 | 失败分流可视化 | 实现 | todo | retry/manual/stop 可见 | `tmp/stage-h-visibility/failure-route.json` |
-| H01-08 | 回归与提审材料 | 验证 | todo | 指标达标并可复跑 | `verify.md` + `review.md` |
+| H01-05 | 工具详情抽屉（预览+原文引用） | 实现 | done | 可跳转 raw_output_ref/artifact_path | `tmp/stage-h-visibility/ui-detail.json` |
+| H01-06 | 卡住检测与提示策略 | 实现 | done | 30/60/120s 阈值行为正确 | `tmp/stage-h-visibility/stall.json` |
+| H01-07 | 失败分流可视化 | 实现 | done | retry/manual/stop 可见 | `tmp/stage-h-visibility/failure-route.json` |
+| H01-08 | 回归与提审材料 | 验证 | done | 指标达标并可复跑 | `verify.md` + `review.md` |
 | H01-09 | 上下文预算扩容至 512k（runtime/gateway） | 实现 | done | 默认注入 `context_budget_tokens=512000`，runtime 按 hint 解析并回流预算 token 指标 | `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt` |
 
 ## 执行顺序

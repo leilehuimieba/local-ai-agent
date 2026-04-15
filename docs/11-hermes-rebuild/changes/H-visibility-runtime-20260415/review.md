@@ -2,7 +2,7 @@
 
 更新时间：2026-04-15  
 提审类型：阶段 H 子项提审（H-01 透明执行可视化）  
-评审状态：实现轮进行中（未签收）
+评审状态：待签收
 
 ## 1. 提审范围
 
@@ -28,6 +28,12 @@
    - `tmp/stage-h-visibility/gateway.json`
    - `tmp/stage-h-visibility/contracts.json`
    - `tmp/stage-h-visibility/ui-state.json`
+   - `tmp/stage-h-visibility/ui-state-waiting.json`
+   - `tmp/stage-h-visibility/ui-detail.json`
+   - `tmp/stage-h-visibility/stall.json`
+   - `tmp/stage-h-visibility/failure-route.json`
+   - `tmp/stage-h-visibility/runtime-confirmation.json`
+   - `tmp/stage-h-visibility/gateway-confirmation.json`
    - `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt`（512k 上下文预算解析回归）
 3. 实现证据（待回填）：
    - `tmp/stage-h-visibility/ui-state.json`
@@ -46,16 +52,21 @@
 | gateway 透传一致性 | = 100% | 100%（event/log 同步） | PASS |
 | 实现证据就绪度 | >= 1 条链路 | 2（runtime+gateway） | PASS |
 | 前端最小消费 | = 100% | 100%（成功链路样本） | PASS |
+| waiting 分支覆盖 | = 100% | 100%（`confirmation_required` 样本可见） | PASS |
+| 详情抽屉字段映射 | = 100% | 100%（`evidence_ref/raw_output_ref/artifact_path`） | PASS |
+| 卡住检测策略 | = 100% | 100%（35/75/130s 样本） | PASS |
+| 失败分流可视化 | = 100% | 100%（`retry/manual/stop`） | PASS |
 | 上下文预算 512k | = 100% | 100%（默认 `context_budget_tokens=512000` + runtime 预算解析） | PASS |
-| 签收条件达成度 | = 100% | 专项验证未补齐 | 待判定 |
+| 签收条件达成度 | = 100% | 已达成 | PASS |
 
 ## 4. 评审结论
 
-1. 本轮结果：`status=warning`
-2. H-01 当前就绪度：`h01.ready=false`
+1. 本轮结果：`status=pass`
+2. H-01 当前就绪度：`h01.ready=true`
 3. 结论说明：
-   - 文档基线、runtime、gateway 与前端最小消费链路已完成并有证据；
-   - stall/失败分流/回退专项尚未补齐，暂不签收。
+   - 文档基线、runtime、gateway、前端最小消费与详情抽屉映射均已完成；
+   - waiting 分支、stall 阈值、failure-route 三项专项已补齐并留证；
+   - 建议将 H-01 状态推进至“待签收”。
 
 ## 5. 风险与回退
 
@@ -67,6 +78,6 @@
 
 ## 6. 后续动作
 
-1. 完成 H01-04 最小可见样本，补 `ui-state.json`。
-2. 补 waiting/stall/failure-route 三类专项证据。
-3. 达到验收矩阵阈值后，将评审状态更新为“待签收”。
+1. 发起 Gate-H / H-01 提审并确认签收结论。
+2. 如评审要求补强，追加一条独立 `raw_output_ref` 真实样本（非 artifact 回退值）。
+3. 签收后切换下一主推进项。
