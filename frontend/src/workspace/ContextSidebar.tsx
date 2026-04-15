@@ -434,8 +434,20 @@ function readArtifactPath(model: ReturnType<typeof buildHubModel>) {
 }
 
 function readContextEvidence(snapshot?: RunEvent["context_snapshot"]) {
-  const parts = [snapshot?.memory_digest, snapshot?.knowledge_digest].filter(Boolean);
+  const parts = [
+    snapshot?.memory_digest,
+    snapshot?.knowledge_digest,
+    readObservationTokenEvidence(snapshot),
+  ].filter(Boolean);
   return parts.length > 0 ? parts.join("；") : "当前没有记忆或知识沉淀。";
+}
+
+function readObservationTokenEvidence(snapshot?: RunEvent["context_snapshot"]) {
+  const total = snapshot?.observation_budget_total_tokens || 0;
+  if (total <= 0) return "";
+  const used = snapshot?.observation_budget_used_tokens || 0;
+  const hit = snapshot?.observation_budget_hit_tokens ? "（触顶）" : "";
+  return `Observation Token(估算) ${used}/${total}${hit}`;
 }
 
 function readSystemState(model: ReturnType<typeof buildHubModel>) {

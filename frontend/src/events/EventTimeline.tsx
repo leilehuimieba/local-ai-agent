@@ -146,11 +146,13 @@ function EventTagRow(props: { event: RunEvent }) {
 }
 
 function buildEventDetails(event: RunEvent) {
+  const tokenBudget = observationTokenBudget(event.context_snapshot);
   const details = snapshotDetails(event);
   const permissionSummary = readPermissionSummary(event);
   return compactDetails([
     { key: "detail", text: readPrimaryDetail(event) },
     { key: "action", text: readActionDetail(event) },
+    { key: "observation-token-budget", text: tokenBudget },
     { key: "permission", text: permissionSummary },
     { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
     { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
@@ -160,6 +162,14 @@ function buildEventDetails(event: RunEvent) {
     { key: "next", text: event.metadata?.next_step ? `下一步：${event.metadata.next_step}` : "" },
     { key: "reason", text: readMemoryReason(event) },
   ]);
+}
+
+function observationTokenBudget(snapshot?: RuntimeContextSnapshot) {
+  if (!snapshot || !snapshot.observation_budget_total_tokens) return "";
+  const used = snapshot.observation_budget_used_tokens || 0;
+  const total = snapshot.observation_budget_total_tokens;
+  const hit = snapshot.observation_budget_hit_tokens ? "，触顶" : "";
+  return `Observation Token(估算)：${used}/${total}${hit}`;
 }
 
 function compactDetails(details: EventDetail[]) {
