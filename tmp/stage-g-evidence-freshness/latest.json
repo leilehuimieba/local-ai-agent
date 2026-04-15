@@ -1,12 +1,12 @@
 ﻿{
-    "checked_at":  "2026-04-15T08:44:22.1285213+08:00",
+    "checked_at":  "2026-04-15T10:21:08.1892565+08:00",
     "status":  "passed",
     "mode":  "routine",
     "policy":  {
                    "max_evidence_age_minutes":  180,
                    "rerun_frequency_minutes":  180,
                    "owner_rule":  "warn状态必须登记Executor/TrackingId/DueAt",
-                   "refresh_evidence":  true
+                   "refresh_evidence":  false
                },
     "checks":  {
                    "backend_reverify_ready":  true,

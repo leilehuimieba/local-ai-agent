@@ -1,0 +1,79 @@
+﻿{
+    "checked_at":  "2026-04-15T10:21:10.3532729+08:00",
+    "status":  "passed",
+    "mode":  "refresh_then_verify",
+    "summary":  {
+                    "rounds":  3,
+                    "total_runs":  3,
+                    "pass_count":  3,
+                    "pass_rate":  100,
+                    "threshold":  95,
+                    "ready":  true
+                },
+    "refresh_log":  [
+                        "E-01 history refreshed",
+                        "E-01 cancel refreshed",
+                        "E-04 consistency refreshed",
+                        "G-01 gate refreshed",
+                        "G-02 governance refreshed"
+                    ],
+    "failed_samples":  [
+
+                       ],
+    "runs":  [
+                 {
+                     "round":  1,
+                     "started_at":  "2026-04-15T10:09:45.8562592+08:00",
+                     "ended_at":  "2026-04-15T10:20:44.7156951+08:00",
+                     "passed":  true,
+                     "route":  [
+                                   "none"
+                               ],
+                     "evidence":  {
+                                      "e01_history":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-history\\latest.json",
+                                      "e01_cancel":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-cancel\\latest.json",
+                                      "e04_consistency":  "D:\\newwork\\本地智能体\\tmp\\stage-e-consistency\\latest.json",
+                                      "f_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-f-gate\\latest.json",
+                                      "g_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-g-gate\\latest.json",
+                                      "g_freshness":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",
+                                      "g_ops":  "D:\\newwork\\本地智能体\\tmp\\stage-g-ops\\latest.json"
+                                  }
+                 },
+                 {
+                     "round":  2,
+                     "started_at":  "2026-04-15T10:20:44.7171978+08:00",
+                     "ended_at":  "2026-04-15T10:20:57.7834558+08:00",
+                     "passed":  true,
+                     "route":  [
+                                   "none"
+                               ],
+                     "evidence":  {
+                                      "e01_history":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-history\\latest.json",
+                                      "e01_cancel":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-cancel\\latest.json",
+                                      "e04_consistency":  "D:\\newwork\\本地智能体\\tmp\\stage-e-consistency\\latest.json",
+                                      "f_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-f-gate\\latest.json",
+                                      "g_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-g-gate\\latest.json",
+                                      "g_freshness":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",
+                                      "g_ops":  "D:\\newwork\\本地智能体\\tmp\\stage-g-ops\\latest.json"
+                                  }
+                 },
+                 {
+                     "round":  3,
+                     "started_at":  "2026-04-15T10:20:57.7834558+08:00",
+                     "ended_at":  "2026-04-15T10:21:10.3477734+08:00",
+                     "passed":  true,
+                     "route":  [
+                                   "none"
+                               ],
+                     "evidence":  {
+                                      "e01_history":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-history\\latest.json",
+                                      "e01_cancel":  "D:\\newwork\\本地智能体\\tmp\\stage-e-cli-cancel\\latest.json",
+                                      "e04_consistency":  "D:\\newwork\\本地智能体\\tmp\\stage-e-consistency\\latest.json",
+                                      "f_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-f-gate\\latest.json",
+                                      "g_gate":  "D:\\newwork\\本地智能体\\tmp\\stage-g-gate\\latest.json",
+                                      "g_freshness":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",
+                                      "g_ops":  "D:\\newwork\\本地智能体\\tmp\\stage-g-ops\\latest.json"
+                                  }
+                 }
+             ]
+}

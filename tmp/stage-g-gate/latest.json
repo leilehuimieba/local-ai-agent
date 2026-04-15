@@ -1,5 +1,5 @@
 ﻿{
-    "checked_at":  "2026-04-14T23:48:47.0596012+08:00",
+    "checked_at":  "2026-04-15T10:21:08.2542868+08:00",
     "status":  "passed",
     "gate_g":  {
                    "evidence_freshness_ready":  true,
@@ -12,7 +12,7 @@
                    "max_evidence_age_minutes":  180,
                    "rerun_frequency_minutes":  180,
                    "owner_rule":  "warn状态必须登记Executor/TrackingId/DueAt",
-                   "refresh_evidence":  true
+                   "refresh_evidence":  false
                },
     "evidence":  {
                      "freshness_latest":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",

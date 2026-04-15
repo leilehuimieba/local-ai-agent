@@ -8,22 +8,23 @@
 
 ## 当前活跃 change
 
-1. [G-warning-governance-closure-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-warning-governance-closure-20260415/status.md)
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/G-warning-governance-closure-20260415/`
-3. [G-evidence-freshness-policy-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-evidence-freshness-policy-20260414/status.md)（`G-01` 已收口）
-4. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（阶段切换已签收）
-5. [G-stage-definition-prep-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-definition-prep-20260414/status.md)（阶段切换准备已收口）
-6. [F-gate-f-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-gate-f-signoff-20260414/status.md)（Gate-F 本轮签收）
-7. [F-windows-10min-verification-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-windows-10min-verification-20260414/status.md)（`F-05` 已收口）
-8. [F-release-candidate-regression-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-release-candidate-regression-20260414/status.md)（`F-03` 已收口）
-9. [F-doctor-core-checks-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-doctor-core-checks-20260414/status.md)（`F-02` 已收口）
-10. [F-install-upgrade-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/status.md)（`F-01` 已收口）
-11. [E-gate-e-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gate-e-signoff-20260414/status.md)（Gate-E 签收变更）
-12. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（上一轮已收口）
-13. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（历史已收口）
-14. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
-15. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
-16. 历史说明：`E-sensitive-pattern-expansion` 与 `E-frontend-experience-upgrade` 已迁入归档目录。
+1. [G-regression-baseline-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-regression-baseline-20260415/status.md)
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/G-regression-baseline-20260415/`
+3. [G-warning-governance-closure-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-warning-governance-closure-20260415/status.md)（`G-02` 已收口）
+4. [G-evidence-freshness-policy-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-evidence-freshness-policy-20260414/status.md)（`G-01` 已收口）
+5. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（阶段切换已签收）
+6. [G-stage-definition-prep-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-definition-prep-20260414/status.md)（阶段切换准备已收口）
+7. [F-gate-f-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-gate-f-signoff-20260414/status.md)（Gate-F 本轮签收）
+8. [F-windows-10min-verification-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-windows-10min-verification-20260414/status.md)（`F-05` 已收口）
+9. [F-release-candidate-regression-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-release-candidate-regression-20260414/status.md)（`F-03` 已收口）
+10. [F-doctor-core-checks-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-doctor-core-checks-20260414/status.md)（`F-02` 已收口）
+11. [F-install-upgrade-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/F-install-upgrade-20260414/status.md)（`F-01` 已收口）
+12. [E-gate-e-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-gate-e-signoff-20260414/status.md)（Gate-E 签收变更）
+13. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（上一轮已收口）
+14. [E-cn-query-recall-optimization](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-cn-query-recall-optimization/status.md)（历史已收口）
+15. [E-knowledge-base-activation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-knowledge-base-activation/status.md)（历史已收口）
+16. [E-settings-diagnostics-polish](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-settings-diagnostics-polish/status.md)（历史已完成）
+17. 历史说明：`E-sensitive-pattern-expansion` 与 `E-frontend-experience-upgrade` 已迁入归档目录。
 
 ## 保留观察项
 

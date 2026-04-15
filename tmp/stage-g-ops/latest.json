@@ -1,5 +1,5 @@
 ﻿{
-    "checked_at":  "2026-04-15T08:44:22.2347372+08:00",
+    "checked_at":  "2026-04-15T10:21:10.3279183+08:00",
     "status":  "passed",
     "checks":  {
                    "freshness_ready":  true,
@@ -18,9 +18,9 @@
                      "escalation_threshold":  2
                  },
     "audit":  {
-                  "owner":  "g-duty",
-                  "tracking_id":  "G02-20260415-001",
-                  "due_at":  "2026-04-15T18:00:00+08:00"
+                  "owner":  "g-regression",
+                  "tracking_id":  "G03-G01-20260415100919-03",
+                  "due_at":  "2026-04-16T10:09:19+08:00"
               },
     "evidence":  {
                      "freshness_report":  "D:\\newwork\\本地智能体\\tmp\\stage-g-evidence-freshness\\latest.json",

@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 G（发布后稳定运营与持续治理）
 2. 当前 Gate：Gate-G（执行中，未签收）
-3. 当前活跃 change：`G-warning-governance-closure-20260415`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/G-warning-governance-closure-20260415/`
+3. 当前活跃 change：`G-regression-baseline-20260415`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/G-regression-baseline-20260415/`
 
 ## 2. 口径边界
 
@@ -23,4 +23,3 @@
 1. 新建或切换主推进项时，先更新本文件，再更新 `changes/INDEX.md`。
 2. 进入提审或 Gate 结论变更时，先更新本文件，再更新阶段计划或 change 状态。
 3. 每次更新本文件时，同时补“更新时间”。
-
