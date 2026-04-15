@@ -1,4 +1,4 @@
-﻿# Hermes 当前执行状态（单一事实源）
+# Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-04-15  
 状态：`当前有效`
@@ -7,10 +7,10 @@
 
 ## 1. 当前执行状态
 
-1. 当前阶段：阶段 G（发布后稳定运营与持续治理）
-2. 当前 Gate：Gate-G（已签收）
-3. 当前活跃 change：`G-gate-g-signoff-20260415`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/G-gate-g-signoff-20260415/`
+1. 当前阶段：阶段 H（产品差异化与透明执行）
+2. 当前 Gate：Gate-H（执行中，未签收）
+3. 当前活跃 change：`H-stage-definition-prep-20260415`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/`
 
 ## 2. 口径边界
 
