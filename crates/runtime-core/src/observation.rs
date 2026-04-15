@@ -1085,7 +1085,26 @@ fn normalize_budget_total_chars(value: usize) -> usize {
     if value == 0 {
         return 1200;
     }
-    value.max(300).min(20000)
+    value.max(300).min(2_048_000)
+}
+
+pub(crate) fn resolve_observation_budget_chars(request: &RunRequest, fallback: usize) -> usize {
+    let chars = context_hint_usize(request, "context_budget_chars")
+        .or_else(|| context_hint_usize(request, "context_budget_tokens").map(tokens_to_chars))
+        .or_else(|| context_hint_usize(request, "codex_context_tokens").map(tokens_to_chars))
+        .unwrap_or(fallback);
+    normalize_budget_total_chars(chars)
+}
+
+fn context_hint_usize(request: &RunRequest, key: &str) -> Option<usize> {
+    request
+        .context_hints
+        .get(key)
+        .and_then(|value| value.trim().parse::<usize>().ok())
+}
+
+fn tokens_to_chars(tokens: usize) -> usize {
+    tokens.saturating_mul(4)
 }
 
 fn split_budgets(total: usize) -> (usize, usize, usize) {
@@ -1866,5 +1885,23 @@ mod tests {
         let report = observation_rollback_flow(&request, "analysis");
         assert!(report.fallback_to_legacy);
         assert!(!report.feature_enabled);
+    }
+
+    #[test]
+    fn should_resolve_budget_from_context_budget_tokens() {
+        let mut request = sample_request();
+        request
+            .context_hints
+            .insert("context_budget_tokens".to_string(), "512000".to_string());
+        assert_eq!(resolve_observation_budget_chars(&request, 1200), 2_048_000);
+    }
+
+    #[test]
+    fn should_resolve_budget_from_codex_context_tokens_when_primary_missing() {
+        let mut request = sample_request();
+        request
+            .context_hints
+            .insert("codex_context_tokens".to_string(), "512000".to_string());
+        assert_eq!(resolve_observation_budget_chars(&request, 300), 2_048_000);
     }
 }

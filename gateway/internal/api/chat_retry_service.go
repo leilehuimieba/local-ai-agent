@@ -37,6 +37,7 @@ func (h *ChatHandler) buildRetryRunRequest(payload ChatRetryRequest) (contracts.
 	request.ProviderRef = providerRef
 	request.ConfirmationDecision = nil
 	request.ContextHints = h.withKnowledgeHints(copyContextHints(request.ContextHints))
+	ensureContextBudgetHints(request.ContextHints)
 	applyRetryCheckpointResume(&request, record.CheckpointID)
 	return request, nil
 }
@@ -77,6 +78,18 @@ func applyRetryCheckpointResume(request *contracts.RunRequest, checkpointID stri
 	}
 	request.ResumeFromCheckpointID = checkpointID
 	request.ResumeStrategy = "retry_failure"
+}
+
+func ensureContextBudgetHints(hints map[string]string) {
+	if hints == nil {
+		return
+	}
+	if _, ok := hints["context_budget_tokens"]; !ok {
+		hints["context_budget_tokens"] = "512000"
+	}
+	if _, ok := hints["codex_context_tokens"]; !ok {
+		hints["codex_context_tokens"] = hints["context_budget_tokens"]
+	}
 }
 
 func writeRetryError(w http.ResponseWriter, err error) {

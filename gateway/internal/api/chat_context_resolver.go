@@ -79,6 +79,12 @@ func runContextHints(source map[string]string, repoRoot string, firstSeen bool) 
 	}
 	hints["repo_root"] = repoRoot
 	hints["workspace_first_seen"] = fmt.Sprintf("%t", firstSeen)
+	if _, ok := hints["context_budget_tokens"]; !ok {
+		hints["context_budget_tokens"] = "512000"
+	}
+	if _, ok := hints["codex_context_tokens"]; !ok {
+		hints["codex_context_tokens"] = hints["context_budget_tokens"]
+	}
 	return hints
 }
 

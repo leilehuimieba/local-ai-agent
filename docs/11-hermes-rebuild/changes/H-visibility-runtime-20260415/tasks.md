@@ -13,6 +13,7 @@
 | H01-06 | 卡住检测与提示策略 | 实现 | todo | 30/60/120s 阈值行为正确 | `tmp/stage-h-visibility/stall.json` |
 | H01-07 | 失败分流可视化 | 实现 | todo | retry/manual/stop 可见 | `tmp/stage-h-visibility/failure-route.json` |
 | H01-08 | 回归与提审材料 | 验证 | todo | 指标达标并可复跑 | `verify.md` + `review.md` |
+| H01-09 | 上下文预算扩容至 512k（runtime/gateway） | 实现 | done | 默认注入 `context_budget_tokens=512000`，runtime 按 hint 解析并回流预算 token 指标 | `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt` |
 
 ## 执行顺序
 

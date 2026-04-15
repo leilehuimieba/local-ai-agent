@@ -13,6 +13,7 @@
    - H01-01 透明执行字段与事件映射已冻结
    - H01-02 runtime 透明字段补齐并导出证据（`tmp/stage-h-visibility/runtime.json`）
    - H01-03 gateway 合同字段透传与日志归一（`tmp/stage-h-visibility/gateway.json`、`tmp/stage-h-visibility/contracts.json`）
+   - H01-09 上下文预算扩容完成：gateway 默认注入 `context_budget_tokens=512000`，runtime 支持从 `context_budget_tokens/codex_context_tokens/context_budget_chars` 解析预算并回流到 `observation_budget_*_tokens` 可视化字段（证据：`tmp/stage-h-visibility/context-budget-runtime-core-tests.txt`）
 2. 进行中：
    - H01-05 工具详情抽屉（预览+原文引用）最小实现
 3. 未开始：

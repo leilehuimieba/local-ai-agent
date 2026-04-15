@@ -3,7 +3,9 @@ use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
 use crate::memory_recall::recall_memory_digest;
-use crate::observation::{build_layered_injection, ObservationLayeredInjectionReport};
+use crate::observation::{
+    build_layered_injection, resolve_observation_budget_chars, ObservationLayeredInjectionReport,
+};
 use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
 use crate::session::{session_prompt_summary, SessionMemory};
 use crate::text::summarize_text;
@@ -326,9 +328,11 @@ fn observation_injection(
     policy: &ContextAssemblyPolicy,
 ) -> ObservationLayeredInjectionReport {
     if policy.include_memory || policy.include_knowledge {
-        return build_layered_injection(request, &request.user_input, 1200);
+        let budget = resolve_observation_budget_chars(request, 1200);
+        return build_layered_injection(request, &request.user_input, budget);
     }
-    build_layered_injection(request, "", 300)
+    let budget = resolve_observation_budget_chars(request, 300);
+    build_layered_injection(request, "", budget)
 }
 
 fn reasoning_summary(

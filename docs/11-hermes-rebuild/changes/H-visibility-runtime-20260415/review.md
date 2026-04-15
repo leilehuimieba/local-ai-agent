@@ -28,6 +28,7 @@
    - `tmp/stage-h-visibility/gateway.json`
    - `tmp/stage-h-visibility/contracts.json`
    - `tmp/stage-h-visibility/ui-state.json`
+   - `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt`（512k 上下文预算解析回归）
 3. 实现证据（待回填）：
    - `tmp/stage-h-visibility/ui-state.json`
    - `tmp/stage-h-visibility/ui-detail.json`
@@ -45,6 +46,7 @@
 | gateway 透传一致性 | = 100% | 100%（event/log 同步） | PASS |
 | 实现证据就绪度 | >= 1 条链路 | 2（runtime+gateway） | PASS |
 | 前端最小消费 | = 100% | 100%（成功链路样本） | PASS |
+| 上下文预算 512k | = 100% | 100%（默认 `context_budget_tokens=512000` + runtime 预算解析） | PASS |
 | 签收条件达成度 | = 100% | 专项验证未补齐 | 待判定 |
 
 ## 4. 评审结论

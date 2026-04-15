@@ -23,6 +23,7 @@
 | 合同一致性 | 三端字段一致性 | = 100% | 100%（H01-02/H01-03 范围） | `tmp/stage-h-visibility/contracts.json` |
 | 回退可用 | 关闭 visibility_v1 后可回退旧展示 | = 100% | 待回填 | `tmp/stage-h-visibility/rollback.json` |
 | 前端最小消费 | 任务卡可显示 `task_title/activity_state/waiting_reason/next_action_hint` | = 100% | 100%（成功链路样本） | `tmp/stage-h-visibility/ui-state.json` |
+| 上下文预算 | 默认上下文预算提升到 512k token 且可从 runtime 预算字段可见 | = 100% | 100%（已通过） | `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt` |
 
 ## 3. 证据位置
 
@@ -40,6 +41,7 @@
    - `tmp/stage-h-visibility/failure-route.json`
    - `tmp/stage-h-visibility/contracts.json`
    - `tmp/stage-h-visibility/rollback.json`
+   - `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt`
 
 ## 4. Gate 映射
 
@@ -51,3 +53,4 @@
 3. 当前结论：
    - `h01.contract_ready=true`
    - `h01.implementation_ready=partial`
+   - `h01.context_budget_512k_ready=true`
