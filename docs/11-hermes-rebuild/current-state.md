@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 H（产品差异化与透明执行）
 2. 当前 Gate：Gate-H（执行中，未签收）
-3. 当前活跃 change：`H-stage-definition-prep-20260415`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/`
+3. 当前活跃 change：`H-visibility-runtime-20260415`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/`
 
 ## 2. 口径边界
 

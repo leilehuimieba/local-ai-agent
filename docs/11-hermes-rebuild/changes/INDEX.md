@@ -8,12 +8,11 @@
 
 ## 当前活跃 change
 
-1. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（当前主推进）
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/`
-3. [H-visibility-runtime-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/status.md)（预备：H-01 透明执行）
-4. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（预备：H-04 学习模式）
+1. [H-visibility-runtime-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/status.md)（当前主推进：H-01 透明执行）
+2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/`
+3. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（预备：H-04 学习模式）
+4. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
 5. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
-6. [G-stage-definition-prep-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-definition-prep-20260414/status.md)（历史：阶段切换准备）
 
 ## 保留观察项
 
