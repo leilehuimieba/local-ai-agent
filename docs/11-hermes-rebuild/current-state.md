@@ -1,6 +1,6 @@
-# Hermes 当前执行状态（单一事实源）
+﻿# Hermes 当前执行状态（单一事实源）
 
-更新时间：2026-04-14  
+更新时间：2026-04-15  
 状态：`当前有效`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于“当前阶段 / 当前 Gate / 当前活跃 change”的唯一权威记录。
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 G（发布后稳定运营与持续治理）
 2. 当前 Gate：Gate-G（执行中，未签收）
-3. 当前活跃 change：`G-evidence-freshness-policy-20260414`
-4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/G-evidence-freshness-policy-20260414/`
+3. 当前活跃 change：`G-warning-governance-closure-20260415`
+4. 当前活跃 change 路径：`docs/11-hermes-rebuild/changes/G-warning-governance-closure-20260415/`
 
 ## 2. 口径边界
 
@@ -23,3 +23,4 @@
 1. 新建或切换主推进项时，先更新本文件，再更新 `changes/INDEX.md`。
 2. 进入提审或 Gate 结论变更时，先更新本文件，再更新阶段计划或 change 状态。
 3. 每次更新本文件时，同时补“更新时间”。
+

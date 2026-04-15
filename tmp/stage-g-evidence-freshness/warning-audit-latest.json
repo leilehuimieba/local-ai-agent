@@ -1,11 +1,11 @@
 ﻿{
-    "generated_at":  "2026-04-14T23:48:46.8862658+08:00",
+    "generated_at":  "2026-04-15T08:44:22.0352245+08:00",
     "source_report":  "D:\\newwork\\本地智能体\\tmp\\stage-backend-reverify\\latest.json",
     "decision":  "pass",
     "ready_for_release":  true,
     "must_record_warning":  false,
     "review":  {
-                   "checked_at":  "2026-04-14T23:48:44.2096666+08:00",
+                   "checked_at":  "2026-04-15T08:44:19.7825993+08:00",
                    "status":  "passed",
                    "identity_diff_severity":  "ok",
                    "failed_checks_count":  0,
@@ -18,8 +18,8 @@
 
                         ],
     "audit_owner":  "g-duty",
-    "tracking_id":  "G01-20260414-002",
-    "due_at":  "2026-04-15T10:30:00+08:00",
+    "tracking_id":  "G02-20260415-001",
+    "due_at":  "2026-04-15T18:00:00+08:00",
     "validation_errors":  [
 
                           ]

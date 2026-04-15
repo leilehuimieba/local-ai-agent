@@ -1,6 +1,6 @@
 ﻿# Scripts 目录说明
 
-更新时间：2026-04-12
+更新时间：2026-04-15
 状态：当前有效
 
 ## 1. 当前保留脚本
@@ -81,23 +81,34 @@
    - 用途：把后端复核包报告转成发布/回滚统一告警审计记录（`pass/warn/blocked` 三态决策）。
    - 规则：`warn` 状态要求补齐 `Executor/TrackingId/DueAt`，否则 `ready_for_release=false`。
    - 证据输出：`tmp/stage-backend-reverify/warning-audit-*.json`。
-24. `export-knowledge-markdown.ps1`
+24. `run-stage-g-evidence-freshness.ps1`
+   - 用途：阶段 G `G-01` 证据保鲜聚合入口（封装 strict gate、时效阈值、warning 审计落盘）。
+   - 模式：`routine`（默认 180 分钟阈值）与 `release_window`（30 分钟阈值）。
+   - 证据输出：`tmp/stage-g-evidence-freshness/latest.json`。
+25. `run-stage-g-gate-acceptance.ps1`
+   - 用途：阶段 G `G-01` 聚合验收（读取证据保鲜报告并输出 gate 判定）。
+   - 证据输出：`tmp/stage-g-gate/latest.json`。
+26. `run-stage-g-warning-governance.ps1`
+   - 用途：阶段 G `G-02` 告警治理闭环（warning 追踪器 + 升级阈值判定）。
+   - 默认升级阈值：同一 `warning_code` 连续出现 >= 2 次。
+   - 证据输出：`tmp/stage-g-ops/latest.json`、`tmp/stage-g-ops/warning-tracker.json`。
+27. `export-knowledge-markdown.ps1`
    - 用途：按时间窗批量导出主库知识为 Markdown 批次（含 frontmatter、wikilink、index.jsonl）。
    - 默认路径：`data/exports/knowledge-markdown/<batch>/`。
    - 入口参数：`-WorkspaceId`、`-StartAt`、`-EndAt`、`-ExportRoot`。
-25. `build-graphify-input.ps1`
+28. `build-graphify-input.ps1`
    - 用途：基于 Markdown 导出批次一键构建图谱输入（`graphify-input.json` + `nodes/edges.jsonl`）。
    - 默认行为：未指定 `-BatchDir` 时自动选择最新导出批次。
    - 入口参数：`-BatchDir`、`-ExportRoot`。
-26. `run-stage-e-knowledge-recall-eval.ps1`
+29. `run-stage-e-knowledge-recall-eval.ps1`
    - 用途：阶段 E `T25` 固定召回评测集批跑（CET4 样例 Top-5 命中率 + 失败原因统计）。
    - 默认输出：`tmp/stage-e-knowledge-recall-eval/latest.json`。
    - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-FixturePath`、`-AgentId`、`-OutputDir`。
-27. `cortex/cleanup-low-quality-memories.ps1`
+30. `cortex/cleanup-low-quality-memories.ps1`
    - 用途：阶段 E `T26` 低质量条目清洗（硬规则 + 评分模型：`confidence/source_trust/duplication`）。
    - 支持模式：`-DryRun` 仅识别不删除，默认执行删除。
    - 入口参数：`-ApiBaseUrl`、`-AuthToken`、`-AgentId`、`-DryRun`、`-OutputPath`、`-ScoreThreshold`、`-MinLength`。
-28. `cortex/run-external-memory-rollback-drill.ps1`
+31. `cortex/run-external-memory-rollback-drill.ps1`
    - 用途：阶段 E `T28` 外部记忆回退演练（开关回退到 `enabled=false` 并验证本地主链路测试通过）。
    - 默认行为：先开后关执行一次回退，再跑本地写入/召回降级测试。
    - 入口参数：`-RepoRoot`、`-OutputPath`。

@@ -1,6 +1,6 @@
 ﻿# 阶段 G 发布后巡检与告警治理（G-02）
 
-更新时间：2026-04-14
+更新时间：2026-04-15
 
 ## 1. 巡检目标
 
@@ -31,3 +31,10 @@
 1. `tmp/stage-g-evidence-freshness/latest.json`
 2. `tmp/stage-g-evidence-freshness/warning-audit-latest.json`
 3. 关联上游：`tmp/stage-backend-reverify/latest.json`
+4. 治理聚合：`tmp/stage-g-ops/latest.json`
+5. warning 追踪器：`tmp/stage-g-ops/warning-tracker.json`
+
+## 6. 升级阈值
+
+1. 默认升级阈值：同一 `warning_code` 连续出现 >= 2 次。
+2. 达到阈值后写入 `escalated_codes`，进入重点跟踪。

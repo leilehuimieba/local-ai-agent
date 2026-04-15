@@ -1,0 +1,23 @@
+﻿{
+    "updated_at":  "2026-04-15T08:44:22.2202310+08:00",
+    "escalate_threshold":  2,
+    "items":  {
+
+              },
+    "last_warning_codes":  [
+
+                           ],
+    "history":  [
+                    {
+                        "checked_at":  "2026-04-15T08:44:22.2150911+08:00",
+                        "status":  "passed",
+                        "warning_count":  0,
+                        "warning_codes":  [
+
+                                          ],
+                        "escalated_codes":  [
+
+                                            ]
+                    }
+                ]
+}
