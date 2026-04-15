@@ -2,7 +2,7 @@
 
 更新时间：2026-04-15  
 提审类型：阶段 H 子项提审（H-01 透明执行可视化）  
-评审状态：首轮基线已冻结（未签收）
+评审状态：实现轮进行中（未签收）
 
 ## 1. 提审范围
 
@@ -22,15 +22,16 @@
    - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/design.md`
    - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/tasks.md`
    - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/status.md`
-2. 实现证据（待回填）：
+2. 实现证据（当前已补）：
    - `tmp/stage-h-visibility/latest.json`
    - `tmp/stage-h-visibility/runtime.json`
    - `tmp/stage-h-visibility/gateway.json`
+   - `tmp/stage-h-visibility/contracts.json`
+3. 实现证据（待回填）：
    - `tmp/stage-h-visibility/ui-state.json`
    - `tmp/stage-h-visibility/ui-detail.json`
    - `tmp/stage-h-visibility/stall.json`
    - `tmp/stage-h-visibility/failure-route.json`
-   - `tmp/stage-h-visibility/contracts.json`
    - `tmp/stage-h-visibility/rollback.json`
 
 ## 3. 首轮评审基线（文档轮）
@@ -39,16 +40,18 @@
 |---|---|---|---|
 | 合同字段冻结完整度 | = 100% | 100% | PASS |
 | 事件映射冻结完整度 | = 100% | 100% | PASS |
-| 实现证据就绪度 | >= 1 条链路 | 0 | WARN |
-| 签收条件达成度 | = 100% | 待回填 | 待判定 |
+| runtime 可视化字段覆盖 | >= 98% | 100%（12/12） | PASS |
+| gateway 透传一致性 | = 100% | 100%（event/log 同步） | PASS |
+| 实现证据就绪度 | >= 1 条链路 | 2（runtime+gateway） | PASS |
+| 签收条件达成度 | = 100% | 前端与专项验证未补齐 | 待判定 |
 
 ## 4. 评审结论
 
 1. 本轮结果：`status=warning`
 2. H-01 当前就绪度：`h01.ready=false`
 3. 结论说明：
-   - 文档基线已冻结，可进入实现；
-   - 尚未产生 runtime/gateway/frontend 实测证据，暂不签收。
+   - 文档基线、runtime 与 gateway 合同链路已完成并有证据；
+   - 前端样本、stall/失败分流/回退专项尚未补齐，暂不签收。
 
 ## 5. 风险与回退
 
@@ -60,6 +63,6 @@
 
 ## 6. 后续动作
 
-1. 完成 H01-02 与 H01-03，补齐 runtime/gateway 证据。
-2. 进入 H01-04 后补 UI 样本证据。
+1. 完成 H01-04 最小可见样本，补 `ui-state.json`。
+2. 补 waiting/stall/failure-route 三类专项证据。
 3. 达到验收矩阵阈值后，将评审状态更新为“待签收”。

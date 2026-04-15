@@ -157,9 +157,11 @@ function buildEventDetails(event: RunEvent) {
     { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
     { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
     { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
+    { key: "activity-state", text: event.activity_state ? `执行态：${event.activity_state}` : "" },
+    { key: "waiting-reason", text: event.waiting_reason ? `等待原因：${event.waiting_reason}` : "" },
     { key: "workspace", text: details.workspace ? `工作区：${details.workspace}` : "" },
     { key: "verification", text: details.verification ? `验证：${details.verification}` : "" },
-    { key: "next", text: event.metadata?.next_step ? `下一步：${event.metadata.next_step}` : "" },
+    { key: "next", text: readNextActionHint(event) },
     { key: "reason", text: readMemoryReason(event) },
   ]);
 }
@@ -170,6 +172,11 @@ function observationTokenBudget(snapshot?: RuntimeContextSnapshot) {
   const total = snapshot.observation_budget_total_tokens;
   const hit = snapshot.observation_budget_hit_tokens ? "，触顶" : "";
   return `Observation Token(估算)：${used}/${total}${hit}`;
+}
+
+function readNextActionHint(event: RunEvent) {
+  const hint = event.next_action_hint || event.metadata?.next_step || "";
+  return hint ? `下一步：${hint}` : "";
 }
 
 function compactDetails(details: EventDetail[]) {

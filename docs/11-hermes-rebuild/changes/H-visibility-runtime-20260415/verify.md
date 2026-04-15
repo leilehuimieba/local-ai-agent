@@ -1,7 +1,7 @@
 # H-visibility-runtime-20260415（verify）
 
 更新时间：2026-04-15
-状态：部分通过（文档轮）
+状态：部分通过（实现轮进行中）
 
 ## 1. 验证方式
 
@@ -17,10 +17,10 @@
 | 维度 | 指标 | 阈值 | 当前结果 | 证据文件 |
 |---|---|---|---|---|
 | 合同冻结 | 字段与映射冻结完成率 | = 100% | 100%（已通过） | `design.md` |
-| 可视化覆盖 | 主链路关键事件可视化覆盖率 | >= 98% | 待回填 | `tmp/stage-h-visibility/latest.json` |
-| 透明反馈 | 无反馈卡住 >60s 占比 | <= 1% | 待回填 | `tmp/stage-h-visibility/stall.json` |
-| 失败可接管 | 失败事件含“原因+下一步建议”比例 | = 100% | 待回填 | `tmp/stage-h-visibility/failure-route.json` |
-| 合同一致性 | 三端字段一致性 | = 100% | 待回填 | `tmp/stage-h-visibility/contracts.json` |
+| 可视化覆盖 | 主链路关键事件可视化覆盖率 | >= 98% | 100%（runtime/gateway 主链路） | `tmp/stage-h-visibility/latest.json` |
+| 透明反馈 | 无反馈卡住 >60s 占比 | <= 1% | 待回填（未执行 stall 专项） | `tmp/stage-h-visibility/stall.json` |
+| 失败可接管 | 失败事件含“原因+下一步建议”比例 | = 100% | 待回填（未执行失败分流专项） | `tmp/stage-h-visibility/failure-route.json` |
+| 合同一致性 | 三端字段一致性 | = 100% | 100%（H01-02/H01-03 范围） | `tmp/stage-h-visibility/contracts.json` |
 | 回退可用 | 关闭 visibility_v1 后可回退旧展示 | = 100% | 待回填 | `tmp/stage-h-visibility/rollback.json` |
 
 ## 3. 证据位置
@@ -45,7 +45,8 @@
 1. 对应阶段 Gate：Gate-H（子项 H-01）
 2. 当前覆盖情况：
    - 文档合同层已通过（H01-01）
-   - 实现层证据待补（H01-02 起）
+   - runtime/gateway 合同实现层已通过（H01-02/H01-03）
+   - frontend 可视化层正在推进（H01-04）
 3. 当前结论：
    - `h01.contract_ready=true`
-   - `h01.implementation_ready=false`
+   - `h01.implementation_ready=partial`

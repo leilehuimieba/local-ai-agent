@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -39,6 +40,7 @@ func loadRuntimePayload(path string) runtimePayload {
 	if err != nil {
 		return runtimePayload{}
 	}
+	blob = bytes.TrimPrefix(blob, []byte{0xEF, 0xBB, 0xBF})
 	var payload runtimePayload
 	_ = json.Unmarshal(blob, &payload)
 	return payload
