@@ -180,6 +180,10 @@ func registerSettingsAndLogsRoutes(
 ) {
 	mux.HandleFunc("/api/v1/settings", settingsHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore))
+	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/logs", diagnosticsLogsRemediationHandler(repoRoot))
+	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/frontend-dist", diagnosticsFrontendRemediationHandler(repoRoot))
+	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/gateway", diagnosticsGatewayRemediationHandler(repoRoot, cfg.GatewayPort))
+	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/config", diagnosticsConfigRemediationHandler(repoRoot))
 	mux.HandleFunc("/api/v1/settings/external-connections/action", externalConnectionActionHandler(repoRoot, cfg, settingsStore))
 	mux.HandleFunc("/api/v1/system/info", systemInfoHandler(repoRoot, cfg.RuntimePort))
 	mux.HandleFunc("/api/v1/logs", logsHandler(eventBus))
