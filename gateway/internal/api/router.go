@@ -162,6 +162,8 @@ func NewRouter(
 	memoryDeps := memoryRouteDeps{store: memory.NewStore(repoRoot), state: settingsStore}
 	registerCoreRoutes(mux, cfg)
 	registerProviderSettingsRoutes(mux, cfg, credentialStore, runtimeStore)
+	registerProviderArticleRoutes(mux)
+	registerLearningRoutes(mux, memoryDeps)
 	registerSettingsAndLogsRoutes(mux, repoRoot, cfg, settingsStore, eventBus)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
