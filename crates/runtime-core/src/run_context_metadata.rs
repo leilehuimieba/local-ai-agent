@@ -165,6 +165,26 @@ fn append_context_includes(
         "includes_tool_preview".to_string(),
         bool_string(context.dynamic_block.includes_tool_preview),
     );
+    metadata.insert(
+        "skill_injection_enabled".to_string(),
+        bool_string(context.dynamic_block.skill_injection_enabled),
+    );
+    metadata.insert(
+        "max_skill_level".to_string(),
+        context.dynamic_block.max_skill_level.clone(),
+    );
+    metadata.insert(
+        "injected_skill_level".to_string(),
+        context.dynamic_block.injected_skill_level.clone(),
+    );
+    metadata.insert(
+        "injected_skill_ids".to_string(),
+        context.dynamic_block.injected_skill_ids.clone(),
+    );
+    metadata.insert(
+        "evidence_refs".to_string(),
+        context.dynamic_block.evidence_refs.clone(),
+    );
 }
 
 fn append_context_selection(

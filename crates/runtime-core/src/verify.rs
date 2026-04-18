@@ -8,6 +8,10 @@ pub(crate) struct VerificationOutcome {
     pub code: String,
     pub policy: String,
     pub evidence: Vec<String>,
+    pub skill_hit_effective: bool,
+    pub skill_hit_reason: String,
+    pub guard_downgraded: bool,
+    pub guard_decision_ref: String,
     pub summary: String,
     pub next_step: String,
 }
@@ -53,6 +57,10 @@ fn passed_outcome(
         code: "verified".to_string(),
         policy: policy.to_string(),
         evidence,
+        skill_hit_effective: trace.result.success,
+        skill_hit_reason: skill_hit_reason(trace, false),
+        guard_downgraded: guard_downgraded(trace),
+        guard_decision_ref: guard_decision_ref(trace),
         summary: format!(
             "验证通过：{}；执行依据：{}",
             summarize_text(&trace.result.summary),
@@ -72,6 +80,10 @@ fn recovered_outcome(
         code: "verified_with_recovery".to_string(),
         policy: policy.to_string(),
         evidence,
+        skill_hit_effective: trace.result.success,
+        skill_hit_reason: skill_hit_reason(trace, true),
+        guard_downgraded: guard_downgraded(trace),
+        guard_decision_ref: guard_decision_ref(trace),
         summary: format!(
             "验证通过（受控恢复）：{}；恢复依据：{}",
             summarize_text(&trace.result.summary),
@@ -91,6 +103,10 @@ fn failed_outcome(
         code: "verification_failed".to_string(),
         policy: policy.to_string(),
         evidence,
+        skill_hit_effective: false,
+        skill_hit_reason: skill_hit_reason(trace, false),
+        guard_downgraded: guard_downgraded(trace),
+        guard_decision_ref: guard_decision_ref(trace),
         summary: format!(
             "验证失败：{}；失败依据：{}",
             summarize_text(&trace.result.final_answer),
@@ -140,7 +156,114 @@ fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
         evidence.push(format!("artifact={path}"));
     }
     evidence.push(format!("cache_status={}", trace.result.cache_status));
+    evidence.push(format!(
+        "skill_hit_effective={}",
+        if trace.result.success { "true" } else { "false" }
+    ));
+    evidence.push(format!(
+        "guard_downgraded={}",
+        if guard_downgraded(trace) { "true" } else { "false" }
+    ));
+    evidence.push(format!("guard_decision_ref={}", guard_decision_ref(trace)));
     evidence
+}
+
+fn skill_hit_reason(trace: &ToolExecutionTrace, recovered: bool) -> String {
+    if !trace.result.success {
+        return "当前执行未成功，skill 命中未形成有效增益。".to_string();
+    }
+    if recovered {
+        return "当前执行通过受控恢复完成，skill 命中产生部分有效增益。".to_string();
+    }
+    "当前执行成功，skill 命中对结果形成有效增益。".to_string()
+}
+
+fn guard_downgraded(trace: &ToolExecutionTrace) -> bool {
+    trace.result
+        .reasoning_summary
+        .contains("guard downgraded")
+        || trace.result.summary.contains("guard downgraded")
+}
+
+fn guard_decision_ref(trace: &ToolExecutionTrace) -> String {
+    if guard_downgraded(trace) {
+        return format!("tool={};decision=review", trace.tool.tool_name);
+    }
+    format!("tool={};decision=allow", trace.tool.tool_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::verify_tool_execution;
+    use crate::capabilities::{ToolCallResult, ToolDefinition, ToolExecutionTrace};
+    use crate::planner::PlannedAction;
+    use crate::tool_registry::ToolCall;
+
+    #[test]
+    fn exposes_skill_hit_fields_on_success() {
+        let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, false));
+        assert!(report.outcome.skill_hit_effective);
+        assert!(!report.outcome.guard_downgraded);
+        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=allow");
+    }
+
+    #[test]
+    fn exposes_guard_downgrade_fields_when_reasoning_marks_review() {
+        let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, true));
+        assert!(report.outcome.skill_hit_effective);
+        assert!(report.outcome.guard_downgraded);
+        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=review");
+    }
+
+    fn sample_tool_call() -> ToolCall {
+        ToolCall {
+            action: PlannedAction::RunCommand {
+                command: "echo ok".to_string(),
+            },
+            spec: ToolDefinition {
+                tool_name: "run_command".to_string(),
+                display_name: "执行命令".to_string(),
+                category: "system_command".to_string(),
+                risk_level: "high".to_string(),
+                input_schema: "command_text".to_string(),
+                output_kind: "text_preview".to_string(),
+                requires_confirmation: true,
+            },
+        }
+    }
+
+    fn sample_trace(success: bool, downgraded: bool) -> ToolExecutionTrace {
+        ToolExecutionTrace {
+            tool: sample_tool_call().spec.clone(),
+            action_summary: "执行 echo ok".to_string(),
+            result: ToolCallResult {
+                summary: if downgraded {
+                    "命令执行成功，guard downgraded".to_string()
+                } else {
+                    "命令执行成功".to_string()
+                },
+                final_answer: if success { "ok" } else { "failed" }.to_string(),
+                artifact_path: None,
+                detail_preview: "preview".to_string(),
+                raw_output_ref: None,
+                result_chars: 10,
+                single_result_budget_chars: 30000,
+                single_result_budget_hit: false,
+                error_code: None,
+                elapsed_ms: 10,
+                retryable: false,
+                success,
+                memory_write_summary: None,
+                reasoning_summary: if downgraded {
+                    "guard downgraded to review".to_string()
+                } else {
+                    "测试推理".to_string()
+                },
+                cache_status: "bypass".to_string(),
+                cache_reason: String::new(),
+            },
+        }
+    }
 }
 
 fn success_next_step(trace: &ToolExecutionTrace) -> String {

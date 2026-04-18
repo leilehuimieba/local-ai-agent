@@ -72,6 +72,8 @@ mod tool_registry;
 mod tool_trace;
 // tools 模块已收敛为 capabilities（能力注册与元信息单一事实源）
 mod verify;
+#[cfg(test)]
+mod h03_eval_tests;
 
 use crate::checkpoint::{
     checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint,

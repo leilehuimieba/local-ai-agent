@@ -178,6 +178,10 @@ pub(crate) mod testkit {
                 "summary=ok".to_string(),
                 "artifact=D:/repo/verify/report.txt".to_string(),
             ],
+            skill_hit_effective: true,
+            skill_hit_reason: "当前执行成功，skill 命中对结果形成有效增益。".to_string(),
+            guard_downgraded: false,
+            guard_decision_ref: "tool=run_command;decision=allow".to_string(),
         }
     }
 }

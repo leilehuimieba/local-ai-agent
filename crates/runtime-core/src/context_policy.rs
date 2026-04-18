@@ -8,6 +8,8 @@ pub(crate) struct ContextAssemblyPolicy {
     pub include_memory: bool,
     pub include_knowledge: bool,
     pub include_tool_preview: bool,
+    pub skill_injection_enabled: bool,
+    pub max_skill_level: String,
     pub phase_label: String,
     pub selection_reason: String,
     pub prefer_artifact_context: bool,
@@ -23,6 +25,8 @@ pub(crate) fn planning_context_policy(
         include_memory: true,
         include_knowledge: needs_project_knowledge(user_input),
         include_tool_preview: true,
+        skill_injection_enabled: true,
+        max_skill_level: "level1:index-summary".to_string(),
         phase_label: "plan".to_string(),
         selection_reason: "当前处于规划阶段，优先加载目标、短期状态和必要知识。".to_string(),
         prefer_artifact_context: false,
@@ -58,6 +62,8 @@ pub(crate) fn project_answer_policy() -> ContextAssemblyPolicy {
         include_memory: false,
         include_knowledge: true,
         include_tool_preview: false,
+        skill_injection_enabled: false,
+        max_skill_level: "disabled".to_string(),
         phase_label: "answer".to_string(),
         selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。"
             .to_string(),
@@ -72,6 +78,8 @@ pub(crate) fn context_answer_policy() -> ContextAssemblyPolicy {
         include_memory: false,
         include_knowledge: false,
         include_tool_preview: false,
+        skill_injection_enabled: false,
+        max_skill_level: "disabled".to_string(),
         phase_label: "continue".to_string(),
         selection_reason: "当前更像续推类问题，优先使用短期会话状态继续回答。".to_string(),
         prefer_artifact_context: false,
@@ -85,6 +93,8 @@ fn agent_resolve_policy() -> ContextAssemblyPolicy {
         include_memory: true,
         include_knowledge: true,
         include_tool_preview: true,
+        skill_injection_enabled: true,
+        max_skill_level: "level1:index-summary".to_string(),
         phase_label: "execute".to_string(),
         selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。"
             .to_string(),
@@ -99,6 +109,8 @@ fn knowledge_policy() -> ContextAssemblyPolicy {
         include_memory: false,
         include_knowledge: true,
         include_tool_preview: false,
+        skill_injection_enabled: false,
+        max_skill_level: "disabled".to_string(),
         phase_label: "knowledge".to_string(),
         selection_reason: "当前是知识检索类动作，优先收紧到知识命中结果。".to_string(),
         prefer_artifact_context: false,
@@ -112,6 +124,8 @@ fn memory_policy() -> ContextAssemblyPolicy {
         include_memory: true,
         include_knowledge: false,
         include_tool_preview: false,
+        skill_injection_enabled: true,
+        max_skill_level: "level1:index-summary".to_string(),
         phase_label: "memory".to_string(),
         selection_reason: "当前是记忆读写动作，优先使用会话状态和长期记忆摘要。".to_string(),
         prefer_artifact_context: false,
@@ -125,6 +139,8 @@ fn explain_policy() -> ContextAssemblyPolicy {
         include_memory: false,
         include_knowledge: false,
         include_tool_preview: true,
+        skill_injection_enabled: false,
+        max_skill_level: "disabled".to_string(),
         phase_label: "explain".to_string(),
         selection_reason: "当前是在解释可用能力，只保留工具预览即可。".to_string(),
         prefer_artifact_context: false,
@@ -138,6 +154,8 @@ fn workspace_policy() -> ContextAssemblyPolicy {
         include_memory: false,
         include_knowledge: false,
         include_tool_preview: false,
+        skill_injection_enabled: true,
+        max_skill_level: "level1:index-summary".to_string(),
         phase_label: "execute".to_string(),
         selection_reason: "当前是工作区动作，优先保留短期状态，避免引入无关知识噪声。".to_string(),
         prefer_artifact_context: false,
@@ -158,6 +176,8 @@ fn apply_session_overrides(policy: &mut ContextAssemblyPolicy, session: &Session
 
 fn apply_confirmation_override(policy: &mut ContextAssemblyPolicy) {
     policy.include_session = true;
+    policy.skill_injection_enabled = false;
+    policy.max_skill_level = "disabled".to_string();
     policy.phase_label = "confirmation_resume".to_string();
     policy.selection_reason = "当前存在待确认事项，优先带入短期状态以恢复原主线。".to_string();
     mark_profile(policy, "confirm");
@@ -166,6 +186,8 @@ fn apply_confirmation_override(policy: &mut ContextAssemblyPolicy) {
 fn apply_handoff_override(policy: &mut ContextAssemblyPolicy) {
     policy.include_session = true;
     policy.include_memory = true;
+    policy.skill_injection_enabled = true;
+    policy.max_skill_level = "level1:index-summary".to_string();
     policy.prefer_artifact_context = true;
     policy.phase_label = "handoff_resume".to_string();
     policy.selection_reason =
@@ -176,6 +198,8 @@ fn apply_handoff_override(policy: &mut ContextAssemblyPolicy) {
 fn apply_recovery_override(policy: &mut ContextAssemblyPolicy) {
     policy.include_session = true;
     policy.include_memory = true;
+    policy.skill_injection_enabled = true;
+    policy.max_skill_level = "level1:index-summary".to_string();
     policy.prefer_artifact_context = true;
     policy.phase_label = "recovery".to_string();
     policy.selection_reason =
@@ -216,4 +240,33 @@ fn needs_project_knowledge(user_input: &str) -> bool {
     ]
     .iter()
     .any(|token| lower.contains(token))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::session::{SessionMemory, ShortTermMemory};
+
+    #[test]
+    fn project_answer_disables_skill_injection() {
+        let policy = project_answer_policy();
+        assert!(!policy.skill_injection_enabled);
+        assert_eq!(policy.max_skill_level, "disabled");
+    }
+
+    #[test]
+    fn agent_resolve_enables_level1_skill_injection() {
+        let policy = action_context_policy(&PlannedAction::AgentResolve, &empty_session());
+        assert!(policy.skill_injection_enabled);
+        assert_eq!(policy.max_skill_level, "level1:index-summary");
+    }
+
+    fn empty_session() -> SessionMemory {
+        SessionMemory {
+            session_id: "session-1".to_string(),
+            short_term: ShortTermMemory::default(),
+            recent_turns: Vec::new(),
+            compressed_summary: String::new(),
+        }
+    }
 }

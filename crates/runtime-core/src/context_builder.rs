@@ -31,6 +31,11 @@ pub(crate) struct DynamicPromptBlock {
     pub includes_memory: bool,
     pub includes_knowledge: bool,
     pub includes_tool_preview: bool,
+    pub skill_injection_enabled: bool,
+    pub max_skill_level: String,
+    pub injected_skill_level: String,
+    pub injected_skill_ids: String,
+    pub evidence_refs: String,
     pub phase_label: String,
     pub selection_reason: String,
     pub prefers_artifact_context: bool,
@@ -189,6 +194,11 @@ fn fill_identity_fields(
     block.includes_memory = policy.include_memory;
     block.includes_knowledge = policy.include_knowledge;
     block.includes_tool_preview = policy.include_tool_preview;
+    block.skill_injection_enabled = policy.skill_injection_enabled;
+    block.max_skill_level = policy.max_skill_level.clone();
+    block.injected_skill_level = effective_skill_level(policy);
+    block.injected_skill_ids = injected_skill_ids(request, policy);
+    block.evidence_refs = evidence_refs(request, policy);
     block.phase_label = policy.phase_label.clone();
     block.selection_reason = policy.selection_reason.clone();
     block.prefers_artifact_context = policy.prefer_artifact_context;
@@ -323,6 +333,38 @@ fn selected_artifact_hint(
     "当前阶段未注入交接包提示。".to_string()
 }
 
+fn effective_skill_level(policy: &ContextAssemblyPolicy) -> String {
+    if policy.skill_injection_enabled {
+        policy.max_skill_level.clone()
+    } else {
+        "disabled".to_string()
+    }
+}
+
+fn injected_skill_ids(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
+    if !policy.skill_injection_enabled {
+        return "none".to_string();
+    }
+    request
+        .context_hints
+        .get("skill_ids")
+        .cloned()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "none".to_string())
+}
+
+fn evidence_refs(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
+    if !policy.include_memory && !policy.include_knowledge {
+        return "none".to_string();
+    }
+    request
+        .context_hints
+        .get("evidence_refs")
+        .cloned()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "observation".to_string())
+}
+
 fn observation_injection(
     request: &RunRequest,
     policy: &ContextAssemblyPolicy,
@@ -347,4 +389,87 @@ fn reasoning_summary(
         "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆、本地知识与 observation 分层注入组织回答。会话：{} || 记忆：{} || 知识：{} || Observation：{} || Artifact：{}",
         selection_reason, session_summary, memory_digest, knowledge_digest, observation_injection, artifact_hint
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn fills_skill_injection_fields_from_policy_and_hints() {
+        let request = sample_request();
+        let policy = ContextAssemblyPolicy {
+            profile: "agent_resolve".to_string(),
+            include_session: true,
+            include_memory: true,
+            include_knowledge: true,
+            include_tool_preview: false,
+            skill_injection_enabled: true,
+            max_skill_level: "level1:index-summary".to_string(),
+            phase_label: "execute".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let mut block = DynamicPromptBlock::default();
+        fill_identity_fields(&mut block, &request, &policy);
+        assert!(block.skill_injection_enabled);
+        assert_eq!(block.max_skill_level, "level1:index-summary");
+        assert_eq!(block.injected_skill_level, "level1:index-summary");
+        assert_eq!(block.injected_skill_ids, "skill.alpha,skill.beta");
+        assert_eq!(block.evidence_refs, "verify:sample");
+    }
+
+    #[test]
+    fn disables_skill_fields_when_policy_disables_injection() {
+        let request = sample_request();
+        let policy = ContextAssemblyPolicy {
+            profile: "project_answer".to_string(),
+            include_session: false,
+            include_memory: false,
+            include_knowledge: false,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "answer".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let mut block = DynamicPromptBlock::default();
+        fill_identity_fields(&mut block, &request, &policy);
+        assert!(!block.skill_injection_enabled);
+        assert_eq!(block.injected_skill_level, "disabled");
+        assert_eq!(block.injected_skill_ids, "none");
+    }
+
+    fn sample_request() -> RunRequest {
+        let mut context_hints = BTreeMap::new();
+        context_hints.insert("skill_ids".to_string(), "skill.alpha,skill.beta".to_string());
+        context_hints.insert("evidence_refs".to_string(), "verify:sample".to_string());
+        RunRequest {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            user_input: "test".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: "D:/workspace".to_string(),
+                is_active: true,
+            },
+            context_hints,
+            resume_from_checkpoint_id: String::new(),
+            resume_strategy: String::new(),
+            confirmation_decision: None,
+        }
+    }
 }

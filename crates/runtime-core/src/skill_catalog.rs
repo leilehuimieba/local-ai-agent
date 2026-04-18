@@ -17,11 +17,17 @@ pub(crate) struct SkillDescriptor {
     pub version: String,
     pub entry_path: String,
     pub isolation_scope: String,
+    pub trust_tier: String,
+    pub guard_action: String,
+    pub guard_reason: String,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct SkillSkipRecord {
     pub skill_id: String,
+    pub trust_tier: String,
+    pub guard_action: String,
+    pub guard_reason: String,
     pub reason: String,
 }
 
@@ -38,6 +44,8 @@ struct SkillManifestItem {
     entry: String,
     #[serde(default)]
     workspace_id: String,
+    #[serde(default)]
+    trust_tier: String,
 }
 
 pub(crate) fn load_skill_catalog(request: &RunRequest) -> SkillCatalog {
@@ -55,6 +63,9 @@ pub(crate) fn load_skill_catalog(request: &RunRequest) -> SkillCatalog {
         Err(error) => {
             catalog.skipped.push(SkillSkipRecord {
                 skill_id: "_manifest".to_string(),
+                trust_tier: "unknown".to_string(),
+                guard_action: "deny".to_string(),
+                guard_reason: "manifest_invalid".to_string(),
                 reason: error,
             });
             catalog
@@ -68,8 +79,14 @@ pub(crate) fn skill_catalog_brief(catalog: &SkillCatalog) -> String {
         .iter()
         .map(|item| {
             format!(
-                "{}@{}@{}@{}",
-                item.skill_id, item.version, item.entry_path, item.isolation_scope
+                "{}@{}@{}@{}@{}@{}@{}",
+                item.skill_id,
+                item.version,
+                item.entry_path,
+                item.isolation_scope,
+                item.trust_tier,
+                item.guard_action,
+                item.guard_reason
             )
         })
         .collect::<Vec<_>>()
@@ -77,7 +94,16 @@ pub(crate) fn skill_catalog_brief(catalog: &SkillCatalog) -> String {
     let skipped = catalog
         .skipped
         .iter()
-        .map(|item| format!("{}@{}", item.skill_id, item.reason))
+        .map(|item| {
+            format!(
+                "{}@{}@{}@{}@{}",
+                item.skill_id,
+                item.trust_tier,
+                item.guard_action,
+                item.guard_reason,
+                item.reason
+            )
+        })
         .collect::<Vec<_>>()
         .join(",");
     format!(
@@ -149,33 +175,25 @@ fn apply_manifest_item(
     if !workspace_matches(request, &item) {
         return;
     }
-    let Some(current) = semver_tuple(&item.version) else {
-        push_skip(
-            catalog,
-            &item.skill_id,
-            "版本格式非法，要求 major.minor.patch。",
-        );
+    if semver_tuple(&item.version).is_none() {
+        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "版本格式非法，要求 major.minor.patch。");
         return;
-    };
+    }
     if !pin_matches(pins, &item.skill_id, &item.version) {
-        push_skip(catalog, &item.skill_id, "命中版本治理 pin，但版本不匹配。");
+        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "命中版本治理 pin，但版本不匹配。");
         return;
     }
     let Some(entry_path) = isolated_entry_path(request, &item.entry) else {
-        push_skip(
-            catalog,
-            &item.skill_id,
-            "技能入口路径越界，未通过隔离校验。",
-        );
+        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "技能入口路径越界，未通过隔离校验。");
         return;
     };
-    catalog.loaded.push(SkillDescriptor {
-        skill_id: item.skill_id,
-        version: item.version,
-        entry_path,
-        isolation_scope: format!("workspace:{}", request.workspace_ref.workspace_id),
-    });
-    let _ = current;
+    let trust_tier = resolved_trust_tier(&item);
+    let guard_action = guard_action_for(&trust_tier);
+    if guard_action == "deny" {
+        push_skip(catalog, &item.skill_id, &trust_tier, &guard_action, &guard_reason_for(&guard_action, &trust_tier));
+        return;
+    }
+    catalog.loaded.push(build_skill_descriptor(request, item, entry_path, trust_tier, guard_action));
 }
 
 fn workspace_matches(request: &RunRequest, item: &SkillManifestItem) -> bool {
@@ -206,9 +224,64 @@ fn isolated_entry_path(request: &RunRequest, entry: &str) -> Option<String> {
         .map(|path| path.display().to_string())
 }
 
-fn push_skip(catalog: &mut SkillCatalog, skill_id: &str, reason: &str) {
+fn resolved_trust_tier(item: &SkillManifestItem) -> String {
+    match item.trust_tier.trim() {
+        "builtin" => "builtin".to_string(),
+        "local_generated" => "local_generated".to_string(),
+        "external_imported" => "external_imported".to_string(),
+        "community" => "community".to_string(),
+        _ => "project_trusted".to_string(),
+    }
+}
+
+fn guard_action_for(trust_tier: &str) -> String {
+    match trust_tier {
+        "builtin" | "project_trusted" => "allow".to_string(),
+        "local_generated" | "external_imported" => "review".to_string(),
+        "community" => "deny".to_string(),
+        _ => "review".to_string(),
+    }
+}
+
+fn guard_reason_for(action: &str, trust_tier: &str) -> String {
+    match action {
+        "allow" => format!("trust_tier={trust_tier}，允许进入当前默认加载级别。"),
+        "review" => format!("trust_tier={trust_tier}，仅允许索引或受控展开。"),
+        _ => format!("trust_tier={trust_tier}，默认禁止直接注入执行上下文。"),
+    }
+}
+
+fn build_skill_descriptor(
+    request: &RunRequest,
+    item: SkillManifestItem,
+    entry_path: String,
+    trust_tier: String,
+    guard_action: String,
+) -> SkillDescriptor {
+    let guard_reason = guard_reason_for(&guard_action, &trust_tier);
+    SkillDescriptor {
+        skill_id: item.skill_id,
+        version: item.version,
+        entry_path,
+        isolation_scope: format!("workspace:{}", request.workspace_ref.workspace_id),
+        trust_tier,
+        guard_action,
+        guard_reason,
+    }
+}
+
+fn push_skip(
+    catalog: &mut SkillCatalog,
+    skill_id: &str,
+    trust_tier: &str,
+    guard_action: &str,
+    reason: &str,
+) {
     catalog.skipped.push(SkillSkipRecord {
         skill_id: skill_id.to_string(),
+        trust_tier: trust_tier.to_string(),
+        guard_action: guard_action.to_string(),
+        guard_reason: guard_reason_for(guard_action, trust_tier),
         reason: reason.to_string(),
     });
 }
@@ -242,6 +315,8 @@ mod tests {
         assert_eq!(catalog.loaded.len(), 1);
         assert!(catalog.skipped.is_empty());
         assert_eq!(catalog.loaded[0].version, "1.2.0");
+        assert_eq!(catalog.loaded[0].trust_tier, "project_trusted");
+        assert_eq!(catalog.loaded[0].guard_action, "allow");
     }
 
     #[test]
@@ -270,6 +345,35 @@ mod tests {
         assert!(catalog.loaded.is_empty());
         assert_eq!(catalog.skipped.len(), 1);
         assert!(catalog.skipped[0].reason.contains("隔离"));
+        assert_eq!(catalog.skipped[0].guard_action, "deny");
+    }
+
+    #[test]
+    fn marks_local_generated_skill_as_review() {
+        let root = test_root("skill-review");
+        write_manifest(
+            &root,
+            r#"{"skills":[{"skill_id":"compose_ui","version":"1.2.0","entry":"skills/compose/SKILL.md","trust_tier":"local_generated"}]}"#,
+        );
+        let request = sample_request(&root, "");
+        let catalog = load_skill_catalog(&request);
+        assert_eq!(catalog.loaded.len(), 1);
+        assert_eq!(catalog.loaded[0].trust_tier, "local_generated");
+        assert_eq!(catalog.loaded[0].guard_action, "review");
+    }
+
+    #[test]
+    fn denies_community_skill_by_default() {
+        let root = test_root("skill-community");
+        write_manifest(
+            &root,
+            r#"{"skills":[{"skill_id":"compose_ui","version":"1.2.0","entry":"skills/compose/SKILL.md","trust_tier":"community"}]}"#,
+        );
+        let request = sample_request(&root, "");
+        let catalog = load_skill_catalog(&request);
+        assert!(catalog.loaded.is_empty());
+        assert_eq!(catalog.skipped[0].trust_tier, "community");
+        assert_eq!(catalog.skipped[0].guard_action, "deny");
     }
 
     fn sample_request(root: &std::path::Path, pins: &str) -> RunRequest {

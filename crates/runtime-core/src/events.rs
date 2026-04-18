@@ -274,6 +274,11 @@ fn fill_context_policy(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMa
     snapshot.includes_memory = metadata_flag(metadata, "includes_memory");
     snapshot.includes_knowledge = metadata_flag(metadata, "includes_knowledge");
     snapshot.includes_tool_preview = metadata_flag(metadata, "includes_tool_preview");
+    snapshot.skill_injection_enabled = metadata_flag(metadata, "skill_injection_enabled");
+    snapshot.max_skill_level = metadata_value(metadata, "max_skill_level");
+    snapshot.injected_skill_level = metadata_value(metadata, "injected_skill_level");
+    snapshot.injected_skill_ids = metadata_value(metadata, "injected_skill_ids");
+    snapshot.evidence_refs = metadata_value(metadata, "evidence_refs");
     snapshot.phase_label = metadata_value(metadata, "phase_label");
     snapshot.selection_reason = metadata_value(metadata, "selection_reason");
     snapshot.prefers_artifact_context = metadata_flag(metadata, "prefers_artifact_context");
@@ -306,6 +311,11 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.cache_status.is_empty()
         || !snapshot.cache_reason.is_empty()
         || !snapshot.assembly_profile.is_empty()
+        || snapshot.skill_injection_enabled
+        || !snapshot.max_skill_level.is_empty()
+        || !snapshot.injected_skill_level.is_empty()
+        || !snapshot.injected_skill_ids.is_empty()
+        || !snapshot.evidence_refs.is_empty()
         || !snapshot.phase_label.is_empty()
         || !snapshot.selection_reason.is_empty()
         || !snapshot.artifact_hint.is_empty()
@@ -376,6 +386,22 @@ fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<Verifica
             .get("verification_evidence")
             .map(|value| split_lines(value))
             .unwrap_or_default(),
+        skill_hit_effective: metadata
+            .get("verification_skill_hit_effective")
+            .map(|value| value == "true")
+            .unwrap_or(false),
+        skill_hit_reason: metadata
+            .get("verification_skill_hit_reason")
+            .cloned()
+            .unwrap_or_default(),
+        guard_downgraded: metadata
+            .get("verification_guard_downgraded")
+            .map(|value| value == "true")
+            .unwrap_or(false),
+        guard_decision_ref: metadata
+            .get("verification_guard_decision_ref")
+            .cloned()
+            .unwrap_or_default(),
     };
     has_verification_snapshot(&snapshot).then_some(snapshot)
 }
@@ -386,6 +412,10 @@ fn has_verification_snapshot(snapshot: &VerificationSnapshot) -> bool {
         || snapshot.passed
         || !snapshot.policy.is_empty()
         || !snapshot.evidence.is_empty()
+        || snapshot.skill_hit_effective
+        || !snapshot.skill_hit_reason.is_empty()
+        || snapshot.guard_downgraded
+        || !snapshot.guard_decision_ref.is_empty()
 }
 
 fn split_lines(value: &str) -> Vec<String> {
@@ -510,6 +540,11 @@ fn prompt_dynamic_block(
         includes_memory: metadata_flag(metadata, "includes_memory"),
         includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
         includes_tool_preview: metadata_flag(metadata, "includes_tool_preview"),
+        skill_injection_enabled: metadata_flag(metadata, "skill_injection_enabled"),
+        max_skill_level: metadata_value(metadata, "max_skill_level"),
+        injected_skill_level: metadata_value(metadata, "injected_skill_level"),
+        injected_skill_ids: metadata_value(metadata, "injected_skill_ids"),
+        evidence_refs: metadata_value(metadata, "evidence_refs"),
         phase_label: metadata_value(metadata, "phase_label"),
         selection_reason: metadata_value(metadata, "selection_reason"),
         prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),

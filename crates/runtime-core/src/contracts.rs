@@ -215,6 +215,16 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub includes_tool_preview: bool,
     #[serde(default)]
+    pub skill_injection_enabled: bool,
+    #[serde(default)]
+    pub max_skill_level: String,
+    #[serde(default)]
+    pub injected_skill_level: String,
+    #[serde(default)]
+    pub injected_skill_ids: String,
+    #[serde(default)]
+    pub evidence_refs: String,
+    #[serde(default)]
     pub phase_label: String,
     #[serde(default)]
     pub selection_reason: String,
@@ -278,6 +288,14 @@ pub struct VerificationSnapshot {
     pub policy: String,
     #[serde(default)]
     pub evidence: Vec<String>,
+    #[serde(default)]
+    pub skill_hit_effective: bool,
+    #[serde(default)]
+    pub skill_hit_reason: String,
+    #[serde(default)]
+    pub guard_downgraded: bool,
+    #[serde(default)]
+    pub guard_decision_ref: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

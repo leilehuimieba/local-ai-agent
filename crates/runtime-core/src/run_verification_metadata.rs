@@ -30,6 +30,22 @@ fn append_verification_core(
         report.outcome.policy.clone(),
     );
     metadata.insert(
+        "verification_skill_hit_effective".to_string(),
+        bool_string(report.outcome.skill_hit_effective),
+    );
+    metadata.insert(
+        "verification_skill_hit_reason".to_string(),
+        report.outcome.skill_hit_reason.clone(),
+    );
+    metadata.insert(
+        "verification_guard_downgraded".to_string(),
+        bool_string(report.outcome.guard_downgraded),
+    );
+    metadata.insert(
+        "verification_guard_decision_ref".to_string(),
+        report.outcome.guard_decision_ref.clone(),
+    );
+    metadata.insert(
         "verification_evidence".to_string(),
         report.outcome.evidence.join("\n"),
     );
@@ -81,6 +97,14 @@ mod tests {
             metadata.get("single_result_budget_hit"),
             Some(&"true".to_string())
         );
+        assert_eq!(
+            metadata.get("verification_skill_hit_effective"),
+            Some(&"true".to_string())
+        );
+        assert_eq!(
+            metadata.get("verification_guard_downgraded"),
+            Some(&"false".to_string())
+        );
     }
 
     fn sample_report() -> VerificationReport {
@@ -90,6 +114,10 @@ mod tests {
                 code: "verified".to_string(),
                 policy: "inspect_command_result".to_string(),
                 evidence: vec!["summary=ok".to_string()],
+                skill_hit_effective: true,
+                skill_hit_reason: "有效".to_string(),
+                guard_downgraded: false,
+                guard_decision_ref: "tool=run_command;decision=allow".to_string(),
                 summary: "验证通过".to_string(),
                 next_step: "继续".to_string(),
             },
