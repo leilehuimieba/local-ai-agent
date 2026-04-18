@@ -17,6 +17,10 @@
 7. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
 8. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
 
+## 待启动 / 草案 change
+
+1. [H-modularity-hardening-20260419](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-modularity-hardening-20260419/status.md)（草案：仓库模块化收敛与热点文件减重）
+
 ## 保留观察项
 
 1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（历史进行中状态，当前不作为主推进）
