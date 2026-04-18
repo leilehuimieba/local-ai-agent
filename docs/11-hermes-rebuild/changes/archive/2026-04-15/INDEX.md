@@ -13,6 +13,7 @@
 5. [G-runbook-duty-closure-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/G-runbook-duty-closure-20260415/status.md)
 6. [G-gate-g-signoff-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/G-gate-g-signoff-20260415/status.md)
 7. [G-runbook-duty-drill-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/G-runbook-duty-drill-20260415/status.md)
+8. [H-visibility-runtime-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/status.md)
 
 ## 归档说明
 

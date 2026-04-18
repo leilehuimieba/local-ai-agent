@@ -2,7 +2,7 @@
 
 更新时间：2026-04-15  
 提审类型：阶段 H 子项提审（H-01 透明执行可视化）  
-评审状态：待签收
+评审状态：已签收
 
 ## 1. 提审范围
 
@@ -19,9 +19,9 @@
 ## 2. 核心证据
 
 1. 文档基线：
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/design.md`
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/tasks.md`
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/status.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/design.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/tasks.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/status.md`
 2. 实现证据（当前已补）：
    - `tmp/stage-h-visibility/latest.json`
    - `tmp/stage-h-visibility/runtime.json`
@@ -35,13 +35,6 @@
    - `tmp/stage-h-visibility/runtime-confirmation.json`
    - `tmp/stage-h-visibility/gateway-confirmation.json`
    - `tmp/stage-h-visibility/context-budget-runtime-core-tests.txt`（512k 上下文预算解析回归）
-3. 实现证据（待回填）：
-   - `tmp/stage-h-visibility/ui-state.json`
-   - `tmp/stage-h-visibility/ui-detail.json`
-   - `tmp/stage-h-visibility/stall.json`
-   - `tmp/stage-h-visibility/failure-route.json`
-   - `tmp/stage-h-visibility/rollback.json`
-
 ## 3. 首轮评审基线（文档轮）
 
 | 指标 | 阈值 | 实测 | 结论 |
@@ -63,10 +56,11 @@
 
 1. 本轮结果：`status=pass`
 2. H-01 当前就绪度：`h01.ready=true`
-3. 结论说明：
+3. 签收结论：`h01.signed_off=true`
+4. 结论说明：
    - 文档基线、runtime、gateway、前端最小消费与详情抽屉映射均已完成；
    - waiting 分支、stall 阈值、failure-route 三项专项已补齐并留证；
-   - 建议将 H-01 状态推进至“待签收”。
+   - 本轮复跑通过，可按归档规则结束本 change。
 
 ## 5. 风险与回退
 
@@ -78,6 +72,6 @@
 
 ## 6. 后续动作
 
-1. 发起 Gate-H / H-01 提审并确认签收结论。
-2. 如评审要求补强，追加一条独立 `raw_output_ref` 真实样本（非 artifact 回退值）。
-3. 签收后切换下一主推进项。
+1. 已完成 Gate-H / H-01 签收。
+2. 按归档规则迁入 `changes/archive/2026-04-15/`。
+3. 当前主推进切换到 `H-learning-mode-browser-20260415`。

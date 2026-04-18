@@ -1,7 +1,7 @@
 # H-visibility-runtime-20260415（verify）
 
 更新时间：2026-04-15
-状态：部分通过（实现轮进行中）
+状态：已通过（已签收）
 
 ## 1. 验证方式
 
@@ -30,9 +30,9 @@
 ## 3. 证据位置
 
 1. 文档证据：
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/design.md`
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/tasks.md`
-   - `docs/11-hermes-rebuild/changes/H-visibility-runtime-20260415/status.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/design.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/tasks.md`
+   - `docs/11-hermes-rebuild/changes/archive/2026-04-15/H-visibility-runtime-20260415/status.md`
 2. 实现证据（预留）：
    - `tmp/stage-h-visibility/latest.json`
    - `tmp/stage-h-visibility/runtime.json`
@@ -60,3 +60,4 @@
    - `h01.implementation_ready=true`
    - `h01.context_budget_512k_ready=true`
    - `h01.ready_for_signoff=true`
+   - `h01.signed_off=true`
