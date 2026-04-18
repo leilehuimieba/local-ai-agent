@@ -49,6 +49,62 @@
 2. 拆 `gateway/internal/api/router.go`。
 3. 将 learning 相关 handler 收口到独立目录或独立路由注册层。
 
+#### `gateway/internal/api/router.go` 第一轮拆分方案
+
+第一轮目标不是重构 handler 或抽 service，而是先把“总路由表”收敛成“装配入口 + 按域注册文件”。
+
+##### 拆分目标文件
+
+1. 保留：`gateway/internal/api/router.go`
+2. 新增：
+   - `gateway/internal/api/router_chat.go`
+   - `gateway/internal/api/router_learning.go`
+   - `gateway/internal/api/router_settings.go`
+   - `gateway/internal/api/router_logs.go`
+   - `gateway/internal/api/router_providers.go`
+
+##### 第一轮职责边界
+
+1. `router.go`
+   - 只保留 `NewRouter(...)`
+   - 只负责依赖初始化与分组注册调用
+   - 不再承载大量 `mux.HandleFunc(...)`
+2. `router_chat.go`
+   - 负责 `registerChatRoutes(...)`
+3. `router_learning.go`
+   - 负责 `registerLearningRoutes(...)`
+4. `router_settings.go`
+   - 负责 `registerSettingsRoutes(...)`
+   - 负责 `registerDiagnosticsRoutes(...)`
+   - 如当前代码仍保持 settings/diagnostics 强耦合，允许先放在同一文件中
+5. `router_logs.go`
+   - 负责 `registerLogsRoutes(...)`
+6. `router_providers.go`
+   - 负责 `registerProviderSettingsRoutes(...)`
+   - 负责 `registerProviderArticleRoutes(...)`
+
+##### 第一轮不做什么
+
+1. 不改 handler 函数签名。
+2. 不改 API contract。
+3. 不抽 learning service 层。
+4. 不把 learning handler 全量迁入新目录。
+5. 不把 diagnostics remediation 再细拆到 executor / response / planner。
+
+##### 验证方式
+
+1. 编译与回归优先使用：
+   - `go test ./internal/api`
+2. 若第一轮拆分涉及 provider 注册路径，再补：
+   - `go test ./...`
+
+##### 验收口径
+
+1. `router.go` 只剩装配入口，不再承担域内展开。
+2. Chat / Learning / Settings / Diagnostics / Logs / Providers 的注册边界可单文件定位。
+3. 第一轮 diff 不改变任何已有 API 路径与行为。
+4. `go test ./internal/api` 通过。
+
 ### 第二批：runtime-core 热点文件目录化
 
 1. 拆 `crates/runtime-core/src/observation.rs`。
