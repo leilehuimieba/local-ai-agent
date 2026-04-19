@@ -327,7 +327,7 @@
 #### 本轮仍未完成的内容
 本轮 verify 必须同时指出以下事项仍未完成：
 
-1. 正式多轮人工复核机制尚未形成；
+1. 制度化复核主索引最小闭环已形成，但长期正式多轮人工复核机制仍未形成；
 2. 更大规模真实主链分布仍未补齐；
 3. 第二轮校准集仍不足以外推为总体真实分布；
 4. 当前仍不足以把 H-03 写成 ready；
@@ -414,7 +414,7 @@
 2. 已核对：`long-tail-distribution.json`、`recovery-chain-distribution.json`、`skill-hit-effective-calibration.json`、`review-rounds-h03.json` 均已分别落证长尾、恢复链、五桶校准、双轮/角色差异复核四类结构门槛，而不是仅停留在文档口头表述。
 3. 已核对：`tasks.md`、`status.md`、`verify.md`、`review.md`、`formal-execution-entry.md` 当前统一收口到“仍为 warning / 建议主控评估是否切主推进”，未把结论外溢成 ready、Gate-H 可签收、active change 已切换或主控已批准切主推进。
 4. 已新增：`tmp/stage-h-mcp-skills/h03-39-handoff-check.json`，集中记录 H03-38 稳定性、文档强度一致性与主控交接建议。
-5. 当前 remaining gaps 仍存在：真实主链分布仍属第一批正式执行样本规模、正式多评审制度化流程尚未形成、命中有效性分布仍不足以外推为总体稳定分布。
+5. 当前 remaining gaps 仍存在：制度化复核主索引最小闭环虽已形成，但长期正式多评审制度化流程仍未完成；同时真实主链分布仍属第一批正式执行样本规模、命中有效性分布仍不足以外推为总体稳定分布。
 
 ### 本节结论
 - H03-39：已完成（正式执行后复核与交接已完成）。
