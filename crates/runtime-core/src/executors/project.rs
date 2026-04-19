@@ -63,25 +63,31 @@ fn project_status_context(request: &RunRequest) -> String {
 
 fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
     let docs_root = repo_root(request).join("docs");
+    let mut paths = hermes_project_status_paths(&docs_root);
+    paths.extend(legacy_project_status_paths(&docs_root));
+    paths
+}
+
+fn hermes_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
     vec![
-        docs_root
-            .join("06-development")
-            .join("忠实用户转化导向开发任务书_V1.md"),
-        docs_root
-            .join("07-test")
-            .join("忠实用户转化导向验收文档_V1.md"),
-        docs_root
-            .join("06-development")
-            .join("第二阶段需求文档_V1.md"),
-        docs_root
-            .join("06-development")
-            .join("第二阶段产品定位与开发重点清单_V1.md"),
-        docs_root
-            .join("06-development")
-            .join("第二阶段短期可用能力开发任务书_V1.md"),
-        docs_root
-            .join("07-test")
-            .join("第二阶段短期可用能力验收文档_V1.md"),
+        docs_root.join("11-hermes-rebuild").join("current-state.md"),
+        docs_root.join("11-hermes-rebuild").join("changes").join("H-gate-h-signoff-20260416").join("status.md"),
+        docs_root.join("11-hermes-rebuild").join("changes").join("H-gate-h-signoff-20260416").join("review.md"),
+        docs_root.join("11-hermes-rebuild").join("changes").join("INDEX.md"),
+        docs_root.join("README.md"),
+        docs_root.join("11-hermes-rebuild").join("Hermes重构总路线图_完整计划.md"),
+        docs_root.join("11-hermes-rebuild").join("stage-plans").join("阶段计划总表.md"),
+    ]
+}
+
+fn legacy_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
+    vec![
+        docs_root.join("06-development").join("忠实用户转化导向开发任务书_V1.md"),
+        docs_root.join("07-test").join("忠实用户转化导向验收文档_V1.md"),
+        docs_root.join("06-development").join("第二阶段需求文档_V1.md"),
+        docs_root.join("06-development").join("第二阶段产品定位与开发重点清单_V1.md"),
+        docs_root.join("06-development").join("第二阶段短期可用能力开发任务书_V1.md"),
+        docs_root.join("07-test").join("第二阶段短期可用能力验收文档_V1.md"),
     ]
 }
 
@@ -131,7 +137,7 @@ fn project_context_hits(request: &RunRequest) -> Vec<crate::knowledge::Knowledge
 
 fn project_context_fallback_query(user_input: &str) -> String {
     if is_project_status_request(user_input) {
-        "忠实用户转化 进度 当前阶段 工作包D 项目状态 下一步 样本 验收 第二阶段 主链路".to_string()
+        "阶段 H Gate-H 聚合复核 current-state 当前活跃 change warning 未签收 不可签收 H-02 H-03 暂停点 重启条件".to_string()
     } else {
         "项目 智能体 本地 主干 架构 运行时".to_string()
     }
@@ -139,12 +145,19 @@ fn project_context_fallback_query(user_input: &str) -> String {
 
 fn is_project_status_request(user_input: &str) -> bool {
     [
+        "停在什么状态",
         "做到什么程度",
         "进度",
         "当前阶段",
         "实现了什么",
         "完成了吗",
         "当前情况",
+        "为什么不能继续",
+        "默认推进",
+        "为什么停",
+        "暂停点",
+        "重启",
+        "恢复推进",
         "还差什么",
         "继续下一步",
         "现在最该做什么",
@@ -185,7 +198,7 @@ fn ok_project_answer(
         result_summary,
         final_answer,
         format!(
-            "优先依据 README 与 06-development 等项目文档片段组织项目说明。{}",
+            "优先依据当前执行入口与项目文档片段组织项目说明。{}",
             cache_probe.reason
         ),
         cache_probe.status.clone(),
@@ -287,6 +300,8 @@ fn should_recover_project_answer(content: &str, final_answer: &str) -> bool {
 fn fallback_project_summary(snippets: &str) -> String {
     if snippets.contains("当前没有检索到可用项目文档片段") {
         "当前缺少可复用的项目文档片段，建议先补充 README 或开发文档后再追问。".to_string()
+    } else if is_hermes_status_context(snippets) {
+        stable_project_status_answer(snippets)
     } else if is_loyal_status_context(snippets) {
         stable_project_status_answer(snippets)
     } else if is_phase2_status_context(snippets) {
@@ -297,6 +312,9 @@ fn fallback_project_summary(snippets: &str) -> String {
 }
 
 fn stable_project_status_answer(snippets: &str) -> String {
+    if is_hermes_status_context(snippets) {
+        return "当前停在阶段 H 的 Gate-H 聚合复核暂停点：Gate-H 仍是执行中、未签收，当前活跃 change 为 `H-gate-h-signoff-20260416`。现在不能默认继续推进，是因为 H-02 仍处于并行观察 / 冻结观察 warning，当前无新的合格受限样本，第二窗口仍是 `aborted_manual_takeover`；H-03 虽已完成 `H03-37`、`H03-38`、`H03-39`，但最强结论只到“建议主控评估是否切主推进”，仍不等于 ready。Gate-H 已完成当前轮次聚合复核判断，但聚合层不能写得比 H-02 / H-03 输入更强，所以当前只能维持 `warning / 执行中 / 未签收 / 不可签收`。后续只有在出现新的 H-02 合格受限样本、H-03 获得超出当前 warning 的更强证据，或主控明确给出新的更强裁决口径时，才值得重新启动下一轮推进。".to_string();
+    }
     if is_loyal_status_context(snippets) {
         return "已完成能力：在线模型对话、文件读写、受控命令执行、缓存、正式记忆查看与删除、会话续推，以及首页继续上次任务和下一步建议都已落到主链路，并已有 `tmp/loyal-user-acceptance/memory-visibility-sample.json`、`tmp/loyal-user-acceptance/memory-delete-sample.json`、`tmp/loyal-user-acceptance/project-continue-sample.json`、`tmp/loyal-user-acceptance/workspace-dashboard-sample.json` 留证。当前阶段：项目已从第二阶段短期可用，推进到忠实用户转化导向收口期；正式验收里工作包 A 已通过，整体结论仍是有条件通过，正在补工作包 D 的项目状态理解增强。待收口项：还需要把项目状态类回答稳定绑定到独立状态样本、验证路径和完成标准，并让“现在最该做什么 / 继续下一步 / 还差什么”更明确指向当前阶段动作。验证路径与完成标准：本轮应补 `tmp/loyal-user-acceptance/project-status-loyal-summary.json` 与 `tmp/loyal-user-acceptance/next-step-sample.json`，并回填 `docs/07-test/忠实用户转化导向验收文档_V1.md` 的工作包 D、构建验证和整体结论；做到回答能明确指出已完成能力、当前阶段、待收口项，并进一步指向样本或完成标准，才算通过。".to_string();
     }
@@ -312,6 +330,13 @@ fn is_loyal_status_context(snippets: &str) -> bool {
         || snippets.contains("工作包 A 已通过")
         || snippets.contains("工作包 D")
         || snippets.contains("memory-visibility-sample.json")
+}
+
+fn is_hermes_status_context(snippets: &str) -> bool {
+    snippets.contains("阶段 H")
+        || snippets.contains("Gate-H")
+        || snippets.contains("H-gate-h-signoff-20260416")
+        || snippets.contains("聚合复核")
 }
 
 fn is_phase2_status_context(snippets: &str) -> bool {
@@ -383,4 +408,31 @@ fn render_project_prompt(
         &cache_probe.reason,
     );
     render_project_answer_prompt(&envelope).full_prompt
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{is_project_status_request, project_result_summary, stable_project_status_answer};
+
+    #[test]
+    fn recognizes_stage_h_pause_question_as_status_request() {
+        let input = "我现在接手这个项目，请直接告诉我：当前停在什么状态、为什么不能继续默认推进、以及以后满足什么条件才值得重启。";
+        assert!(is_project_status_request(input));
+    }
+
+    #[test]
+    fn prefers_hermes_pause_answer_for_gate_h_context() {
+        let snippets = "当前阶段：阶段 H。当前 Gate：Gate-H（执行中，未签收）。当前活跃 change：H-gate-h-signoff-20260416。当前主推进：Gate-H 聚合复核。";
+        let answer = stable_project_status_answer(snippets);
+        assert!(answer.contains("Gate-H"));
+        assert!(answer.contains("不可签收"));
+        assert!(answer.contains("重新启动下一轮推进"));
+    }
+
+    #[test]
+    fn project_result_summary_prefers_current_state_first() {
+        let snippets = "文件：D:\\newwork\\本地智能体\\docs\\11-hermes-rebuild\\current-state.md\n摘要：当前阶段：阶段 H。当前 Gate：Gate-H（执行中，未签收）。\n\n文件：D:\\newwork\\本地智能体\\docs\\README.md\n摘要：Docs 导航。";
+        let summary = project_result_summary(snippets);
+        assert!(summary.contains("current-state.md"));
+    }
 }

@@ -3,12 +3,15 @@ use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
 use crate::memory_recall::recall_memory_digest;
+use crate::paths::repo_root;
 use crate::observation::{
     build_layered_injection, resolve_observation_budget_chars, ObservationLayeredInjectionReport,
 };
 use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
 use crate::session::{session_prompt_summary, SessionMemory};
-use crate::text::summarize_text;
+use crate::text::{extract_snippet, summarize_text};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub(crate) struct StaticPromptBlock {
@@ -268,11 +271,10 @@ fn selected_memory_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) 
 }
 
 fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
-    if policy.include_knowledge {
-        knowledge_digest(request)
-    } else {
-        "当前阶段未注入知识摘要。".to_string()
+    if !policy.include_knowledge {
+        return "当前阶段未注入知识摘要。".to_string();
     }
+    project_status_knowledge_digest(request, policy).unwrap_or_else(|| knowledge_digest(request))
 }
 
 fn knowledge_digest(request: &RunRequest) -> String {
@@ -287,6 +289,55 @@ fn knowledge_digest(request: &RunRequest) -> String {
             .collect::<Vec<_>>()
             .join(" || "),
     )
+}
+
+fn project_status_knowledge_digest(
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+) -> Option<String> {
+    if policy.profile != "project_answer" || !is_project_status_query(&request.user_input) {
+        return None;
+    }
+    let entries = preferred_project_status_paths(request)
+        .into_iter()
+        .filter_map(|path| status_digest_entry(&path, &request.user_input))
+        .collect::<Vec<_>>();
+    (!entries.is_empty()).then(|| summarize_text(&entries.join(" || ")))
+}
+
+fn is_project_status_query(user_input: &str) -> bool {
+    [
+        "停在什么状态",
+        "为什么不能继续",
+        "默认推进",
+        "为什么停",
+        "暂停点",
+        "重启",
+        "当前阶段",
+        "还差什么",
+        "下一步做什么",
+    ]
+    .iter()
+    .any(|token| user_input.contains(token))
+}
+
+fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
+    let docs_root = repo_root(request).join("docs");
+    let hermes_root = docs_root.join("11-hermes-rebuild");
+    vec![
+        hermes_root.join("current-state.md"),
+        hermes_root.join("changes").join("H-gate-h-signoff-20260416").join("status.md"),
+        hermes_root.join("changes").join("H-gate-h-signoff-20260416").join("review.md"),
+        hermes_root.join("changes").join("INDEX.md"),
+        docs_root.join("README.md"),
+        hermes_root.join("Hermes重构总路线图_完整计划.md"),
+        hermes_root.join("stage-plans").join("阶段计划总表.md"),
+    ]
+}
+
+fn status_digest_entry(path: &Path, query: &str) -> Option<String> {
+    let content = fs::read_to_string(path).ok()?;
+    Some(format!("{}: {}", path.display(), extract_snippet(&content, query)))
 }
 
 fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
@@ -396,6 +447,7 @@ mod tests {
     use super::*;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use std::collections::BTreeMap;
+    use std::path::Path;
 
     #[test]
     fn fills_skill_injection_fields_from_policy_and_hints() {
@@ -443,16 +495,51 @@ mod tests {
         assert_eq!(block.injected_skill_ids, "none");
     }
 
+    #[test]
+    fn project_answer_status_digest_prefers_current_hermes_docs() {
+        let request = status_request();
+        let policy = ContextAssemblyPolicy {
+            profile: "project_answer".to_string(),
+            include_session: false,
+            include_memory: false,
+            include_knowledge: true,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "answer".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let digest = selected_knowledge_digest(&request, &policy);
+        assert!(digest.contains("11-hermes-rebuild"));
+        assert!(digest.contains("current-state"));
+        assert!(!digest.contains("docs\\07-test\\evidence"));
+    }
+
     fn sample_request() -> RunRequest {
+        request_with_input("test")
+    }
+
+    fn status_request() -> RunRequest {
+        request_with_input("我现在接手这个项目，请直接告诉我：当前停在什么状态、为什么不能继续默认推进、以及以后满足什么条件才值得重启。")
+    }
+
+    fn request_with_input(user_input: &str) -> RunRequest {
         let mut context_hints = BTreeMap::new();
         context_hints.insert("skill_ids".to_string(), "skill.alpha,skill.beta".to_string());
         context_hints.insert("evidence_refs".to_string(), "verify:sample".to_string());
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|path| path.parent())
+            .unwrap()
+            .display()
+            .to_string();
         RunRequest {
             request_id: "request-1".to_string(),
             run_id: "run-1".to_string(),
             session_id: "session-1".to_string(),
             trace_id: "trace-1".to_string(),
-            user_input: "test".to_string(),
+            user_input: user_input.to_string(),
             mode: "standard".to_string(),
             model_ref: ModelRef {
                 provider_id: "provider".to_string(),
@@ -463,7 +550,7 @@ mod tests {
             workspace_ref: WorkspaceRef {
                 workspace_id: "workspace-1".to_string(),
                 name: "Workspace".to_string(),
-                root_path: "D:/workspace".to_string(),
+                root_path: repo_root,
                 is_active: true,
             },
             context_hints,

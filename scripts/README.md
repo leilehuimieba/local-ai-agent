@@ -1,6 +1,6 @@
 ﻿# Scripts 目录说明
 
-更新时间：2026-04-15
+更新时间：2026-04-19
 状态：当前有效
 
 ## 1. 当前保留脚本
@@ -112,6 +112,11 @@
    - 用途：阶段 E `T28` 外部记忆回退演练（开关回退到 `enabled=false` 并验证本地主链路测试通过）。
    - 默认行为：先开后关执行一次回退，再跑本地写入/召回降级测试。
    - 入口参数：`-RepoRoot`、`-OutputPath`。
+32. `run-project-status-answer-regression.ps1`
+   - 用途：项目状态问答真实入口回归（固定“接手项目”问句，验证回答稳定命中当前主线状态）。
+   - 真实入口：拉起隔离 `runtime-host` 与 `gateway` 后，通过 `POST /api/v1/chat/run` + `GET /api/v1/logs` 完成端到端校验。
+   - 证据输出：`tmp/project-status-answer-regression/latest.json`。
+   - 引用文档：`docs/07-test/evidence/20260419-project-status-answer-regression/README.md`
 
 ## 2. 同步命令示例
 
