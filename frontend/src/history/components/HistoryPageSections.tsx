@@ -10,13 +10,15 @@ export function HistoryLogsHeader(props: {
   return (
     <SectionHeader
       kind="page"
-      kicker="记录"
+      kicker="Review"
       level="h2"
-      title="调查与复盘"
+      title="调查记录工作区"
+      description="把稳定记录、会话规模与复盘入口收在同一视图里，先看收口状态，再继续下钻。"
       action={
         <div className="page-header-meta">
           <MetricChip label="记录" value={`${props.logCount} 条`} />
           <MetricChip label="会话" value={`${props.sessionCount} 个`} />
+          <MetricChip label="模式" value="Logs" />
         </div>
       }
     />
@@ -29,10 +31,10 @@ export function HistoryLogsSummary(props: {
 }) {
   return (
     <section className="logs-summary-strip" aria-label="记录摘要">
-      <HistorySummaryCard label="总记录" value={`${props.total} 条`} tone="neutral" />
-      <HistorySummaryCard label="错误" value={`${props.stats.errorCount} 条`} tone="danger" />
-      <HistorySummaryCard label="确认" value={`${props.stats.confirmationCount} 条`} tone="warning" />
-      <HistorySummaryCard label="工具" value={`${props.stats.toolCount} 个`} tone="calm" />
+      <HistorySummaryCard label="稳定记录" value={`${props.total} 条`} tone="neutral" />
+      <HistorySummaryCard label="异常收口" value={`${props.stats.errorCount} 条`} tone="danger" />
+      <HistorySummaryCard label="待确认" value={`${props.stats.confirmationCount} 条`} tone="warning" />
+      <HistorySummaryCard label="工具触达" value={`${props.stats.toolCount} 个`} tone="calm" />
     </section>
   );
 }
@@ -58,12 +60,20 @@ export function HistoryFilterToolbar(props: {
     <section className="logs-filter-toolbar" aria-label="记录筛选">
       <FilterToolbarHeader resultCount={props.resultCount} />
       <FilterToolbarControls props={props} />
+      <FilterToolbarNote />
     </section>
   );
 }
 
 function FilterToolbarHeader(props: { resultCount: number }) {
-  return <SectionHeader title="筛选" action={<MetricChip label="结果" value={`${props.resultCount} 条`} />} />;
+  return (
+    <SectionHeader
+      kicker="Filter"
+      title="复盘筛选台"
+      description="先定焦点，再缩小范围，最后进入时间线和详情栏。"
+      action={<MetricChip label="结果" value={`${props.resultCount} 条`} />}
+    />
+  );
 }
 
 function FilterToolbarControls(props: {
@@ -82,12 +92,21 @@ function FilterToolbarControls(props: {
   );
 }
 
+function FilterToolbarNote() {
+  return (
+    <div className="logs-filter-note">
+      <strong>建议顺序</strong>
+      <p>先选焦点分组，再叠加类型、审计和级别过滤，避免时间线噪音回升。</p>
+    </div>
+  );
+}
+
 function HistoryFocusGroupBar(props: {
   value: ReviewFocusFilter;
   onChange: (value: ReviewFocusFilter) => void;
 }) {
   return (
-    <div className="history-focus-bar" role="group" aria-label="结构化复查分组">
+    <div className="history-focus-bar" role="group" aria-label="复盘焦点分组">
       {buildFocusOptions().map((item) => (
         <button
           key={item.value}

@@ -1,14 +1,13 @@
 # Hermes Change 索引
 
-更新时间：2026-04-19
+更新时间：2026-04-21
 
 这个文件用于提供 change 目录导航。
-“当前阶段 / 当前 Gate / 当前活跃 change” 的状态裁决统一由
-`docs/11-hermes-rebuild/current-state.md` 负责。
+“当前阶段 / 当前 Gate / 当前活跃 change”的状态统一以 `docs/11-hermes-rebuild/current-state.md` 为准。
 
 ## 当前活跃 change
 
-1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md)（当前主推进：Gate-H 聚合复核，仍不可签收）
+1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md)（当前主推进：Gate-H 聚合复核，仍未签收）
 2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/`
 3. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
 4. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
@@ -19,7 +18,8 @@
 
 ## 待启动 / 草案 change
 
-1. [H-modularity-hardening-20260419](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-modularity-hardening-20260419/status.md)（草案：仓库模块化收敛与热点文件减重）
+1. [H-frontend-workbench-reframe-20260421](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-frontend-workbench-reframe-20260421/status.md)（并行收口：Wave 3 页面证据已补齐，主控判断可结束，不切主推进）
+2. [H-modularity-hardening-20260419](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-modularity-hardening-20260419/status.md)（草案：仓库模块化收敛与热点文件减重）
 
 ## 保留观察项
 
@@ -31,16 +31,16 @@
 1. [archive/2026-04-15/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
 2. [archive/2026-04-14/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
 3. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
-4. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（历史已收口 change 归档）
+4. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（更早已收口 change 归档）
 
 ## 选择规则
 
-1. 继续任务时，先读取 `current-state.md`，再定位对应 change 目录。
+1. 继续任务时，先读 `current-state.md`，再定位对应 change 目录。
 2. 如果用户明确点名某个 change，以用户指定为准。
 3. 如果 `INDEX.md` 或任意 `status.md` 与 `current-state.md` 冲突，先指出冲突并暂停推进。
 
 ## 维护规则
 
-1. 新建中等以上变更后，将其加入索引。
+1. 新建中等及以上变更后，将其加入索引。
 2. 切换主推进项时，先更新 `current-state.md`，再更新本索引。
 3. 某个 change 完成并收口后，移动到 `archive/<日期>/` 并补归档索引。

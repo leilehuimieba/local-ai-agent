@@ -16,6 +16,12 @@
   完成判据：将 H-03 的 `business-task-chain: 20`、`skill-false-positive: 16`、`manual-review: 12` 及恢复链/行业尾部/交叉复核证据纳入聚合，并重新判断 H-02/H-03 状态、Gate-H 不可签收原因与唯一下一优先级任务。
 - [x] T08 基于任务15结果刷新 Gate-H 聚合判断
   完成判据：将 H-03 的“策略设计判断已完成，可进入正式执行入口”纳入 Gate-H 聚合，并明确 Gate-H 仍不可签收。
+- [x] T09 补 Gate-H 聚合证据入口
+  完成判据：新增 `scripts/run-stage-h-gate-acceptance.ps1` 并生成 `tmp/stage-h-gate/latest.json`，其中 `status=warning` 且 `gate_h.ready=false`。
+- [x] T10 补 Gate-H 提审证据入口
+  完成判据：新增 `scripts/run-stage-h-signoff-acceptance.ps1` 并生成 `tmp/stage-h-signoff/latest.json`，其中 `status=warning` 且 `gate_h_signoff.signoff_ready=false`。
+- [x] T11 为 Gate-H 聚合 JSON 补中文说明字段
+  完成判据：`tmp/stage-h-gate/latest.json` 与 `tmp/stage-h-signoff/latest.json` 在保留英文结构字段的同时，新增 `summary_zh`、`status_zh` 及各阻塞项中文说明字段。
 
 ## 口径注记（2026-04-19 最小收紧）
 
@@ -24,4 +30,5 @@
    - 当前活跃 change：`H-gate-h-signoff-20260416`
    - H-03 当前最强结论：`H03-39 已完成；建议主控评估是否切主推进`，但仍为 `warning`
    - H-02 当前口径：`并行观察 / 冻结观察`，仍为 `warning`，且当前无新的合格受限样本
-3. 因此，Gate-H 当前允许的最强口径是：已完成当前轮次聚合复核判断；当前仍为 `warning` / `执行中` / `未签收` / `不可签收`，不等于 Gate-H 可签收，不等于阶段 H 已完成。
+3. `tmp/stage-h-gate/latest.json` 与 `tmp/stage-h-signoff/latest.json` 当前只允许固化“聚合复核入口 / 提审入口”，不允许把当前 `warning` 强行改写成 `passed`。
+4. 因此，Gate-H 当前允许的最强口径是：已完成当前轮次聚合复核判断；当前仍为 `warning` / `执行中` / `未签收` / `不可签收`，不等于 Gate-H 可签收，不等于阶段 H 已完成。

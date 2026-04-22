@@ -1,8 +1,16 @@
 # 阶段性提审包（H-mcp-skills-quality-20260415）
 
-更新时间：2026-04-17  
+更新时间：2026-04-22  
 提审类型：阶段 H 子项提审草案（H-03 MCP + Skills 执行质量体系）  
 评审状态：草案（H03-39 正式执行后复核与交接已完成；当前仍为 warning，仅建议主控评估是否切主推进）
+
+## 2026-04-22 聚合漂移补记
+
+1. `tmp/stage-h-mcp-skills/latest.json` 已按 H03-38/H03-39 专项批次证据保守回刷到 `30 / 24 / 16`。
+2. `evals/business-task-chain.json`、`skill-false-positive.json`、`manual-review.json` 已补入 `formal_batch_summary / batch_sync_state / formal_batch_detailed_samples`，但当前只允许表述为“summary 已同步、部分 detailed sample layer 已回填”。
+3. 其中 `manual-review` 当前只有 8 条样本在 `review-rounds-h03.json`、`institutional_review_primary_records` 与 `formal_batch_detailed_samples` 之间形成稳定结构化回指；formal batch 目标中的剩余 8 条仍应视为“来源待确认 / 结构化落点待补”。
+4. 因此，当前不能再把 H-03 写成“基础 eval 明细已全部同步”或“formal batch 16 条人工复核明细已完整落盘”；更准确口径应是：`30 / 24 / 16` 已在 summary 层与专项批次证据层成立，但 detailed sample layer 仍是 partial backfill。
+5. 已继续核对 `update_task13.py` 与 `h03-institutional-review-check.json`，当前未发现除现有 8 条之外的新增结构化 manual-review 明细来源；因此剩余 8 条不能按“继续整理即可补齐”理解。
 
 ## 1. 提审范围
 
@@ -111,6 +119,7 @@
    - 当前已把 `verify` 的命中有效性与 Guard 决策引用推进到最小可观测实现，并已补 1 条真实 `guard downgraded -> verify` 联动样本。
    - 当前 warning 已继续收缩到“策略设计判断完成，可进入规模化扩样设计”：已补失败注入扩样（4 条）、人工评测扩样（12 条）、跨技能类型样本（4 条）、真实业务任务链路样本（20 条）与 false positive 扩样（16 条），并形成代表性维度 + 长尾分布 + 恢复链/复核分歧三层证据映射。
    - 当前仍未解决：真实主链分布仍属中小样本、命中有效性分布仍未校准、交叉复核尚不是正式评审机制；因此不能宣称 H-03 ready，也不能据此宣称 Gate-H 可签收。
+   - 当前还需额外保留一个收紧边界：`manual-review=16` 目前只成立在 formal batch summary 层；当前只有 8 条样本形成了稳定结构化 detailed sample 回指，剩余 8 条不能默认按“已有现成明细待抄录”处理。
 
 ## 6. 风险与回退
 
@@ -356,6 +365,7 @@ H-03 当前是否应正式从“策略设计判断已完成”切换到“策略
 2. `skill-hit-effective-calibration.json`、`review-rounds-h03.json`、`long-tail-distribution.json`、`recovery-chain-distribution.json` 已分别形成校准、复核、长尾、恢复链的独立证据。
 3. `tasks.md`、`status.md`、`verify.md`、`review.md`、`formal-execution-entry.md` 当前口径一致：只允许得出“仍为 warning / 建议主控评估是否切主推进”，不把结果误写成 ready、Gate-H 可签收、active change 已切换或主控已批准切主推进。
 4. `tmp/stage-h-mcp-skills/h03-39-handoff-check.json` 已形成本轮主控交接证据。
+5. 当前 `manual-review` 的 formal batch detailed sample layer 只稳定落了 8 条；`representative-coverage.json` 中较早引用的旧 manual 样本当前尚未形成对应的 structured detailed sample 落点，因此不能把 `manual_review=16` 误读成“16 条明细已完整同步”。
 
 ### 评审停止点
 1. H03-39 的交接完成，不等于主控已经做出切主推进裁决。

@@ -1,0 +1,18 @@
+时间：2026-04-22
+目的：复核 Wave 3 截图补证前的运行环境与自动化阻塞状态
+
+本地健康检查：
+1. http://127.0.0.1:4173 => 200 text/html
+2. http://127.0.0.1:4173/api/v1/settings => 200 application/json; charset=utf-8
+3. http://127.0.0.1:8897/api/v1/settings => 200 application/json; charset=utf-8
+
+浏览器自动化现状：
+1. chrome-devtools-mcp 当前无法直接新建页面。
+2. 返回信息为：
+   The browser is already running for C:\Users\33371\.cache\chrome-devtools-mcp\chrome-profile.
+   Use --isolated to run multiple browser instances.
+3. 这说明当前阻塞点是现有 DevTools 浏览器 profile 被占用，不是前端预览或 settings 接口异常。
+
+当前结论：
+1. Wave 3 代码侧收口不受运行时健康影响。
+2. 当前主要缺口仍是页面级截图与直观 walkthrough 证据。

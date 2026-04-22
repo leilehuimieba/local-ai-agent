@@ -1,6 +1,7 @@
 import { FormEvent, KeyboardEvent } from "react";
 
 import { ConfirmationCard } from "../confirmations/ConfirmationCard";
+import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
 import {
   buildAssistantResult,
   formatEntryIndex,
@@ -58,6 +59,7 @@ function TaskThread(props: { props: ChatPanelProps }) {
   return (
     <section className="stream-shell">
       <ThreadHeader props={props.props} />
+      <ThreadMeta props={props.props} />
       <div className="sr-only" aria-live="polite">{getStreamLiveLabel(props.props.runState, props.props.messages.length)}</div>
       <div className="messages" aria-live="polite" aria-relevant="additions text">
         <ThreadContent props={props.props} />
@@ -71,7 +73,16 @@ function ThreadHeader(props: { props: ChatPanelProps }) {
   return (
     <div className="stream-header stream-header-simple">
       <strong>任务主线程</strong>
-      <span className={`status-badge ${statusClass}`}>{props.props.statusLine}</span>
+      <StatusPill className={statusClass} label={props.props.statusLine} />
+    </div>
+  );
+}
+
+function ThreadMeta(props: { props: ChatPanelProps }) {
+  return (
+    <div className="thread-meta">
+      <strong>{props.props.currentTaskTitle || "等待任务输入"}</strong>
+      <p>{readThreadMetaText(props.props.currentRunId, props.props.runState)}</p>
     </div>
   );
 }
@@ -147,12 +158,15 @@ function AssistantRecord(props: { message: ChatMessage; index: number; runEvent?
   const result = buildAssistantResult(props.message.content, props.runEvent);
   const isThinking = !props.runEvent;
   return (
-    <article className="thread-record assistant">
+    <article className={readAssistantRecordClass(result.mode)}>
       <RecordHead index={props.index} role={result.roleLabel} tag={result.statusTag} />
-      <div className="thread-record-copy">
-        <ResultSummary label={result.summaryLabel} summary={result.summary} />
-        {result.sections.map((section, index) => <ResultBlock key={`${props.message.id}-${index}`} section={section} />)}
-      </div>
+      <ResultBlockStack
+        messageId={props.message.id}
+        mode={result.mode}
+        summaryLabel={result.summaryLabel}
+        summary={result.summary}
+        sections={result.sections}
+      />
       {isThinking ? <ThinkingDots /> : null}
     </article>
   );
@@ -170,22 +184,46 @@ function RecordHead(props: { role: string; index: number; tag?: string }) {
   );
 }
 
-function ResultSummary(props: { label: string; summary: string }) {
+function ResultSummary(props: { label: string; mode: string; summary: string }) {
   return (
-    <section className="result-block result-block-summary">
+    <InfoCard className={`result-block result-block-summary result-block-summary-${props.mode}`}>
       <strong>{props.label}</strong>
       <p>{props.summary}</p>
-    </section>
+    </InfoCard>
   );
 }
 
 function ResultBlock(props: { section: ResultSection }) {
   return (
-    <section className={`result-block result-block-${props.section.kind}`}>
+    <InfoCard className={readResultBlockClass(props.section.kind)}>
       <strong>{props.section.title}</strong>
       <p>{props.section.text}</p>
-    </section>
+    </InfoCard>
   );
+}
+
+function ResultBlockStack(props: {
+  messageId: string;
+  mode: string;
+  summaryLabel: string;
+  summary: string;
+  sections: ResultSection[];
+}) {
+  return (
+    <div className={`thread-record-copy result-block-stack result-block-stack-${props.mode}`}>
+      <ResultSummary label={props.summaryLabel} mode={props.mode} summary={props.summary} />
+      {props.sections.map((section, index) => <ResultBlock key={`${props.messageId}-${index}`} section={section} />)}
+    </div>
+  );
+}
+
+function readAssistantRecordClass(mode: string) {
+  return `thread-record assistant assistant-record assistant-record-${mode}`;
+}
+
+function readResultBlockClass(kind: ResultSection["kind"]) {
+  const density = kind === "detail" ? "subtle" : "strong";
+  return `result-block result-block-${kind} result-block-${density}`;
 }
 
 function ThinkingDots() {
@@ -203,7 +241,7 @@ function ConfirmationRecord(props: { props: ChatPanelProps }) {
     <section id="task-confirmation-anchor" className="thread-record confirmation" tabIndex={-1}>
       <div className="thread-record-head">
         <span className="thread-record-role">待确认项</span>
-        <span className="thread-tag">待确认</span>
+        <StatusPill className="status-awaiting" label="待确认" />
       </div>
       <ConfirmationCard
         confirmation={props.props.confirmation as ConfirmationRequest}
@@ -218,10 +256,10 @@ function ConfirmationRecord(props: { props: ChatPanelProps }) {
 
 function EmptyWorkbench() {
   return (
-    <div className="chat-empty-simple">
-      <strong>开始一个任务</strong>
-      <p>输入目标后，这里会按时间顺序显示回复和执行状态。</p>
-    </div>
+    <EmptyStateBlock
+      title="开始一个任务"
+      text="输入目标后，这里会按时间顺序显示回复和执行状态。"
+    />
   );
 }
 
@@ -325,10 +363,10 @@ function StateRecord(props: {
   const title = readCompactStateTitle(props.state);
   const copy = readCompactStateCopy(props.body, props.advice);
   return (
-    <article className={`thread-record state-record state-record-${props.state}`}>
+    <article className={readStateRecordClass(props.state)}>
       <div className="thread-record-head">
         <span className="thread-record-role">状态更新</span>
-        <span className={`status-badge ${badge.className}`}>{badge.label}</span>
+        <StatusPill className={badge.className} label={badge.label} />
       </div>
       <div className="thread-record-copy">
         <strong>{title}</strong>
@@ -376,11 +414,19 @@ function readStateMeta(state: "failed" | "running" | "completed") {
   return readUnifiedStatusMeta("running");
 }
 
+function readStateRecordClass(state: "failed" | "running" | "completed") {
+  return `thread-record state-record state-record-${state}`;
+}
+
 function TaskComposer(props: { props: ChatPanelProps }) {
   const isDisabled = readComposerDisabled(props.props);
   const hint = readComposerHint(props.props);
   return (
     <form className="composer composer-simple" onSubmit={props.props.onSubmit}>
+      <div className="composer-meta-row">
+        <strong>Agent Composer</strong>
+        <span>{readComposerStateLabel(props.props)}</span>
+      </div>
       <div className="simple-composer-shell">
         <input
           id="task-composer-input"
@@ -439,6 +485,24 @@ function readComposerHint(props: ChatPanelProps) {
 
 function readSubmitLabel(isRunning: boolean) {
   return isRunning ? "发送中" : "发送";
+}
+
+function readComposerStateLabel(props: ChatPanelProps) {
+  if (!props.settings) return "需先完成设置";
+  if (props.isRunning) return "当前执行中";
+  return "可以继续提交任务";
+}
+
+function readThreadMetaText(currentRunId: string, runState: RunState) {
+  if (currentRunId) return `当前运行：${currentRunId} · ${readUnifiedStatusMeta(readStateKey(runState)).label}`;
+  return "当前还没有运行编号，提交后这里会显示主任务链路。";
+}
+
+function readStateKey(runState: RunState) {
+  if (runState === "failed") return "failed";
+  if (runState === "completed") return "completed";
+  if (runState === "awaiting_confirmation") return "awaiting_confirmation";
+  return "running";
 }
 
 function splitMessage(content: string) {

@@ -85,8 +85,8 @@ function BottomPanelHeader(props: { isOpen: boolean; onOpenChange: (open: boolea
   return (
     <div className="bottom-panel-header">
       <div>
-        <span className="bottom-panel-kicker">调查</span>
-        <h2>当前会话调查</h2>
+        <span className="bottom-panel-kicker">辅助轨道</span>
+        <h2>调查与执行轨迹</h2>
       </div>
       <button
         type="button"
@@ -159,7 +159,7 @@ function InvestigationLane(props: {
 }) {
   return (
     <section className="investigation-lane">
-      <LaneHeader title="事件流" text="当前会话过程。" />
+      <LaneHeader title="事件流" text="当前任务的执行过程与工具轨迹。" />
       <FollowModeNotice autoFollow={props.props.model.autoFollow} onResumeFollow={props.props.focus.resumeFollow} />
       {shouldShowInlineInvestigationFailure(props.props.props.runState, props.props.progress.hasNewEvent) ? (
         <InlineInvestigationFailure submitError={props.props.props.submitError} />
@@ -184,7 +184,7 @@ function FocusLane(props: {
 }) {
   return (
     <aside className="inspection-lane">
-      <LaneHeader title="焦点详情" text="阶段、证据、下一步。" />
+      <LaneHeader title="焦点详情" text="阶段、证据与下一步建议。" />
       {!props.props.model.autoFollow ? <button type="button" className="secondary-button" onClick={props.props.focus.resumeFollow}>回到最新事件</button> : null}
       <InspectionFocusCard model={props.props.model} />
       <InspectionMetaGrid model={props.props.model} />
@@ -411,7 +411,7 @@ function readBottomPanelHeadline(props: BottomPanelProps, progress: ReturnType<t
   if (props.runState === "idle") return readUnifiedStatusMeta("idle").label;
   if (props.runState === "archived") return "已归档";
   if (props.runState === "failed" && !progress.hasNewEvent) return readUnifiedStatusMeta("failed").label;
-  return readUnifiedStatusMeta(readUnifiedStatusFromRunState(props.runState)).label;
+  return `调查轨道 · ${readUnifiedStatusMeta(readUnifiedStatusFromRunState(props.runState)).label}`;
 }
 
 function readPreviewSummary(event: RunEvent) {

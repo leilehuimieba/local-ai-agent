@@ -1,0 +1,23 @@
+时间：2026-04-22
+目标：补 Wave 3 直观 walkthrough 证据，覆盖 Logs → History / Review → Settings → Resources。
+
+执行入口：
+1. 打开 http://127.0.0.1:4173
+2. 通过顶部主导航进入“记录”
+3. 在 Logs / Review Workspace 内选中一条稳定记录
+4. 通过顶部主导航进入“设置”
+5. 在 Settings 内滚动到“记忆与资源”模块
+
+关键观察：
+1. Logs 页可见 “Logs / Review Workspace”“调查记录工作区”“复盘筛选台”“稳定记录流”“焦点复盘卡”。
+2. 选中稳定记录后，可见 “复盘详情栏”“基本信息”“复盘拆解”“风险与错误”，说明 History / Review 挂在 Logs / Review workspace 内，而不是独立页面。
+3. Settings 页可见 “Settings Workspace”，并能继续看到“记忆与资源”等模块入口。
+4. 在 Settings 内滚动后，可见 “资源工作区”“Memory / Resources Workspace”“记忆入口”“治理摘要”“存储落点”，说明 Resources 挂在 Settings 内，而不是独立页面。
+
+当前结论：
+1. Wave 3 四类视图的页面级截图与最小 walkthrough 已具备。
+2. History / Review 不是独立顶层页面，挂在 Logs / Review Workspace 内。
+3. Resources 不是独立页面，挂在 Settings 视图的“记忆与资源”模块内。
+4. 当前仍建议维持保守口径：Wave 3 代码侧已基本收口，页面证据已显著补齐；是否正式关闭，仍需结合验收口径再判断。
+
+结构化记录：wave3-walkthrough-20260422.json

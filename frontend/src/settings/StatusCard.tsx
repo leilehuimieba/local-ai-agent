@@ -27,7 +27,16 @@ export function StatusCard(props: StatusCardProps) {
 }
 
 function StatusHeader(props: { status: string; statusClass: string }) {
-  return <SectionHeader className="status-card-header" kicker="环境" level="h2" title="环境状态" action={<StatusPill className={props.statusClass} label={props.status} />} />;
+  return (
+    <SectionHeader
+      className="status-card-header"
+      kicker="Runtime"
+      level="h2"
+      title="设置运行态"
+      description="先确认运行时、模型、模式和工作区是否稳定，再执行配置变更或诊断动作。"
+      action={<StatusPill className={props.statusClass} label={props.status} />}
+    />
+  );
 }
 
 function StatusContent(props: { settings: SettingsResponse }) {

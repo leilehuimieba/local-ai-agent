@@ -27,18 +27,15 @@ export function TopBar(props: TopBarProps) {
   return (
     <header className="topbar topbar-compact">
       <BrandBlock currentView={props.currentView} settings={props.settings} runState={props.runState} statusLine={props.statusLine} />
-      <ConfigSummary
+      <PrimaryNav currentView={props.currentView} onViewChange={props.onViewChange} />
+      <UtilityBlock
+        connectionLabel={props.connectionLabel}
+        currentRunId={props.currentRunId}
         currentView={props.currentView}
         homeStateHint={props.homeStateHint}
         onOpenHomeStart={props.onOpenHomeStart}
         onViewChange={props.onViewChange}
         settings={props.settings}
-      />
-      <UtilityBlock
-        connectionLabel={props.connectionLabel}
-        currentRunId={props.currentRunId}
-        currentView={props.currentView}
-        onViewChange={props.onViewChange}
         sessionId={props.sessionId}
       />
     </header>
@@ -64,43 +61,43 @@ function BrandBlock(props: {
   );
 }
 
-function ConfigSummary(props: {
-  settings: SettingsResponse | null;
-  currentView: ViewId;
-  homeStateHint: string;
-  onOpenHomeStart: () => void;
-  onViewChange: (view: ViewId) => void;
-}) {
-  return (
-    <section className="topbar-group topbar-summary">
-      <ContextItem label="模型" value={props.settings?.model.display_name || "未加载"} />
-      <ContextItem label="模式" value={readModeLabel(props.settings?.mode)} />
-      <ContextItem label="首页" value={props.homeStateHint} />
-      {props.currentView !== "home" ? <button type="button" className="secondary-button" onClick={props.onOpenHomeStart}>新建任务</button> : null}
-      {props.currentView !== "settings" ? <button type="button" className="secondary-button" onClick={() => props.onViewChange("settings")}>前往设置调整</button> : null}
-    </section>
-  );
-}
-
-function UtilityBlock(props: {
-  connectionLabel: string;
-  sessionId: string;
-  currentRunId: string;
+function PrimaryNav(props: {
   currentView: ViewId;
   onViewChange: (view: ViewId) => void;
 }) {
   return (
-    <section className="topbar-group topbar-utility">
-      <ContextItem label="连接" value={props.connectionLabel} />
-      <ContextItem label="会话" value={shortId(props.sessionId, "未创建")} />
-      <ContextItem label="运行" value={shortId(props.currentRunId, "等待中")} />
-      <nav className="topbar-nav topbar-nav-compact" aria-label="主导航">
+    <nav className="topbar-group topbar-summary" aria-label="主导航">
+      <div className="topbar-nav topbar-nav-compact">
         {NAV_ITEMS.map((item) => (
           <button key={item.id} type="button" aria-current={item.id === props.currentView ? "page" : undefined} className={item.id === props.currentView ? "nav-button active" : "nav-button"} onClick={() => props.onViewChange(item.id)}>
             {item.label}
           </button>
         ))}
-      </nav>
+      </div>
+    </nav>
+  );
+}
+
+function UtilityBlock(props: {
+  settings: SettingsResponse | null;
+  connectionLabel: string;
+  homeStateHint: string;
+  sessionId: string;
+  currentRunId: string;
+  currentView: ViewId;
+  onOpenHomeStart: () => void;
+  onViewChange: (view: ViewId) => void;
+}) {
+  return (
+    <section className="topbar-group topbar-utility">
+      <ContextItem label="模型" value={props.settings?.model.display_name || "未加载"} />
+      <ContextItem label="模式" value={readModeLabel(props.settings?.mode)} />
+      <ContextItem label="连接" value={props.connectionLabel} />
+      <ContextItem label="首页" value={props.homeStateHint} />
+      <ContextItem label="会话" value={shortId(props.sessionId, "未创建")} />
+      <ContextItem label="运行" value={shortId(props.currentRunId, "等待中")} />
+      {props.currentView !== "home" ? <button type="button" className="secondary-button" onClick={props.onOpenHomeStart}>新建任务</button> : null}
+      {props.currentView !== "settings" ? <button type="button" className="secondary-button" onClick={() => props.onViewChange("settings")}>前往设置调整</button> : null}
     </section>
   );
 }

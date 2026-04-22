@@ -21,7 +21,11 @@ export function HistoryDetailRail(props: { focusLog: LogEntry | null; focusSecti
   useFocusDetailSection(props.focusSection, props.focusLog?.log_id || "");
   return (
     <section className="page-section detail-rail logs-detail-rail">
-      <SectionHeader title="详情栏" />
+      <SectionHeader
+        kicker="Detail"
+        title="复盘详情栏"
+        description="沿着基本信息、摘要、风险、上下文与验证继续下钻，优先阅读当前焦点记录的稳定信息。"
+      />
       {buildDetailSections(props.focusLog, props.focusSection || null).map((section) => section.node)}
     </section>
   );
@@ -171,7 +175,7 @@ function LearningRow(props: { label: string; value: string }) {
 function EmptyFocusCard() {
   return (
     <section className="detail-card">
-      <EmptyStateBlock title="基本信息" text="选择左侧记录后，这里会显示详情和后续建议。" />
+      <EmptyStateBlock title="等待选中记录" text="从左侧时间线选择一条稳定记录后，这里会显示详情、证据和后续建议。" />
     </section>
   );
 }

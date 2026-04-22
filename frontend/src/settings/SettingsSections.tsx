@@ -58,7 +58,7 @@ export function SettingsModules(props: SettingsModulesProps) {
 }
 
 export function SettingsEmptyState() {
-  return <EmptyStateBlock compact title="正在读取设置" text="环境状态返回后，这里会显示可用控制项。" />;
+  return <EmptyStateBlock compact title="设置工作区正在同步" text="环境状态返回后，这里会显示可用控制项与诊断入口。" />;
 }
 
 function buildSettingsModules(props: SettingsModulesProps) {
@@ -465,7 +465,7 @@ function DiagnosticsPathCard(props: { settings: SettingsResponse }) {
 }
 
 function ModuleHeader(props: { title: string; badge: string }) {
-  return <SectionHeader kind="head" kicker="控制" title={props.title} action={<StatusPill className={readModuleStatusClass(props.badge)} label={props.badge} />} />;
+  return <SectionHeader kind="head" kicker="Module" title={props.title} action={<StatusPill className={readModuleStatusClass(props.badge)} label={props.badge} />} />;
 }
 
 function PlaceholderRow(props: { title: string; text: string }) {

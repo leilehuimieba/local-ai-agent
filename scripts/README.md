@@ -117,6 +117,16 @@
    - 真实入口：拉起隔离 `runtime-host` 与 `gateway` 后，通过 `POST /api/v1/chat/run` + `GET /api/v1/logs` 完成端到端校验。
    - 证据输出：`tmp/project-status-answer-regression/latest.json`。
    - 引用文档：`docs/07-test/evidence/20260419-project-status-answer-regression/README.md`
+33. `run-stage-h-gate-acceptance.ps1`
+   - 用途：阶段 H `Gate-H` 聚合验收入口（聚合 H-01 ~ H-05 当前权威状态并输出 Gate-H 判定）。
+   - 当前口径：只固化当前 `warning / ready=false` 的聚合事实，不把 Gate-H 误写为通过。
+   - 输出格式：`tmp/stage-h-gate/latest.json` 采用“英文结构字段 + 中文说明字段”的双语 JSON，便于机器读取与人工复核同时使用。
+   - 证据输出：`tmp/stage-h-gate/latest.json`。
+34. `run-stage-h-signoff-acceptance.ps1`
+   - 用途：阶段 H `Gate-H` 提审入口（基于 Gate-H 聚合报告输出当前是否可签收的结构化结论）。
+   - 当前口径：只固化当前 `warning / signoff_ready=false` 的提审事实，不把 Gate-H 误写为可签收。
+   - 输出格式：`tmp/stage-h-signoff/latest.json` 采用“英文结构字段 + 中文说明字段”的双语 JSON，便于机器读取与人工复核同时使用。
+   - 证据输出：`tmp/stage-h-signoff/latest.json`。
 
 ## 2. 同步命令示例
 

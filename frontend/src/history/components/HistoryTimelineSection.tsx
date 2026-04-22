@@ -1,7 +1,7 @@
 import { KeyboardEvent } from "react";
 
 import { LogEntry } from "../../shared/contracts";
-import { EmptyStateBlock, SectionHeader, StatusPill } from "../../ui/primitives";
+import { EmptyStateBlock, MetricChip, SectionHeader, StatusPill } from "../../ui/primitives";
 import { readAuditTags } from "../auditSignals";
 import { readLogType, readReviewTypeLabel } from "../logType";
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../../runtime/state";
@@ -16,7 +16,12 @@ type HistoryTimelineSectionProps = {
 export function HistoryTimelineSection(props: HistoryTimelineSectionProps) {
   return (
     <section className="page-section logs-timeline-panel">
-      <SectionHeader title="时间线" description="按时间顺序扫读稳定记录，优先看类型、阶段、摘要和风险。" />
+      <SectionHeader
+        kicker="Timeline"
+        title="稳定记录流"
+        description="按时间顺序扫读稳定记录，优先看状态、阶段、摘要和关键信号。"
+        action={<MetricChip label="记录" value={`${props.logs.length} 条`} />}
+      />
       <div className="investigation-list" role="listbox" aria-label="稳定记录时间线">
         {renderTimeline(props.logs, props.selectedLogId, props.onSelectLog)}
       </div>
@@ -56,14 +61,14 @@ function HistoryTimelineItem(props: {
       onClick={() => props.onSelect(props.log.log_id)}
       onKeyDown={(event) => handleHistoryItemKeyDown(event, props.log.log_id, props.onSelect)}
     >
-      <TimelineItemHeader log={props.log} />
+      <TimelineItemHeader log={props.log} selected={props.selected} />
       <TimelineItemDetails log={props.log} />
       <TimelineItemMeta log={props.log} />
     </article>
   );
 }
 
-function TimelineItemHeader(props: { log: LogEntry }) {
+function TimelineItemHeader(props: { log: LogEntry; selected: boolean }) {
   const logType = readLogType(props.log);
   return (
     <div className="investigation-item-head">
@@ -71,7 +76,7 @@ function TimelineItemHeader(props: { log: LogEntry }) {
         <strong>{readReviewTypeLabel(logType)}</strong>
         <p>{props.log.stage || "无阶段"}</p>
       </div>
-      <div className="timeline-chip-row">
+      <div className={buildTimelineChipRowClass(props.log, props.selected)}>
         <StatusPill className={readStatusClass(props.log)} label={readStatusLabel(props.log)} />
         {readRiskTag(props.log) ? <span className="risk-pill risk-medium">{readRiskTag(props.log)}</span> : null}
         {props.log.error?.error_code ? <span className="sidebar-chip-muted">{props.log.error.error_code}</span> : null}
@@ -83,23 +88,18 @@ function TimelineItemHeader(props: { log: LogEntry }) {
 function TimelineItemDetails(props: { log: LogEntry }) {
   return (
     <div className="timeline-detail-group">
-      <p className="timeline-detail timeline-summary">{readTimelineSummary(props.log)}</p>
-      {readToolName(props.log) ? <p className="timeline-detail">工具：{readToolName(props.log)}</p> : null}
-      {readKeyDetail(props.log) ? <p className="timeline-detail">{readKeyDetail(props.log)}</p> : null}
+      {readTimelineDetails(props.log).map((item, index) => (
+        <p key={`${props.log.log_id}-${index}`} className={index === 0 ? "timeline-detail timeline-summary" : "timeline-detail"}>{item}</p>
+      ))}
     </div>
   );
 }
 
 function TimelineItemMeta(props: { log: LogEntry }) {
-  const auditTags = readAuditTags(props.log);
+  const tags = readTimelineTags(props.log);
   return (
     <div className="timeline-tags">
-      <span>{readReviewTypeLabel(readLogType(props.log))}</span>
-      <span>{props.log.tool_category || props.log.category}</span>
-      <span>{props.log.level}</span>
-      <span>{props.log.source || "runtime"}</span>
-      {auditTags.map((item) => <span key={`${props.log.log_id}-${item}`}>{item}</span>)}
-      <span>{formatTimestamp(props.log.timestamp)}</span>
+      {tags.map((item) => <span key={`${props.log.log_id}-${item}`}>{item}</span>)}
     </div>
   );
 }
@@ -107,6 +107,12 @@ function TimelineItemMeta(props: { log: LogEntry }) {
 function buildItemClass(selected: boolean, log: LogEntry) {
   const tone = readItemTone(log);
   return selected ? `investigation-item selected tone-${tone}` : `investigation-item tone-${tone}`;
+}
+
+function buildTimelineChipRowClass(log: LogEntry, selected: boolean) {
+  const tone = readItemTone(log);
+  const stateClass = `timeline-chip-row timeline-chip-row-${tone}`;
+  return selected ? `${stateClass} timeline-chip-row-selected` : stateClass;
 }
 
 function readItemTone(log: LogEntry) {
@@ -123,6 +129,26 @@ function readToolName(log: LogEntry) {
 
 function readRiskTag(log: LogEntry) {
   return log.risk_level || (log.confirmation_id ? "确认" : "");
+}
+
+function readTimelineDetails(log: LogEntry) {
+  return [
+    readTimelineSummary(log),
+    readToolName(log) ? `工具：${readToolName(log)}` : "",
+    readKeyDetail(log),
+  ].filter(Boolean) as string[];
+}
+
+function readTimelineTags(log: LogEntry) {
+  const tags = [
+    readReviewTypeLabel(readLogType(log)),
+    log.tool_category || log.category || "",
+    log.level || "",
+    log.source || "runtime",
+    ...readAuditTags(log),
+  ].filter(Boolean);
+  const unique = Array.from(new Set(tags)).slice(0, 3);
+  return [...unique, formatTimestamp(log.timestamp)];
 }
 
 function readKeyDetail(log: LogEntry) {

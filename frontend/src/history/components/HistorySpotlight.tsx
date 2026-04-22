@@ -9,8 +9,9 @@ export function HistoryReviewSpotlight(props: { focusLog: LogEntry | null }) {
     <section className="review-spotlight logs-focus-strip">
       <SectionHeader
         className="review-spotlight-head"
-        kicker="焦点"
-        title="复盘摘要"
+        kicker="Spotlight"
+        title="焦点复盘卡"
+        description="把当前选中记录的结论、风险与验证信号压缩到同一块里。"
         action={
           <div className="review-chip-row">
             {spotlight.chips.map((chip) => <MetricChip key={`${chip.label}-${chip.value}`} label={chip.label} value={chip.value} />)}
@@ -27,7 +28,7 @@ export function HistoryReviewSpotlight(props: { focusLog: LogEntry | null }) {
 function EmptyReviewSpotlight() {
   return (
     <section className="review-spotlight logs-focus-strip">
-      <SectionHeader className="review-spotlight-head" kicker="焦点" title="复盘摘要" />
+      <SectionHeader className="review-spotlight-head" kicker="Spotlight" title="焦点复盘卡" description="从左侧选择一条记录后，这里会显示压缩后的复盘摘要。" />
     </section>
   );
 }

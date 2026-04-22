@@ -1,6 +1,6 @@
 # H-mcp-skills-quality-20260415（verify）
 
-更新时间：2026-04-17
+更新时间：2026-04-22
 状态：部分已验证（H03-39 正式执行后复核与交接已完成，仍为 warning）
 
 ## 验证方式
@@ -32,6 +32,25 @@
    - `cargo test -p runtime-core run_verification_metadata -- --nocapture`
    - `cargo test -p runtime-core skill_catalog -- --nocapture`
    - `static read: skill_catalog.rs, context_builder.rs, context_policy.rs, memory_router.rs, verify.rs`
+
+## 2026-04-22 漂移复核补记
+
+1. `tmp/stage-h-mcp-skills/latest.json` 当前仍为 `2026-04-16` 的旧聚合产物，`summary` 仍停在 `business_chain_samples=8`、`false_positive_samples=3`、`manual_review_samples=4`。
+2. 已于 2026-04-22 对 `tmp/stage-h-mcp-skills/latest.json` 做保守回刷：`summary` 已更新为 `30 / 24 / 16`，并新增 `summary_basis`、`base_eval_sync_pending`、`aggregation_state` 字段，明确该主报告当前以 H03-38/H03-39 专项批次证据为真值来源。
+3. 已于 2026-04-22 对 `tmp/stage-h-mcp-skills/evals/business-task-chain.json`、`skill-false-positive.json`、`manual-review.json` 补入 `formal_batch_summary` 与 `batch_sync_state`，把正式批次总量、索引级样本覆盖与 `detail_backfill_pending=true` 显式落盘。
+4. 已于 2026-04-22 进一步补入 `formal_batch_detailed_samples`：
+   - `business-task-chain.json` 当前已回填 17 条可直接追溯的正式批次详细样本；
+   - `skill-false-positive.json` 当前已回填 5 条可直接追溯的正式批次详细样本；
+   - `manual-review.json` 当前已回填 8 条可直接追溯的正式批次详细样本。
+5. 当前三份基础 eval 仍保留旧基础样本明细；本轮只补“可直接追溯的 detailed sample layer”，不伪造 30 / 24 / 16 的完整样本列表；因此它们当前状态应理解为“批次 summary 已同步、部分详细样本已回填、剩余样本仍 pending”。
+6. `h03-38-batch1-execution.json`、`h03-39-handoff-check.json`、`skill-hit-effective-calibration.json`、`review-rounds-h03.json`、`long-tail-distribution.json`、`recovery-chain-distribution.json` 等专项证据，已推进到 H03-38/H03-39 的批次验证强度。
+7. 因此，当前允许的准确表述应是：“`latest.json` 与三份基础 eval 均已按专项批次证据完成保守/诚实回刷，并补入部分可追溯 detailed sample layer，但完整详细样本明细仍待统一回填”；不得误写成“所有基础聚合文件已完全同步”。
+8. 当前详细样本缺口已单独落盘到 `formal-batch-detail-backfill-gap-20260422.md`；后续如继续推进，只允许围绕该清单补剩余 detailed sample 明细。
+9. 已于 2026-04-22 进一步核对 `manual-review` 的 formal batch detailed sample 落点：`review-rounds-h03.json`、`manual-review.json.institutional_review_primary_records`、`indexed_formal_batch_sample_ids` 与 `formal_batch_detailed_samples` 当前都只稳定支撑 8 条结构化样本。
+10. `representative-coverage.json` 中较早引用的 `manual_review_cross_domain_external_imported / manual_review_long_chain_review_manual_verify / manual_review_high_conflict_multi_candidate / manual_review_cross_domain_trust_conflict`，当前未在现有 formal batch detailed sample layer 中形成对应的结构化回指落点。
+11. 因此，`manual_review_cases=16` 当前只能作为 formal batch summary 口径使用；剩余 8 条不能默认视为“已有现成可回填明细”，而应继续视为“来源待确认 / 结构化落点待补”。
+12. 已继续核对 `update_task13.py` 与 `h03-institutional-review-check.json`：前者只显式涉及较早的 2 条 manual-review 扩样脚本落点，后者只确认了 `review_rounds_samples=8 / manual_review_primary_records=8` 的最小主索引闭环；当前未发现除现有 8 条之外的新增结构化明细来源。
+13. 因此，当前更准确结论应收紧为：`manual-review` 剩余 8 条不是“待抄录”，而是“当前未发现更多可直接回填的结构化来源”。
 
 ## 本轮新增验证结论
 
@@ -381,7 +400,7 @@
 3. Gate-H 是否可签收。
 
 ### 实际结果（2026-04-17 H03-38）
-1. 数量门槛已达到：`business_chain_samples=30`、`false_positive_samples=24`、`manual_review_samples=16`（见 `latest.json.summary`）。
+1. 数量门槛已在专项批次证据中达到：`business_chain_samples=30`、`false_positive_samples=24`、`manual_review_samples=16`（见 `h03-38-batch1-execution.json.quantity_threshold`；当前 `latest.json.summary` 仍未回刷到该口径）。
 2. 长尾门槛已落证：4 类行业（`food_safety_import_tail`、`trade_finance_tail`、`compliance_support_tail`、`repo_maintenance_tail`）且每类 >=2 条非换皮样本（见 `long-tail-distribution.json`）。
 3. 恢复链门槛已落证：恢复链样本 10 条，三段及以上 7 条（见 `recovery-chain-distribution.json`）。
 4. 校准门槛已落证：`skill_hit_effective` 五桶保持有效，且 `manual_assisted_effective` 明确单列，未混算为 `true_positive_effective`（见 `skill-hit-effective-calibration.json`）。
@@ -410,7 +429,7 @@
 4. 主控是否已经批准切主推进。
 
 ### 实际结果（2026-04-17 H03-39）
-1. 已核对：`latest.json.summary`、`h03-38-batch1-execution.json`、`scale-out-strategy-h03.json.h03_38_batch1_result` 对 `business_chain_samples=30`、`false_positive_samples=24`、`manual_review_samples=16` 的数量门槛表达一致。
+1. 已核对：`h03-38-batch1-execution.json`、`h03-39-handoff-check.json`、`scale-out-strategy-h03.json.h03_38_batch1_result` 对 `business_chain_samples=30`、`false_positive_samples=24`、`manual_review_samples=16` 的专项批次门槛表达一致；当前 `latest.json.summary` 仍停在旧聚合口径，尚未完成统一回刷。
 2. 已核对：`long-tail-distribution.json`、`recovery-chain-distribution.json`、`skill-hit-effective-calibration.json`、`review-rounds-h03.json` 均已分别落证长尾、恢复链、五桶校准、双轮/角色差异复核四类结构门槛，而不是仅停留在文档口头表述。
 3. 已核对：`tasks.md`、`status.md`、`verify.md`、`review.md`、`formal-execution-entry.md` 当前统一收口到“仍为 warning / 建议主控评估是否切主推进”，未把结论外溢成 ready、Gate-H 可签收、active change 已切换或主控已批准切主推进。
 4. 已新增：`tmp/stage-h-mcp-skills/h03-39-handoff-check.json`，集中记录 H03-38 稳定性、文档强度一致性与主控交接建议。

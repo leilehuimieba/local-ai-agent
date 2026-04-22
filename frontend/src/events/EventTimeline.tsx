@@ -4,6 +4,7 @@ import { RunEvent, RuntimeContextSnapshot } from "../shared/contracts";
 import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { isPermissionAwaiting, isPermissionBlocked, isPermissionResolved, readPermissionSummary } from "../shared/permissionFlow";
+import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
 
 type EventTimelineProps = {
   autoFollow?: boolean;
@@ -25,10 +26,11 @@ export function EventTimeline(props: EventTimelineProps) {
 
 function EmptyTimeline() {
   return (
-    <div className="empty-state compact">
-      <h3>没有事件记录</h3>
-      <p>任务开始后，这里会显示当前会话的阶段推进和关键动作。</p>
-    </div>
+    <EmptyStateBlock
+      compact
+      title="没有事件记录"
+      text="任务开始后，这里会显示当前会话的阶段推进和关键动作。"
+    />
   );
 }
 
@@ -78,8 +80,9 @@ function EventCard(props: {
   onSelect?: (eventId: string) => void;
 }) {
   const details = buildEventDetails(props.event);
+  const tone = readEventTone(props.event);
   return (
-    <article
+    <InfoCard
       id={props.event.event_id}
       className={buildEventCardClassName(props.selected, props.isLatest, props.event)}
       data-event-id={props.event.event_id}
@@ -87,62 +90,65 @@ function EventCard(props: {
       aria-selected={props.selected}
       tabIndex={props.selected ? 0 : -1}
       onClick={() => props.onSelect?.(props.event.event_id)}
-      onKeyDown={(event) => handleEventCardKeyDown(event, props)}
+      onKeyDown={(event: KeyboardEvent<HTMLElement>) => handleEventCardKeyDown(event, props)}
     >
-      <EventCardHeader event={props.event} isLatest={props.isLatest} />
-      <EventSummary event={props.event} />
-      <EventDetailList details={details} />
+      <EventCardHeader event={props.event} isLatest={props.isLatest} tone={tone} selected={props.selected} />
+      <EventSummary event={props.event} tone={tone} />
+      <EventDetailList details={details} tone={tone} />
       <EventTagRow event={props.event} />
-    </article>
+    </InfoCard>
   );
 }
 
-function EventCardHeader(props: { event: RunEvent; isLatest: boolean }) {
-  const eventType = readRunEventType(props.event);
+function EventCardHeader(props: { event: RunEvent; isLatest: boolean; tone: string; selected: boolean }) {
+  const title = readReviewTypeLabel(readRunEventType(props.event));
   return (
     <div className="investigation-item-head">
       <div className="timeline-head-copy">
-        <strong>{readReviewTypeLabel(eventType)}</strong>
+        <strong>{title}</strong>
         <p>{props.event.stage}</p>
       </div>
-      <div className="timeline-chip-row">
-        <span className={`status-badge ${readStatusClass(props.event)}`}>{readStatusLabel(props.event)}</span>
-        {props.isLatest ? <span className="timeline-focus-badge">最新</span> : null}
+      <div className={readTimelineChipRowClass(props.tone, props.selected)}>
+        <StatusPill className={readStatusClass(props.event)} label={readStatusLabel(props.event)} />
+        {props.isLatest ? <span className={readFocusBadgeClass(props.tone, props.selected)}>最新</span> : null}
       </div>
     </div>
   );
 }
 
-function EventSummary(props: { event: RunEvent }) {
+function EventSummary(props: { event: RunEvent; tone: string }) {
+  const detail = readPrimaryDetail(props.event);
   return (
-    <div className="timeline-detail-group">
-      <p className="timeline-detail timeline-summary">{props.event.summary}</p>
-      {readPrimaryDetail(props.event) ? <p className="timeline-detail">{readPrimaryDetail(props.event)}</p> : null}
+    <div className={`timeline-detail-group timeline-detail-group-${props.tone}`}>
+      <p className={`timeline-detail timeline-summary timeline-summary-${props.tone}`}>{props.event.summary}</p>
+      {detail ? <p className={`timeline-detail timeline-primary-detail timeline-primary-detail-${props.tone}`}>{detail}</p> : null}
     </div>
   );
 }
 
-function EventDetailList(props: { details: EventDetail[] }) {
+function EventDetailList(props: { details: EventDetail[]; tone: string }) {
   if (props.details.length === 0) return null;
   return (
-    <div className="timeline-detail-group">
-      {props.details.map((detail) => <p key={detail.key} className="timeline-detail">{detail.text}</p>)}
+    <div className={`timeline-detail-list timeline-detail-list-${props.tone}`}>
+      {props.details.map((detail) => <DetailRow key={detail.key} detail={detail} tone={props.tone} />)}
     </div>
   );
 }
 
 function EventTagRow(props: { event: RunEvent }) {
+  const tags = buildEventTags(props.event);
   return (
     <div className="timeline-tags">
-      <span>{readReviewTypeLabel(readRunEventType(props.event))}</span>
-      <span>{props.event.source || "runtime"}</span>
-      {props.event.tool_category ? <span>{props.event.tool_category}</span> : null}
-      {readToolTag(props.event) ? <span>{readToolTag(props.event)}</span> : null}
-      {props.event.risk_level ? <span>{props.event.risk_level}</span> : null}
-      {isMemoryEvent(props.event) ? <span>{readMemoryFacetLabel(eventLikeMemory(props.event))}</span> : null}
-      {isMemoryEvent(props.event) ? <span>{readMemoryGovernanceLabel(eventLikeMemory(props.event))}</span> : null}
+      {tags.map((tag) => <span key={tag}>{tag}</span>)}
     </div>
   );
+}
+
+function buildEventTags(event: RunEvent) {
+  const tags = [readReviewTypeLabel(readRunEventType(event)), readToolTag(event), event.risk_level, event.source || "runtime"];
+  if (isMemoryEvent(event)) tags.push(readMemoryFacetLabel(eventLikeMemory(event)));
+  if (isMemoryEvent(event)) tags.push(readMemoryGovernanceLabel(eventLikeMemory(event)));
+  return compactTags(tags);
 }
 
 function buildEventDetails(event: RunEvent) {
@@ -150,22 +156,21 @@ function buildEventDetails(event: RunEvent) {
   const details = snapshotDetails(event);
   const permissionSummary = readPermissionSummary(event);
   return compactDetails([
-    { key: "detail", text: readPrimaryDetail(event) },
     { key: "action", text: readActionDetail(event) },
-    { key: "observation-token-budget", text: tokenBudget },
     { key: "permission", text: permissionSummary },
-    { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
-    { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
-    { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
-    { key: "raw-output", text: readRawOutputRef(event) },
-    { key: "evidence-ref", text: readEvidenceRef(event) },
-    { key: "activity-state", text: event.activity_state ? `执行态：${event.activity_state}` : "" },
+    { key: "next", text: readNextActionHint(event) },
+    { key: "failure-route", text: readFailureRoute(event) },
     { key: "stall", text: readStallDetail(event) },
     { key: "waiting-reason", text: event.waiting_reason ? `等待原因：${event.waiting_reason}` : "" },
-    { key: "failure-route", text: readFailureRoute(event) },
-    { key: "workspace", text: details.workspace ? `工作区：${details.workspace}` : "" },
+    { key: "artifact", text: event.artifact_path ? `产物：${event.artifact_path}` : "" },
     { key: "verification", text: details.verification ? `验证：${details.verification}` : "" },
-    { key: "next", text: readNextActionHint(event) },
+    { key: "observation-token-budget", text: tokenBudget },
+    { key: "activity-state", text: event.activity_state ? `执行态：${event.activity_state}` : "" },
+    { key: "raw-output", text: readRawOutputRef(event) },
+    { key: "evidence-ref", text: readEvidenceRef(event) },
+    { key: "memory", text: isMemoryEvent(event) ? `记忆动作：${readMemoryActivityLabel(eventLikeMemory(event))}` : "" },
+    { key: "governance", text: isMemoryEvent(event) ? `治理状态：${readMemoryGovernanceLabel(eventLikeMemory(event))}` : "" },
+    { key: "workspace", text: details.workspace ? `工作区：${details.workspace}` : "" },
     { key: "reason", text: readMemoryReason(event) },
   ]);
 }
@@ -184,7 +189,25 @@ function readNextActionHint(event: RunEvent) {
 }
 
 function compactDetails(details: EventDetail[]) {
-  return details.filter((detail) => detail.text).slice(0, 8);
+  return details.filter((detail) => detail.text).slice(0, 4);
+}
+
+function compactTags(tags: Array<string | undefined>) {
+  return [...new Set(tags.filter(Boolean))].slice(0, 3) as string[];
+}
+
+function DetailRow(props: { detail: EventDetail; tone: string }) {
+  return <p className={`timeline-detail timeline-detail-row timeline-detail-row-${props.tone}`}>{props.detail.text}</p>;
+}
+
+function readTimelineChipRowClass(tone: string, selected: boolean) {
+  const state = selected ? "selected" : "plain";
+  return `timeline-chip-row timeline-chip-row-${tone} timeline-chip-row-${state}`;
+}
+
+function readFocusBadgeClass(tone: string, selected: boolean) {
+  const state = selected ? "selected" : "plain";
+  return `timeline-focus-badge timeline-focus-badge-${tone} timeline-focus-badge-${state}`;
 }
 
 function readRawOutputRef(event: RunEvent) {

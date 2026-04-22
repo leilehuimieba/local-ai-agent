@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-04-22T06:34:16.451Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "summary": "Wave 3 walkthrough covering Logs, History/Review, Settings, and Settings->Resources.",
+  "steps": [
+    {
+      "id": 1,
+      "view": "logs",
+      "note": "进入记录视图，验证 Logs workspace hero 与复盘工作区头部。",
+      "url": "http://127.0.0.1:4173/",
+      "found": [
+        "Logs / Review Workspace",
+        "调查记录工作区",
+        "复盘筛选台",
+        "稳定记录流",
+        "焦点复盘卡"
+      ],
+      "capturedAt": "2026-04-22T06:34:02.444Z"
+    },
+    {
+      "id": 2,
+      "view": "history-review",
+      "note": "在 Logs / Review workspace 内选中一条稳定记录，验证 History / Review 不是独立页面，而是挂在复盘工作区内。",
+      "url": "http://127.0.0.1:4173/",
+      "found": [
+        "焦点复盘卡",
+        "复盘详情栏",
+        "基本信息",
+        "复盘拆解",
+        "风险与错误"
+      ],
+      "capturedAt": "2026-04-22T06:34:03.523Z"
+    },
+    {
+      "id": 3,
+      "view": "settings",
+      "note": "进入设置视图，验证 Settings workspace hero、运行态卡与模块分区。",
+      "url": "http://127.0.0.1:4173/",
+      "found": [
+        "Settings Workspace",
+        "记忆与资源"
+      ],
+      "capturedAt": "2026-04-22T06:34:15.154Z"
+    },
+    {
+      "id": 4,
+      "view": "settings-resources",
+      "note": "在 Settings 内滚动到记忆与资源模块，验证 Resources 不是独立页面，而是 Settings 内模块。",
+      "url": "http://127.0.0.1:4173/",
+      "found": [
+        "资源工作区",
+        "Memory / Resources Workspace",
+        "记忆入口",
+        "治理摘要",
+        "存储落点"
+      ],
+      "capturedAt": "2026-04-22T06:34:16.451Z"
+    }
+  ]
+}

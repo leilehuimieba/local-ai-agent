@@ -23,6 +23,7 @@ export function ContextSidebar(props: ContextSidebarProps) {
   const model = buildHubModel(props);
   return (
     <aside className={readSidebarClass(props.variant)}>
+      <SidebarOverview model={model} />
       {buildInspectorSections(model).map(renderInspectorSection)}
     </aside>
   );
@@ -53,6 +54,25 @@ function buildHubModel(props: ContextSidebarProps) {
   };
 }
 
+function SidebarOverview(props: { model: ReturnType<typeof buildHubModel> }) {
+  return (
+    <section className="sidebar-card sidebar-overview-card">
+      <div className="section-head">
+        <div>
+          <span className="section-kicker">工作台侧栏</span>
+          <h3>{readSidebarOverviewTitle(props.model.variant)}</h3>
+        </div>
+        <span className={`status-badge ${readInspectorStatusClass(props.model.statusLine)}`}>{props.model.statusLine}</span>
+      </div>
+      <p className="sidebar-title">{props.model.currentTask}</p>
+      <div className="sidebar-inline-meta">
+        <span>{props.model.settings?.workspace.name || "未加载工作区"}</span>
+        <span>{props.model.connectionLabel}</span>
+      </div>
+    </section>
+  );
+}
+
 function TaskGroup(props: { model: ReturnType<typeof buildHubModel> }) {
   return (
     <section className="sidebar-card inspector-card">
@@ -81,7 +101,12 @@ function createInspectorSection(key: InspectorSectionKey, model: ReturnType<type
 
 function readInspectorSectionOrder(variant: ContextSidebarProps["variant"]) {
   if (variant === "home") return ["task", "context", "risk"] as InspectorSectionKey[];
-  return ["action", "context", "risk"] as InspectorSectionKey[];
+  return ["task", "action", "context", "risk"] as InspectorSectionKey[];
+}
+
+function readSidebarOverviewTitle(variant: ContextSidebarProps["variant"]) {
+  if (variant === "task") return "当前任务工作区";
+  return "首页上下文与风险概览";
 }
 
 function ActionGroup(props: { model: ReturnType<typeof buildHubModel> }) {
@@ -136,7 +161,7 @@ function InspectorHeader(props: { title: string; status: string }) {
   return (
     <div className="section-head">
       <div>
-        <span className="section-kicker">检查器</span>
+        <span className="section-kicker">工作台模块</span>
         <h3>{props.title}</h3>
       </div>
       <span className={`status-badge ${readInspectorStatusClass(props.status)}`}>{props.status}</span>

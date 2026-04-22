@@ -1,7 +1,7 @@
 # H-remediation-playbook-20260415（verify）
 
-更新时间：2026-04-17（冻结观察口径已收紧）
-状态：部分已验证（边界冻结 + 三类真实修复样本 + 一类配置自动写入最小闭环样本已落证据；当前无新的合格受限样本）
+更新时间：2026-04-21（已补 baijiacms 多层接管样本总结）
+状态：部分已验证（边界冻结 + 三类真实修复样本 + 一类配置自动写入最小闭环样本已落证据，并新增 baijiacms 的多层接管样本总结；当前无新的合格受限样本）
 
 ## 验证方式
 
@@ -24,14 +24,26 @@
    - `tmp/stage-h-remediation/manual-guides/`
    - `tmp/stage-h-remediation/replay-results.json`（`config_missing_required_fields` 已更新为 `auto_fix`）
    - `tmp/stage-h-remediation/manual-guide-eval.json`（当前 8 条扩样，`guide_score_avg=4.75`）
-3. 聚合回填证据：
+3. 新增样本证据：
+   - `tmp/stage-h-remediation/h02-baijiacms-usable-sample-20260420.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-iis-restored-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-db-prereq-takeover-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-db-prereq-guide-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-db-prereq-runtime-check-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-siteid-host-check-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-homepage-check-20260421.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`
+   - `tmp/stage-h-remediation/manual-guides/baijiacms-db-prereq-missing.md`
+   - `tmp/stage-h-remediation/baijiacms-phpstudy-8088-final-check.json`
+   - `tmp/stage-h-remediation/h02-baijiacms-iis-php-blockers-20260420.json`
+4. 聚合回填证据：
    - `docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md`
    - `docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/verify.md`
-4. 复用基线证据：
+5. 复用基线证据：
    - `tmp/stage-f-doctor/latest.json`
    - `scripts/doctor.ps1`
    - `scripts/run-stage-f-doctor-acceptance.ps1`
-5. 本轮测试记录：
+6. 本轮测试记录：
    - `go test ./internal/api -run 'TestRemediate|TestGenerateH02RemediationEvidence'`（工作目录：`D:/newwork/本地智能体/gateway`）
    - 人工接管评分证据已随 `TestGenerateH02RemediationEvidence` 刷新
 
@@ -42,10 +54,23 @@
    - 低风险自动修复已覆盖日志目录、前端构建、gateway 启动恢复与一个配置缺失字段补默认值子样本。
    - 人工接管模板可执行性已有 8 条样本评分证据，说明当前手动指引不是空文档。
    - 当前已有足够文档与证据，把剩余 warning 从“缺口已定义”推进到“后续路径已裁决”。
+   - `baijiacms` 已额外证明一类本地 PHP 靶场环境问题可从“IIS 500 阻塞”收敛到“IIS 主链路恢复、剩余问题降到应用层数据库前置条件”。
+   - `baijiacms` 现已可进一步作为“环境已恢复、剩余数据库前置条件缺失”的人工接管样本保留，后续接手无需再回到环境链路排查。
+   - `baijiacms` 的数据库前置条件缺失样本已补齐专用人工接管指引，当前接手动作已能直接落到数据库配置、MySQL 服务与安装状态核对。
+   - `baijiacms` 已完成最小运行核查：当前直接阻塞可进一步收紧为“MySQL 未启动”；数据库启动后页面进入“未找到站点ID”，说明接管入口已继续向业务层前移。
+   - `baijiacms` 已进一步确认站点ID问题源于 Host 不匹配；切换到 `localhost` 后页面继续推进到“请先在后台进行店铺装修，新建一个店铺首页”，说明接管入口已继续前移到业务初始化。
+   - `baijiacms` 已进一步确认店铺首页提示的直接原因是 `baijiacms_eshop_designer` 缺少商城首页装修记录，当前接管入口已具体落到首页装修数据初始化。
+   - `baijiacms` 现已可正式收口为“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”的高质量多层人工接管样本，并可在 H-02 冻结观察期内稳定归档引用。
 2. 已支持的结论边界：
    - 可以证明 H-02 warning 已明显收缩。
    - 可以证明 H-02 已进入“签收级缺口收口阶段”，且当前后续路径已裁决。
    - 不能据此证明 H-02 已 ready，更不能据此视为 Gate-H 可签收输入。
+   - `baijiacms` 的 IIS 主链路恢复只能增强 H-02 的环境/接管样本强度，不等于阶段签收。
+   - `baijiacms` 的数据库前置条件缺失样本只证明人工接管边界已更清楚，不等于获得应用层自动修复结论。
+   - `baijiacms` 的最小运行核查只证明接管链路已进一步收紧，不等于业务层初始化已完成。
+   - `baijiacms` 的 Host/站点ID 核查只证明当前访问入口应改用 `localhost` 或等价 Host 映射，不等于店铺首页初始化已完成。
+   - `baijiacms` 的首页装修缺失核查只证明业务层缺少默认首页数据，不等于后台装修流程已完成。
+   - `baijiacms` 的样本总结只证明该样本已可作为高质量多层人工接管样本归档，不等于 H-02 ready 或 Gate-H 可签收。
 
 ## 当前仍不足以签收的原因
 
@@ -179,3 +204,4 @@ H-02 在以下情况下仍只适合停留在 warning：
 3. 当前未覆盖且仍阻塞签收的内容：
    - 更高风险配置写入的签收级验证。
    - 更广权限类真实验收的签收级分层验证。
+

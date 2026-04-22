@@ -58,7 +58,23 @@ function MemoryOverviewGrid(props: {
 }
 
 function MemorySectionHeader(props: { enabled: boolean; count: number }) {
-  return <SectionHeader title="Memory Policy" action={<div className="page-header-meta"><MetricChip label="结果" value={`${props.count} 条`} /><StatusPill label={props.enabled ? "已启用" : "未启用"} /></div>} />;
+  return (
+    <SectionHeader
+      kicker="Resources"
+      title="Memory / Resources Workspace"
+      description="统一查看记忆策略、治理状态、筛选结果与资源落点，保持和 Logs、Settings 一致的工作台语言。"
+      action={<MemoryHeaderMeta count={props.count} enabled={props.enabled} />}
+    />
+  );
+}
+
+function MemoryHeaderMeta(props: { count: number; enabled: boolean }) {
+  return (
+    <div className="page-header-meta">
+      <MetricChip label="结果" value={`${props.count} 条`} />
+      <StatusPill label={props.enabled ? "已启用" : "未启用"} />
+    </div>
+  );
 }
 
 function MemoryStatusCard(props: { enabled: boolean; latestMemory?: MemoryEntry }) {
@@ -122,8 +138,13 @@ function MemoryList(props: {
   onRefresh: () => void;
 }) {
   return (
-    <div className="settings-subsection">
-      <SectionHeader title="记忆入口" action={<MemoryListActions filter={props.filter} isRefreshing={props.isRefreshing} onFilterChange={props.onFilterChange} onRefresh={props.onRefresh} />} />
+    <div className="settings-subsection resources-list-section">
+      <SectionHeader
+        kicker="Entries"
+        title="记忆入口"
+        description="按筛选结果浏览偏好、教训和治理项，必要时再展开单条详情。"
+        action={<MemoryListActions filter={props.filter} isRefreshing={props.isRefreshing} onFilterChange={props.onFilterChange} onRefresh={props.onRefresh} />}
+      />
       {props.actionState ? <MemoryActionNotice state={props.actionState} /> : null}
       {props.error ? <MemoryErrorCard message={props.error} /> : null}
       {!props.error && props.groups.length === 0 ? <EmptyMemoryCard /> : null}
@@ -154,8 +175,8 @@ function MemoryActionNotice(props: { state: ResourceActionState }) {
 
 function MemoryErrorCard(props: { message: string }) {
   return (
-    <div className="detail-card">
-      <strong>记忆入口</strong>
+    <div className="detail-card muted-card">
+      <strong>资源入口</strong>
       <p>{props.message}</p>
     </div>
   );

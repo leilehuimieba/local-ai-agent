@@ -1,6 +1,6 @@
 # H-remediation-playbook-20260415（tasks）
 
-更新时间：2026-04-17
+更新时间：2026-04-21
 状态：进行中
 
 | ID | 任务 | 类型 | 状态 | 验收标准 | 证据 |
@@ -29,6 +29,13 @@
 | H02-21 | 选定第二个受限验证窗口 | 文档/授权准备 | done | design/status/review 已明确：第二窗口固定为 `frontend_dist_missing_build_ready_rebuild`，且其他候选继续保持禁止、观察或人工接管 | `design.md`, `status.md`, `review.md` |
 | H02-22 | 冻结第二窗口授权准备说明 | 文档/授权准备 | done | design/verify 已明确：第二窗口的前置条件、动作范围、成功判据、失败降级、回退方式、停止条件与授权边界；本轮不进入真实执行 | `design.md`, `verify.md` |
 | H02-23 | 回填第二个受限验证窗口结果 | 验证/受限执行 | done | `frontend_dist_missing_build_ready_rebuild` 已在受限边界内完成一次前置条件核查并记录为 `aborted_manual_takeover`；该记录不构成新的合格受限样本，当前只允许冻结观察并维持人工接管 | `tmp/stage-h-remediation/latest.json`, `tmp/stage-h-remediation/replay-results.json`, `status.md`, `verify.md`, `review.md` |
+| H02-24 | 回填 baijiacms IIS 主链路恢复样本 | 验证/样本增强 | done | `baijiacms-master` 已从“IIS 统一 500”推进到“80 端口下 PHP 探针与 index.php 均 200”，并把剩余问题收敛到应用层数据库配置；该结果仅增强 H-02 样本强度，不得外推为 ready | `tmp/stage-h-remediation/h02-baijiacms-iis-restored-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-25 | 回填 baijiacms 数据库前置条件缺失接管样本 | 验证/人工接管样本 | done | `baijiacms-master` 已明确收口为“环境已恢复、剩余数据库前置条件缺失”的人工接管样本；接手者无需再排查 IIS/FastCGI，只需转向数据库配置或初始化 | `tmp/stage-h-remediation/h02-baijiacms-db-prereq-takeover-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-26 | 补 baijiacms 数据库前置条件缺失接管指引 | 验证/人工接管指引 | done | 已补专用人工接管指引，接手者可直接按 `config/config.php`、MySQL 服务、`install.php` 三步核对，不再回到环境链路排查 | `tmp/stage-h-remediation/manual-guides/baijiacms-db-prereq-missing.md`, `tmp/stage-h-remediation/h02-baijiacms-db-prereq-guide-20260421.json`, `status.md`, `verify.md` |
+| H02-27 | 回填 baijiacms 数据库前置条件最小运行核查 | 验证/人工接管样本 | done | 已确认当前直接原因可收紧为“MySQL 未启动”；临时启动后 `baijiacms` 库存在且页面推进到“未找到站点ID”，接手者应先启动 MySQL，再转业务层排查 | `tmp/stage-h-remediation/h02-baijiacms-db-prereq-runtime-check-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-28 | 回填 baijiacms 站点ID/Host 匹配核查 | 验证/人工接管样本 | done | 已确认“未找到站点ID”源于 Host 与 `system_store.website` 不匹配；切换到 `localhost` 后页面推进到“请先在后台进行店铺装修，新建一个店铺首页”，接手者应先修正访问 Host，再转业务初始化 | `tmp/stage-h-remediation/h02-baijiacms-siteid-host-check-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-29 | 回填 baijiacms 首页装修缺失核查 | 验证/人工接管样本 | done | 已确认“请先在后台进行店铺装修，新建一个店铺首页”源于 `baijiacms_eshop_designer` 缺少 `uniacid=1` 且 `pagetype=1` 的首页装修记录；接手者应直接进入后台店铺装修初始化 | `tmp/stage-h-remediation/h02-baijiacms-homepage-check-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-30 | 收口 baijiacms 多层接管样本总结 | 验证/样本归档 | done | 已把 `baijiacms` 收口为“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”的高质量多层人工接管样本，并明确当前停止点只到 warning 归档，不外推为 ready | `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`, `status.md`, `verify.md`, `review.md` |
 
 ## 执行顺序
 
@@ -39,6 +46,11 @@
 5. 已完成唯一受限验证窗口执行：H02-20
 6. 已完成第二窗口授权准备：H02-21 -> H02-22
 7. 已完成第二窗口结果回填：H02-23
-8. H02-21/H02-22 只负责选定并冻结第二窗口授权准备；H02-23 记录的是一次受限边界内的前置条件核查，当前结果为前置条件不足而中止并降级人工接管。
-9. 当前没有新的合格受限样本；H-02 应继续理解为“冻结但可继续观察”的 warning，而不是“可继续扩窗”。
-10. 除非后续补齐新的 build-ready 且 `dist/index.html` 缺失的合格样本并重新获得主控授权，否则不得据此继续执行第二窗口，更不得把 H-02 写成 ready 或回刷 Gate-H。
+8. 已完成 `baijiacms` IIS 主链路恢复样本回填：H02-24
+9. 已完成 `baijiacms` 多层接管样本总结收口：H02-25 -> H02-26 -> H02-27 -> H02-28 -> H02-29 -> H02-30
+10. H02-21/H02-22 只负责选定并冻结第二窗口授权准备；H02-23 记录的是一次受限边界内的前置条件核查，当前结果为前置条件不足而中止并降级人工接管。
+11. H02-24 ~ H02-30 共同记录的是 `baijiacms` 从环境恢复一路推进到业务初始化缺口的多层接管样本；当前最强结论只到高质量 warning 样本归档，不得外推为 ready。
+12. 当前没有新的合格受限样本；H-02 应继续理解为“冻结但可继续观察”的 warning，而不是“可继续扩窗”。
+13. 除非后续补齐新的 build-ready 且 `dist/index.html` 缺失的合格样本并重新获得主控授权，否则不得据此继续执行第二窗口，更不得把 H-02 写成 ready 或回刷 Gate-H。
+
+
