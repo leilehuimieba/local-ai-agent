@@ -20,6 +20,7 @@
 
 1. [H-frontend-workbench-reframe-20260421](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-frontend-workbench-reframe-20260421/status.md)（并行收口：Wave 3 页面证据已补齐，主控判断可结束，不切主推进）
 2. [H-modularity-hardening-20260419](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-modularity-hardening-20260419/status.md)（草案：仓库模块化收敛与热点文件减重）
+3. [H-memory-object-review-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-object-review-20260423/status.md)（并行可提审：memory object/version、system views 与 rollback 最小升级已补齐；不切主推进）
 
 ## 保留观察项
 

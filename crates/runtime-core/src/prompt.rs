@@ -120,13 +120,15 @@ fn render_dynamic_prompt(
     task_hint: &str,
     answer_style: &str,
 ) -> String {
+    let memory_layer = memory_layer_prompt(envelope);
     let base = format!(
-        "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
+        "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆分层：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
         task_hint,
         envelope.dynamic_block.phase_label,
         envelope.dynamic_block.selection_reason,
         envelope.dynamic_block.user_input,
         envelope.dynamic_block.session_summary,
+        memory_layer,
         envelope.dynamic_block.memory_digest,
         envelope.dynamic_block.knowledge_digest,
         envelope.dynamic_block.tool_preview,
@@ -151,6 +153,67 @@ fn observation_prompt_block(envelope: &RuntimeContextEnvelope) -> String {
     )
 }
 
+fn memory_layer_prompt(envelope: &RuntimeContextEnvelope) -> String {
+    let mut layers = Vec::new();
+    if envelope.dynamic_block.memory_has_system_views {
+        layers.push("system views");
+    }
+    if envelope.dynamic_block.memory_has_current_objects {
+        layers.push("current memory object");
+    }
+    if layers.is_empty() {
+        "未显式启用 object-aware 分层".to_string()
+    } else {
+        format!(
+            "{}（对象 {} 条）",
+            layers.join(" + "),
+            envelope.dynamic_block.memory_current_object_count
+        )
+    }
+}
+
 fn join_prompt_parts(static_prompt: &str, project_prompt: &str, dynamic_prompt: &str) -> String {
     [static_prompt, project_prompt, dynamic_prompt].join("\n\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::context_builder::{
+        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
+    };
+
+    #[test]
+    fn render_prompt_surfaces_memory_layer_block() {
+        let envelope = RuntimeContextEnvelope {
+            user_input: "对象摘要".to_string(),
+            mode: "standard".to_string(),
+            workspace_root: "D:/repo".to_string(),
+            static_block: StaticPromptBlock {
+                role_prompt: "role".to_string(),
+                mode_prompt: "mode".to_string(),
+            },
+            project_block: ProjectPromptBlock {
+                workspace_root: "D:/repo".to_string(),
+                repo_summary: "repo".to_string(),
+                doc_summary: "doc".to_string(),
+            },
+            dynamic_block: DynamicPromptBlock {
+                user_input: "对象摘要".to_string(),
+                phase_label: "answer".to_string(),
+                selection_reason: "test".to_string(),
+                session_summary: "session".to_string(),
+                memory_digest: "记忆入口已按分层装配".to_string(),
+                memory_has_system_views: true,
+                memory_has_current_objects: true,
+                memory_current_object_count: 2,
+                knowledge_digest: "knowledge".to_string(),
+                tool_preview: "tools".to_string(),
+                artifact_hint: "artifact".to_string(),
+                ..Default::default()
+            },
+        };
+        let prompt = render_project_answer_prompt(&envelope).full_prompt;
+        assert!(prompt.contains("记忆分层：system views + current memory object（对象 2 条）"));
+    }
 }

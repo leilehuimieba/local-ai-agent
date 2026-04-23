@@ -1,6 +1,6 @@
 use crate::action_meta::{action_tag, default_error_code};
 use crate::artifacts::{externalize_text_artifact, externalize_text_artifact_always};
-use crate::capabilities::{resolve_tool, ToolCallResult, ToolExecutionTrace};
+use crate::capabilities::{ToolCallResult, ToolExecutionTrace, resolve_tool};
 use crate::contracts::RunRequest;
 use crate::execution::execute_action;
 use crate::planner::PlannedAction;
@@ -96,4 +96,57 @@ fn command_raw_output_ref(action: &PlannedAction, artifact_path: Option<&str>) -
         return artifact_path.map(str::to_string);
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::capabilities::ToolDefinition;
+
+    #[test]
+    fn artifact_content_keeps_object_aware_recall_reasoning() {
+        let execution = crate::execution::ActionExecution::bypass_ok(
+            "按需召回记忆：对象摘要".to_string(),
+            "已召回 2 条相关记忆。（system views + current memory object，对象 2 条）"
+                .to_string(),
+            "已召回相关长期记忆。".to_string(),
+            "按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为system views + current memory object，对象 2 条。"
+                .to_string(),
+            "cache",
+        );
+        let artifact = artifact_content(&execution);
+        assert!(artifact.contains("system views + current memory object"));
+    }
+
+    #[test]
+    fn build_tool_result_keeps_object_aware_recall_reasoning() {
+        let result = build_tool_result(
+            Instant::now(),
+            &PlannedAction::RecallMemory {
+                query: "对象摘要".to_string(),
+            },
+            crate::execution::ActionExecution::bypass_ok(
+                "按需召回记忆：对象摘要".to_string(),
+                "已召回 2 条相关记忆。（system views + current memory object，对象 2 条）"
+                    .to_string(),
+                "已召回相关长期记忆。".to_string(),
+                "按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为system views + current memory object，对象 2 条。"
+                    .to_string(),
+                "cache",
+            ),
+            None,
+            None,
+        );
+        assert!(result.summary.contains("system views + current memory object"));
+        assert!(result.reasoning_summary.contains("system views + current memory object"));
+        let _tool = ToolDefinition {
+            tool_name: "memory_recall".to_string(),
+            display_name: "召回记忆".to_string(),
+            category: "memory_read".to_string(),
+            risk_level: "low".to_string(),
+            input_schema: "query".to_string(),
+            output_kind: "text_preview".to_string(),
+            requires_confirmation: false,
+        };
+    }
 }

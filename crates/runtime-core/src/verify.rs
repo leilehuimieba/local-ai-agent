@@ -158,11 +158,19 @@ fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
     evidence.push(format!("cache_status={}", trace.result.cache_status));
     evidence.push(format!(
         "skill_hit_effective={}",
-        if trace.result.success { "true" } else { "false" }
+        if trace.result.success {
+            "true"
+        } else {
+            "false"
+        }
     ));
     evidence.push(format!(
         "guard_downgraded={}",
-        if guard_downgraded(trace) { "true" } else { "false" }
+        if guard_downgraded(trace) {
+            "true"
+        } else {
+            "false"
+        }
     ));
     evidence.push(format!("guard_decision_ref={}", guard_decision_ref(trace)));
     evidence
@@ -179,9 +187,7 @@ fn skill_hit_reason(trace: &ToolExecutionTrace, recovered: bool) -> String {
 }
 
 fn guard_downgraded(trace: &ToolExecutionTrace) -> bool {
-    trace.result
-        .reasoning_summary
-        .contains("guard downgraded")
+    trace.result.reasoning_summary.contains("guard downgraded")
         || trace.result.summary.contains("guard downgraded")
 }
 
@@ -204,7 +210,10 @@ mod tests {
         let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, false));
         assert!(report.outcome.skill_hit_effective);
         assert!(!report.outcome.guard_downgraded);
-        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=allow");
+        assert_eq!(
+            report.outcome.guard_decision_ref,
+            "tool=run_command;decision=allow"
+        );
     }
 
     #[test]
@@ -212,7 +221,26 @@ mod tests {
         let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, true));
         assert!(report.outcome.skill_hit_effective);
         assert!(report.outcome.guard_downgraded);
-        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=review");
+        assert_eq!(
+            report.outcome.guard_decision_ref,
+            "tool=run_command;decision=review"
+        );
+    }
+
+    #[test]
+    fn verification_summary_keeps_object_aware_recall_reasoning() {
+        let report = verify_tool_execution(
+            &memory_recall_tool_call(),
+            &sample_memory_recall_trace("system views + current memory object，对象 2 条"),
+        );
+        assert!(report.outcome.summary.contains("system views + current memory object"));
+        assert!(
+            report
+                .outcome
+                .evidence
+                .iter()
+                .any(|item| item.contains("system views + current memory object"))
+        );
     }
 
     fn sample_tool_call() -> ToolCall {
@@ -259,6 +287,50 @@ mod tests {
                 } else {
                     "测试推理".to_string()
                 },
+                cache_status: "bypass".to_string(),
+                cache_reason: String::new(),
+            },
+        }
+    }
+
+    fn memory_recall_tool_call() -> ToolCall {
+        ToolCall {
+            action: PlannedAction::RecallMemory {
+                query: "对象摘要".to_string(),
+            },
+            spec: ToolDefinition {
+                tool_name: "memory_recall".to_string(),
+                display_name: "召回记忆".to_string(),
+                category: "memory_read".to_string(),
+                risk_level: "low".to_string(),
+                input_schema: "query".to_string(),
+                output_kind: "text_preview".to_string(),
+                requires_confirmation: false,
+            },
+        }
+    }
+
+    fn sample_memory_recall_trace(layer: &str) -> ToolExecutionTrace {
+        ToolExecutionTrace {
+            tool: memory_recall_tool_call().spec.clone(),
+            action_summary: "按需召回记忆：对象摘要".to_string(),
+            result: ToolCallResult {
+                summary: format!("已召回 2 条相关记忆。（{layer}）"),
+                final_answer: format!("已召回相关长期记忆。\n召回层：{layer}"),
+                artifact_path: None,
+                detail_preview: "preview".to_string(),
+                raw_output_ref: None,
+                result_chars: 64,
+                single_result_budget_chars: 30000,
+                single_result_budget_hit: false,
+                error_code: None,
+                elapsed_ms: 10,
+                retryable: false,
+                success: true,
+                memory_write_summary: None,
+                reasoning_summary: format!(
+                    "按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为{layer}。"
+                ),
                 cache_status: "bypass".to_string(),
                 cache_reason: String::new(),
             },

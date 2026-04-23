@@ -43,6 +43,18 @@ fn append_context_digest_metadata(
         context.dynamic_block.memory_digest.clone(),
     );
     metadata.insert(
+        "memory_has_system_views".to_string(),
+        bool_string(context.dynamic_block.memory_has_system_views),
+    );
+    metadata.insert(
+        "memory_has_current_objects".to_string(),
+        bool_string(context.dynamic_block.memory_has_current_objects),
+    );
+    metadata.insert(
+        "memory_current_object_count".to_string(),
+        context.dynamic_block.memory_current_object_count.to_string(),
+    );
+    metadata.insert(
         "knowledge_digest".to_string(),
         context.dynamic_block.knowledge_digest.clone(),
     );
@@ -103,11 +115,17 @@ fn append_observation_token_budget_metadata(
 ) {
     metadata.insert(
         "observation_budget_total_tokens".to_string(),
-        context.dynamic_block.observation_budget_total_tokens.to_string(),
+        context
+            .dynamic_block
+            .observation_budget_total_tokens
+            .to_string(),
     );
     metadata.insert(
         "observation_budget_used_tokens".to_string(),
-        context.dynamic_block.observation_budget_used_tokens.to_string(),
+        context
+            .dynamic_block
+            .observation_budget_used_tokens
+            .to_string(),
     );
     metadata.insert(
         "observation_budget_hit_tokens".to_string(),
@@ -210,5 +228,49 @@ fn bool_string(value: bool) -> String {
         "true".to_string()
     } else {
         "false".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::context_builder::{
+        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
+    };
+
+    #[test]
+    fn append_context_metadata_keeps_memory_layer_flags() {
+        let context = RuntimeContextEnvelope {
+            user_input: "对象摘要".to_string(),
+            mode: "standard".to_string(),
+            workspace_root: "D:/repo".to_string(),
+            static_block: StaticPromptBlock {
+                role_prompt: String::new(),
+                mode_prompt: String::new(),
+            },
+            project_block: ProjectPromptBlock {
+                workspace_root: "D:/repo".to_string(),
+                repo_summary: String::new(),
+                doc_summary: String::new(),
+            },
+            dynamic_block: DynamicPromptBlock {
+                memory_digest: "digest".to_string(),
+                memory_has_system_views: true,
+                memory_has_current_objects: true,
+                memory_current_object_count: 2,
+                ..Default::default()
+            },
+        };
+        let mut metadata = BTreeMap::new();
+        append_context_metadata(&mut metadata, &context);
+        assert_eq!(metadata.get("memory_has_system_views"), Some(&"true".to_string()));
+        assert_eq!(
+            metadata.get("memory_has_current_objects"),
+            Some(&"true".to_string())
+        );
+        assert_eq!(
+            metadata.get("memory_current_object_count"),
+            Some(&"2".to_string())
+        );
     }
 }

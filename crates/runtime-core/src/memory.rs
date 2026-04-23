@@ -1,7 +1,9 @@
 use crate::contracts::RunRequest;
-use crate::memory_schema::{canonical_kind, StructuredMemoryEntry, MEMORY_GOVERNANCE_VERSION};
+use crate::memory_schema::{MEMORY_GOVERNANCE_VERSION, StructuredMemoryEntry, canonical_kind};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
-use crate::sqlite_store::{list_memory_entries_sqlite, write_memory_entry_sqlite};
+use crate::sqlite_store::{
+    list_current_memory_object_entries_sqlite, list_memory_entries_sqlite, write_memory_entry_sqlite,
+};
 use crate::storage::{append_jsonl, read_jsonl};
 use crate::text::score_text;
 use serde::{Deserialize, Serialize};
@@ -145,6 +147,7 @@ fn structured_memory_entry(entry: &MemoryEntry) -> StructuredMemoryEntry {
 
 fn all_memory_entries(request: &RunRequest) -> Vec<MemoryEntry> {
     let mut entries = seed_memory_entries(request);
+    entries.extend(list_current_memory_object_entries_sqlite(request));
     let sqlite_entries = list_memory_entries_sqlite(request);
     if sqlite_entries.is_empty() {
         entries.extend(read_structured_entries(&memory_file_path(request)));
@@ -190,6 +193,7 @@ fn score_memory_entry(
     let mut score = base_memory_score(query_text, &entry);
     score += memory_source_priority(&entry);
     score += memory_priority_bonus(entry.priority);
+    score += memory_object_bonus(query_text, &entry);
     if entry.workspace_id == request.workspace_ref.workspace_id {
         score += 8;
     }
@@ -200,7 +204,15 @@ fn score_memory_entry(
 }
 
 fn base_memory_score(query_text: &str, entry: &MemoryEntry) -> i32 {
-    let haystack = format!("{} {} {}", entry.kind, entry.summary, entry.content);
+    let haystack = format!(
+        "{} {} {} {} {} {}",
+        entry.kind,
+        entry.title,
+        entry.summary,
+        entry.content,
+        entry.source,
+        entry.source_artifact_path
+    );
     let mut score = score_text(query_text, &haystack);
     if query_text.is_empty() {
         score += 1;
@@ -212,11 +224,19 @@ fn memory_priority_bonus(priority: i32) -> i32 {
     priority.clamp(-40, 120) / 2
 }
 
+fn memory_object_bonus(query_text: &str, entry: &MemoryEntry) -> i32 {
+    if entry.source_type != "memory_object_current" {
+        return 0;
+    }
+    18 + score_text(query_text, &entry.source) + score_text(query_text, &entry.source_artifact_path)
+}
+
 fn sort_memory_entries(scored: &mut [(i32, MemoryEntry)]) {
     scored.sort_by(|left, right| {
         right
             .0
             .cmp(&left.0)
+            .then_with(|| memory_object_rank(&right.1).cmp(&memory_object_rank(&left.1)))
             .then_with(|| right.1.timestamp.cmp(&left.1.timestamp))
     });
 }
@@ -225,8 +245,23 @@ fn dedupe_memory_entries(entries: Vec<MemoryEntry>) -> Vec<MemoryEntry> {
     let mut seen = std::collections::BTreeSet::new();
     entries
         .into_iter()
-        .filter(|entry| seen.insert(memory_key(entry)))
+        .filter(|entry| seen.insert(dedupe_memory_key(entry)))
         .collect()
+}
+
+fn memory_object_rank(entry: &MemoryEntry) -> i32 {
+    if entry.source_type == "memory_object_current" {
+        1
+    } else {
+        0
+    }
+}
+
+fn dedupe_memory_key(entry: &MemoryEntry) -> String {
+    if entry.source_type == "memory_object_current" {
+        return format!("object://{}", entry.source);
+    }
+    memory_key(entry)
 }
 
 fn entry_timestamp(entry: &StructuredMemoryEntry) -> String {
@@ -525,6 +560,8 @@ fn archived_at(entry: &StructuredMemoryEntry) -> String {
 mod tests {
     use super::*;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+    use crate::events::timestamp_now;
+    use crate::sqlite_store::write_memory_entry_sqlite;
     use std::collections::BTreeMap;
 
     #[test]
@@ -537,6 +574,17 @@ mod tests {
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].id, first.id);
         assert_eq!(items[1].id, third.id);
+    }
+
+    #[test]
+    fn dedupe_keeps_distinct_memory_object_identity() {
+        let mut object = sample_entry("version-1", "project_rule", "同一条记忆", 20);
+        object.source_type = "memory_object_current".to_string();
+        object.source = "memory://workspace-test/project-rule/rule-object".to_string();
+        let legacy = sample_entry("memory-legacy", "project_rule", "同一条记忆", 20);
+        let items = dedupe_memory_entries(vec![object.clone(), legacy]);
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].source_type, "memory_object_current");
     }
 
     #[test]
@@ -560,7 +608,47 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[test]
+    fn search_includes_current_memory_object_for_duplicate_entry() {
+        let request = sample_request();
+        let entry = ascii_entry("memory-object-1", "alphaobjectcurrent");
+        write_memory_entry_sqlite(&request, &entry).unwrap();
+        let hits = search_memory_entries(&request, "alphaobjectcurrent", 3);
+        assert!(hits.iter().any(|item| item.source_type == "memory_object_current"));
+    }
+
+    #[test]
+    fn search_can_hit_current_memory_object_uri() {
+        let request = sample_request();
+        let entry = ascii_entry("memory-object-2", "uri summary");
+        write_memory_entry_sqlite(&request, &entry).unwrap();
+        let hits = search_memory_entries(
+            &request,
+            "memory://workspace-test/project-rule/rule-object",
+            1,
+        );
+        assert_eq!(hits[0].source_type, "memory_object_current");
+        assert_eq!(hits[0].title, "rule-object");
+    }
+
+    #[test]
+    fn sort_prefers_current_memory_object_on_same_score() {
+        let mut scored = vec![
+            (50, sample_entry("legacy", "project_rule", "同分旧记录", 10)),
+            (50, {
+                let mut entry = sample_entry("current", "project_rule", "同分对象", 10);
+                entry.source_type = "memory_object_current".to_string();
+                entry.source = "memory://workspace-test/project-rule/rule-object".to_string();
+                entry
+            }),
+        ];
+        sort_memory_entries(&mut scored);
+        assert_eq!(scored[0].1.source_type, "memory_object_current");
+    }
+
     fn sample_request() -> RunRequest {
+        let root = std::env::temp_dir().join(format!("memory-search-{}", timestamp_now()));
+        std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             request_id: "request-test".to_string(),
             run_id: "run-test".to_string(),
@@ -577,7 +665,7 @@ mod tests {
             workspace_ref: WorkspaceRef {
                 workspace_id: "workspace-test".to_string(),
                 name: "workspace".to_string(),
-                root_path: "D:/repo".to_string(),
+                root_path: root.display().to_string(),
                 is_active: true,
             },
             context_hints: BTreeMap::new(),
@@ -585,6 +673,13 @@ mod tests {
             resume_strategy: String::new(),
             confirmation_decision: None,
         }
+    }
+
+    fn ascii_entry(id: &str, summary: &str) -> MemoryEntry {
+        let mut item = sample_entry(id, "project_rule", summary, 12);
+        item.title = "rule-object".to_string();
+        item.content = format!("content-{summary}");
+        item
     }
 
     fn sample_entry(id: &str, kind: &str, summary: &str, priority: i32) -> MemoryEntry {

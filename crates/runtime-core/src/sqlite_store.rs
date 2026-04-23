@@ -1,24 +1,78 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::{normalized_memory_entry, MemoryEntry};
+use crate::memory::{MemoryEntry, normalized_memory_entry};
+use crate::memory_object_store::{
+    MemoryObjectRollbackResult, MemoryObjectVersion,
+};
 use crate::observation::ObservationRecord;
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
-use rusqlite::{params, Connection};
+use crate::events::timestamp_now;
+use rusqlite::{Connection, params};
 use serde_json::{from_str, to_string};
 use std::collections::BTreeSet;
 use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub(crate) fn write_memory_entry_sqlite(
     request: &RunRequest,
     entry: &MemoryEntry,
 ) -> Result<(), String> {
-    with_connection(request, |conn| insert_memory_entry(conn, entry))
+    with_connection(request, |conn| {
+        insert_memory_entry(conn, entry)?;
+        upsert_memory_object_version(conn, entry)?;
+        Ok(())
+    })
 }
 
 pub(crate) fn list_memory_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntry> {
     with_connection(request, |conn| load_memory_entries(conn, request)).unwrap_or_default()
+}
+
+pub(crate) fn list_current_memory_object_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntry> {
+    with_connection(request, |conn| load_current_memory_object_entries(conn, request))
+        .unwrap_or_default()
+}
+
+pub(crate) fn list_current_memory_object_entries_limited_sqlite(
+    request: &RunRequest,
+    limit: usize,
+) -> Vec<MemoryEntry> {
+    with_connection(request, |conn| load_current_memory_object_entries_limited(conn, request, limit))
+        .unwrap_or_default()
+}
+
+pub(crate) fn sync_memory_object_entry_sqlite(
+    request: &RunRequest,
+    entry: &MemoryEntry,
+) -> Result<MemoryObjectVersion, String> {
+    with_connection(request, |conn| upsert_memory_object_version(conn, entry))
+}
+
+pub(crate) fn list_memory_object_versions_sqlite(
+    request: &RunRequest,
+    object_id: &str,
+) -> Vec<MemoryObjectVersion> {
+    with_connection(request, |conn| load_memory_object_versions(conn, object_id))
+        .unwrap_or_default()
+}
+
+pub(crate) fn list_memory_object_aliases_sqlite(
+    request: &RunRequest,
+    object_id: &str,
+) -> Vec<String> {
+    with_connection(request, |conn| load_memory_object_aliases(conn, object_id)).unwrap_or_default()
+}
+
+pub(crate) fn rollback_memory_object_sqlite(
+    request: &RunRequest,
+    object_id: &str,
+    target_version_id: &str,
+) -> Result<MemoryObjectRollbackResult, String> {
+    with_connection(request, |conn| {
+        rollback_memory_object_conn(conn, request, object_id, target_version_id)
+    })
 }
 
 pub(crate) fn write_knowledge_record_sqlite(
@@ -127,6 +181,10 @@ pub(crate) fn memory_count(conn: &Connection, workspace_id: &str) -> Result<i64,
     count_by_workspace(conn, "long_term_memory", workspace_id)
 }
 
+pub(crate) fn memory_object_count(conn: &Connection, workspace_id: &str) -> Result<i64, String> {
+    count_by_workspace(conn, "memory_objects", workspace_id)
+}
+
 pub(crate) fn knowledge_count(conn: &Connection, workspace_id: &str) -> Result<i64, String> {
     count_by_workspace(conn, "knowledge_base", workspace_id)
 }
@@ -141,7 +199,8 @@ fn load_memory_entries(
              source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
              governance_version, governance_reason, governance_source, governance_at, archive_reason,
              verified, priority, archived, archived_at, created_at, updated_at, timestamp
-             from long_term_memory where workspace_id = ?1 order by priority desc, updated_at desc",
+             from long_term_memory where workspace_id = ?1
+             order by priority desc, length(updated_at) desc, updated_at desc",
         )
         .map_err(|error| error.to_string())?;
     let rows = statement
@@ -168,6 +227,35 @@ fn load_knowledge_records(
         .query_map(
             params![request.workspace_ref.workspace_id.clone()],
             map_knowledge_record,
+        )
+        .map_err(|error| error.to_string())?;
+    collect_rows(rows)
+}
+
+fn load_current_memory_object_entries(
+    conn: &Connection,
+    request: &RunRequest,
+) -> Result<Vec<MemoryEntry>, String> {
+    load_current_memory_object_entries_limited(conn, request, usize::MAX)
+}
+
+fn load_current_memory_object_entries_limited(
+    conn: &Connection,
+    request: &RunRequest,
+    limit: usize,
+) -> Result<Vec<MemoryEntry>, String> {
+    let sql = "select o.workspace_id, o.memory_type, o.title, o.canonical_uri, v.version_id,
+               v.summary, v.content, v.source_run_id, v.priority, v.verified, v.created_at,
+               coalesce((select group_concat(alias_uri, ' || ') from memory_object_aliases a
+               where a.object_id = o.object_id), '')
+               from memory_objects o join memory_object_versions v on o.current_version_id = v.version_id
+               where o.workspace_id = ?1 order by v.priority desc, length(v.created_at) desc, v.created_at desc
+               limit ?2";
+    let mut statement = conn.prepare(sql).map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map(
+            params![request.workspace_ref.workspace_id.clone(), limit as i64],
+            map_memory_object_entry,
         )
         .map_err(|error| error.to_string())?;
     collect_rows(rows)
@@ -279,6 +367,40 @@ fn map_knowledge_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<KnowledgeRe
         created_at: row.get(12)?,
         updated_at: row.get(13)?,
     })
+}
+
+fn map_memory_object_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryEntry> {
+    let workspace_id = row.get::<_, String>(0)?;
+    let title = row.get::<_, String>(2)?;
+    let created_at = row.get::<_, String>(10)?;
+    Ok(normalized_memory_entry(&MemoryEntry {
+        id: row.get::<_, String>(4)?,
+        kind: row.get(1)?,
+        title: title.clone(),
+        summary: row.get(5)?,
+        content: row.get(6)?,
+        scope: "workspace".to_string(),
+        workspace_id,
+        session_id: String::new(),
+        source_run_id: row.get(7)?,
+        source: row.get(3)?,
+        source_type: "memory_object_current".to_string(),
+        source_title: title,
+        source_event_type: "memory_object_current".to_string(),
+        source_artifact_path: row.get(11)?,
+        governance_version: String::new(),
+        governance_reason: String::new(),
+        governance_source: String::new(),
+        governance_at: created_at.clone(),
+        archive_reason: String::new(),
+        verified: row.get::<_, i32>(9)? != 0,
+        priority: row.get(8)?,
+        archived: false,
+        archived_at: String::new(),
+        created_at: created_at.clone(),
+        updated_at: created_at.clone(),
+        timestamp: created_at,
+    }))
 }
 
 fn collect_rows<T, F>(rows: rusqlite::MappedRows<'_, F>) -> Result<Vec<T>, String>
@@ -435,6 +557,343 @@ fn count_by_workspace(conn: &Connection, table: &str, workspace_id: &str) -> Res
         .map_err(|error| error.to_string())
 }
 
+pub(crate) fn load_memory_entries_for_workspace_conn(
+    conn: &Connection,
+    workspace_id: &str,
+) -> Result<Vec<MemoryEntry>, String> {
+    load_memory_entries_for_workspace(conn, workspace_id)
+}
+
+fn upsert_memory_object_version(
+    conn: &Connection,
+    entry: &MemoryEntry,
+) -> Result<MemoryObjectVersion, String> {
+    upsert_memory_object_version_with_restore(conn, entry, "")
+}
+
+fn upsert_memory_object_version_with_restore(
+    conn: &Connection,
+    entry: &MemoryEntry,
+    restored_from_version_id: &str,
+) -> Result<MemoryObjectVersion, String> {
+    let object_id = object_id_for_entry(entry);
+    let version_id = version_id_for_entry(entry);
+    let canonical_uri = canonical_uri_for_entry(entry);
+    insert_memory_object(conn, &object_id, &canonical_uri, entry)?;
+    deactivate_current_versions(conn, &object_id)?;
+    insert_memory_object_version(conn, &object_id, &version_id, entry, restored_from_version_id)?;
+    insert_memory_object_alias(conn, &object_id, &canonical_uri, &entry.created_at)?;
+    set_memory_object_current(conn, &object_id, &version_id, &canonical_uri, entry)?;
+    Ok(build_memory_object_version(
+        &object_id,
+        &version_id,
+        &canonical_uri,
+        entry,
+        true,
+        restored_from_version_id,
+    ))
+}
+
+fn insert_memory_object(
+    conn: &Connection,
+    object_id: &str,
+    canonical_uri: &str,
+    entry: &MemoryEntry,
+) -> Result<(), String> {
+    conn.execute(
+        "insert or ignore into memory_objects (
+            object_id, workspace_id, memory_type, title, canonical_uri, current_version_id, created_at, updated_at
+        ) values (?1, ?2, ?3, ?4, ?5, '', ?6, ?7)",
+        params![
+            object_id,
+            entry.workspace_id,
+            entry.kind,
+            entry.title,
+            canonical_uri,
+            entry.created_at,
+            entry.updated_at
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn deactivate_current_versions(conn: &Connection, object_id: &str) -> Result<(), String> {
+    conn.execute(
+        "update memory_object_versions set is_current = 0 where object_id = ?1",
+        params![object_id],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn insert_memory_object_version(
+    conn: &Connection,
+    object_id: &str,
+    version_id: &str,
+    entry: &MemoryEntry,
+    restored_from_version_id: &str,
+) -> Result<(), String> {
+    conn.execute(
+        "insert or replace into memory_object_versions (
+            version_id, object_id, summary, content, source_run_id, priority, verified,
+            is_current, restored_from_version_id, created_at
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9)",
+        params![
+            version_id,
+            object_id,
+            entry.summary,
+            entry.content,
+            entry.source_run_id,
+            entry.priority,
+            bool_flag(entry.verified),
+            restored_from_version_id,
+            entry.created_at
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn insert_memory_object_alias(
+    conn: &Connection,
+    object_id: &str,
+    canonical_uri: &str,
+    created_at: &str,
+) -> Result<(), String> {
+    conn.execute(
+        "insert or ignore into memory_object_aliases (alias_uri, object_id, created_at) values (?1, ?2, ?3)",
+        params![canonical_uri, object_id, created_at],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn set_memory_object_current(
+    conn: &Connection,
+    object_id: &str,
+    version_id: &str,
+    canonical_uri: &str,
+    entry: &MemoryEntry,
+) -> Result<(), String> {
+    conn.execute(
+        "update memory_objects
+         set title = ?1, canonical_uri = ?2, current_version_id = ?3, updated_at = ?4
+         where object_id = ?5",
+        params![
+            entry.title,
+            canonical_uri,
+            version_id,
+            entry.updated_at,
+            object_id
+        ],
+    )
+    .map(|_| ())
+    .map_err(|error| error.to_string())
+}
+
+fn load_memory_object_versions(
+    conn: &Connection,
+    object_id: &str,
+) -> Result<Vec<MemoryObjectVersion>, String> {
+    let uri = load_memory_object_uri(conn, object_id)?;
+    let mut statement = conn
+        .prepare(
+            "select version_id, summary, content, is_current, restored_from_version_id, created_at
+             from memory_object_versions where object_id = ?1
+             order by length(created_at) desc, created_at desc",
+        )
+        .map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map(params![object_id], |row| {
+            map_memory_object_version_row(row, object_id, &uri)
+        })
+        .map_err(|error| error.to_string())?;
+    collect_rows(rows)
+}
+
+fn load_memory_object_uri(conn: &Connection, object_id: &str) -> Result<String, String> {
+    conn.query_row(
+        "select canonical_uri from memory_objects where object_id = ?1",
+        params![object_id],
+        |row| row.get(0),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn map_memory_object_version_row(
+    row: &rusqlite::Row<'_>,
+    object_id: &str,
+    canonical_uri: &str,
+) -> rusqlite::Result<MemoryObjectVersion> {
+    Ok(MemoryObjectVersion {
+        object_id: object_id.to_string(),
+        version_id: row.get(0)?,
+        canonical_uri: canonical_uri.to_string(),
+        summary: row.get(1)?,
+        content: row.get(2)?,
+        is_current: row.get::<_, i32>(3)? != 0,
+        restored_from_version_id: row.get(4)?,
+        created_at: row.get(5)?,
+    })
+}
+
+fn load_memory_object_aliases(conn: &Connection, object_id: &str) -> Result<Vec<String>, String> {
+    let mut statement = conn
+        .prepare(
+            "select alias_uri from memory_object_aliases where object_id = ?1 order by alias_uri asc",
+        )
+        .map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map(params![object_id], |row| row.get(0))
+        .map_err(|error| error.to_string())?;
+    collect_rows(rows)
+}
+
+fn build_memory_object_version(
+    object_id: &str,
+    version_id: &str,
+    canonical_uri: &str,
+    entry: &MemoryEntry,
+    is_current: bool,
+    restored_from_version_id: &str,
+) -> MemoryObjectVersion {
+    MemoryObjectVersion {
+        object_id: object_id.to_string(),
+        version_id: version_id.to_string(),
+        canonical_uri: canonical_uri.to_string(),
+        summary: entry.summary.clone(),
+        content: entry.content.clone(),
+        is_current,
+        restored_from_version_id: restored_from_version_id.to_string(),
+        created_at: entry.created_at.clone(),
+    }
+}
+
+fn rollback_memory_object_conn(
+    conn: &Connection,
+    request: &RunRequest,
+    object_id: &str,
+    target_version_id: &str,
+) -> Result<MemoryObjectRollbackResult, String> {
+    let meta = load_memory_object_meta(conn, object_id)?;
+    let target = load_memory_object_version_row(conn, object_id, target_version_id)?;
+    let entry = build_rollback_entry(request, &meta, &target);
+    insert_memory_entry(conn, &entry)?;
+    let restored = upsert_memory_object_version_with_restore(conn, &entry, target_version_id)?;
+    Ok(MemoryObjectRollbackResult {
+        object_id: object_id.to_string(),
+        target_version_id: target_version_id.to_string(),
+        restored_version_id: restored.version_id,
+        canonical_uri: restored.canonical_uri,
+    })
+}
+
+fn load_memory_object_meta(conn: &Connection, object_id: &str) -> Result<MemoryObjectMeta, String> {
+    conn.query_row(
+        "select workspace_id, memory_type, title, canonical_uri from memory_objects where object_id = ?1",
+        params![object_id],
+        |row| {
+            Ok(MemoryObjectMeta {
+                workspace_id: row.get(0)?,
+                kind: row.get(1)?,
+                title: row.get(2)?,
+                canonical_uri: row.get(3)?,
+            })
+        },
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn load_memory_object_version_row(
+    conn: &Connection,
+    object_id: &str,
+    version_id: &str,
+) -> Result<MemoryObjectVersion, String> {
+    let uri = load_memory_object_uri(conn, object_id)?;
+    conn.query_row(
+        "select version_id, summary, content, is_current, restored_from_version_id, created_at
+         from memory_object_versions where object_id = ?1 and version_id = ?2",
+        params![object_id, version_id],
+        |row| map_memory_object_version_row(row, object_id, &uri),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn build_rollback_entry(
+    request: &RunRequest,
+    meta: &MemoryObjectMeta,
+    target: &MemoryObjectVersion,
+) -> MemoryEntry {
+    let now = timestamp_now();
+    let summary = target.summary.clone();
+    let rollback_id = format!("memory-rollback-{now}");
+    MemoryEntry {
+        id: rollback_id,
+        kind: meta.kind.clone(),
+        title: meta.title.clone(),
+        summary,
+        content: target.content.clone(),
+        scope: "workspace".to_string(),
+        workspace_id: meta.workspace_id.clone(),
+        session_id: request.session_id.clone(),
+        source_run_id: format!("rollback:{}", request.run_id),
+        source: format!("memory_object.rollback:{}", meta.canonical_uri),
+        source_type: "governed_rollback".to_string(),
+        source_title: meta.title.clone(),
+        source_event_type: "rollback_applied".to_string(),
+        source_artifact_path: String::new(),
+        governance_version: "memory-object-rollback-v1".to_string(),
+        governance_reason: format!("回滚到 {target_version_id}", target_version_id = target.version_id),
+        governance_source: "memory_object_store.rollback".to_string(),
+        governance_at: now.clone(),
+        archive_reason: String::new(),
+        verified: true,
+        priority: 10,
+        archived: false,
+        archived_at: String::new(),
+        created_at: now.clone(),
+        updated_at: now.clone(),
+        timestamp: now,
+    }
+}
+
+struct MemoryObjectMeta {
+    workspace_id: String,
+    kind: String,
+    title: String,
+    canonical_uri: String,
+}
+
+fn object_id_for_entry(entry: &MemoryEntry) -> String {
+    let mut hasher = DefaultHasher::new();
+    entry.workspace_id.hash(&mut hasher);
+    entry.kind.hash(&mut hasher);
+    entry.title.hash(&mut hasher);
+    format!("object-{:x}", hasher.finish())
+}
+
+fn version_id_for_entry(entry: &MemoryEntry) -> String {
+    format!("version-{}", entry.id)
+}
+
+fn canonical_uri_for_entry(entry: &MemoryEntry) -> String {
+    format!(
+        "memory://{}/{}/{}",
+        slug_part(&entry.workspace_id),
+        slug_part(&entry.kind),
+        slug_part(&entry.title)
+    )
+}
+
+fn slug_part(value: &str) -> String {
+    let output = value
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
+        .collect::<String>();
+    output.trim_matches('-').to_lowercase()
+}
+
 fn encode_tags(tags: &[String]) -> String {
     serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_string())
 }
@@ -444,11 +903,7 @@ fn decode_tags(value: String) -> Vec<String> {
 }
 
 fn bool_flag(value: bool) -> i32 {
-    if value {
-        1
-    } else {
-        0
-    }
+    if value { 1 } else { 0 }
 }
 
 fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
@@ -513,7 +968,7 @@ fn is_legacy_preference_noise(item: &MemoryEntry) -> bool {
     item.kind == "preference" && item.title.trim().is_empty() && !item.verified
 }
 
-const SCHEMA_STATEMENTS: [&str; 16] = [
+const SCHEMA_STATEMENTS: [&str; 22] = [
     "create table if not exists long_term_memory (
         id text primary key,
         workspace_id text not null,
@@ -610,9 +1065,39 @@ const SCHEMA_STATEMENTS: [&str; 16] = [
     )",
     "create index if not exists idx_observation_pending_queue_workspace_status on observation_pending_queue (workspace_id, status)",
     "create index if not exists idx_observation_pending_queue_workspace_updated on observation_pending_queue (workspace_id, updated_at)",
+    "create table if not exists memory_objects (
+        object_id text primary key,
+        workspace_id text not null,
+        memory_type text not null,
+        title text not null,
+        canonical_uri text not null,
+        current_version_id text not null default '',
+        created_at text not null,
+        updated_at text not null
+    )",
+    "create index if not exists idx_memory_objects_workspace_type on memory_objects (workspace_id, memory_type)",
+    "create table if not exists memory_object_versions (
+        version_id text primary key,
+        object_id text not null,
+        summary text not null,
+        content text not null,
+        source_run_id text not null,
+        priority integer not null default 0,
+        verified integer not null default 0,
+        is_current integer not null default 0,
+        restored_from_version_id text not null default '',
+        created_at text not null
+    )",
+    "create index if not exists idx_memory_object_versions_object_created on memory_object_versions (object_id, created_at)",
+    "create table if not exists memory_object_aliases (
+        alias_uri text primary key,
+        object_id text not null,
+        created_at text not null
+    )",
+    "create index if not exists idx_memory_object_aliases_object on memory_object_aliases (object_id)",
 ];
 
-const MEMORY_MIGRATIONS: [&str; 11] = [
+const MEMORY_MIGRATIONS: [&str; 12] = [
     "alter table long_term_memory add column source_title text not null default ''",
     "alter table long_term_memory add column source_event_type text not null default ''",
     "alter table long_term_memory add column source_artifact_path text not null default ''",
@@ -624,6 +1109,7 @@ const MEMORY_MIGRATIONS: [&str; 11] = [
     "alter table long_term_memory add column archived_at text not null default ''",
     "alter table runtime_checkpoints add column resume_reason text not null default ''",
     "alter table runtime_checkpoints add column resume_stage text not null default ''",
+    "alter table memory_object_versions add column restored_from_version_id text not null default ''",
 ];
 
 fn insert_runtime_checkpoint(conn: &Connection, checkpoint: &RunCheckpoint) -> Result<(), String> {

@@ -195,6 +195,12 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub memory_digest: String,
     #[serde(default)]
+    pub memory_has_system_views: bool,
+    #[serde(default)]
+    pub memory_has_current_objects: bool,
+    #[serde(default)]
+    pub memory_current_object_count: usize,
+    #[serde(default)]
     pub knowledge_digest: String,
     #[serde(default)]
     pub tool_preview: String,

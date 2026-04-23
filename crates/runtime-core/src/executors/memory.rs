@@ -1,7 +1,9 @@
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::execution::ActionExecution;
-use crate::memory::{append_memory_entry, search_memory_entries, MemoryEntry};
+use crate::memory_layer::{digest_layer_phrase, digest_layer_summary};
+use crate::memory::{MemoryEntry, append_memory_entry, search_memory_entries};
+use crate::memory_recall::recall_memory_digest;
 use crate::text::summarize_text;
 
 const CACHE_WRITE_REASON: &str = "记忆写入属于实时副作用动作，不使用回答缓存。";
@@ -28,20 +30,31 @@ pub(crate) fn execute_memory_write(
 
 pub(crate) fn execute_memory_recall(request: &RunRequest, query: &str) -> ActionExecution {
     let entries = search_memory_entries(request, query, 3);
+    let digest = recall_memory_digest(request, query, 3);
     if entries.is_empty() {
         return ok(
             format!("按需召回记忆：{}", query),
-            "没有找到相关长期记忆。".to_string(),
+            format!("没有找到相关长期记忆。（{}）", digest_layer_phrase(&digest)),
             format!("当前没有找到与 `{}` 相关的长期记忆。", query),
-            "先检索长期记忆索引，未命中时直接返回空结果说明。",
+            &format!(
+                "先检索长期记忆索引，未命中时直接返回空结果说明；本次召回层为{}。",
+                digest_layer_phrase(&digest)
+            ),
             CACHE_RECALL_REASON,
         );
     }
     ok(
         format!("按需召回记忆：{}", query),
-        format!("已召回 {} 条相关记忆。", entries.len()),
-        format!("已召回相关长期记忆：\n{}", render_entries(&entries)),
-        "按查询词检索长期记忆，并返回前几条高相关结果。",
+        format!("已召回 {} 条相关记忆。（{}）", entries.len(), digest_layer_phrase(&digest)),
+        format!(
+            "已召回相关长期记忆。\n召回层：{}\n\n{}",
+            digest_layer_summary(&digest),
+            render_entries(&entries)
+        ),
+        &format!(
+            "按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为{}。",
+            digest_layer_phrase(&digest)
+        ),
         CACHE_RECALL_REASON,
     )
 }
@@ -153,4 +166,94 @@ fn fail(
         reasoning_summary.to_string(),
         cache_reason,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::contracts::{ModelRef, ProviderRef, WorkspaceRef};
+    use crate::memory::MemoryEntry;
+    use crate::sqlite_store::write_memory_entry_sqlite;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn memory_recall_result_mentions_object_aware_layers() {
+        let request = sample_request("对象摘要");
+        write_memory_entry_sqlite(&request, &sample_entry("对象摘要")).unwrap();
+        let result = execute_memory_recall(&request, "对象摘要");
+        assert!(result.result_summary.contains("system views + current memory object"));
+        assert!(result.final_answer.contains("召回层：system views + current memory object"));
+        assert!(result.reasoning_summary.contains("本次召回层为system views + current memory object"));
+    }
+
+    #[test]
+    fn memory_recall_without_object_hits_mentions_system_view_layer() {
+        let request = sample_request("未命中");
+        let result = execute_memory_recall(&request, "未命中");
+        assert!(result.result_summary.contains("system views"));
+        assert!(result.reasoning_summary.contains("本次召回层为system views"));
+    }
+
+    fn sample_request(user_input: &str) -> RunRequest {
+        let root = std::env::temp_dir().join(format!(
+            "memory-executor-{}",
+            crate::events::timestamp_now()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        RunRequest {
+            request_id: "request-test".to_string(),
+            run_id: "run-test".to_string(),
+            session_id: "session-test".to_string(),
+            trace_id: "trace-test".to_string(),
+            user_input: user_input.to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "p".to_string(),
+                model_id: "m".to_string(),
+                display_name: "model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-test".to_string(),
+                name: "workspace".to_string(),
+                root_path: root.display().to_string(),
+                is_active: true,
+            },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: String::new(),
+            resume_strategy: String::new(),
+            confirmation_decision: None,
+        }
+    }
+
+    fn sample_entry(summary: &str) -> MemoryEntry {
+        MemoryEntry {
+            id: "memory-object".to_string(),
+            kind: "project_rule".to_string(),
+            title: "rule-object".to_string(),
+            summary: summary.to_string(),
+            content: format!("content-{summary}"),
+            scope: "workspace".to_string(),
+            workspace_id: "workspace-test".to_string(),
+            session_id: "session-test".to_string(),
+            source_run_id: "run-test".to_string(),
+            source: "run:run-test".to_string(),
+            source_type: "runtime".to_string(),
+            source_title: "rule-object".to_string(),
+            source_event_type: "run_finished".to_string(),
+            source_artifact_path: String::new(),
+            governance_version: "v1".to_string(),
+            governance_reason: "测试".to_string(),
+            governance_source: "test".to_string(),
+            governance_at: "1".to_string(),
+            archive_reason: String::new(),
+            verified: true,
+            priority: 12,
+            archived: false,
+            archived_at: String::new(),
+            created_at: "1001".to_string(),
+            updated_at: "1001".to_string(),
+            timestamp: "1001".to_string(),
+        }
+    }
 }

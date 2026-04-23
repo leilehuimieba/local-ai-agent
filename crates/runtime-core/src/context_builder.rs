@@ -2,13 +2,13 @@ use crate::capabilities::ToolDefinition;
 use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::knowledge::search_knowledge;
-use crate::memory_recall::recall_memory_digest;
-use crate::paths::repo_root;
+use crate::memory_recall::{MemoryDigest, recall_memory_digest};
 use crate::observation::{
-    build_layered_injection, resolve_observation_budget_chars, ObservationLayeredInjectionReport,
+    ObservationLayeredInjectionReport, build_layered_injection, resolve_observation_budget_chars,
 };
-use crate::repo_context::{repo_context_summary, RepoContextLoadResult};
-use crate::session::{session_prompt_summary, SessionMemory};
+use crate::paths::repo_root;
+use crate::repo_context::{RepoContextLoadResult, repo_context_summary};
+use crate::session::{SessionMemory, session_prompt_summary};
 use crate::text::{extract_snippet, summarize_text};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -44,6 +44,9 @@ pub(crate) struct DynamicPromptBlock {
     pub prefers_artifact_context: bool,
     pub session_summary: String,
     pub memory_digest: String,
+    pub memory_has_system_views: bool,
+    pub memory_has_current_objects: bool,
+    pub memory_current_object_count: usize,
     pub knowledge_digest: String,
     pub tool_preview: String,
     pub artifact_hint: String,
@@ -141,7 +144,7 @@ fn dynamic_prompt_block(
     cache_reason: &str,
 ) -> DynamicPromptBlock {
     let session_summary = selected_session_summary(session_context, policy);
-    let memory_digest = selected_memory_digest(request, policy);
+    let memory = selected_memory_selection(request, policy);
     let knowledge_digest = selected_knowledge_digest(request, policy);
     let tool_preview = selected_tool_preview(visible_tools, policy);
     let artifact_hint = selected_artifact_hint(session_context, policy);
@@ -153,7 +156,10 @@ fn dynamic_prompt_block(
         cache_reason,
         PromptParts {
             session_summary,
-            memory_digest,
+            memory_digest: memory.digest,
+            memory_has_system_views: memory.has_system_views,
+            memory_has_current_objects: memory.has_current_objects,
+            memory_current_object_count: memory.current_object_count,
             knowledge_digest,
             tool_preview,
             artifact_hint,
@@ -165,10 +171,20 @@ fn dynamic_prompt_block(
 struct PromptParts {
     session_summary: String,
     memory_digest: String,
+    memory_has_system_views: bool,
+    memory_has_current_objects: bool,
+    memory_current_object_count: usize,
     knowledge_digest: String,
     tool_preview: String,
     artifact_hint: String,
     observation: ObservationLayeredInjectionReport,
+}
+
+struct MemoryPromptSelection {
+    digest: String,
+    has_system_views: bool,
+    has_current_objects: bool,
+    current_object_count: usize,
 }
 
 fn build_dynamic_block(
@@ -210,6 +226,9 @@ fn fill_identity_fields(
 fn fill_digest_fields(block: &mut DynamicPromptBlock, parts: &PromptParts) {
     block.session_summary = parts.session_summary.clone();
     block.memory_digest = parts.memory_digest.clone();
+    block.memory_has_system_views = parts.memory_has_system_views;
+    block.memory_has_current_objects = parts.memory_has_current_objects;
+    block.memory_current_object_count = parts.memory_current_object_count;
     block.knowledge_digest = parts.knowledge_digest.clone();
     block.tool_preview = parts.tool_preview.clone();
     block.artifact_hint = parts.artifact_hint.clone();
@@ -262,12 +281,49 @@ fn selected_session_summary(
     }
 }
 
-fn selected_memory_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
-    if policy.include_memory {
-        recall_memory_digest(request, &request.user_input, 3).summary
-    } else {
-        "当前阶段未注入长期记忆摘要。".to_string()
+fn selected_memory_selection(
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+) -> MemoryPromptSelection {
+    if !policy.include_memory {
+        return MemoryPromptSelection {
+            digest: "当前阶段未注入长期记忆摘要。".to_string(),
+            has_system_views: false,
+            has_current_objects: false,
+            current_object_count: 0,
+        };
     }
+    let digest = recall_memory_digest(request, &request.user_input, 3);
+    MemoryPromptSelection {
+        digest: format_memory_digest(&digest),
+        has_system_views: digest.has_system_views,
+        has_current_objects: digest.has_current_objects,
+        current_object_count: digest.current_object_count,
+    }
+}
+
+fn format_memory_digest(digest: &MemoryDigest) -> String {
+    let focus = memory_digest_focus(digest);
+    if focus.is_empty() {
+        digest.summary.clone()
+    } else {
+        format!("{focus} || {}", digest.summary)
+    }
+}
+
+fn memory_digest_focus(digest: &MemoryDigest) -> String {
+    let mut layers = Vec::new();
+    if digest.has_system_views {
+        layers.push("system views");
+    }
+    if digest.has_current_objects {
+        layers.push("current memory object");
+    }
+    if layers.is_empty() {
+        return String::new();
+    }
+    let count = digest.current_object_count;
+    format!("记忆入口已按分层装配：{}（对象 {} 条）", layers.join(" + "), count)
 }
 
 fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
@@ -326,8 +382,14 @@ fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
     let hermes_root = docs_root.join("11-hermes-rebuild");
     vec![
         hermes_root.join("current-state.md"),
-        hermes_root.join("changes").join("H-gate-h-signoff-20260416").join("status.md"),
-        hermes_root.join("changes").join("H-gate-h-signoff-20260416").join("review.md"),
+        hermes_root
+            .join("changes")
+            .join("H-gate-h-signoff-20260416")
+            .join("status.md"),
+        hermes_root
+            .join("changes")
+            .join("H-gate-h-signoff-20260416")
+            .join("review.md"),
         hermes_root.join("changes").join("INDEX.md"),
         docs_root.join("README.md"),
         hermes_root.join("Hermes重构总路线图_完整计划.md"),
@@ -337,7 +399,11 @@ fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
 
 fn status_digest_entry(path: &Path, query: &str) -> Option<String> {
     let content = fs::read_to_string(path).ok()?;
-    Some(format!("{}: {}", path.display(), extract_snippet(&content, query)))
+    Some(format!(
+        "{}: {}",
+        path.display(),
+        extract_snippet(&content, query)
+    ))
 }
 
 fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
@@ -438,7 +504,12 @@ fn reasoning_summary(
 ) -> String {
     summarize_text(&format!(
         "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆、本地知识与 observation 分层注入组织回答。会话：{} || 记忆：{} || 知识：{} || Observation：{} || Artifact：{}",
-        selection_reason, session_summary, memory_digest, knowledge_digest, observation_injection, artifact_hint
+        selection_reason,
+        session_summary,
+        memory_digest,
+        knowledge_digest,
+        observation_injection,
+        artifact_hint
     ))
 }
 
@@ -446,6 +517,8 @@ fn reasoning_summary(
 mod tests {
     use super::*;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+    use crate::memory::MemoryEntry;
+    use crate::sqlite_store::write_memory_entry_sqlite;
     use std::collections::BTreeMap;
     use std::path::Path;
 
@@ -516,17 +589,35 @@ mod tests {
         assert!(!digest.contains("docs\\07-test\\evidence"));
     }
 
+    #[test]
+    fn selected_memory_digest_keeps_object_aware_marker() {
+        let request = memory_request("对象摘要");
+        write_memory_entry_sqlite(&request, &sample_memory_entry("对象摘要")).unwrap();
+        let policy = memory_policy();
+        let memory = selected_memory_selection(&request, &policy);
+        assert!(memory.digest.contains("current memory object"));
+        assert!(memory.digest.contains("对象 1 条"));
+        assert!(memory.digest.contains("对象摘要"));
+        assert!(memory.has_current_objects);
+        assert_eq!(memory.current_object_count, 1);
+    }
+
     fn sample_request() -> RunRequest {
         request_with_input("test")
     }
 
     fn status_request() -> RunRequest {
-        request_with_input("我现在接手这个项目，请直接告诉我：当前停在什么状态、为什么不能继续默认推进、以及以后满足什么条件才值得重启。")
+        request_with_input(
+            "我现在接手这个项目，请直接告诉我：当前停在什么状态、为什么不能继续默认推进、以及以后满足什么条件才值得重启。",
+        )
     }
 
     fn request_with_input(user_input: &str) -> RunRequest {
         let mut context_hints = BTreeMap::new();
-        context_hints.insert("skill_ids".to_string(), "skill.alpha,skill.beta".to_string());
+        context_hints.insert(
+            "skill_ids".to_string(),
+            "skill.alpha,skill.beta".to_string(),
+        );
         context_hints.insert("evidence_refs".to_string(), "verify:sample".to_string());
         let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
@@ -557,6 +648,69 @@ mod tests {
             resume_from_checkpoint_id: String::new(),
             resume_strategy: String::new(),
             confirmation_decision: None,
+        }
+    }
+
+    fn memory_request(user_input: &str) -> RunRequest {
+        let root = std::env::temp_dir().join(format!(
+            "context-builder-memory-{}",
+            crate::events::timestamp_now()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        RunRequest {
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-memory".to_string(),
+                name: "Workspace".to_string(),
+                root_path: root.display().to_string(),
+                is_active: true,
+            },
+            ..request_with_input(user_input)
+        }
+    }
+
+    fn memory_policy() -> ContextAssemblyPolicy {
+        ContextAssemblyPolicy {
+            profile: "agent_resolve".to_string(),
+            include_session: false,
+            include_memory: true,
+            include_knowledge: false,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "answer".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        }
+    }
+
+    fn sample_memory_entry(summary: &str) -> MemoryEntry {
+        MemoryEntry {
+            id: "memory-object".to_string(),
+            kind: "project_rule".to_string(),
+            title: "rule-object".to_string(),
+            summary: summary.to_string(),
+            content: format!("content-{summary}"),
+            scope: "workspace".to_string(),
+            workspace_id: "workspace-memory".to_string(),
+            session_id: "session-1".to_string(),
+            source_run_id: "run-1".to_string(),
+            source: "run:run-1".to_string(),
+            source_type: "runtime".to_string(),
+            source_title: "rule-object".to_string(),
+            source_event_type: "run_finished".to_string(),
+            source_artifact_path: String::new(),
+            governance_version: "v1".to_string(),
+            governance_reason: "测试".to_string(),
+            governance_source: "test".to_string(),
+            governance_at: "1".to_string(),
+            archive_reason: String::new(),
+            verified: true,
+            priority: 12,
+            archived: false,
+            archived_at: String::new(),
+            created_at: "1001".to_string(),
+            updated_at: "1001".to_string(),
+            timestamp: "1001".to_string(),
         }
     }
 }

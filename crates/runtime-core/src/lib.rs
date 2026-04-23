@@ -17,11 +17,14 @@ mod executors;
 mod handoff;
 mod knowledge;
 mod knowledge_store;
+mod memory_layer;
 mod llm;
 mod memory;
+mod memory_object_store;
 mod memory_recall;
 mod memory_router;
 mod memory_schema;
+mod memory_views;
 mod model_adapter;
 mod model_client;
 mod observation;
@@ -71,9 +74,9 @@ mod text;
 mod tool_registry;
 mod tool_trace;
 // tools 模块已收敛为 capabilities（能力注册与元信息单一事实源）
-mod verify;
 #[cfg(test)]
 mod h03_eval_tests;
+mod verify;
 
 use crate::checkpoint::{
     checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint,
@@ -85,7 +88,10 @@ use crate::memory_router::evaluate_finish_memory_writes;
 use crate::query_engine::{bootstrap_run, execute_stage};
 use crate::repo_context::repo_context_metadata;
 use crate::risk::RiskOutcome;
-use crate::run_finish_events::{make_memory_event, make_run_failed_event, read_result_mode};
+use crate::run_finish_events::{
+    append_recall_visibility_metadata, make_memory_event, make_run_failed_event, read_result_mode,
+    run_finished_summary,
+};
 use crate::run_metadata::{
     append_context_metadata, append_tool_spec_metadata, append_verification_metadata,
 };
@@ -97,26 +103,25 @@ use crate::verify::verify_tool_execution;
 use std::collections::BTreeMap;
 
 pub use crate::observation::{
-    dedupe_lifecycle_observations, get_observations, lifecycle_mapping_snapshot,
-    lifecycle_target_event_types, observation_from_event, observation_kind_for_event_type,
-    observation_queue_health, observation_timeline, persist_lifecycle_observations,
-    rank_observations, run_observation_queue_flow, run_observation_retry_flow,
-    search_observations, build_layered_injection, compare_layered_vs_full,
     LifecycleMappingSnapshot, ObservationAbTestReport, ObservationDedupeReport,
     ObservationDetailItem, ObservationGetReport, ObservationLayeredInjectionReport,
-    ObservationPersistenceReport, ObservationQueueFlowReport, ObservationQueueHealthReport,
-    ObservationPrivateSkipReport, ObservationPrivacyRedactReport, ObservationRankItem,
+    ObservationPersistenceReport, ObservationPrivacyRedactReport, ObservationPrivateSkipReport,
+    ObservationQueueFlowReport, ObservationQueueHealthReport, ObservationRankItem,
     ObservationRankReport, ObservationRecord, ObservationRetryReport, ObservationRollbackReport,
     ObservationSearchItem, ObservationSearchReport, ObservationTimelineItem,
-    ObservationTimelineReport, observation_privacy_redact_flow, observation_private_skip_flow,
-    observation_rollback_flow,
+    ObservationTimelineReport, build_layered_injection, compare_layered_vs_full,
+    dedupe_lifecycle_observations, get_observations, lifecycle_mapping_snapshot,
+    lifecycle_target_event_types, observation_from_event, observation_kind_for_event_type,
+    observation_privacy_redact_flow, observation_private_skip_flow, observation_queue_health,
+    observation_rollback_flow, observation_timeline, persist_lifecycle_observations,
+    rank_observations, run_observation_queue_flow, run_observation_retry_flow, search_observations,
 };
 
 pub use crate::contracts::{
     CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest,
     ConnectorListResponse, ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
-    ProviderRef, RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse,
-    RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef, RUNTIME_NAME, RUNTIME_VERSION,
+    ProviderRef, RUNTIME_NAME, RUNTIME_VERSION, RepoContextSnapshot, RunEvent, RunRequest,
+    RunResult, RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef,
 };
 
 pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
@@ -517,6 +522,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
         )
         .to_string(),
     );
+    append_recall_visibility_metadata(&mut finish_metadata, Some(action_result));
     append_context_metadata(&mut finish_metadata, &state.envelope.context_envelope);
     append_tool_spec_metadata(&mut finish_metadata, &state.tool_call);
     append_verification_metadata(&mut finish_metadata, &verification_report);
@@ -526,11 +532,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
         sequence,
         "run_finished",
         "Finish",
-        if action_result.result.success {
-            "任务已完成"
-        } else {
-            "任务已结束，存在执行失败"
-        },
+        &run_finished_summary(action_result.result.success, action_result),
         &action_result.result.final_answer,
         finish_metadata,
     ));

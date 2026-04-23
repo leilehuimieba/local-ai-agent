@@ -1,11 +1,13 @@
 use crate::contracts::RunRequest;
 use crate::knowledge::is_recursive_record;
 use crate::knowledge_store::KnowledgeRecord;
-use crate::memory::{normalized_memory_entry, MemoryEntry};
+use crate::memory::{MemoryEntry, normalized_memory_entry};
 use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{
-    insert_knowledge_record, insert_memory_entry, knowledge_count, memory_count,
+    insert_knowledge_record, insert_memory_entry, knowledge_count,
+    load_memory_entries_for_workspace_conn, memory_count, memory_object_count,
+    sync_memory_object_entry_sqlite,
 };
 use crate::storage::{overwrite_jsonl, read_jsonl};
 use rusqlite::Connection;
@@ -15,8 +17,26 @@ pub(crate) fn ensure_workspace_imported(
     conn: &Connection,
 ) -> Result<(), String> {
     import_memory_if_needed(request, conn)?;
+    backfill_memory_objects_if_needed(request, conn)?;
     import_knowledge_if_needed(request, conn)?;
     compact_legacy_files(request)
+}
+
+fn backfill_memory_objects_if_needed(
+    request: &RunRequest,
+    conn: &Connection,
+) -> Result<(), String> {
+    if memory_count(conn, &request.workspace_ref.workspace_id)? == 0 {
+        return Ok(());
+    }
+    if memory_object_count(conn, &request.workspace_ref.workspace_id)? > 0 {
+        return Ok(());
+    }
+    for entry in load_memory_entries_for_workspace_conn(conn, &request.workspace_ref.workspace_id)?
+    {
+        sync_memory_object_entry_sqlite(request, &entry)?;
+    }
+    Ok(())
 }
 
 fn import_memory_if_needed(request: &RunRequest, conn: &Connection) -> Result<(), String> {

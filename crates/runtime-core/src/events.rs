@@ -2,6 +2,7 @@ use crate::contracts::{
     ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse,
     ToolCallSnapshot, VerificationSnapshot,
 };
+use crate::memory_layer::metadata_layer_summary;
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::prompt::{
     render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt,
@@ -16,14 +17,15 @@ pub(crate) fn make_memory_recall_event(
 ) -> Option<RunEvent> {
     let digest = memory_digest(metadata);
     (!digest.is_empty()).then(|| {
+        let summary = memory_recall_title(metadata, &digest);
         make_event(
             request,
             sequence,
             "memory_recalled",
             "Plan",
-            &memory_recall_title(&digest),
+            &summary,
             &digest,
-            memory_recall_metadata(metadata, &digest),
+            memory_recall_metadata(metadata, &digest, &summary),
         )
     })
 }
@@ -173,21 +175,20 @@ fn memory_recall_anchor(events: &[RunEvent]) -> Option<(usize, &BTreeMap<String,
 fn memory_recall_metadata(
     source: &BTreeMap<String, String>,
     digest: &str,
+    summary: &str,
 ) -> BTreeMap<String, String> {
     let mut metadata = source.clone();
+    let reason = memory_recall_reason(source, digest);
     metadata.insert("layer".to_string(), "long_term_memory".to_string());
     metadata.insert("record_type".to_string(), "recall_digest".to_string());
-    metadata.insert("memory_kind".to_string(), "recall_digest".to_string());
+    metadata.insert("memory_kind".to_string(), memory_recall_kind(source));
     metadata.insert("governance_status".to_string(), "recalled".to_string());
     metadata.insert("memory_action".to_string(), "recall".to_string());
     metadata.insert(
         "governance_version".to_string(),
         MEMORY_GOVERNANCE_VERSION.to_string(),
     );
-    metadata.insert(
-        "governance_reason".to_string(),
-        memory_recall_reason(digest),
-    );
+    metadata.insert("governance_reason".to_string(), reason.clone());
     metadata.insert(
         "governance_source".to_string(),
         "runtime_memory_recall".to_string(),
@@ -200,26 +201,52 @@ fn memory_recall_metadata(
     );
     metadata.insert("source_artifact_path".to_string(), String::new());
     metadata.insert("archive_reason".to_string(), String::new());
-    metadata.insert("title".to_string(), memory_recall_title(digest));
-    metadata.insert("reason".to_string(), memory_recall_reason(digest));
+    metadata.insert("memory_layer_summary".to_string(), memory_layer_summary(source));
+    metadata.insert(
+        "memory_current_object_count".to_string(),
+        metadata_value(source, "memory_current_object_count"),
+    );
+    metadata.insert("title".to_string(), summary.to_string());
+    metadata.insert("reason".to_string(), reason);
     metadata.insert("result_summary".to_string(), digest.to_string());
     metadata
 }
 
-fn memory_recall_title(digest: &str) -> String {
+fn memory_recall_title(metadata: &BTreeMap<String, String>, digest: &str) -> String {
     if digest == "当前没有命中相关长期记忆。" {
         "未命中长期记忆".to_string()
+    } else if metadata_flag(metadata, "memory_has_current_objects") {
+        "已完成对象感知记忆召回".to_string()
+    } else if metadata_flag(metadata, "memory_has_system_views") {
+        "已完成系统视图记忆召回".to_string()
     } else {
         "已完成记忆召回".to_string()
     }
 }
 
-fn memory_recall_reason(digest: &str) -> String {
+fn memory_recall_reason(metadata: &BTreeMap<String, String>, digest: &str) -> String {
     if digest == "当前没有命中相关长期记忆。" {
         "当前查询未命中可复用长期记忆，已输出空召回结果。".to_string()
     } else {
-        "已按当前输入完成长期记忆召回，并将摘要注入上下文。".to_string()
+        format!(
+            "已按当前输入完成长期记忆召回，并将{}摘要注入上下文。",
+            metadata_layer_summary(metadata)
+        )
     }
+}
+
+fn memory_recall_kind(metadata: &BTreeMap<String, String>) -> String {
+    if metadata_flag(metadata, "memory_has_current_objects") {
+        "object_aware_recall_digest".to_string()
+    } else if metadata_flag(metadata, "memory_has_system_views") {
+        "system_view_recall_digest".to_string()
+    } else {
+        "recall_digest".to_string()
+    }
+}
+
+fn memory_layer_summary(metadata: &BTreeMap<String, String>) -> String {
+    metadata_layer_summary(metadata)
 }
 
 fn pick_verification_summary(
@@ -260,6 +287,9 @@ fn fill_context_core(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<
     snapshot.mode = metadata_value(metadata, "context_mode");
     snapshot.session_summary = metadata_value(metadata, "session_summary");
     snapshot.memory_digest = metadata_value(metadata, "memory_digest");
+    snapshot.memory_has_system_views = metadata_flag(metadata, "memory_has_system_views");
+    snapshot.memory_has_current_objects = metadata_flag(metadata, "memory_has_current_objects");
+    snapshot.memory_current_object_count = metadata_usize(metadata, "memory_current_object_count");
     snapshot.knowledge_digest = metadata_value(metadata, "knowledge_digest");
     snapshot.tool_preview = metadata_value(metadata, "tool_preview");
     snapshot.artifact_hint = metadata_value(metadata, "artifact_hint");
@@ -305,6 +335,9 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.mode.is_empty()
         || !snapshot.session_summary.is_empty()
         || !snapshot.memory_digest.is_empty()
+        || snapshot.memory_has_system_views
+        || snapshot.memory_has_current_objects
+        || snapshot.memory_current_object_count > 0
         || !snapshot.knowledge_digest.is_empty()
         || !snapshot.tool_preview.is_empty()
         || !snapshot.reasoning_summary.is_empty()
@@ -550,6 +583,9 @@ fn prompt_dynamic_block(
         prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),
         session_summary: metadata_value(metadata, "session_summary"),
         memory_digest: metadata_value(metadata, "memory_digest"),
+        memory_has_system_views: metadata_flag(metadata, "memory_has_system_views"),
+        memory_has_current_objects: metadata_flag(metadata, "memory_has_current_objects"),
+        memory_current_object_count: metadata_usize(metadata, "memory_current_object_count"),
         knowledge_digest: metadata_value(metadata, "knowledge_digest"),
         tool_preview: metadata_value(metadata, "tool_preview"),
         artifact_hint: metadata_value(metadata, "artifact_hint"),
@@ -588,4 +624,121 @@ pub(crate) fn timestamp_now() -> String {
         .map(|duration| duration.as_millis())
         .unwrap_or(0);
     millis.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
+
+    #[test]
+    fn context_snapshot_keeps_memory_layer_fields() {
+        let mut metadata = BTreeMap::new();
+        metadata.insert("context_workspace_root".to_string(), "D:/repo".to_string());
+        metadata.insert("context_mode".to_string(), "standard".to_string());
+        metadata.insert("memory_digest".to_string(), "digest".to_string());
+        metadata.insert("memory_has_system_views".to_string(), "true".to_string());
+        metadata.insert("memory_has_current_objects".to_string(), "true".to_string());
+        metadata.insert("memory_current_object_count".to_string(), "2".to_string());
+        let snapshot = context_snapshot(&metadata).unwrap();
+        assert!(snapshot.memory_has_system_views);
+        assert!(snapshot.memory_has_current_objects);
+        assert_eq!(snapshot.memory_current_object_count, 2);
+    }
+
+    #[test]
+    fn prompt_snapshot_preserves_memory_layer_prompt() {
+        let request = sample_request();
+        let mut metadata = BTreeMap::new();
+        metadata.insert(
+            "context_workspace_root".to_string(),
+            request.workspace_ref.root_path.clone(),
+        );
+        metadata.insert("context_mode".to_string(), "standard".to_string());
+        metadata.insert("assembly_profile".to_string(), "project_answer".to_string());
+        metadata.insert("phase_label".to_string(), "answer".to_string());
+        metadata.insert("selection_reason".to_string(), "test".to_string());
+        metadata.insert("user_input".to_string(), "对象摘要".to_string());
+        metadata.insert("session_summary".to_string(), "session".to_string());
+        metadata.insert("memory_digest".to_string(), "digest".to_string());
+        metadata.insert("memory_has_system_views".to_string(), "true".to_string());
+        metadata.insert("memory_has_current_objects".to_string(), "true".to_string());
+        metadata.insert("memory_current_object_count".to_string(), "2".to_string());
+        let prompts = prompt_snapshot_parts(&metadata);
+        assert!(prompts.2.contains("记忆分层：system views + current memory object（对象 2 条）"));
+    }
+
+    #[test]
+    fn memory_recall_event_uses_object_aware_summary_and_reason() {
+        let request = sample_request();
+        let mut metadata = BTreeMap::new();
+        metadata.insert("memory_digest".to_string(), "digest".to_string());
+        metadata.insert("memory_has_system_views".to_string(), "true".to_string());
+        metadata.insert("memory_has_current_objects".to_string(), "true".to_string());
+        metadata.insert("memory_current_object_count".to_string(), "2".to_string());
+        let event = make_memory_recall_event(&request, 1, &metadata).unwrap();
+        assert_eq!(event.summary, "已完成对象感知记忆召回");
+        assert_eq!(
+            event.metadata.get("memory_kind"),
+            Some(&"object_aware_recall_digest".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("memory_layer_summary"),
+            Some(&"system views + current memory object（对象 2 条）".to_string())
+        );
+        assert!(
+            event
+                .metadata
+                .get("reason")
+                .unwrap()
+                .contains("system views + current memory object（对象 2 条）")
+        );
+    }
+
+    #[test]
+    fn memory_recall_event_keeps_empty_recall_semantics() {
+        let request = sample_request();
+        let mut metadata = BTreeMap::new();
+        metadata.insert(
+            "memory_digest".to_string(),
+            "当前没有命中相关长期记忆。".to_string(),
+        );
+        let event = make_memory_recall_event(&request, 1, &metadata).unwrap();
+        assert_eq!(event.summary, "未命中长期记忆");
+        assert_eq!(
+            event.metadata.get("memory_kind"),
+            Some(&"recall_digest".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("reason"),
+            Some(&"当前查询未命中可复用长期记忆，已输出空召回结果。".to_string())
+        );
+    }
+
+    fn sample_request() -> RunRequest {
+        RunRequest {
+            request_id: "request-1".to_string(),
+            run_id: "run-1".to_string(),
+            session_id: "session-1".to_string(),
+            trace_id: "trace-1".to_string(),
+            user_input: "对象摘要".to_string(),
+            mode: "standard".to_string(),
+            model_ref: ModelRef {
+                provider_id: "provider".to_string(),
+                model_id: "model".to_string(),
+                display_name: "Model".to_string(),
+            },
+            provider_ref: ProviderRef::default(),
+            workspace_ref: WorkspaceRef {
+                workspace_id: "workspace-1".to_string(),
+                name: "Workspace".to_string(),
+                root_path: "D:/repo".to_string(),
+                is_active: true,
+            },
+            context_hints: BTreeMap::new(),
+            resume_from_checkpoint_id: String::new(),
+            resume_strategy: String::new(),
+            confirmation_decision: None,
+        }
+    }
 }
