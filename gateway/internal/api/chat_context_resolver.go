@@ -16,6 +16,10 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 	if err != nil {
 		return contracts.RunRequest{}, err
 	}
+	hints := h.withKnowledgeHints(runContextHints(payload.ContextHints, h.repoRoot, firstSeen))
+	if payload.KnowledgeBaseID != "" && payload.KnowledgeBaseID != "_none_" {
+		hints["knowledge_base_id"] = payload.KnowledgeBaseID
+	}
 	return contracts.RunRequest{
 		RequestID:              pickRunIdentity(payload.RequestID, "request"),
 		RunID:                  pickRunIdentity(payload.RunID, "run"),
@@ -26,7 +30,7 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		ModelRef:               model,
 		ProviderRef:            providerRef,
 		WorkspaceRef:           workspace,
-		ContextHints:           h.withKnowledgeHints(runContextHints(payload.ContextHints, h.repoRoot, firstSeen)),
+		ContextHints:           hints,
 		ResumeFromCheckpointID: "",
 		ResumeStrategy:         "",
 	}, nil

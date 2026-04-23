@@ -1,12 +1,12 @@
 use crate::capabilities::ToolDefinition;
-use crate::context_builder::{build_runtime_context, RuntimeContextEnvelope};
+use crate::context_builder::{RuntimeContextEnvelope, build_runtime_context};
 use crate::context_policy::{action_context_policy, planning_context_policy};
 use crate::contracts::RunRequest;
-use crate::planner::{analysis_summary, PlannedAction};
+use crate::planner::{PlannedAction, analysis_summary};
 use crate::repo_context::RepoContextLoadResult;
-use crate::risk::{assess_risk, RiskOutcome};
-use crate::session::{record_planning_memory, SessionMemory};
-use crate::tool_registry::{runtime_tool_registry, ToolCall};
+use crate::risk::{RiskOutcome, assess_risk};
+use crate::session::{SessionMemory, record_planning_memory};
+use crate::tool_registry::{ToolCall, runtime_tool_registry};
 
 #[derive(Clone, Debug)]
 pub(crate) struct PreparedRunState {

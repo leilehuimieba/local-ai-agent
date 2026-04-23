@@ -3,16 +3,14 @@ mod tests {
     use crate::capabilities::{ToolCallResult, ToolDefinition, ToolExecutionTrace};
     use crate::context_builder::build_runtime_context;
     use crate::context_policy::{
-        action_context_policy, planning_context_policy, ContextAssemblyPolicy,
+        ContextAssemblyPolicy, action_context_policy, planning_context_policy,
     };
-    use crate::contracts::{
-        ModelRef, ProviderRef, RepoContextSnapshot, RunRequest, WorkspaceRef,
-    };
+    use crate::contracts::{ModelRef, ProviderRef, RepoContextSnapshot, RunRequest, WorkspaceRef};
     use crate::planner::PlannedAction;
     use crate::repo_context::RepoContextLoadResult;
     use crate::session::SessionMemory;
     use crate::skill_catalog::load_skill_catalog;
-    use crate::tool_registry::{runtime_tool_registry, ToolCall};
+    use crate::tool_registry::{ToolCall, runtime_tool_registry};
     use crate::verify::verify_tool_execution;
     use serde_json::json;
     use std::collections::BTreeMap;
@@ -37,14 +35,41 @@ mod tests {
         write_json(&eval_dir.join("skill-catalog.json"), &skill_report);
         write_json(&eval_dir.join("context-skill.json"), &context_report);
         write_json(&eval_dir.join("verify-signals.json"), &verify_report);
-        write_json(&eval_dir.join("skill-false-positive.json"), &false_positive_report);
-        write_json(&eval_dir.join("failure-injection.json"), &failure_injection_report);
+        write_json(
+            &eval_dir.join("skill-false-positive.json"),
+            &false_positive_report,
+        );
+        write_json(
+            &eval_dir.join("failure-injection.json"),
+            &failure_injection_report,
+        );
         write_json(&eval_dir.join("manual-review.json"), &manual_review_report);
-        write_json(&eval_dir.join("cross-skill-expansion.json"), &cross_skill_report);
-        write_json(&eval_dir.join("business-task-chain.json"), &business_chain_report);
+        write_json(
+            &eval_dir.join("cross-skill-expansion.json"),
+            &cross_skill_report,
+        );
+        write_json(
+            &eval_dir.join("business-task-chain.json"),
+            &business_chain_report,
+        );
         write_json(&out_dir.join("fallback-cases.json"), &fallback_report);
-        let latest = build_latest_report(&skill_report, &context_report, &verify_report, &fallback_report);
-        write_json(&out_dir.join("latest.json"), &augment_latest_report(latest, &false_positive_report, &failure_injection_report, &manual_review_report, &cross_skill_report, &business_chain_report));
+        let latest = build_latest_report(
+            &skill_report,
+            &context_report,
+            &verify_report,
+            &fallback_report,
+        );
+        write_json(
+            &out_dir.join("latest.json"),
+            &augment_latest_report(
+                latest,
+                &false_positive_report,
+                &failure_injection_report,
+                &manual_review_report,
+                &cross_skill_report,
+                &business_chain_report,
+            ),
+        );
     }
 
     fn build_skill_catalog_report(repo_root: &Path) -> serde_json::Value {
@@ -163,9 +188,27 @@ mod tests {
 
     fn build_fallback_cases_report() -> serde_json::Value {
         json!([
-            fallback_case("skill_guard_review", "review", "manual", "eval=context-skill.json;sample=agent_resolve", "crates/runtime-core/src/context_policy.rs"),
-            fallback_case("skill_guard_deny", "guard_denied", "manual", "eval=skill-catalog.json;sample=skill_guard_community", "crates/runtime-core/src/skill_catalog.rs"),
-            fallback_case("guard_downgraded_verify_linked", "review", "verify", "eval=verify-signals.json;sample=verification_guard_downgraded_path", "crates/runtime-core/src/verify.rs")
+            fallback_case(
+                "skill_guard_review",
+                "review",
+                "manual",
+                "eval=context-skill.json;sample=agent_resolve",
+                "crates/runtime-core/src/context_policy.rs"
+            ),
+            fallback_case(
+                "skill_guard_deny",
+                "guard_denied",
+                "manual",
+                "eval=skill-catalog.json;sample=skill_guard_community",
+                "crates/runtime-core/src/skill_catalog.rs"
+            ),
+            fallback_case(
+                "guard_downgraded_verify_linked",
+                "review",
+                "verify",
+                "eval=verify-signals.json;sample=verification_guard_downgraded_path",
+                "crates/runtime-core/src/verify.rs"
+            )
         ])
     }
 
@@ -240,7 +283,12 @@ mod tests {
     }
 
     fn cross_skill_samples(repo_root: &Path) -> Vec<serde_json::Value> {
-        let tiers = ["builtin", "project_trusted", "local_generated", "external_imported"];
+        let tiers = [
+            "builtin",
+            "project_trusted",
+            "local_generated",
+            "external_imported",
+        ];
         tiers
             .iter()
             .map(|tier| cross_skill_sample(repo_root, tier))
@@ -261,14 +309,54 @@ mod tests {
 
     fn build_business_task_chain_report() -> serde_json::Value {
         let cases = vec![
-            business_chain_case("chain_collect_context", 0, "verify", "verification_success_path"),
-            business_chain_case("chain_guard_review", 1, "verify", "verification_guard_downgraded_path"),
-            business_chain_case("chain_false_positive", 2, "verify", "verification_failure_path"),
-            business_chain_case("chain_guard_deny_manual", 3, "manual", "verification_failure_path"),
-            business_chain_case("chain_recover_then_verify", 4, "verify", "verification_success_path"),
-            business_chain_case("chain_manual_retry_success", 5, "manual", "verification_success_path"),
-            business_chain_case("chain_verify_then_manual", 6, "manual", "verification_failure_path"),
-            business_chain_case("chain_multi_step_review", 7, "verify", "verification_guard_downgraded_path"),
+            business_chain_case(
+                "chain_collect_context",
+                0,
+                "verify",
+                "verification_success_path",
+            ),
+            business_chain_case(
+                "chain_guard_review",
+                1,
+                "verify",
+                "verification_guard_downgraded_path",
+            ),
+            business_chain_case(
+                "chain_false_positive",
+                2,
+                "verify",
+                "verification_failure_path",
+            ),
+            business_chain_case(
+                "chain_guard_deny_manual",
+                3,
+                "manual",
+                "verification_failure_path",
+            ),
+            business_chain_case(
+                "chain_recover_then_verify",
+                4,
+                "verify",
+                "verification_success_path",
+            ),
+            business_chain_case(
+                "chain_manual_retry_success",
+                5,
+                "manual",
+                "verification_success_path",
+            ),
+            business_chain_case(
+                "chain_verify_then_manual",
+                6,
+                "manual",
+                "verification_failure_path",
+            ),
+            business_chain_case(
+                "chain_multi_step_review",
+                7,
+                "verify",
+                "verification_guard_downgraded_path",
+            ),
         ];
         json!({
             "checked_at": "2026-04-16T20:30:00+08:00",
@@ -282,7 +370,12 @@ mod tests {
         })
     }
 
-    fn business_chain_case(sample_id: &str, step_index: usize, route: &str, verify_sample: &str) -> serde_json::Value {
+    fn business_chain_case(
+        sample_id: &str,
+        step_index: usize,
+        route: &str,
+        verify_sample: &str,
+    ) -> serde_json::Value {
         json!({
             "sample_id": sample_id,
             "step_index": step_index,
@@ -303,14 +396,34 @@ mod tests {
 
     fn manual_review_samples() -> serde_json::Value {
         json!([
-            manual_review_sample("manual_review_guard_downgraded", "verify-signals.json", "accepted_as_expected"),
-            manual_review_sample("manual_review_skill_false_positive", "skill-false-positive.json", "accepted_as_noise"),
-            manual_review_sample("manual_review_guard_denied", "skill-catalog.json", "accepted_as_blocked"),
-            manual_review_sample("manual_review_business_chain_false_positive", "business-task-chain.json", "accepted_as_warning")
+            manual_review_sample(
+                "manual_review_guard_downgraded",
+                "verify-signals.json",
+                "accepted_as_expected"
+            ),
+            manual_review_sample(
+                "manual_review_skill_false_positive",
+                "skill-false-positive.json",
+                "accepted_as_noise"
+            ),
+            manual_review_sample(
+                "manual_review_guard_denied",
+                "skill-catalog.json",
+                "accepted_as_blocked"
+            ),
+            manual_review_sample(
+                "manual_review_business_chain_false_positive",
+                "business-task-chain.json",
+                "accepted_as_warning"
+            )
         ])
     }
 
-    fn manual_review_sample(sample_id: &str, source_eval: &str, decision: &str) -> serde_json::Value {
+    fn manual_review_sample(
+        sample_id: &str,
+        source_eval: &str,
+        decision: &str,
+    ) -> serde_json::Value {
         json!({
             "sample_id": sample_id,
             "source_eval": source_eval,
@@ -433,7 +546,10 @@ mod tests {
         latest
     }
 
-    fn merge_business_chain_metrics(latest: &mut serde_json::Value, business_chain_report: &serde_json::Value) {
+    fn merge_business_chain_metrics(
+        latest: &mut serde_json::Value,
+        business_chain_report: &serde_json::Value,
+    ) {
         if let Some(metrics) = business_chain_report.get("metrics") {
             latest["metrics"]["business_chain_observable_rate"] =
                 metrics["business_chain_observable_rate"].clone();
@@ -441,7 +557,10 @@ mod tests {
         latest["summary"]["business_chain_samples"] = json!(sample_count(business_chain_report));
     }
 
-    fn merge_cross_skill_metrics(latest: &mut serde_json::Value, cross_skill_report: &serde_json::Value) {
+    fn merge_cross_skill_metrics(
+        latest: &mut serde_json::Value,
+        cross_skill_report: &serde_json::Value,
+    ) {
         if let Some(metrics) = cross_skill_report.get("metrics") {
             latest["metrics"]["cross_skill_observable_rate"] =
                 metrics["cross_skill_observable_rate"].clone();
@@ -454,8 +573,10 @@ mod tests {
         false_positive_report: &serde_json::Value,
     ) {
         if let Some(metrics) = false_positive_report.get("metrics") {
-            latest["metrics"]["skill_hit_effective_rate"] = metrics["skill_hit_effective_rate"].clone();
-            latest["metrics"]["skill_false_positive_rate"] = metrics["skill_false_positive_rate"].clone();
+            latest["metrics"]["skill_hit_effective_rate"] =
+                metrics["skill_hit_effective_rate"].clone();
+            latest["metrics"]["skill_false_positive_rate"] =
+                metrics["skill_false_positive_rate"].clone();
         }
         latest["summary"]["false_positive_samples"] = json!(sample_count(false_positive_report));
     }
@@ -488,18 +609,27 @@ mod tests {
     }
 
     fn skill_request(repo_root: &Path, trust_tier: &str) -> RunRequest {
-        let root = repo_root.join("tmp").join("stage-h-mcp-skills").join(format!("skill-{trust_tier}"));
+        let root = repo_root
+            .join("tmp")
+            .join("stage-h-mcp-skills")
+            .join(format!("skill-{trust_tier}"));
         let _ = fs::remove_dir_all(&root);
         let _ = fs::create_dir_all(root.join("workspace").join("skills").join("compose"));
         let _ = fs::create_dir_all(root.join("data").join("skills"));
         let _ = fs::write(
-            root.join("workspace").join("skills").join("compose").join("SKILL.md"),
+            root.join("workspace")
+                .join("skills")
+                .join("compose")
+                .join("SKILL.md"),
             "# skill\n",
         );
         let manifest = format!(
             r#"{{"skills":[{{"skill_id":"compose_ui","version":"1.2.0","entry":"skills/compose/SKILL.md","workspace_id":"workspace-1","trust_tier":"{trust_tier}"}}]}}"#
         );
-        let _ = fs::write(root.join("data").join("skills").join("workspace-1.json"), manifest);
+        let _ = fs::write(
+            root.join("data").join("skills").join("workspace-1.json"),
+            manifest,
+        );
         RunRequest {
             request_id: "request-1".to_string(),
             run_id: "run-1".to_string(),
@@ -524,7 +654,10 @@ mod tests {
 
     fn context_request() -> RunRequest {
         let mut hints = BTreeMap::new();
-        hints.insert("skill_ids".to_string(), "skill.alpha,skill.beta".to_string());
+        hints.insert(
+            "skill_ids".to_string(),
+            "skill.alpha,skill.beta".to_string(),
+        );
         hints.insert("evidence_refs".to_string(), "verify:sample".to_string());
         RunRequest {
             request_id: "request-1".to_string(),
@@ -615,7 +748,12 @@ mod tests {
             tool: sample_tool_call("run_command").spec,
             action_summary: "执行 echo ok".to_string(),
             result: ToolCallResult {
-                summary: if success { "命令执行成功" } else { "命令执行失败" }.to_string(),
+                summary: if success {
+                    "命令执行成功"
+                } else {
+                    "命令执行失败"
+                }
+                .to_string(),
                 final_answer: if success { "ok" } else { "failed" }.to_string(),
                 artifact_path: None,
                 detail_preview: "preview".to_string(),
@@ -623,7 +761,11 @@ mod tests {
                 result_chars: 10,
                 single_result_budget_chars: 30000,
                 single_result_budget_hit: false,
-                error_code: if success { None } else { Some("exit_1".to_string()) },
+                error_code: if success {
+                    None
+                } else {
+                    Some("exit_1".to_string())
+                },
                 elapsed_ms: 10,
                 retryable: !success,
                 success,

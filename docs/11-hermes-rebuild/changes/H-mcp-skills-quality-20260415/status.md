@@ -1,7 +1,7 @@
 # H-mcp-skills-quality-20260415（status）
 
-最近更新时间：2026-04-22（补记 H-03 聚合证据漂移）
-状态：进行中（H03-39 正式执行后复核与交接已完成；当前仍为 warning）
+最近更新时间：2026-04-23（完成两轮回填，所有结构化来源已用尽，缺口仍存在）
+状态：进行中（H03-39 已完成；当前仍为 warning，所有可直接追溯来源已映射完毕）
 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 
 ## 当前状态
@@ -36,7 +36,10 @@
    - 已把外部参考项目 `rtk-ai/rtk` 的可迁移治理原则收敛进 H-03 草案：薄适配层 + 单一裁决核心、增强层失败不阻断主链路、摘要/原始证据双轨、质量收益量化闭环。
 2. 进行中：
    - H03-39 已完成正式执行后复核与交接，当前只形成“建议主控评估是否切主推进”的收口结果，而不是继续无边界补样。
-   - `tmp/stage-h-mcp-skills/latest.json` 已于 2026-04-22 按 H03-38/H03-39 专项批次证据做保守回刷；`evals/business-task-chain.json`、`evals/skill-false-positive.json`、`evals/manual-review.json` 也已补入 `formal_batch_summary / batch_sync_state` 诚实回填层，并进一步补入 `formal_batch_detailed_samples`，当前仍需继续收口“已落明细层”与“尚未补齐的剩余批次样本”之间的漂移，不继续扩大实现范围。
+   - `tmp/stage-h-mcp-skills/latest.json` 已于 2026-04-23 按新增映射更新；`evals/business-task-chain.json`、`evals/skill-false-positive.json`、`evals/manual-review.json` 已补入新一轮可直接追溯的 detailed sample layer。
+   - 2026-04-23 新增映射：从 `skill-hit-effective-calibration.json` 映射 11 条 business-task-chain 样本、5 条 skill-false-positive 样本；从 `manual-review.before-batch-sync-20260422.json` 的 `institutional_review_primary_records` 映射 8 条 manual-review 样本。
+   - 2026-04-23 完成第二轮映射：从 `long-tail-distribution.json` 映射 5 条 business-task-chain 样本；从 `representative-coverage.json` 映射 1 条 skill-false-positive 样本。
+   - 当前所有可直接追溯的结构化来源已用尽；剩余缺口无现成结构化证据可映射。
 3. 阻塞点：
    - 当前冻结的是架构口径，不是 runtime 完整实现。
    - 当前已具备 H03-02 最小可观测字段，并已补 1 条真实 trust tier -> guard(review) -> verify 联动样本。
@@ -53,8 +56,9 @@
     - 当前正式执行入口已收口到 `formal-execution-entry.md`；H03-39 已完成，后续仅可交由主控单独裁决是否评估切主推进。
     - 本 change 当前能支持的最强结论是：“H03-39 已完成正式执行后复核与交接，建议主控评估是否切主推进”；这不等于已经切主推进，也不等于 H-03 ready，更不等于 Gate-H 可签收。
     - 当前应继续收口 H-03 聚合证据漂移：`latest.json` 已保守回刷到 `30 / 24 / 16`，但基础 eval 明细仍未统一回填，因此当前只能表述为“主报告已按专项批次证据更新、基础明细仍待同步”。
-    - 当前详细样本回填只允许按 `formal-batch-detail-backfill-gap-20260422.md` 推进：当前缺口为 `business=13`、`false_positive=19`、`manual_review=8`，且必须继续坚持“不伪造样本明细”的边界。
-    - 其中 `manual_review=8` 的剩余缺口当前不能默认视为“已有现成结构化明细待抄录”：已核对 `review-rounds-h03.json`、`manual-review.json.institutional_review_primary_records` 与 `formal_batch_detailed_samples`，当前只有 8 条样本形成了稳定回指；剩余 8 条仍应视为“来源待确认”，而不是“已存在但尚未落盘”。
-    - 进一步核对 `update_task13.py` 与 `h03-institutional-review-check.json` 后，当前仍未发现除这 8 条之外的新增结构化来源；因此剩余 8 条更准确应表述为“当前未发现更多可直接回填的结构化来源”，而不是“继续整理即可补齐”。
+    - 当前详细样本回填已按 `formal-batch-detail-backfill-gap-20260423.md` 推进两轮：当前缺口为 `business=6`、`false_positive=15`、`manual_review=4`，所有结构化来源已用尽。
+    - `manual_review` 剩余缺口为 4 条：`review-rounds-h03.json` 中的 8 条样本已通过 `institutional_review_primary_records` 全部映射；已核查全部 11 份专项证据文件，无更多可映射来源。
+    - `business-task-chain` 剩余缺口为 6 条：`long-tail-distribution.json` 中 13 条 sample_refs 已全部映射到 business-task-chain；无更多可映射来源。
+    - `skill-false-positive` 剩余缺口为 15 条：所有专项文件中 false_positive 相关的独立样本（`skill-hit-effective-calibration.json` 5 条 + `representative-coverage.json` 1 条 + 初始 `verify-signals.json` 3 条）共 9 条已全部映射；该缺口属于结构性问题（目标 24 远超当前可用独立样本数）。
     - H03-38 本批次已在专项证据中达到 `business_chain_samples=30`、`false_positive_samples=24`、`manual_review_samples=16`，且四类结构门槛已形成对应证据；H03-39 已完成稳定性复核与文档口径统一收口，当前 `latest.json` 已按该批次做保守更新。
     - 当前 warning 已从“策略设计草稿可复用”进一步收口到“制度化复核主索引最小闭环已形成、主记录 / 主台账映射闭环已补齐，且正式执行后结果已可交主控评估”；但真实主链分布仍属中小样本、命中有效性分布仍未完成可外推校准、长期正式多评审流程仍未完成，因此仍不能宣称 H-03 ready，也不能据此宣称 Gate-H 可签收。

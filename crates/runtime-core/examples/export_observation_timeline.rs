@@ -1,6 +1,6 @@
 use runtime_core::{
-    observation_timeline, persist_lifecycle_observations, ModelRef, ProviderRef, RunEvent,
-    RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_timeline,
+    persist_lifecycle_observations,
 };
 use serde_json::json;
 use std::collections::BTreeMap;

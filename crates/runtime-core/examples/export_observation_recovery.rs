@@ -1,5 +1,5 @@
 use runtime_core::{
-    run_observation_queue_flow, ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, run_observation_queue_flow,
 };
 use serde_json::json;
 use std::collections::BTreeMap;

@@ -26,11 +26,7 @@ export function EventTimeline(props: EventTimelineProps) {
 
 function EmptyTimeline() {
   return (
-    <EmptyStateBlock
-      compact
-      title="没有事件记录"
-      text="任务开始后，这里会显示当前会话的阶段推进和关键动作。"
-    />
+    <EmptyStateBlock compact title="没有事件记录" text="任务开始后显示阶段推进。" />
   );
 }
 

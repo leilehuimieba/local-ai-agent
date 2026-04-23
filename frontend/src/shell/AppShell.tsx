@@ -2,27 +2,29 @@ import { ReactNode } from "react";
 
 type AppShellProps = {
   topbar: ReactNode;
+  leftNav: ReactNode;
   overlays: ReactNode;
   content: ReactNode;
+  rightPanel: ReactNode;
   bottomPanel: ReactNode;
 };
 
 export function AppShell(props: AppShellProps) {
+  const hasRightPanel = Boolean(props.rightPanel);
   return (
-    <>
-      <a className="skip-link" href="#main-content">跳到主内容</a>
-      <div className="app-shell-frame">
-        <main className="app-shell">
-          <header className="app-shell-topbar">{props.topbar}</header>
-          {props.overlays ? <div className="app-shell-overlays">{props.overlays}</div> : null}
-          <div className="app-shell-body">
-            <div id="main-content" className="app-shell-main" tabIndex={-1}>
-              {props.content}
-            </div>
-          </div>
-          {props.bottomPanel ? <div className="app-shell-drawer">{props.bottomPanel}</div> : null}
-        </main>
+    <div className="app-layout">
+      <header className="app-topbar">{props.topbar}</header>
+      <div className="app-body">
+        {props.leftNav}
+        <div className="app-main">
+          {props.overlays}
+          <main className="app-content">{props.content}</main>
+          {props.bottomPanel}
+        </div>
+        {hasRightPanel ? (
+          <aside className="app-right-panel">{props.rightPanel}</aside>
+        ) : null}
       </div>
-    </>
+    </div>
   );
 }

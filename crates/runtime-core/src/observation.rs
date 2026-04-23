@@ -1,6 +1,8 @@
 use crate::contracts::{RunEvent, RunRequest};
 use crate::paths::observation_audit_file_path;
-use crate::sensitive_data::{contains_private_marker, contains_sensitive_text, redact_sensitive_text};
+use crate::sensitive_data::{
+    contains_private_marker, contains_sensitive_text, redact_sensitive_text,
+};
 use crate::sqlite_store::{insert_observation_record, with_connection};
 use crate::storage::{append_jsonl, read_jsonl};
 use serde::{Deserialize, Serialize};
@@ -485,11 +487,7 @@ pub fn observation_timeline(
     }
 }
 
-pub fn get_observations(
-    request: &RunRequest,
-    ids: &[i64],
-    limit: usize,
-) -> ObservationGetReport {
+pub fn get_observations(request: &RunRequest, ids: &[i64], limit: usize) -> ObservationGetReport {
     let normalized_limit = normalize_limit(limit, 20);
     let normalized_ids = normalized_observation_ids(ids, normalized_limit);
     let rows = rows_by_ids(request, &normalized_ids);
@@ -501,11 +499,7 @@ pub fn get_observations(
     }
 }
 
-pub fn rank_observations(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> ObservationRankReport {
+pub fn rank_observations(request: &RunRequest, query: &str, limit: usize) -> ObservationRankReport {
     let normalized_limit = normalize_limit(limit, 5);
     let candidates = search_rows(request, query, 100);
     let mut scored = scored_rows(query, &candidates);
@@ -531,8 +525,13 @@ pub fn build_layered_injection(
     let (summary_budget, timeline_budget, details_budget) = split_budgets(total);
     let ranked = rank_observations(request, query, 20);
     let details = get_observation_details(request, &ranked);
-    let (summary_section, timeline_section, details_section) =
-        layered_sections(&ranked.items, &details, summary_budget, timeline_budget, details_budget);
+    let (summary_section, timeline_section, details_section) = layered_sections(
+        &ranked.items,
+        &details,
+        summary_budget,
+        timeline_budget,
+        details_budget,
+    );
     let references = build_references(&details);
     layered_injection_report(
         query,
@@ -650,7 +649,8 @@ fn layered_injection_report(
     references: Vec<String>,
 ) -> ObservationLayeredInjectionReport {
     let budget = layer_budget_for_sections(budgets, &sections);
-    let injected_text = join_layered_sections(&sections.summary, &sections.timeline, &sections.details);
+    let injected_text =
+        join_layered_sections(&sections.summary, &sections.timeline, &sections.details);
     ObservationLayeredInjectionReport {
         query: query.to_string(),
         budget_total_chars: budgets.total,
@@ -673,7 +673,10 @@ fn layered_injection_report(
     }
 }
 
-fn layer_budget_for_sections(budgets: LayerCharBudgets, sections: &LayerSections) -> LayerBudgetReport {
+fn layer_budget_for_sections(
+    budgets: LayerCharBudgets,
+    sections: &LayerSections,
+) -> LayerBudgetReport {
     layer_budget_report(
         budgets.total,
         budgets.summary,
@@ -710,9 +713,7 @@ pub fn observation_privacy_redact_flow(
     }
 }
 
-pub fn observation_private_skip_flow(
-    events: &[RunEvent],
-) -> ObservationPrivateSkipReport {
+pub fn observation_private_skip_flow(events: &[RunEvent]) -> ObservationPrivateSkipReport {
     let dedupe = dedupe_lifecycle_observations(&lifecycle_mapping_snapshot(events).mapped_items);
     let marked = private_marked_records(&dedupe.unique_items);
     ObservationPrivateSkipReport {
@@ -723,10 +724,7 @@ pub fn observation_private_skip_flow(
     }
 }
 
-pub fn observation_rollback_flow(
-    request: &RunRequest,
-    query: &str,
-) -> ObservationRollbackReport {
+pub fn observation_rollback_flow(request: &RunRequest, query: &str) -> ObservationRollbackReport {
     let enabled = memory_enhanced_enabled(request);
     if !enabled {
         let search = search_observations(request, query, 5);
@@ -1334,11 +1332,7 @@ fn repeat_placeholders(count: usize) -> String {
     (0..count).map(|_| "?").collect::<Vec<_>>().join(",")
 }
 
-fn query_rows_by_ids(
-    request: &RunRequest,
-    sql: &str,
-    ids: &[i64],
-) -> Vec<StoredObservationRow> {
+fn query_rows_by_ids(request: &RunRequest, sql: &str, ids: &[i64]) -> Vec<StoredObservationRow> {
     with_connection(request, |conn| {
         let mut values = vec![rusqlite::types::Value::from(
             request.workspace_ref.workspace_id.clone(),
@@ -1448,7 +1442,10 @@ fn query_terms(query: &str) -> Vec<String> {
         .collect()
 }
 
-fn compare_scored_rows(left: &ScoredObservationRow, right: &ScoredObservationRow) -> std::cmp::Ordering {
+fn compare_scored_rows(
+    left: &ScoredObservationRow,
+    right: &ScoredObservationRow,
+) -> std::cmp::Ordering {
     right
         .total_score
         .partial_cmp(&left.total_score)
@@ -1517,11 +1514,7 @@ fn timeline_report(
     }
 }
 
-fn timeline_rows(
-    request: &RunRequest,
-    anchor_id: i64,
-    window: usize,
-) -> Vec<StoredObservationRow> {
+fn timeline_rows(request: &RunRequest, anchor_id: i64, window: usize) -> Vec<StoredObservationRow> {
     let lower = anchor_id.saturating_sub(window as i64);
     let upper = anchor_id.saturating_add(window as i64);
     with_connection(request, |conn| {
@@ -1545,10 +1538,7 @@ fn timeline_rows(
     .unwrap_or_default()
 }
 
-fn timeline_item_from_row(
-    row: &StoredObservationRow,
-    anchor_id: i64,
-) -> ObservationTimelineItem {
+fn timeline_item_from_row(row: &StoredObservationRow, anchor_id: i64) -> ObservationTimelineItem {
     ObservationTimelineItem {
         observation_id: row.id,
         event_type: row.event_type.clone(),
@@ -1792,10 +1782,12 @@ mod tests {
         let _ = persist_lifecycle_observations(&request, &sample_lifecycle_events());
         let report = search_observations(&request, "analysis", 5);
         assert!(report.total_hits >= 1);
-        assert!(report
-            .items
-            .iter()
-            .all(|item| item.summary_preview.len() <= 121));
+        assert!(
+            report
+                .items
+                .iter()
+                .all(|item| item.summary_preview.len() <= 121)
+        );
     }
 
     #[test]
@@ -1823,10 +1815,12 @@ mod tests {
         let _ = persist_lifecycle_observations(&request, &sample_lifecycle_events());
         let report = rank_observations(&request, "verification", 5);
         assert!(report.candidate_count >= 1);
-        assert!(report
-            .items
-            .iter()
-            .all(|item| item.total_score >= 0.0 && item.total_score <= 1.0));
+        assert!(
+            report
+                .items
+                .iter()
+                .all(|item| item.total_score >= 0.0 && item.total_score <= 1.0)
+        );
     }
 
     #[test]
@@ -1848,10 +1842,12 @@ mod tests {
         ];
         let report = observation_privacy_redact_flow(&request, &events);
         assert!(report.redacted_count >= 1);
-        assert!(report
-            .sample_summaries
-            .iter()
-            .any(|item| item.contains("[REDACTED]")));
+        assert!(
+            report
+                .sample_summaries
+                .iter()
+                .any(|item| item.contains("[REDACTED]"))
+        );
     }
 
     #[test]

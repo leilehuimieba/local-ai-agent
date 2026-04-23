@@ -10,17 +10,20 @@ import {
   getRunStateLabel,
   useRuntimeStore,
 } from "./runtime/state";
+import { LeftNav } from "./shell/LeftNav";
 import { AppShell } from "./shell/AppShell";
 import {
   buildHomeViewModel,
+  getSidebarProps,
   renderBottomPanel,
   renderGlobalLayers,
   renderTopBar,
   renderWorkspaceContent,
 } from "./shell/workspaceViewModel";
+import { ContextSidebar } from "./workspace/ContextSidebar";
 import { useSettings } from "./settings/useSettings";
 
-export type AppView = "home" | "task" | "logs" | "settings";
+export type AppView = "home" | "task" | "logs" | "settings" | "knowledge";
 export type RuntimeView = ReturnType<typeof useRuntimeView>;
 export type ViewState = ReturnType<typeof useViewState>;
 export type SettingsApi = ReturnType<typeof useSettings>;
@@ -36,11 +39,20 @@ function App() {
 }
 
 function AppLayout({ app }: { app: ReturnType<typeof useWorkspaceApp> }) {
+  const { rightPanelOpen, toggleRightPanel } = app.view;
   return (
     <AppShell
-      topbar={renderTopBar(app)}
+      topbar={renderTopBar(app, rightPanelOpen, toggleRightPanel)}
+      leftNav={
+        <LeftNav
+          currentView={app.view.currentView}
+          onViewChange={app.view.setCurrentView}
+          onNewTask={app.actions.openHomeStart}
+        />
+      }
       overlays={renderGlobalLayers(app)}
       content={renderWorkspaceContent(app)}
+      rightPanel={renderRightPanel(app, rightPanelOpen)}
       bottomPanel={renderBottomPanel(app)}
     />
   );
@@ -79,16 +91,19 @@ function useHomePreview() {
 }
 
 function useViewState() {
-  const [currentView, setCurrentView] = useState<AppView>("home");
+  const [currentView, setCurrentView] = useState<AppView>(readPreviewView());
   const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
   const [homeIntent, setHomeIntent] = useState<HomeIntent>("auto");
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
   return {
     bottomPanelOpen,
     currentView,
     homeIntent,
+    rightPanelOpen,
     setBottomPanelOpen,
     setCurrentView: (nextView: AppView) => updateCurrentView(nextView, setCurrentView, setHomeIntent),
     showHomeCompose: () => showHomeCompose(setCurrentView, setHomeIntent),
+    toggleRightPanel: () => setRightPanelOpen((v) => !v),
   };
 }
 
@@ -213,10 +228,12 @@ async function submitTask(
   event.preventDefault();
   const userInput = runtime.composeValue.trim();
   if (!userInput || !settingsApi.settings) return;
+  const kbSelect = event.currentTarget.elements.namedItem("knowledge_base_id") as HTMLSelectElement | null;
+  const knowledgeBaseId = kbSelect?.value || "";
   actions.startSubmission(userInput);
   view.setCurrentView("task");
   try {
-    const payload = await submitChatRun(buildChatRunPayload(runtime, settingsApi, userInput));
+    const payload = await submitChatRun(buildChatRunPayload(runtime, settingsApi, userInput, knowledgeBaseId));
     actions.acceptRun(payload.session_id, payload.run_id);
   } catch (error) {
     actions.failSubmission(readRuntimeError(error, "未知提交错误"));
@@ -227,6 +244,7 @@ function buildChatRunPayload(
   runtime: RuntimeView,
   settingsApi: SettingsApi,
   userInput: string,
+  knowledgeBaseId: string,
 ) {
   const settings = settingsApi.settings!;
   return {
@@ -235,6 +253,7 @@ function buildChatRunPayload(
     sessionId: runtime.sessionId,
     userInput,
     workspace: settings.workspace,
+    knowledgeBaseId,
   };
 }
 
@@ -345,6 +364,12 @@ function readHomePreview() {
   return value === "first_use" || value === "resume" || value === "blocked" || value === "confirmation"
     ? value
     : null;
+}
+
+function readPreviewView(): AppView {
+  const value = new URLSearchParams(window.location.search).get("view");
+  if (value === "task" || value === "logs" || value === "settings") return value;
+  return "home";
 }
 
 function applyFirstUsePreview() {
@@ -471,6 +496,17 @@ function buildPreviewConfirmation() {
     alternatives: ["先查看 diff 再确认"],
     kind: "high_risk_action",
   };
+}
+
+function renderRightPanel(app: WorkspaceAppModel, rightPanelOpen: boolean) {
+  if (!rightPanelOpen) return null;
+  if (app.view.currentView === "task") {
+    return <ContextSidebar {...getSidebarProps(app, "task")} />;
+  }
+  if (app.view.currentView === "home") {
+    return <ContextSidebar {...getSidebarProps(app, "home")} />;
+  }
+  return null;
 }
 
 function focusConfirmationCard() {

@@ -22,8 +22,10 @@ type ProviderConfig struct {
 	DisplayName         string `json:"display_name"`
 	BaseURL             string `json:"base_url"`
 	ChatCompletionsPath string `json:"chat_completions_path"`
+	EmbeddingsPath      string `json:"embeddings_path"`
 	ModelsPath          string `json:"models_path"`
 	APIKey              string `json:"api_key"`
+	EmbeddingModel      string `json:"embedding_model"`
 }
 
 type WorkspaceRef struct {

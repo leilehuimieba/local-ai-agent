@@ -183,7 +183,7 @@ function MemoryErrorCard(props: { message: string }) {
 }
 
 function EmptyMemoryCard() {
-  return <EmptyStateBlock compact title="没有匹配记忆" text="调整筛选条件后，这里会显示偏好、失败教训和治理状态。" />;
+  return <EmptyStateBlock compact title="没有匹配记忆" text="调整筛选条件后显示结果。" />;
 }
 
 function MemoryFilterSelect(props: { filter: MemoryFilter; onChange: (filter: MemoryFilter) => void }) {

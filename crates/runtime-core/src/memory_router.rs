@@ -2,11 +2,11 @@ use crate::capabilities::ToolExecutionTrace;
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::knowledge_store::{
-    append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
-    should_skip_knowledge_record, KnowledgeRecord,
+    KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
+    should_skip_knowledge_record,
 };
 use crate::memory::{
-    append_memory_entry, normalized_memory_entry, search_memory_entries, MemoryEntry,
+    MemoryEntry, append_memory_entry, normalized_memory_entry, search_memory_entries,
 };
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::paths::{

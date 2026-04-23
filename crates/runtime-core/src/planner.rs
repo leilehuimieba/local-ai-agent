@@ -659,7 +659,7 @@ fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{plan_action_with_context, PlannedAction};
+    use super::{PlannedAction, plan_action_with_context};
     use crate::context_builder::{
         DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
     };

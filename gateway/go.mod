@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/stretchr/testify v1.10.0
 	modernc.org/sqlite v1.39.1
+	rsc.io/pdf v0.1.1
 )
 
 require (

@@ -42,7 +42,7 @@ function renderTimeline(logs: LogEntry[], selectedLogId: string, onSelectLog: (l
 }
 
 function EmptyTimeline() {
-  return <EmptyStateBlock compact title="当前筛选下没有记录" text="调整搜索或筛选条件后，这里会显示匹配结果。" />;
+  return <EmptyStateBlock compact title="当前筛选下没有记录" text="调整筛选条件后显示匹配结果。" />;
 }
 
 function HistoryTimelineItem(props: {

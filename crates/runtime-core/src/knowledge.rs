@@ -1,5 +1,5 @@
 use crate::contracts::RunRequest;
-use crate::knowledge_store::{search_knowledge_records, KnowledgeRecord};
+use crate::knowledge_store::{KnowledgeRecord, search_knowledge_records};
 use crate::paths::{external_memory_audit_path, repo_root, siyuan_root_dir, siyuan_sync_enabled};
 use crate::sensitive_data::contains_sensitive_text;
 use crate::storage::append_jsonl;
@@ -625,8 +625,8 @@ fn collect_search_files(
 #[cfg(test)]
 mod tests {
     use super::{
-        chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits, merge_knowledge_hits,
-        parse_cortex_recall_hits, recall_source, KnowledgeHit,
+        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits,
+        merge_knowledge_hits, parse_cortex_recall_hits, recall_source,
     };
     use crate::paths::external_memory_audit_path;
 

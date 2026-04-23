@@ -33,14 +33,18 @@ mod tests {
         let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session
-            .short_term
-            .current_plan
-            .contains("继续动作：执行命令"));
-        assert!(session
-            .short_term
-            .current_plan
-            .contains("执行命令: Write-Error"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("继续动作：执行命令")
+        );
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("执行命令: Write-Error")
+        );
     }
 
     #[test]
@@ -48,10 +52,12 @@ mod tests {
         let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session
-            .short_term
-            .current_plan
-            .contains("恢复提示：建议先检查命令语法"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复提示：建议先检查命令语法")
+        );
     }
 
     #[test]
@@ -60,10 +66,12 @@ mod tests {
         let checkpoint = sample_checkpoint_with_execution_boundary();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session
-            .short_term
-            .current_plan
-            .contains("恢复边界：阶段=Execute，事件=action_completed，下一步=进入验证阶段"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复边界：阶段=Execute，事件=action_completed，下一步=进入验证阶段")
+        );
     }
 
     #[test]
@@ -72,14 +80,18 @@ mod tests {
         let checkpoint = sample_checkpoint_with_verification_snapshot();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session
-            .short_term
-            .recent_tool_result
-            .contains("验证快照：验证通过并产生产物"));
-        assert!(session
-            .short_term
-            .recent_observation
-            .contains("D:/repo/verify/report.txt"));
+        assert!(
+            session
+                .short_term
+                .recent_tool_result
+                .contains("验证快照：验证通过并产生产物")
+        );
+        assert!(
+            session
+                .short_term
+                .recent_observation
+                .contains("D:/repo/verify/report.txt")
+        );
     }
 
     #[test]
@@ -88,10 +100,12 @@ mod tests {
         let checkpoint = sample_checkpoint_with_confirmation_boundary();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(session
-            .short_term
-            .current_plan
-            .contains("恢复边界：阶段=PausedForConfirmation，事件=confirmation_required"));
+        assert!(
+            session
+                .short_term
+                .current_plan
+                .contains("恢复边界：阶段=PausedForConfirmation，事件=confirmation_required")
+        );
     }
 
     fn sample_session() -> SessionMemory {

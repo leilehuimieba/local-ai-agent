@@ -3,8 +3,8 @@ mod slots;
 mod spec;
 
 pub(crate) use registry::{resolve_tool, visible_tools};
-pub(crate) use slots::{connector_slot_spec, external_connection_slots, ExternalConnectionSlot};
+pub(crate) use slots::{ExternalConnectionSlot, connector_slot_spec, external_connection_slots};
 pub(crate) use spec::{
-    capability_spec, tool_definition_to_json_schema, ToolCallResult, ToolDefinition,
-    ToolExecutionTrace,
+    ToolCallResult, ToolDefinition, ToolExecutionTrace, capability_spec,
+    tool_definition_to_json_schema,
 };

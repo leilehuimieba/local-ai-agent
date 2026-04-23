@@ -175,7 +175,7 @@ function LearningRow(props: { label: string; value: string }) {
 function EmptyFocusCard() {
   return (
     <section className="detail-card">
-      <EmptyStateBlock title="等待选中记录" text="从左侧时间线选择一条稳定记录后，这里会显示详情、证据和后续建议。" />
+      <EmptyStateBlock title="等待选中记录" text="从左侧选择一条记录查看详情。" />
     </section>
   );
 }

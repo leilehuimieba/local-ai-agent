@@ -58,7 +58,7 @@ export function SettingsModules(props: SettingsModulesProps) {
 }
 
 export function SettingsEmptyState() {
-  return <EmptyStateBlock compact title="设置工作区正在同步" text="环境状态返回后，这里会显示可用控制项与诊断入口。" />;
+  return <EmptyStateBlock compact title="设置加载中" text="环境状态返回后显示控制项。" />;
 }
 
 function buildSettingsModules(props: SettingsModulesProps) {

@@ -1,4 +1,4 @@
-use runtime_core::{dedupe_lifecycle_observations, lifecycle_mapping_snapshot, RunEvent};
+use runtime_core::{RunEvent, dedupe_lifecycle_observations, lifecycle_mapping_snapshot};
 use serde_json::json;
 
 fn sample_event(event_type: &str, stage: &str, sequence: u32, timestamp: &str) -> RunEvent {

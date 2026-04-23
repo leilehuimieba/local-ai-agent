@@ -36,6 +36,7 @@
 | H02-28 | 回填 baijiacms 站点ID/Host 匹配核查 | 验证/人工接管样本 | done | 已确认“未找到站点ID”源于 Host 与 `system_store.website` 不匹配；切换到 `localhost` 后页面推进到“请先在后台进行店铺装修，新建一个店铺首页”，接手者应先修正访问 Host，再转业务初始化 | `tmp/stage-h-remediation/h02-baijiacms-siteid-host-check-20260421.json`, `status.md`, `verify.md`, `review.md` |
 | H02-29 | 回填 baijiacms 首页装修缺失核查 | 验证/人工接管样本 | done | 已确认“请先在后台进行店铺装修，新建一个店铺首页”源于 `baijiacms_eshop_designer` 缺少 `uniacid=1` 且 `pagetype=1` 的首页装修记录；接手者应直接进入后台店铺装修初始化 | `tmp/stage-h-remediation/h02-baijiacms-homepage-check-20260421.json`, `status.md`, `verify.md`, `review.md` |
 | H02-30 | 收口 baijiacms 多层接管样本总结 | 验证/样本归档 | done | 已把 `baijiacms` 收口为“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”的高质量多层人工接管样本，并明确当前停止点只到 warning 归档，不外推为 ready | `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`, `status.md`, `verify.md`, `review.md` |
+| H02-31 | 执行第二受限验证窗口 `frontend_dist_missing_build_ready_rebuild` | 验证/受限执行 | done | 在主控授权下构造"dist 缺失 + build ready"前置条件，执行 `npm run build`，验证 `dist/index.html` 重新生成，全程未触发管理员权限或系统级修复 | `tmp/stage-h-remediation/replay-results.json`, `tmp/stage-h-remediation/latest.json`, `verify.md`, `status.md` |
 
 ## 执行顺序
 
@@ -48,9 +49,9 @@
 7. 已完成第二窗口结果回填：H02-23
 8. 已完成 `baijiacms` IIS 主链路恢复样本回填：H02-24
 9. 已完成 `baijiacms` 多层接管样本总结收口：H02-25 -> H02-26 -> H02-27 -> H02-28 -> H02-29 -> H02-30
-10. H02-21/H02-22 只负责选定并冻结第二窗口授权准备；H02-23 记录的是一次受限边界内的前置条件核查，当前结果为前置条件不足而中止并降级人工接管。
+10. H02-21/H02-22 负责选定并冻结第二窗口授权准备；H02-23 记录的是一次受限边界内的前置条件核查，当前结果为前置条件不足而中止并降级人工接管。
 11. H02-24 ~ H02-30 共同记录的是 `baijiacms` 从环境恢复一路推进到业务初始化缺口的多层接管样本；当前最强结论只到高质量 warning 样本归档，不得外推为 ready。
-12. 当前没有新的合格受限样本；H-02 应继续理解为“冻结但可继续观察”的 warning，而不是“可继续扩窗”。
-13. 除非后续补齐新的 build-ready 且 `dist/index.html` 缺失的合格样本并重新获得主控授权，否则不得据此继续执行第二窗口，更不得把 H-02 写成 ready 或回刷 Gate-H。
+12. H02-31 记录的是在主控授权下，第二窗口在真实项目目录上的正式执行：`dist/index.html` 被删除后通过 `npm run build` 成功重建；该结果只证明第二受限窗口在真实条件下可闭环，不等于 H-02 ready，不等于 Gate-H 可签收。
+13. 当前 H-02 仍应理解为“冻结但可继续观察”的 warning；第二窗口成功后不再自动进入第三个窗口。
 
 

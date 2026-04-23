@@ -1,7 +1,7 @@
-# H-remediation-playbook-20260415（status）
+﻿# H-remediation-playbook-20260415（status）
 
-最近更新时间：2026-04-21（已补 baijiacms 多层接管样本总结）
-状态：进行中（并行观察，冻结观察，保留已落最小闭环证据）
+最近更新时间：2026-04-23（已执行第二受限验证窗口 `frontend_dist_missing_build_ready_rebuild`）
+状态：进行中（并行观察，冻结观察；第二窗口已成功执行，但仍为 warning）
 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 
 ## 当前状态
@@ -38,11 +38,13 @@
    - 已补人工接管模板实测评分：4 条人工接管样本 `guide_score_avg=4.8/5`，证据已落 `tmp/stage-h-remediation/manual-guide-eval.json`
    - 已补 H02-08 扩样：人工接管样本扩至 8 条，`guide_score_avg=4.75/5`、`manual_takeover_success_rate=1.0`。
 2. 进行中：
-   - 无；当前已不再作为主推进，只保留冻结观察，不新增正式窗口。
+   - 第二受限验证窗口 `frontend_dist_missing_build_ready_rebuild` 已于 2026-04-23 在主控授权下在真实项目目录上成功执行。
+   - 当前仍保留冻结观察口径，第二窗口成功后不再自动进入第三个窗口。
 3. 阻塞点：
    - 配置类已补 1 个低风险自动写入闭环样本，但自动写入仍仅限“缺失字段补安全默认值”这一最小边界。
    - 更高风险配置写入与更广权限类场景虽已完成签收级矩阵冻结与后续路径裁决，但尚未形成可支持签收的新增验证结论。
-   - 当前虽已完成首个窗口成功执行，但第二窗口只形成一条 `aborted_manual_takeover` 记录：现有样本中 `dist/index.html` 已存在，且 `package.json` 仅为 `{}`，不足以构成新的合格受限样本。
+   - 2026-04-23 前，第二窗口只形成一条 `aborted_manual_takeover` 记录：原有样本目录中 `dist/index.html` 已存在，且部分 `package.json` 仅为 `{}`，不足以构成新的合格受限样本。
+   - 2026-04-23 在主控授权下，第二窗口已在真实项目目录上完成正式执行：`frontend/dist/index.html` 被删除后通过 `npm run build` 成功重建，构成新的合格受限样本。
    - 已补 `baijiacms-master` 的主链路恢复证据：当前 80 端口下 `__codex_probe.php` 与 `index.php` 均已返回 200，说明 IIS/PHP/FastCGI 主链路已恢复；`index.php` 当前进入数据库配置报错，剩余问题已从环境承载链路收敛到应用层前置条件。该结果增强了 H-02 的本地环境/接管样本强度，但仍不足以把 H-02 写成 ready。
    - 已进一步把 `baijiacms-master` 收口为“环境已恢复、剩余数据库前置条件缺失”的人工接管样本：后续接手者无需再排查 IIS/FastCGI，只需转向数据库配置或初始化。
    - 已为 `baijiacms-master` 补齐对应人工接管指引：当前可直接引导接手者核对 `config/config.php`、MySQL 服务与 `install.php` 安装状态，而不再回到环境链路排查。
@@ -51,8 +53,7 @@
    - 已进一步确认“请先在后台进行店铺装修，新建一个店铺首页”的直接原因是 `baijiacms_eshop_designer` 中缺少 `uniacid=1` 且 `pagetype=1` 的首页装修记录；当前接管入口已明确推进到业务层首页初始化。
    - 已把 `baijiacms` 正式收口为 H-02 的高质量多层人工接管样本：当前链路已稳定落为“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”，后续默认只作为 warning 级归档样本保留，不再继续扩成业务初始化执行。
 4. 下一步：
-   - H-02 当前仍为 `warning`，且当前最保守、与证据一致的口径是：只保留已落最小闭环证据，不新增新的正式执行窗口。
-   - 第二窗口本次未形成成功闭环：现有工作区样本的 `dist/index.html` 已存在，不能证明“缺失后重建”；同时 `package.json` 未提供可核验的构建脚本内容，按受限边界不能继续扩展到依赖安装或环境修复。
+   - H-02 当前仍为 `warning`，且当前最保守、与证据一致的口径是：保留已落最小闭环证据，第二窗口成功后不再自动进入第三个窗口。
+   - 第二窗口已于 2026-04-23 在主控授权下在真实项目目录上成功执行：`frontend/dist/index.html` 被删除后通过 `npm run build` 成功重建。
    - 当前主推进以 `docs/11-hermes-rebuild/current-state.md` 为准；H-02 本 change 当前只保留并行观察、文档一致性维护与候选样本归档，不再自行回抬主推进。
    - 本轮新增的 `baijiacms` 结论已说明：H-02 可以稳定接住一类本地 PHP 靶场环境阻塞并恢复 IIS 主链路，并把剩余问题继续收口为“先启动 MySQL、再确保 Host 与站点映射匹配，最后处理店铺首页装修初始化”的高质量多层人工接管样本；该样本当前已足够作为 H-02 warning 输入长期保留，但仍不能写成 ready 或 Gate-H 可签收输入。
-

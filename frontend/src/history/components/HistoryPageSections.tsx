@@ -58,21 +58,9 @@ export function HistoryFilterToolbar(props: {
 }) {
   return (
     <section className="logs-filter-toolbar" aria-label="记录筛选">
-      <FilterToolbarHeader resultCount={props.resultCount} />
       <FilterToolbarControls props={props} />
       <FilterToolbarNote />
     </section>
-  );
-}
-
-function FilterToolbarHeader(props: { resultCount: number }) {
-  return (
-    <SectionHeader
-      kicker="Filter"
-      title="复盘筛选台"
-      description="先定焦点，再缩小范围，最后进入时间线和详情栏。"
-      action={<MetricChip label="结果" value={`${props.resultCount} 条`} />}
-    />
   );
 }
 

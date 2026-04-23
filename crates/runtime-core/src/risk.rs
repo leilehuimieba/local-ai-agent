@@ -1,6 +1,6 @@
 use crate::contracts::{ConfirmationRequest, RunRequest};
 use crate::paths::resolve_workspace_path;
-use crate::planner::{normalize_mode, PlannedAction};
+use crate::planner::{PlannedAction, normalize_mode};
 
 #[derive(Clone, Debug)]
 pub(crate) enum RiskOutcome {
@@ -158,7 +158,7 @@ fn is_dangerous_command(command: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{assess_risk, RiskOutcome};
+    use super::{RiskOutcome, assess_risk};
     use crate::contracts::{ConfirmationDecision, ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::planner::PlannedAction;
     use std::collections::BTreeMap;

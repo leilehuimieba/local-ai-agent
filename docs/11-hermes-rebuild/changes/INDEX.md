@@ -18,7 +18,8 @@
 
 ## 待启动 / 草案 change
 
-1. [H-frontend-workbench-reframe-20260421](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-frontend-workbench-reframe-20260421/status.md)（并行收口：Wave 3 页面证据已补齐，主控判断可结束，不切主推进）
+1. [H-knowledge-base-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-knowledge-base-20260423/status.md)（已完成：前端 UI + localStorage mock，不阻塞 Gate-H）
+2. [H-frontend-workbench-reframe-20260421](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-frontend-workbench-reframe-20260421/status.md)（并行收口：Wave 3 页面证据已补齐，主控判断可结束，不切主推进）
 2. [H-modularity-hardening-20260419](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-modularity-hardening-20260419/status.md)（草案：仓库模块化收敛与热点文件减重）
 3. [H-memory-object-review-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-object-review-20260423/status.md)（并行可提审：memory object/version、system views 与 rollback 最小升级已补齐；不切主推进）
 
@@ -33,6 +34,7 @@
 2. [archive/2026-04-14/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
 3. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
 4. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（更早已收口 change 归档）
+5. [archive/2026-04-23/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-23/INDEX.md)（前端重新设计完成归档）
 
 ## 选择规则
 

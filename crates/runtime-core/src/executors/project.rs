@@ -71,23 +71,51 @@ fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
 fn hermes_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
     vec![
         docs_root.join("11-hermes-rebuild").join("current-state.md"),
-        docs_root.join("11-hermes-rebuild").join("changes").join("H-gate-h-signoff-20260416").join("status.md"),
-        docs_root.join("11-hermes-rebuild").join("changes").join("H-gate-h-signoff-20260416").join("review.md"),
-        docs_root.join("11-hermes-rebuild").join("changes").join("INDEX.md"),
+        docs_root
+            .join("11-hermes-rebuild")
+            .join("changes")
+            .join("H-gate-h-signoff-20260416")
+            .join("status.md"),
+        docs_root
+            .join("11-hermes-rebuild")
+            .join("changes")
+            .join("H-gate-h-signoff-20260416")
+            .join("review.md"),
+        docs_root
+            .join("11-hermes-rebuild")
+            .join("changes")
+            .join("INDEX.md"),
         docs_root.join("README.md"),
-        docs_root.join("11-hermes-rebuild").join("Hermes重构总路线图_完整计划.md"),
-        docs_root.join("11-hermes-rebuild").join("stage-plans").join("阶段计划总表.md"),
+        docs_root
+            .join("11-hermes-rebuild")
+            .join("Hermes重构总路线图_完整计划.md"),
+        docs_root
+            .join("11-hermes-rebuild")
+            .join("stage-plans")
+            .join("阶段计划总表.md"),
     ]
 }
 
 fn legacy_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
     vec![
-        docs_root.join("06-development").join("忠实用户转化导向开发任务书_V1.md"),
-        docs_root.join("07-test").join("忠实用户转化导向验收文档_V1.md"),
-        docs_root.join("06-development").join("第二阶段需求文档_V1.md"),
-        docs_root.join("06-development").join("第二阶段产品定位与开发重点清单_V1.md"),
-        docs_root.join("06-development").join("第二阶段短期可用能力开发任务书_V1.md"),
-        docs_root.join("07-test").join("第二阶段短期可用能力验收文档_V1.md"),
+        docs_root
+            .join("06-development")
+            .join("忠实用户转化导向开发任务书_V1.md"),
+        docs_root
+            .join("07-test")
+            .join("忠实用户转化导向验收文档_V1.md"),
+        docs_root
+            .join("06-development")
+            .join("第二阶段需求文档_V1.md"),
+        docs_root
+            .join("06-development")
+            .join("第二阶段产品定位与开发重点清单_V1.md"),
+        docs_root
+            .join("06-development")
+            .join("第二阶段短期可用能力开发任务书_V1.md"),
+        docs_root
+            .join("07-test")
+            .join("第二阶段短期可用能力验收文档_V1.md"),
     ]
 }
 

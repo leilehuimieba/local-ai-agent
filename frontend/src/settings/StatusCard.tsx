@@ -84,7 +84,7 @@ function ErrorBlock(props: { title: string; body: string; advice: string }) {
 }
 
 function EmptyHint(props: { text: string }) {
-  return <EmptyStateBlock compact title="正在读取设置" text={props.text} />;
+  return <EmptyStateBlock compact title="读取中" text={props.text} />;
 }
 
 function ActionBlock(props: { tone: "running" | "failed" | "completed"; title: string; detail: string }) {

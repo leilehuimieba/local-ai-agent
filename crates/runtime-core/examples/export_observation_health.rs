@@ -1,6 +1,6 @@
 use runtime_core::{
-    observation_queue_health, run_observation_queue_flow, ModelRef, ProviderRef, RunEvent,
-    RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_queue_health,
+    run_observation_queue_flow,
 };
 use serde_json::json;
 use std::collections::BTreeMap;

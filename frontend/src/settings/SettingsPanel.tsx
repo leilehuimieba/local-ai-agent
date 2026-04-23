@@ -65,10 +65,10 @@ function SettingsWorkspaceHero(props: {
     <section className="settings-workspace-hero">
       <SectionHeader
         kind="page"
-        kicker="Workspace"
+        kicker="工作区"
         level="h2"
-        title="Settings Workspace"
-        description="统一查看运行环境、控制项、诊断动作与资源状态，保持与任务页、Logs 页一致的工作台语义。"
+        title="设置"
+        description="运行环境、模型、工作区、权限与诊断。"
         action={<SettingsWorkspaceMeta settings={props.settings} memories={props.memories} />}
       />
     </section>

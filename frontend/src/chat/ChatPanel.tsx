@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 
 import { ConfirmationCard } from "../confirmations/ConfirmationCard";
 import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
@@ -256,10 +256,7 @@ function ConfirmationRecord(props: { props: ChatPanelProps }) {
 
 function EmptyWorkbench() {
   return (
-    <EmptyStateBlock
-      title="开始一个任务"
-      text="输入目标后，这里会按时间顺序显示回复和执行状态。"
-    />
+    <EmptyStateBlock title="开始一个任务" text="输入目标后显示执行过程。" />
   );
 }
 
@@ -425,7 +422,7 @@ function TaskComposer(props: { props: ChatPanelProps }) {
     <form className="composer composer-simple" onSubmit={props.props.onSubmit}>
       <div className="composer-meta-row">
         <strong>Agent Composer</strong>
-        <span>{readComposerStateLabel(props.props)}</span>
+        <KnowledgeBaseSelector />
       </div>
       <div className="simple-composer-shell">
         <input
@@ -485,6 +482,30 @@ function readComposerHint(props: ChatPanelProps) {
 
 function readSubmitLabel(isRunning: boolean) {
   return isRunning ? "发送中" : "发送";
+}
+
+function KnowledgeBaseSelector() {
+  const [items, setItems] = useState<Array<{ id: string; title: string }>>([]);
+  useEffect(() => {
+    fetch("/api/v1/knowledge/items")
+      .then((r) => r.json())
+      .then((data: { items: Array<{ id: string; title: string }> }) => {
+        setItems(data.items || []);
+      })
+      .catch(() => setItems([]));
+  }, []);
+  return (
+    <label className="kb-selector">
+      <span>引用知识库</span>
+      <select name="knowledge_base_id" defaultValue="">
+        <option value="">自动</option>
+        <option value="_none_">不引用</option>
+        {items.map((item) => (
+          <option key={item.id} value={item.id}>{item.title}</option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 function readComposerStateLabel(props: ChatPanelProps) {

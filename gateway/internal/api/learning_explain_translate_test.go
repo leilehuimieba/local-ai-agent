@@ -256,14 +256,6 @@ func manualReviewNote(articleID string) string {
 	return "Explain 与 translate 都能保持主题一致，满足学习模式 reader_bridge 卡片的最小可读性要求。"
 }
 
-func previewText(text string) string {
-	runes := []rune(text)
-	if len(runes) <= 120 {
-		return text
-	}
-	return string(runes[:120]) + "..."
-}
-
 func writeExplainTranslateEvidence(t *testing.T, report explainTranslateEvidenceReport) {
 	data, err := json.MarshalIndent(report, "", "  ")
 	require.NoError(t, err)

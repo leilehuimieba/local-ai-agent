@@ -13,6 +13,7 @@ import (
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/knowledge"
 	"local-agent/gateway/internal/memory"
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
@@ -167,6 +168,7 @@ func NewRouter(
 	registerSettingsAndLogsRoutes(mux, repoRoot, cfg, settingsStore, eventBus)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
+	knowledge.NewHandler(repoRoot).RegisterRoutes(mux, settingsStore, repoRoot, cfg)
 	mux.Handle("/", spaHandler(repoRoot))
 	return mux
 }

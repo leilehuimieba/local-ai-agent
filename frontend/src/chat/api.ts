@@ -6,6 +6,7 @@ type SubmitChatRunPayload = {
   mode: string;
   model: ModelRef;
   workspace: WorkspaceRef;
+  knowledgeBaseId: string;
 };
 
 export async function submitChatRun(payload: SubmitChatRunPayload): Promise<ChatRunAccepted> {
@@ -20,6 +21,7 @@ export async function submitChatRun(payload: SubmitChatRunPayload): Promise<Chat
       mode: payload.mode,
       model: payload.model,
       workspace: payload.workspace,
+      knowledge_base_id: payload.knowledgeBaseId || undefined,
     }),
   });
 

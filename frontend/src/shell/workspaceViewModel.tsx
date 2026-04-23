@@ -11,8 +11,8 @@ import {
   useRuntimeStore,
 } from "../runtime/state";
 import { SettingsPanel } from "../settings/SettingsPanel";
+import { KnowledgeBasePanel } from "../knowledge-base/KnowledgeBasePanel";
 import { BottomPanel } from "../workspace/BottomPanel";
-import { ContextSidebar } from "../workspace/ContextSidebar";
 import { TopBar } from "../workspace/TopBar";
 import { WorkbenchOverview } from "../workspace/WorkbenchOverview";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
@@ -127,20 +127,26 @@ export function renderWorkspaceContent(app: AppModel) {
   if (app.view.currentView === "home") return renderHomeView(app);
   if (app.view.currentView === "task") return renderTaskView(app);
   if (app.view.currentView === "logs") return renderLogsView(app);
+  if (app.view.currentView === "knowledge") return renderKnowledgeBaseView(app);
   return renderSettingsView(app);
 }
 
-export function renderTopBar(app: AppModel) {
-  return <TopBar {...getTopBarProps(app)} />;
+function renderKnowledgeBaseView(_app: AppModel) {
+  return (
+    <section className="single-view">
+      <KnowledgeBasePanel />
+    </section>
+  );
+}
+
+export function renderTopBar(app: AppModel, rightPanelOpen: boolean, onToggleRightPanel: () => void) {
+  return <TopBar {...getTopBarProps(app, rightPanelOpen, onToggleRightPanel)} />;
 }
 
 export function renderHomeView(app: AppModel) {
   return (
-    <section className="single-view page-container home-layout home-layout-home">
-      <div className="home-scene">
-        <WorkbenchOverview {...app.home} />
-      </div>
-      <ContextSidebar {...getSidebarProps(app, "home")} />
+    <section className="single-view">
+      <WorkbenchOverview {...app.home} />
     </section>
   );
 }
@@ -179,12 +185,9 @@ function renderLogsView(app: AppModel) {
 
 function renderTaskView(app: AppModel) {
   return (
-    <section className="single-view page-container home-layout agent-page">
-      <div className="task-main-column">
-        <TaskPageToolbar app={app} />
-        <ChatPanel {...getChatPanelProps(app)} />
-      </div>
-      <ContextSidebar {...getSidebarProps(app, "task")} />
+    <section className="single-view">
+      <TaskPageToolbar app={app} />
+      <ChatPanel {...getChatPanelProps(app)} />
     </section>
   );
 }
@@ -281,6 +284,7 @@ function TaskNavRail(props: { app: AppModel; expanded: boolean; onToggleExpand: 
       <NavIconButton app={props.app} nav="home" icon="⌂" label="首页" />
       <NavIconButton app={props.app} nav="task" icon="◉" label="任务" />
       <NavIconButton app={props.app} nav="logs" icon="≡" label="记录" />
+      <NavIconButton app={props.app} nav="knowledge" icon="📚" label="知识库" />
       <NavIconButton app={props.app} nav="settings" icon="⚙" label="设置" />
       <button type="button" className="task-nav-button icon-only task-nav-action" data-label="新任务" aria-label="新任务" onClick={props.app.actions.openHomeStart}><span className="task-nav-icon" aria-hidden="true">＋</span></button>
     </nav>
@@ -533,7 +537,7 @@ function buildSettingsPanelHandlers(app: AppModel) {
   };
 }
 
-function getTopBarProps(app: AppModel) {
+function getTopBarProps(app: AppModel, rightPanelOpen: boolean, onToggleRightPanel: () => void) {
   return {
     connectionLabel: app.connectionLabel,
     currentRunId: app.runtime.currentRunId,
@@ -541,6 +545,8 @@ function getTopBarProps(app: AppModel) {
     homeStateHint: app.home.navHint,
     onOpenHomeStart: app.actions.openHomeStart,
     onViewChange: app.view.setCurrentView,
+    rightPanelOpen,
+    onToggleRightPanel,
     runState: app.runtime.runState,
     sessionId: app.runtime.sessionId,
     settings: app.settingsApi.settings,
@@ -560,7 +566,7 @@ function getBottomPanelProps(app: AppModel) {
   };
 }
 
-function getSidebarProps(app: AppModel, variant: "home" | "task") {
+export function getSidebarProps(app: AppModel, variant: "home" | "task") {
   return {
     bootstrapError: app.settingsApi.bootstrapError,
     confirmation: app.runtime.confirmation,

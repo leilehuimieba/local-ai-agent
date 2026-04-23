@@ -97,11 +97,7 @@ pub(crate) fn skill_catalog_brief(catalog: &SkillCatalog) -> String {
         .map(|item| {
             format!(
                 "{}@{}@{}@{}@{}",
-                item.skill_id,
-                item.trust_tier,
-                item.guard_action,
-                item.guard_reason,
-                item.reason
+                item.skill_id, item.trust_tier, item.guard_action, item.guard_reason, item.reason
             )
         })
         .collect::<Vec<_>>()
@@ -176,24 +172,54 @@ fn apply_manifest_item(
         return;
     }
     if semver_tuple(&item.version).is_none() {
-        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "版本格式非法，要求 major.minor.patch。");
+        push_skip(
+            catalog,
+            &item.skill_id,
+            &resolved_trust_tier(&item),
+            "deny",
+            "版本格式非法，要求 major.minor.patch。",
+        );
         return;
     }
     if !pin_matches(pins, &item.skill_id, &item.version) {
-        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "命中版本治理 pin，但版本不匹配。");
+        push_skip(
+            catalog,
+            &item.skill_id,
+            &resolved_trust_tier(&item),
+            "deny",
+            "命中版本治理 pin，但版本不匹配。",
+        );
         return;
     }
     let Some(entry_path) = isolated_entry_path(request, &item.entry) else {
-        push_skip(catalog, &item.skill_id, &resolved_trust_tier(&item), "deny", "技能入口路径越界，未通过隔离校验。");
+        push_skip(
+            catalog,
+            &item.skill_id,
+            &resolved_trust_tier(&item),
+            "deny",
+            "技能入口路径越界，未通过隔离校验。",
+        );
         return;
     };
     let trust_tier = resolved_trust_tier(&item);
     let guard_action = guard_action_for(&trust_tier);
     if guard_action == "deny" {
-        push_skip(catalog, &item.skill_id, &trust_tier, &guard_action, &guard_reason_for(&guard_action, &trust_tier));
+        push_skip(
+            catalog,
+            &item.skill_id,
+            &trust_tier,
+            &guard_action,
+            &guard_reason_for(&guard_action, &trust_tier),
+        );
         return;
     }
-    catalog.loaded.push(build_skill_descriptor(request, item, entry_path, trust_tier, guard_action));
+    catalog.loaded.push(build_skill_descriptor(
+        request,
+        item,
+        entry_path,
+        trust_tier,
+        guard_action,
+    ));
 }
 
 fn workspace_matches(request: &RunRequest, item: &SkillManifestItem) -> bool {

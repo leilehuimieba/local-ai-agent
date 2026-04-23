@@ -1,5 +1,5 @@
 use runtime_core::{
-    observation_privacy_redact_flow, ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_privacy_redact_flow,
 };
 use serde_json::json;
 use std::collections::BTreeMap;

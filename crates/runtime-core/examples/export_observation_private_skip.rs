@@ -1,4 +1,4 @@
-use runtime_core::{observation_private_skip_flow, RunEvent};
+use runtime_core::{RunEvent, observation_private_skip_flow};
 use serde_json::json;
 
 fn sample_event(event_type: &str, stage: &str, sequence: u32, summary: &str) -> RunEvent {

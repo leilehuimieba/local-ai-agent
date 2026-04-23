@@ -1,7 +1,6 @@
 use runtime_core::{
-    build_layered_injection, compare_layered_vs_full, get_observations,
-    persist_lifecycle_observations, rank_observations, ModelRef, ProviderRef, RunEvent,
-    RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, build_layered_injection,
+    compare_layered_vs_full, get_observations, persist_lifecycle_observations, rank_observations,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -24,7 +23,12 @@ fn sample_event(event_type: &str, stage: &str, sequence: u32, summary: &str) -> 
 
 fn sample_events() -> Vec<RunEvent> {
     vec![
-        sample_event("run_started", "Analyze", 1, &long_summary("start runtime loop")),
+        sample_event(
+            "run_started",
+            "Analyze",
+            1,
+            &long_summary("start runtime loop"),
+        ),
         sample_event(
             "analysis_ready",
             "Analyze",
@@ -49,7 +53,12 @@ fn sample_events() -> Vec<RunEvent> {
             5,
             &long_summary("verification keeps quality baseline for injection"),
         ),
-        sample_event("run_finished", "Finish", 6, &long_summary("finish with references")),
+        sample_event(
+            "run_finished",
+            "Finish",
+            6,
+            &long_summary("finish with references"),
+        ),
     ]
 }
 

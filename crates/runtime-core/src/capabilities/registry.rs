@@ -1,6 +1,6 @@
 use crate::capabilities::slots::is_mutating_tool;
 use crate::capabilities::spec::ToolDefinition;
-use crate::planner::{normalize_mode, PlannedAction};
+use crate::planner::{PlannedAction, normalize_mode};
 
 pub(crate) fn resolve_tool(action: &PlannedAction) -> ToolDefinition {
     match action {

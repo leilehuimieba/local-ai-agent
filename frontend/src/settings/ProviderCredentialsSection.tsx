@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+﻿import { FormEvent, useState } from "react";
 
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { ProviderSettingsItem, ProviderSettingsResponse } from "../shared/contracts";
@@ -51,8 +51,8 @@ function ProviderHeaderAction(props: { props: ProviderCredentialsSectionProps })
 function ProviderSectionBody(props: { props: ProviderCredentialsSectionProps }) {
   const providers = props.props.providerSettings?.providers ?? [];
   if (!props.props.providerSettings && props.props.providerBootstrapError) return <ProviderLoadError message={props.props.providerBootstrapError} />;
-  if (!props.props.providerSettings) return <EmptyStateBlock compact title="正在读取模型服务设置" text="读取完成后，这里会显示可配置的 provider 列表。" />;
-  if (providers.length === 0) return <EmptyStateBlock compact title="暂无可配置 provider" text="后端当前没有返回可管理的模型服务条目。" />;
+  if (!props.props.providerSettings) return <EmptyStateBlock compact title="读取中" text="加载可配置的模型服务。" />;
+  if (providers.length === 0) return <EmptyStateBlock compact title="暂无可配置 provider" text="后端未返回可管理的模型服务。" />;
   return (
     <div className="settings-subsection">
       {props.props.providerBootstrapError ? <ProviderInlineFeedback feedback={{ detail: props.props.providerBootstrapError, status: "failed" }} /> : null}
@@ -67,7 +67,7 @@ function ProviderLoadError(props: { message: string }) {
   return (
     <div className="settings-subsection">
       <ProviderInlineFeedback feedback={{ detail: props.message, status: "failed" }} />
-      <EmptyStateBlock compact title="模型服务设置加载失败" text="可先检查后端接口，再点击“刷新状态”重试。" />
+      <EmptyStateBlock compact title="加载失败" text="检查后端接口后点击刷新重试。" />
     </div>
   );
 }

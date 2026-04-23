@@ -346,8 +346,8 @@ fn null_sink() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_knowledge_record, retry_cortex_ingest_operation, search_knowledge_records,
-        should_skip_knowledge_record, should_sync_to_cortex, KnowledgeRecord,
+        KnowledgeRecord, append_knowledge_record, retry_cortex_ingest_operation,
+        search_knowledge_records, should_skip_knowledge_record, should_sync_to_cortex,
     };
     use crate::paths::external_memory_audit_path;
 

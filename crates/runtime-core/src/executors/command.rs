@@ -204,7 +204,7 @@ struct CommandBudget {
 
 #[cfg(test)]
 mod tests {
-    use super::{budget_preview, command_budget, COMMAND_SINGLE_RESULT_BUDGET_CHARS};
+    use super::{COMMAND_SINGLE_RESULT_BUDGET_CHARS, budget_preview, command_budget};
 
     #[test]
     fn marks_budget_hit_when_output_exceeds_single_result_budget() {

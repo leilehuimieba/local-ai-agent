@@ -1,6 +1,6 @@
 use runtime_core::{
-    persist_lifecycle_observations, search_observations, ModelRef, ProviderRef, RunEvent,
-    RunRequest, WorkspaceRef,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, persist_lifecycle_observations,
+    search_observations,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -24,10 +24,20 @@ fn sample_event(event_type: &str, stage: &str, sequence: u32, summary: &str) -> 
 fn sample_events() -> Vec<RunEvent> {
     vec![
         sample_event("run_started", "Analyze", 1, "run started"),
-        sample_event("analysis_ready", "Analyze", 2, "analysis for memory retrieval"),
+        sample_event(
+            "analysis_ready",
+            "Analyze",
+            2,
+            "analysis for memory retrieval",
+        ),
         sample_event("plan_ready", "Plan", 3, "plan memory retrieval steps"),
         sample_event("action_completed", "Observe", 4, "search api implemented"),
-        sample_event("verification_completed", "Verify", 5, "search verification passed"),
+        sample_event(
+            "verification_completed",
+            "Verify",
+            5,
+            "search verification passed",
+        ),
         sample_event("run_finished", "Finish", 6, "run finished"),
     ]
 }
