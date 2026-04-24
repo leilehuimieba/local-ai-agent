@@ -1,4 +1,4 @@
-# 任务清单
+﻿# 任务清单
 
 - [x] T01 建立 Gate-H 签收草案工作区
   完成判据：proposal/design/tasks/status/verify 五件套齐备，并加入 `changes/INDEX.md`。
@@ -32,3 +32,11 @@
    - H-02 当前口径：`并行观察 / 冻结观察`，仍为 `warning`，且当前无新的合格受限样本
 3. `tmp/stage-h-gate/latest.json` 与 `tmp/stage-h-signoff/latest.json` 当前只允许固化“聚合复核入口 / 提审入口”，不允许把当前 `warning` 强行改写成 `passed`。
 4. 因此，Gate-H 当前允许的最强口径是：已完成当前轮次聚合复核判断；当前仍为 `warning` / `执行中` / `未签收` / `不可签收`，不等于 Gate-H 可签收，不等于阶段 H 已完成。
+- [x] T12 落盘主控裁决并刷新 Gate-H 签收证据
+  完成判据：H-02 人工接管手册替代验收、H-03 结构性缺口风险接受均写入 status/verify，`scripts/run-stage-h-signoff-acceptance.ps1 -RequireSignoff` 生成 `signoff_ready=true`。
+
+## 口径注记（2026-04-24 主控裁决）
+
+1. 早期口径注记中的 `warning`、`不可签收`、`不允许改写成 passed` 保留为历史执行痕迹，不再作为当前裁决。
+2. 当前权威状态以 `status.md`、`verify.md` 与 `tmp/stage-h-signoff/latest.json` 为准：Gate-H 已签收。
+3. 签收依据不是 H-02 高风险场景自动修复通过，也不是 H-03 长期校准取消；签收依据是主控接受 H-02 永久人工接管手册与 H-03 结构性缺口说明作为替代验收输入。

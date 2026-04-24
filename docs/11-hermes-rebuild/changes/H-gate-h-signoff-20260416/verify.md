@@ -3,25 +3,21 @@
 ## 验证方式
 
 - 文档验证：
-  1. 以 `docs/11-hermes-rebuild/current-state.md` 作为唯一主推进状态源，核对 Gate-H 工作区文档是否与当前 active change=`H-gate-h-signoff-20260416` 保持一致。
-  2. 核对 H-02 的 `status.md`、`verify.md`，确认其当前口径已提升为"开发阶段 ready"，十一个受限验证窗口均已闭环，高风险场景已冻结为人工接管。
-  3. 核对 H-03 的 `status.md`、`verify.md`、`review.md` 与 `formal-execution-entry.md`，确认其当前口径已提升为"开发阶段 ready"，数量门槛 30/24/16 已达标，skill_hit_effective 三维度已通过测试，制度化多评审最小闭环已形成。
+  1. 以 `docs/11-hermes-rebuild/current-state.md` 作为当前活跃 change 来源，核对 Gate-H 工作区文档是否与 active change=`H-gate-h-signoff-20260416` 保持一致。
+  2. 核对 H-02 的 `status.md`、`verify.md` 与人工接管手册，确认其当前口径为开发阶段 ready，且高风险/权限类场景已由主控裁决接受为人工接管替代验收。
+  3. 核对 H-03 的 `status.md`、`verify.md`、`review.md`、`formal-execution-entry.md` 与结构性缺口说明，确认其当前口径为开发阶段 ready，且结构性缺口已由主控裁决接受为风险接受条件。
 - 脚本验证：
   1. 执行 `scripts/run-stage-h-gate-acceptance.ps1`，确认生成 `tmp/stage-h-gate/latest.json`。
-  2. 执行 `scripts/run-stage-h-signoff-acceptance.ps1`，确认生成 `tmp/stage-h-signoff/latest.json`。
+  2. 执行 `scripts/run-stage-h-signoff-acceptance.ps1 -RequireSignoff`，确认生成 `tmp/stage-h-signoff/latest.json`。
   3. 检查 gate JSON 当前保持 `status=development_ready`，`gate_h.ready=true`，`h02_ready=true`，`h03_ready=true`。
-  4. 检查 signoff JSON 当前保持 `status=development_ready`，`signoff_ready=false`，`development_ready=true`。
-  5. 检查两个 JSON 在保留英文结构字段的同时，包含 `summary_zh`、`status_zh` 以及阻塞项中文说明字段。
-  6. 检查两份 JSON 的双语输出约定是否稳定：英文结构字段作为机器可读主结构，中文说明字段仅作人工复核与提审说明，不替代英文结构字段。
+  4. 检查 signoff JSON 当前保持 `status=signed_off`，`signoff_ready=true`，`development_ready=true`。
+  5. 检查 signoff JSON 中 `h02_manual_takeover_accepted=true`、`h03_structural_gap_accepted=true`。
+  6. 检查两份 JSON 的双语输出约定是否稳定：英文结构字段作为机器可读主结构，中文说明字段仅作人工复核与提审说明。
 - 一致性验证：
   1. 检查 Gate-H 文档是否明确：H-02 / H-03 当前都已提升为 `development_ready`。
-  2. 检查 Gate-H 文档是否明确：H-02 / H-03 的已知缺口已记录，上线前需补验收。
-  3. 检查 Gate-H 文档是否明确：当前虽已开发阶段通过，但 `signoff_ready=false`，不可正式上线签收。
-  4. 检查 Gate-H 文档是否明确：本工作区开发阶段通过不等于阶段完成，上线前验收是阶段 H 的最后一步。
-- 收紧验证：
-  1. 检查 Gate-H 文档是否已移除"非当前主推进 / 聚合复核候选"等旧口径。
-  2. 检查 Gate-H 文档是否仍坚持：开发阶段通过但上线前不可签收。
-  3. 检查 Gate-H 文档是否已把 H-03 从"warning"更新到 `development_ready` 后的当前权威强度。
+  2. 检查 Gate-H 文档是否明确：H-02 / H-03 的已知缺口已由主控裁决转为替代验收或后续治理。
+  3. 检查 Gate-H 文档是否明确：当前 `signoff_ready=true`，Gate-H 已签收。
+  4. 检查 Gate-H 文档是否明确：签收不扩大 H-02 自动修复边界，也不取消 H-03 长期校准。
 
 ## 证据位置
 
@@ -36,16 +32,14 @@
   8. `scripts/run-stage-h-signoff-acceptance.ps1`
   9. `tmp/stage-h-gate/latest.json`
   10. `tmp/stage-h-signoff/latest.json`
-- H-02 状态证据：
+- H-02 替代验收证据：
   1. `docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md`
   2. `docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/verify.md`
-  3. `tmp/stage-h-remediation/h02-baijiacms-db-prereq-takeover-20260421.json`
-  4. `tmp/stage-h-remediation/h02-baijiacms-db-prereq-guide-20260421.json`
+  3. `tmp/stage-h-remediation/manual-guides/high-risk-config-write.md`
+  4. `tmp/stage-h-remediation/manual-guides/permission-elevation-required.md`
   5. `tmp/stage-h-remediation/manual-guides/baijiacms-db-prereq-missing.md`
-  6. `tmp/stage-h-remediation/h02-baijiacms-siteid-host-check-20260421.json`
-  7. `tmp/stage-h-remediation/h02-baijiacms-homepage-check-20260421.json`
-  8. `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`
-- H-03 状态证据：
+  6. `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`
+- H-03 替代验收证据：
   1. `docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md`
   2. `docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/verify.md`
   3. `docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/review.md`
@@ -54,6 +48,7 @@
   6. `tmp/stage-h-mcp-skills/h03-38-batch1-execution.json`
   7. `tmp/stage-h-mcp-skills/h03-39-handoff-check.json`
   8. `tmp/stage-h-mcp-skills/evals/institutional-review-minimum-closure.json`
+  9. `tmp/stage-h-mcp-skills/structural-gap-acceptance-20260424.md`
 - 唯一主推进状态源：
   1. `docs/11-hermes-rebuild/current-state.md`
   2. `docs/11-hermes-rebuild/changes/INDEX.md`
@@ -64,38 +59,33 @@
   1. `Gate-H`
 - 当前覆盖情况：
   1. H-01 已签收。
-  2. H-02 已提升为开发阶段 ready：十一个低风险受限验证窗口全部闭环，高风险配置写入和权限类场景已冻结为人工接管，上线前需补 runtime 验收。
-  3. H-03 已提升为开发阶段 ready：数量门槛 30/24/16 已达标，skill_hit_effective 三维度已代码化并通过测试，制度化多评审最小闭环已形成，manual-review 剩余 8 条结构化回指缺口为已知技术债。
+  2. H-02 已提升为开发阶段 ready：十一个低风险受限验证窗口全部闭环，高风险配置写入和权限类场景已由永久人工接管手册覆盖。
+  3. H-03 已提升为开发阶段 ready：数量门槛 30/24/16 已达标，skill_hit_effective 三维度已代码化并通过测试，制度化多评审最小闭环已形成，剩余结构性缺口已由风险接受条件覆盖。
   4. H-04/H-05 已签收。
-  5. Gate-H 已开发阶段通过，但 `signoff_ready=false`，上线前需补验收方可签收。
+  5. Gate-H 已完成主控裁决，`signoff_ready=true`。
+
+## 2026-04-24 主控裁决记录
+
+1. H-02 人工接管手册可替代当前高风险/权限类 runtime 验收。
+   - 替代对象：`C-B`~`C-F` 高风险配置写入、`P-C`/`P-D` 权限提升类场景。
+   - 替代性质：风险接受与人工接管，不是自动修复能力通过。
+   - 后续要求：继续保持自动化停止、人工接管、回退记录与后续新授权重开 change 的边界。
+2. H-03 结构性缺口说明可替代上线前长期校准闭合要求。
+   - 替代对象：当前剩余 `business-task-chain`、`skill-false-positive`、`manual-review` 样本缺口。
+   - 替代性质：结构性资源缺口的风险接受，不是长期校准取消。
+   - 后续要求：新 runtime 观测样本出现后优先回填 `manual-review` 缺口，并维持 skill guard 可观测字段。
+3. Gate-H 签收裁决：
+   - `signoff_ready=true`。
+   - 允许 Gate-H 签收。
 
 ## 本轮结论
 
-1. 本轮目标是在开发阶段口径下，完成 Gate-H 聚合判断并统一工作区口径，明确已知缺口，释放资源转向后续开发任务。
-2. H-02 / H-03 在开发阶段标准下均已 ready，Gate-H 开发阶段通过。
-3. 上线前验收条件已明确记录，验收完成前 `signoff_ready` 保持为 `false`。
+1. H-02 / H-03 在开发阶段标准下均已 ready。
+2. H-02 / H-03 的上线前阻塞项已由主控裁决转为替代验收或后续治理。
+3. Gate-H 已签收。
 
-## 当前仍不可正式上线签收的原因
+## 后续接手边界
 
-1. H-02 高风险配置写入场景（`C-B`~`F`）和权限类场景（`P-C`/`P-D`）尚未形成 runtime 验证结论。
-2. H-03 manual-review 剩余 8 条结构化回指缺口尚未补齐，命中有效性分布仍需长期校准，多评审制度化流程仍需正式化。
-3. Gate-H 作为阶段聚合判断，在上线前验收未完成前不可签收。
-
-## 若主控后续接手时的入口边界
-
-1. H-02：按"开发阶段 ready，上线前需补高风险场景 runtime 验收"的口径继续引用。
-2. H-03：按"开发阶段 ready，上线前需补 manual-review 缺口 + 长期校准 + 制度化流程正式化"的口径继续引用。
-3. Gate-H：当前已开发阶段通过，但上线前验收完成前 `signoff_ready=false`。
-## 2026-04-24 证据重跑记录
-
-1. 已重跑 `scripts/run-stage-h-gate-acceptance.ps1`，输出 `tmp/stage-h-gate/latest.json`。
-   - `status=development_ready`
-   - `status_zh=开发阶段通过`
-   - `gate_h.ready=true`
-2. 已重跑 `scripts/run-stage-h-signoff-acceptance.ps1`，输出 `tmp/stage-h-signoff/latest.json`。
-   - `status=development_ready`
-   - `status_zh=开发阶段通过`
-   - `gate_h_signoff.development_ready=true`
-   - `gate_h_signoff.signoff_ready=false`
-3. 中文说明字段已从 base64 解码常量改为直接中文文本，避免重新生成证据时出现乱码或语义损坏。
-4. 本轮重跑不改变 Gate-H 结论：开发阶段通过，上线前不可签收。
+1. H-02：按"开发阶段 ready，高风险/权限类场景由永久人工接管手册覆盖"的口径继续引用。
+2. H-03：按"开发阶段 ready，结构性缺口由风险接受条件覆盖，长期校准转后续治理"的口径继续引用。
+3. Gate-H：当前 `signoff_ready=true`，但不自动放行后续阶段切换；阶段切换仍需先更新 `current-state.md` 与 `changes/INDEX.md`。

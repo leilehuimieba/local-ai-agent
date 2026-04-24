@@ -10,6 +10,9 @@
 
 2. [H-gateway-service-extraction-20260424](H-gateway-service-extraction-20260424/status.md)
    - 内容：gateway `api` 包业务逻辑抽取到独立 `service` 层
-   - 完成项：provider_settings.go / diagnostics.go 业务逻辑下沉、handler 层纯化、测试文件迁移适配
+   - 完成项：
+     - provider_settings.go / diagnostics.go 业务逻辑下沉、handler 层纯化、测试文件迁移适配；
+     - Chat 核心链路（context/provider/retry/confirmation/execution/execute/events）全下沉；
+     - Learning 系列（value_score/recommend/explain/translate）全下沉，api 层改为类型别名 + 转发。
    - 归档原因：编译与测试全部通过，handler 行数符合目标
    - 原始路径：`docs/11-hermes-rebuild/changes/H-gateway-service-extraction-20260424/`

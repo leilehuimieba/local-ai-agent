@@ -7,19 +7,20 @@
 
 ## 当前活跃 change
 
-1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md)（当前主推进：Gate-H 聚合复核，仍未签收）
-2. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/`
-3. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
-4. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
-5. [H-memory-routing-kb-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-routing-kb-20260415/status.md)（已收口：H-05 记忆路由与知识沉淀）
-6. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（已收口：H-04 学习模式最小闭环）
-7. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
-8. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
+1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md)（当前主推进：Gate-H 已签收，等待后续主推进切换）
+2. [H-runtime-strict-e2e-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-runtime-strict-e2e-20260424/status.md)（已收口：严格 runtime E2E 验收通过）
+3. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/`
+4. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
+5. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
+6. [H-memory-routing-kb-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-routing-kb-20260415/status.md)（已收口：H-05 记忆路由与知识沉淀）
+7. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（已收口：H-04 学习模式最小闭环）
+8. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
+9. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
 
 ## 待启动 / 草案 change
 
 1. [H-knowledge-base-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-knowledge-base-20260423/status.md)（已完成：前端 UI + localStorage mock，不阻塞 Gate-H）
-2. [H-memory-object-review-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-object-review-20260423/status.md)（并行可提审：memory object/version、system views 与 rollback 最小升级已补齐；不切主推进）
+2. [H-memory-object-review-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-object-review-20260423/status.md)（已提审：memory object/version、system views 与 rollback 最小升级已补齐；等待主控裁决；不切主推进）
 
 ## 保留观察项
 
@@ -46,3 +47,4 @@
 1. 新建中等及以上变更后，将其加入索引。
 2. 切换主推进项时，先更新 `current-state.md`，再更新本索引。
 3. 某个 change 完成并收口后，移动到 `archive/<日期>/` 并补归档索引。
+
