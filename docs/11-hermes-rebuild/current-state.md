@@ -1,18 +1,26 @@
 # Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-04-24
-状态：`阶段 I 已启动`
+状态：`阶段 I 已收口`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
 ## 1. 当前执行状态
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
-2. 当前 Gate：Gate-I（待定义）
-3. 当前活跃 change：`I-sustainable-delivery-20260424`
-4. 当前主推进目录：`docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/`
+2. 当前 Gate：Gate-I（已收口）
+3. 当前活跃 change：无（阶段 I 全部任务已完成）
+4. 上一主推进目录：`docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/`
 
-## 2. 阶段 H 收口结论
+## 2. 阶段 I 收口结论
+
+1. I-01 已完成：25 个 Rust warning 已清理。
+2. I-02 已完成：全量回归脚本 `run-full-regression.ps1` 已建立，6 项检查全绿。
+3. I-03 已完成：`.gitattributes` 已添加，LF/CRLF warning 已消除。
+4. I-04 已完成：基线标签 `v1.0.0-20260424` 已打。
+5. 阶段 I 收口，项目进入自由迭代期。
+
+## 3. 阶段 H 收口结论
 
 1. Gate-H 已签收（H-01~H-05 全部闭环）。
 2. H-memory-object-review-20260423 已提审，等待主控裁决（不切主推进）。
