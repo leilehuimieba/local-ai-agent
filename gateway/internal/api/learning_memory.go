@@ -131,7 +131,7 @@ func learningMemorySummary(article bestblogs.ArticleResponse) string {
 	if strings.TrimSpace(article.Summary.OneSentence) != "" {
 		return strings.TrimSpace(article.Summary.OneSentence)
 	}
-	return firstLearningPoint(article)
+	return service.FirstLearningPoint(article)
 }
 
 func learningMemoryContent(article bestblogs.ArticleResponse, score int) string {

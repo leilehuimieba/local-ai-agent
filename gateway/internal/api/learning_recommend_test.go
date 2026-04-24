@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"local-agent/gateway/internal/providers/bestblogs"
 )
 
 type recommendEvidenceCase struct {
@@ -47,19 +45,6 @@ type recommendEvidenceReport struct {
 	Threshold         float64                 `json:"threshold"`
 	Samples           []recommendEvidenceCase `json:"samples"`
 	ManualReviews     []recommendManualReview `json:"manual_reviews"`
-}
-
-func TestBuildLearningRecommend(t *testing.T) {
-	article := bestblogs.ArticleResponse{
-		Provider: "bestblogs", Strategy: "public_api", ArticleID: "42acaf7d",
-		Meta:    bestblogs.ArticleMeta{Title: "浏览器自动化：从 GUI 到 OpenCLI", Tags: []string{"浏览器自动化", "AI Agent", "OpenCLI"}},
-		Summary: bestblogs.ArticleSummary{MainPoints: []bestblogs.MainPoint{{Point: "为什么我们需要浏览器自动化"}}},
-		Content: bestblogs.ArticleContent{Markdown: stringsRepeat("浏览器自动化 OpenCLI Agent ", 180), Images: []string{"a"}},
-	}
-	result := buildLearningRecommend(article)
-	require.NotEmpty(t, result.Recommendation)
-	require.NotEmpty(t, result.FocusTopics)
-	require.NotEmpty(t, result.NextStep)
 }
 
 func TestGenerateLearningRecommendEvidence(t *testing.T) {
