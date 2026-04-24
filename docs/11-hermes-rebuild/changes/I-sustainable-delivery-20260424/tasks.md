@@ -12,10 +12,11 @@
   - 证据落点：`tmp/stage-i-sustainable/regression-report.json`
   - 实际结果：2026-04-24 完成，6 项检查全部 passed（含 E2E strict_runtime_terminal）。
 
-- [ ] I-03 治理 LF/CRLF 混用
+- [x] I-03 治理 LF/CRLF 混用
   - 完成判据：`git diff` 不再输出 LF→CRLF warning。
   - 验证方式：任意修改后 `git diff --stat` 无 warning。
   - 证据落点：`.gitattributes` + `git add --renormalize .` 执行记录
+  - 实际结果：2026-04-24 完成，新增 `.gitattributes`，仅 1 个文件需标准化。
 
 - [ ] I-04 建立发布标签规范并打基线标签
   - 完成判据：存在 `v1.0.0-20260424` 标签，且 `git checkout` 后可编译。
