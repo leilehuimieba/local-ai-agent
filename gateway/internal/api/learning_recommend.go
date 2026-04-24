@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"local-agent/gateway/internal/providers/bestblogs"
+	"local-agent/gateway/internal/service"
 )
 
 type learningRecommendResponse struct {
@@ -37,10 +38,10 @@ func learningRecommendHandler() http.HandlerFunc {
 
 func buildLearningRecommend(article bestblogs.ArticleResponse) learningRecommendResponse {
 	signals := buildLearningValueSignals(article)
-	score := calculateLearningValueScore(signals)
+	score := service.CalculateLearningValueScore(signals)
 	return learningRecommendResponse{
 		OK: true, Provider: article.Provider, Strategy: article.Strategy, ArticleID: article.ArticleID,
-		Score: score, Level: learningValueLevel(score), Recommendation: learningRecommendation(score),
+		Score: score, Level: service.LearningValueLevel(score), Recommendation: learningRecommendation(score),
 		FocusTopics: learningFocusTopics(article), Why: learningRecommendWhy(article, signals),
 		NextStep: learningRecommendNextStep(article, score), Meta: article.Meta,
 	}
@@ -87,13 +88,13 @@ func appendFocusTopic(items []string, seen map[string]struct{}, tag string) []st
 
 func learningRecommendWhy(article bestblogs.ArticleResponse, signals learningValueSignals) string {
 	topics := strings.Join(learningFocusTopics(article), "、")
-	return "优先关注 " + topics + "。 " + learningValueReason(signals)
+	return "优先关注 " + topics + "。 " + service.LearningValueReason(signals)
 }
 
 func learningRecommendNextStep(article bestblogs.ArticleResponse, score int) string {
 	point := firstLearningPoint(article)
 	if point == "" {
-		return learningValueNextAction(score)
+		return service.LearningValueNextAction(score)
 	}
 	if score >= 85 {
 		return "先看要点「" + point + "」，再回到原文对应段落做深读。"

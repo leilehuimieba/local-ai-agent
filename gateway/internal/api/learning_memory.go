@@ -7,6 +7,7 @@ import (
 
 	"local-agent/gateway/internal/memory"
 	"local-agent/gateway/internal/providers/bestblogs"
+	"local-agent/gateway/internal/service"
 )
 
 type learningMemoryWriteResponse struct {
@@ -64,7 +65,7 @@ func learningMemoryWriteHandler(deps memoryRouteDeps) http.HandlerFunc {
 
 func buildLearningMemoryResponse(store *memory.Store, workspaceID string, article bestblogs.ArticleResponse) (learningMemoryWriteResponse, error) {
 	signals := buildLearningValueSignals(article)
-	score := calculateLearningValueScore(signals)
+	score := service.CalculateLearningValueScore(signals)
 	decision, err := routeLearningMemory(store, workspaceID, article, score)
 	if err != nil {
 		return learningMemoryWriteResponse{}, err
@@ -73,7 +74,7 @@ func buildLearningMemoryResponse(store *memory.Store, workspaceID string, articl
 		OK: true, Provider: article.Provider, Strategy: article.Strategy, ArticleID: article.ArticleID,
 		Title: article.Meta.Title, Route: decision.Route, WriteStatus: decision.WriteStatus,
 		Reason: decision.Reason, MemoryID: decision.MemoryID, MemoryTitle: decision.MemoryTitle,
-		Score: score, Level: learningValueLevel(score), RecallCount: decision.RecallCount,
+		Score: score, Level: service.LearningValueLevel(score), RecallCount: decision.RecallCount,
 		MemoryDigest: decision.MemoryDigest, InjectionPreview: decision.InjectionPreview,
 	}, nil
 }
@@ -137,7 +138,7 @@ func learningMemoryContent(article bestblogs.ArticleResponse, score int) string 
 	return strings.Join([]string{
 		"title=" + article.Meta.Title,
 		"article_id=" + article.ArticleID,
-		"score=" + learningValueLevel(score),
+		"score=" + service.LearningValueLevel(score),
 		"tags=" + strings.Join(article.Meta.Tags, "|"),
 		"summary=" + learningMemorySummary(article),
 	}, "; ")
