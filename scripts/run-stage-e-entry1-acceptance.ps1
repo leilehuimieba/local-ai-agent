@@ -237,4 +237,4 @@ try {
   Stop-IsolatedProcess -Process $gatewayProc
   Stop-IsolatedProcess -Process $runtimeProc
   Cleanup-ProcessEvents
-}
+}
