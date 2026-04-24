@@ -6,10 +6,11 @@
   - 证据落点：`tmp/stage-i-sustainable/cargo-test-clean.log`
   - 实际结果：2026-04-24 完成，169 passed / 0 failed，warning 清零。
 
-- [ ] I-02 建立全量回归脚本 `scripts/run-full-regression.ps1`
+- [x] I-02 建立全量回归脚本 `scripts/run-full-regression.ps1`
   - 完成判据：单脚本可串行跑完 Rust/Go/前端/E2E 四项检查。
   - 验证方式：执行脚本，exit code 0。
   - 证据落点：`tmp/stage-i-sustainable/regression-report.json`
+  - 实际结果：2026-04-24 完成，6 项检查全部 passed（含 E2E strict_runtime_terminal）。
 
 - [ ] I-03 治理 LF/CRLF 混用
   - 完成判据：`git diff` 不再输出 LF→CRLF warning。
