@@ -1,10 +1,10 @@
-package api
+package service
 
 import "testing"
 
 func TestEnsureContextBudgetHintsAddsDefaults(t *testing.T) {
 	hints := map[string]string{}
-	ensureContextBudgetHints(hints)
+	EnsureContextBudgetHints(hints)
 	if hints["context_budget_tokens"] != "512000" {
 		t.Fatalf("context_budget_tokens=%s", hints["context_budget_tokens"])
 	}
@@ -15,7 +15,7 @@ func TestEnsureContextBudgetHintsAddsDefaults(t *testing.T) {
 
 func TestEnsureContextBudgetHintsKeepsExistingValue(t *testing.T) {
 	hints := map[string]string{"context_budget_tokens": "64000"}
-	ensureContextBudgetHints(hints)
+	EnsureContextBudgetHints(hints)
 	if hints["context_budget_tokens"] != "64000" {
 		t.Fatalf("context_budget_tokens=%s", hints["context_budget_tokens"])
 	}

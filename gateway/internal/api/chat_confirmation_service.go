@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/service"
 	"local-agent/gateway/internal/state"
 )
 
@@ -28,12 +29,12 @@ func decodeConfirmationDecision(r *http.Request) (contracts.ConfirmationDecision
 func (h *ChatHandler) pendingConfirmation(
 	decision contracts.ConfirmationDecision,
 ) (state.PendingConfirmation, int, error) {
-	pending, ok := h.confirmationStore.Get(decision.ConfirmationID)
-	if !ok {
-		return state.PendingConfirmation{}, http.StatusNotFound, fmt.Errorf("confirmation not found")
-	}
-	if pending.Request.RunID != decision.RunID {
-		return state.PendingConfirmation{}, http.StatusBadRequest, fmt.Errorf("run_id does not match confirmation")
+	pending, err := service.PendingConfirmation(decision.ConfirmationID, decision.RunID, h.confirmationStore)
+	if err != nil {
+		if err.Error() == "confirmation not found" {
+			return state.PendingConfirmation{}, http.StatusNotFound, err
+		}
+		return state.PendingConfirmation{}, http.StatusBadRequest, err
 	}
 	return pending, http.StatusOK, nil
 }
@@ -58,7 +59,7 @@ func (h *ChatHandler) approveConfirmation(
 	}
 	pending.Request.ContextHints["workspace_first_seen"] = "false"
 	pending.Request.ConfirmationDecision = &decision
-	applyCheckpointResume(&pending.Request, pending.CheckpointID)
+	service.ApplyCheckpointResume(&pending.Request, pending.CheckpointID)
 	go h.execute(pending.Request)
 	writeConfirmationResponse(w, http.StatusAccepted, decision)
 }
