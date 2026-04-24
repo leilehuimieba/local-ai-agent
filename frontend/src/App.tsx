@@ -368,7 +368,7 @@ function readHomePreview() {
 
 function readPreviewView(): AppView {
   const value = new URLSearchParams(window.location.search).get("view");
-  if (value === "task" || value === "logs" || value === "settings") return value;
+  if (value === "task" || value === "logs" || value === "settings" || value === "knowledge") return value;
   return "home";
 }
 

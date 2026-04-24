@@ -228,8 +228,7 @@ func (h *Handler) generateEmbedding(workspaceID, itemID string) {
 	if err != nil {
 		return
 	}
-	item.Embedding = embed
-	_, _ = h.store.Update(workspaceID, itemID, UpdateRequest{})
+	_, _ = h.store.Update(workspaceID, itemID, UpdateRequest{Embedding: embed})
 }
 
 func currentWorkspaceID(store *state.SettingsStore) (string, bool) {
