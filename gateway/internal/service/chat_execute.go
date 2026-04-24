@@ -18,30 +18,54 @@ func Execute(
 	confirmationStore *state.ConfirmationStore,
 	registry *ExecutionRegistry,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	registry.Register(runRequest, cancel)
 	defer registry.Finish(runRequest.RunID)
 	defer cancel()
+	eventBus.Publish(RunStartedEvent(runRequest))
 	response, err := runtimeClient.Run(ctx, runRequest)
 	if err != nil {
-		if registry.WasCancelled(runRequest.RunID) || errors.Is(err, context.Canceled) {
-			detail := "任务已被用户中断，Runtime 请求已取消。"
-			eventBus.Publish(RunCancelledEvent(runRequest, detail))
-			eventBus.Publish(RunCancelledFinishEvent(runRequest, detail))
-			return
-		}
-		eventBus.Publish(RuntimeFailureEvent(runRequest, err.Error()))
-		eventBus.Publish(RuntimeFailureFinishEvent(runRequest, err.Error()))
+		publishRuntimeError(runRequest, eventBus, registry, err)
 		return
 	}
-	if response.ConfirmationRequest != nil {
-		confirmationStore.Save(state.PendingConfirmation{
-			Request:      runRequest,
-			Confirmation: *response.ConfirmationRequest,
-			CheckpointID: stringValue(response.Result.CheckpointID),
-		})
+	eventBus.Publish(RuntimeReturnedEvent(runRequest, len(response.Events)))
+	persistConfirmation(runRequest, response, confirmationStore)
+	publishRuntimeEvents(response.Events, eventBus)
+}
+
+func publishRuntimeError(
+	runRequest contracts.RunRequest,
+	eventBus *session.EventBus,
+	registry *ExecutionRegistry,
+	err error,
+) {
+	if registry.WasCancelled(runRequest.RunID) || errors.Is(err, context.Canceled) {
+		detail := "任务已被用户中断，Runtime 请求已取消。"
+		eventBus.Publish(RunCancelledEvent(runRequest, detail))
+		eventBus.Publish(RunCancelledFinishEvent(runRequest, detail))
+		return
 	}
-	for _, item := range response.Events {
+	eventBus.Publish(RuntimeFailureEvent(runRequest, err.Error()))
+	eventBus.Publish(RuntimeFailureFinishEvent(runRequest, err.Error()))
+}
+
+func persistConfirmation(
+	runRequest contracts.RunRequest,
+	response contracts.RuntimeRunResponse,
+	confirmationStore *state.ConfirmationStore,
+) {
+	if response.ConfirmationRequest == nil {
+		return
+	}
+	confirmationStore.Save(state.PendingConfirmation{
+		Request:      runRequest,
+		Confirmation: *response.ConfirmationRequest,
+		CheckpointID: stringValue(response.Result.CheckpointID),
+	})
+}
+
+func publishRuntimeEvents(events []contracts.RunEvent, eventBus *session.EventBus) {
+	for _, item := range events {
 		eventBus.Publish(item)
 		time.Sleep(120 * time.Millisecond)
 	}

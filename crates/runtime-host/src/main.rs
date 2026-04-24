@@ -1,6 +1,7 @@
 use std::env;
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::TcpListener;
+use std::io::{BufRead, BufReader, Write};
+use std::net::{TcpListener, TcpStream};
+use std::thread;
 
 use runtime_core::{
     RUNTIME_NAME, RUNTIME_VERSION, RunRequest, RuntimeSnapshot, capability_catalog,
@@ -30,11 +31,29 @@ fn runtime_addr() -> String {
 
 fn serve_requests(listener: TcpListener) {
     for stream in listener.incoming().flatten() {
-        handle_stream(stream);
+        handle_stream_on_worker(stream);
     }
 }
 
-fn handle_stream(mut stream: std::net::TcpStream) {
+fn handle_stream_on_worker(stream: TcpStream) {
+    eprintln!("[local-agent-runtime] spawning request worker");
+    let result = thread::Builder::new()
+        .name("runtime-host-request".to_string())
+        .stack_size(128 * 1024 * 1024)
+        .spawn(move || handle_stream(stream));
+    match result {
+        Ok(worker) => {
+            eprintln!("[local-agent-runtime] joining request worker");
+            if worker.join().is_err() {
+                eprintln!("[local-agent-runtime] request worker panicked");
+            }
+            eprintln!("[local-agent-runtime] request worker joined");
+        }
+        Err(error) => eprintln!("[local-agent-runtime] spawn request worker failed: {error}"),
+    }
+}
+
+fn handle_stream(mut stream: TcpStream) {
     eprintln!("[local-agent-runtime] incoming request");
     let Some(request) = read_request(&stream) else {
         return;
@@ -46,8 +65,13 @@ fn handle_stream(mut stream: std::net::TcpStream) {
         request.body.len()
     );
     let response = route_response(&request);
-    let _ = stream.write_all(response.as_bytes());
-    let _ = stream.flush();
+    if let Err(error) = stream.write_all(response.as_bytes()) {
+        eprintln!("[local-agent-runtime] write response failed: {error}");
+        return;
+    }
+    if let Err(error) = stream.flush() {
+        eprintln!("[local-agent-runtime] flush response failed: {error}");
+    }
 }
 
 fn read_request(stream: &std::net::TcpStream) -> Option<HttpRequest> {
@@ -81,12 +105,22 @@ fn read_request(stream: &std::net::TcpStream) -> Option<HttpRequest> {
         }
     }
 
-    let mut body = vec![0_u8; content_length];
-    if content_length > 0 && reader.read_exact(&mut body).is_err() {
-        return None;
-    }
-
+    let body = read_body(&mut reader, content_length)?;
     Some(HttpRequest { method, path, body })
+}
+
+fn read_body(reader: &mut BufReader<TcpStream>, content_length: usize) -> Option<Vec<u8>> {
+    let mut body = Vec::with_capacity(content_length);
+    while body.len() < content_length {
+        let available = reader.fill_buf().ok()?;
+        if available.is_empty() {
+            return None;
+        }
+        let take = available.len().min(content_length - body.len());
+        body.extend_from_slice(&available[..take]);
+        reader.consume(take);
+    }
+    Some(body)
 }
 
 fn route_response(request: &HttpRequest) -> String {

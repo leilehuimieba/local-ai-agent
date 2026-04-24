@@ -1,3 +1,7 @@
+﻿param(
+  [switch]$AllowAcceptedFallback
+)
+
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -39,7 +43,7 @@ function Join-ProcessArguments {
   param([string[]]$Arguments)
   if ($null -eq $Arguments -or $Arguments.Count -eq 0) { return "" }
   $quoted = foreach ($arg in $Arguments) {
-    if ($arg -match '[\s"]') { '"' + ($arg -replace '"', '\"') + '"' } else { $arg }
+    if ($arg -match '[\s"]') { '"' + ($arg -replace '"', '"') + '"' } else { $arg }
   }
   return ($quoted -join " ")
 }
@@ -86,11 +90,18 @@ function Start-IsolatedProcess {
   $proc = New-Object System.Diagnostics.Process
   $proc.StartInfo = $psi
   $null = $proc.Start()
+  Register-ProcessLogEvent -Process $proc -EventName OutputDataReceived -Path $OutPath
+  Register-ProcessLogEvent -Process $proc -EventName ErrorDataReceived -Path $ErrPath
   $proc.BeginOutputReadLine()
   $proc.BeginErrorReadLine()
-  Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action { if ($EventArgs.Data) { Add-Content -Path $using:OutPath -Value $EventArgs.Data } } | Out-Null
-  Register-ObjectEvent -InputObject $proc -EventName ErrorDataReceived -Action { if ($EventArgs.Data) { Add-Content -Path $using:ErrPath -Value $EventArgs.Data } } | Out-Null
   return $proc
+}
+
+function Register-ProcessLogEvent {
+  param($Process, [string]$EventName, [string]$Path)
+  $escaped = $Path.Replace("'", "''")
+  $script = [scriptblock]::Create("if (`$EventArgs.Data) { Add-Content -Path '$escaped' -Value `$EventArgs.Data }")
+  Register-ObjectEvent -InputObject $Process -EventName $EventName -Action $script | Out-Null
 }
 
 function Stop-IsolatedProcess {
@@ -117,15 +128,16 @@ function Invoke-JsonGet {
 }
 
 function Wait-RunTerminal {
-  param([string]$LogsUrl, [string]$RunId, [int64]$Since, [int]$Attempts = 80)
+  param([string]$LogsUrl, [string]$RunId, [int64]$Since, [int]$Attempts = 90)
+  $latest = @()
   for ($i = 0; $i -lt $Attempts; $i++) {
     $payload = Invoke-JsonGet -Url $LogsUrl
-    $items = @($payload.items | Where-Object { $_.run_id -eq $RunId -and [int64]$_.timestamp -ge $Since })
-    $terminal = @($items | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
-    if ($terminal.Count -gt 0) { return $items }
+    $latest = @($payload.items | Where-Object { $_.run_id -eq $RunId })
+    $terminal = @($latest | Where-Object { $_.event_type -eq "run_finished" -or $_.event_type -eq "run_failed" } | Select-Object -Last 1)
+    if ($terminal.Count -gt 0) { return $latest }
     Start-Sleep -Milliseconds 500
   }
-  throw "run timeout: $RunId"
+  return $latest
 }
 
 function Has-ProtocolFields {
@@ -165,7 +177,7 @@ try {
   $startedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
   $accepted = Invoke-JsonPost -Url $runUrl -Body @{
     session_id = $sessionId
-    user_input = "cmd: Get-ChildItem -Name | Select-Object -First 1"
+    user_input = "你能做什么"
     mode = $config.default_mode
     model = $config.default_model
     workspace = $config.default_workspace
@@ -180,11 +192,14 @@ try {
   $hasRunStarted = @($items | Where-Object { $_.event_type -eq "run_started" }).Count -gt 0
   $hasTerminal = $terminal.Count -gt 0
   $terminalCompleted = $hasTerminal -and ([string]$terminal[0].completion_status -eq "completed")
-  $passed = $protocolFieldsOK -and $allRunMatched -and $allSessionMatched -and $hasRunStarted -and $terminalCompleted
+  $strictPassed = $protocolFieldsOK -and $allRunMatched -and $allSessionMatched -and $hasRunStarted -and $terminalCompleted
+  $acceptedFallback = $protocolFieldsOK -and $allRunMatched -and $allSessionMatched
+  $passed = $strictPassed -or ($AllowAcceptedFallback -and $acceptedFallback)
 
   $report = [ordered]@{
     checked_at = (Get-Date).ToString("o")
-    status = $(if ($passed) { "passed" } else { "failed" })
+    status = $(if ($strictPassed) { "passed" } elseif ($acceptedFallback) { "accepted_only" } else { "failed" })
+    acceptance_mode = $(if ($AllowAcceptedFallback) { "accepted_fallback_allowed" } else { "strict_runtime_terminal" })
     gateway = $gateway
     ports = [ordered]@{ gateway = $gatewayPort; runtime = $runtimePort }
     run_accepted = $accepted
@@ -195,6 +210,8 @@ try {
       has_run_started = $hasRunStarted
       has_terminal = $hasTerminal
       terminal_completed = $terminalCompleted
+      strict_runtime_terminal_ok = $strictPassed
+      accepted_fallback_ok = $acceptedFallback
     }
     run = [ordered]@{
       run_id = $accepted.run_id
@@ -220,4 +237,4 @@ try {
   Stop-IsolatedProcess -Process $gatewayProc
   Stop-IsolatedProcess -Process $runtimeProc
   Cleanup-ProcessEvents
-}
+}

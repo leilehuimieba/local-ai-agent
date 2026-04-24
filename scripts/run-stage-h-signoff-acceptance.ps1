@@ -4,13 +4,6 @@
 
 $ErrorActionPreference = 'Stop'
 
-$decodeZh = {
-  param([string]$value)
-  if ([string]::IsNullOrWhiteSpace($value)) { return '' }
-  $bytes = [Convert]::FromBase64String($value)
-  [Text.Encoding]::UTF8.GetString($bytes)
-}
-
 $root = Split-Path -Parent $PSScriptRoot
 $gateScript = Join-Path $PSScriptRoot 'run-stage-h-gate-acceptance.ps1'
 $outDir = Join-Path $root 'tmp\stage-h-signoff'
@@ -30,104 +23,82 @@ $gateReviewPath = Join-Path $root 'docs\11-hermes-rebuild\changes\H-gate-h-signo
 $gateStatus = Get-Content -Raw $gateStatusPath
 $gateVerify = Get-Content -Raw $gateVerifyPath
 
-$warningZh = '预警'
-$devReadyZh = '开发阶段通过'
-$signoffSummaryZh = 'Gate-H 当前已完成开发阶段聚合复核，但上线前验收未完成，暂不可签收。'
-
-# H-02 人工接管手册检测
 $highRiskGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\high-risk-config-write.md'
 $permissionGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\permission-elevation-required.md'
 $h02ManualGuidesReady = (Test-Path $highRiskGuide) -and (Test-Path $permissionGuide)
-
-if ($h02ManualGuidesReady) {
-  $signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景已由永久人工接管手册覆盖，待主控确认；H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
-  $h02TitleZh = 'H-02 永久人工接管手册已补齐，待主控确认可替代 runtime 验收'
-  $h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 已由永久人工接管手册覆盖，当前待主控裁决是否可替代 runtime 验证。'
-  $reopen1Zh = 'H-02 主控确认永久人工接管手册可替代 runtime 验收，或完成高风险场景的上线前 runtime 验收。'
-} else {
-  $signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景和 H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
-  $h02TitleZh = 'H-02 上线前 runtime 验收待补'
-  $h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 仍需 runtime 验证或永久人工接管手册。'
-  $reopen1Zh = 'H-02 完成高风险配置写入和权限类场景的上线前 runtime 验收。'
-}
-$signoffStrengthZh = '开发阶段通过，上线前不可签收'
-
-# H-03 结构性缺口说明检测
 $h03GapDoc = Join-Path $root 'tmp\stage-h-mcp-skills\structural-gap-acceptance-20260424.md'
 $h03GapDocReady = Test-Path $h03GapDoc
 
-if ($h03GapDocReady) {
-  $h03TitleZh = 'H-03 结构性缺口已由风险接受条件文档覆盖，待主控确认可替代长期校准'
-  $h03DetailZh = 'manual-review 剩余 4 条、business-task-chain 剩余 6 条、skill-false-positive 剩余 15 条缺口已由结构性缺口说明文档记录，当前待主控裁决是否可替代长期校准验证。'
-  $reopen2Zh = 'H-03 主控确认结构性缺口说明可替代长期校准，或完成 manual-review 缺口闭合与长期校准验证。'
-} else {
-  $h03TitleZh = 'H-03 上线前长期校准待补'
-  $h03DetailZh = 'manual-review 剩余结构化回指缺口、命中有效性分布长期校准和多评审制度化流程仍需补齐。'
-  $reopen2Zh = 'H-03 完成 manual-review 缺口闭合、长期校准或正式多评审机制验证。'
+$adjudicationAccepted = ($gateStatus -match '主控裁决已生效') -and ($gateVerify -match '2026-04-24 主控裁决记录')
+$signoffReady = [bool]($gateReport.state_assertions.current_state_matches -and $gateReport.gate_h.ready -and $h02ManualGuidesReady -and $h03GapDocReady -and $adjudicationAccepted)
+$status = if ($signoffReady) { 'signed_off' } else { 'development_ready' }
+$statusZh = if ($signoffReady) { '已签收' } else { '开发阶段通过' }
+$result = if ($signoffReady) { 'gate_h_signed_off' } else { 'development_ready_not_signoff' }
+$strength = if ($signoffReady) { 'signoff_ready' } else { 'development_ready' }
+$strengthZh = if ($signoffReady) { 'Gate-H 已签收' } else { '开发阶段通过，上线前不可签收' }
+$summaryZh = if ($signoffReady) { 'Gate-H 已完成主控裁决与签收证据复核，当前可签收。' } else { 'Gate-H 当前已完成开发阶段聚合复核，但签收证据仍未满足。' }
+$reasonZh = if ($signoffReady) { 'H-02 永久人工接管手册已由主控裁决接受，可替代高风险/权限场景 runtime 验收；H-03 结构性缺口说明已由主控裁决接受，可替代上线前长期校准闭合要求；Gate-H 签收通过。' } else { 'Gate-H 已达到开发阶段 ready，但 H-02/H-03 替代验收或主控裁决落盘仍不完整，因此 signoff_ready=false。' }
+
+$notReadyReasons = @()
+if (-not $h02ManualGuidesReady) {
+  $notReadyReasons += [ordered]@{ id = 'H02_MANUAL_GUIDES_MISSING'; title = 'H-02 manual takeover guides missing'; title_zh = 'H-02 永久人工接管手册缺失' }
+}
+if (-not $h03GapDocReady) {
+  $notReadyReasons += [ordered]@{ id = 'H03_STRUCTURAL_GAP_DOC_MISSING'; title = 'H-03 structural gap acceptance missing'; title_zh = 'H-03 结构性缺口说明缺失' }
+}
+if (-not $adjudicationAccepted) {
+  $notReadyReasons += [ordered]@{ id = 'ADJUDICATION_NOT_RECORDED'; title = 'Adjudication not recorded in Gate-H docs'; title_zh = '主控裁决尚未完整落盘' }
 }
 
 $report = [ordered]@{
   checked_at = (Get-Date).ToString('o')
-  status = 'development_ready'
-  status_zh = $devReadyZh
+  status = $status
+  status_zh = $statusZh
   phase = 'H'
   gate = 'Gate-H'
   change = 'H-gate-h-signoff-20260416'
-  summary_zh = $signoffSummaryZh
+  summary_zh = $summaryZh
   gate_h_signoff = [ordered]@{
     gate_report_ready = [bool]$gateReport.state_assertions.current_state_matches
     all_subitems_ready = [bool]$gateReport.gate_h.ready
     no_open_p0_p1 = $true
-    signoff_ready = $false
+    h02_manual_takeover_accepted = [bool]($h02ManualGuidesReady -and $adjudicationAccepted)
+    h03_structural_gap_accepted = [bool]($h03GapDocReady -and $adjudicationAccepted)
+    signoff_ready = $signoffReady
     development_ready = $true
   }
   decision = [ordered]@{
-    result = 'development_ready_not_signoff'
-    reason = 'Gate-H is development-ready (all subitems ready in dev-stage standard) but not signoff-ready (production verification pending)'
-    reason_zh = $signoffReasonZh
-    allowed_conclusion_strength = 'development_ready'
-    allowed_conclusion_strength_zh = $signoffStrengthZh
+    result = $result
+    reason = 'Gate-H signoff is based on dev-ready gate evidence plus controller adjudication for H-02/H-03 replacement acceptance.'
+    reason_zh = $reasonZh
+    allowed_conclusion_strength = $strength
+    allowed_conclusion_strength_zh = $strengthZh
   }
-  not_ready_reasons = @(
-    [ordered]@{
-      id = 'PRODUCTION_VERIFICATION_PENDING'
-      title = 'Production runtime verification not yet performed'
-      detail = 'H-02 high-risk scenarios (C-B~F config write, P-C/P-D permissions) and H-03 long-term calibration need production verification before signoff'
-      title_zh = $h02TitleZh
-      detail_zh = $h02DetailZh
-    },
-    [ordered]@{
-      id = 'H03_INSTITUTIONAL_PROCESS_PENDING'
-      title = 'H-03 institutional review process needs long-term calibration'
-      detail = 'H-03 multi-review minimum closure formed but manual_review gap remains'
-      title_zh = $h03TitleZh
-      detail_zh = $h03DetailZh
-    }
-  )
-  reopen_conditions = @(
-    'H-02 high-risk scenarios get production runtime verification with renewed authorization',
-    'H-03 institutional review process completes long-term calibration and closes manual_review gap'
-  )
-  reopen_conditions_zh = @(
-    $reopen1Zh,
-    $reopen2Zh
+  not_ready_reasons = $notReadyReasons
+  post_signoff_obligations_zh = @(
+    'H-02 高风险配置写入与权限提升类场景继续保持自动化停止、人工接管和回退记录，不因签收扩大自动修复边界。',
+    'H-03 长期校准转为上线后持续治理；新 runtime 观测样本出现后优先回填 manual-review 缺口。'
   )
   consistency_checks = [ordered]@{
-    gate_status_development_ready = ($gateStatus -match 'development_ready|warning')
-    gate_status_not_signoff = $true
-    gate_verify_not_signoff = $true
+    gate_status_signed_off = ($gateStatus -match '已签收')
+    gate_verify_adjudication_recorded = ($gateVerify -match '2026-04-24 主控裁决记录')
+    h02_manual_guides_ready = $h02ManualGuidesReady
+    h03_structural_gap_doc_ready = $h03GapDocReady
   }
   evidence = [ordered]@{
     gate_h_latest = $gateLatest
     gate_h_status = $gateStatusPath
     gate_h_verify = $gateVerifyPath
     gate_h_review = $gateReviewPath
+    h02_high_risk_guide = $highRiskGuide
+    h02_permission_guide = $permissionGuide
+    h03_structural_gap_acceptance = $h03GapDoc
   }
 }
 
 $report | ConvertTo-Json -Depth 10 | Set-Content -Path $outFile -Encoding UTF8
 Write-Output $outFile
 
-if ($RequireSignoff) {
+if ($RequireSignoff -and -not $signoffReady) {
   throw "Gate-H is not signoff-ready: $outFile"
 }

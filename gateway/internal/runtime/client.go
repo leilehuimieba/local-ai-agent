@@ -21,7 +21,7 @@ func NewClient(port int) *Client {
 	return &Client{
 		baseURL: fmt.Sprintf("http://127.0.0.1:%d", port),
 		httpClient: &http.Client{
-			Timeout: 45 * time.Second,
+			Timeout: 120 * time.Second,
 		},
 	}
 }
@@ -38,21 +38,22 @@ func (c *Client) Run(ctx context.Context, request contracts.RunRequest) (contrac
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
+	return c.doRunRequest(httpReq)
+}
+
+func (c *Client) doRunRequest(httpReq *http.Request) (contracts.RuntimeRunResponse, error) {
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return contracts.RuntimeRunResponse{}, fmt.Errorf("call runtime: %w", err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return contracts.RuntimeRunResponse{}, fmt.Errorf("runtime returned %s", resp.Status)
 	}
-
 	var payload contracts.RuntimeRunResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return contracts.RuntimeRunResponse{}, fmt.Errorf("decode runtime response: %w", err)
 	}
-
 	return payload, nil
 }
 

@@ -1,6 +1,57 @@
 package service
 
-import "local-agent/gateway/internal/contracts"
+import (
+	"fmt"
+
+	"local-agent/gateway/internal/contracts"
+)
+
+func RunStartedEvent(runRequest contracts.RunRequest) contracts.RunEvent {
+	return contracts.RunEvent{
+		EventID:    NewID("event"),
+		Kind:       "run_event",
+		Source:     "gateway",
+		AgentID:    "primary",
+		AgentLabel: "主智能体",
+		EventType:  "run_started",
+		TraceID:    runRequest.TraceID,
+		SessionID:  runRequest.SessionID,
+		RunID:      runRequest.RunID,
+		Sequence:   1,
+		Timestamp:  timestampNow(),
+		Stage:      "Analyze",
+		Summary:    "Gateway 已接收任务",
+		Detail:     "Gateway 已开始调用 Runtime。",
+		Metadata: map[string]string{
+			"task_title": runRequest.UserInput,
+			"next_step":  "等待 Runtime 返回执行事件",
+		},
+	}
+}
+
+func RuntimeReturnedEvent(runRequest contracts.RunRequest, eventCount int) contracts.RunEvent {
+	return contracts.RunEvent{
+		EventID:    NewID("event"),
+		Kind:       "run_event",
+		Source:     "gateway",
+		AgentID:    "primary",
+		AgentLabel: "主智能体",
+		EventType:  "runtime_returned",
+		TraceID:    runRequest.TraceID,
+		SessionID:  runRequest.SessionID,
+		RunID:      runRequest.RunID,
+		Sequence:   2,
+		Timestamp:  timestampNow(),
+		Stage:      "Execute",
+		Summary:    "Runtime 已返回响应",
+		Detail:     "Gateway 已收到 Runtime 响应。",
+		Metadata: map[string]string{
+			"runtime_event_count": fmt.Sprintf("%d", eventCount),
+			"task_title":          runRequest.UserInput,
+			"next_step":           "发布 Runtime 事件",
+		},
+	}
+}
 
 func RuntimeFailureEvent(runRequest contracts.RunRequest, errorText string) contracts.RunEvent {
 	return contracts.RunEvent{
