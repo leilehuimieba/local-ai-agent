@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/service"
 	"local-agent/gateway/internal/state"
 )
 
@@ -36,7 +37,7 @@ func (h *ChatHandler) buildRetryRunRequest(payload ChatRetryRequest) (contracts.
 	request.SessionID = payload.SessionID
 	request.ProviderRef = providerRef
 	request.ConfirmationDecision = nil
-	request.ContextHints = h.withKnowledgeHints(copyContextHints(request.ContextHints))
+	request.ContextHints = service.WithKnowledgeHints(copyContextHints(request.ContextHints), h.appConfig.Siyuan)
 	ensureContextBudgetHints(request.ContextHints)
 	applyRetryCheckpointResume(&request, record.CheckpointID)
 	return request, nil
