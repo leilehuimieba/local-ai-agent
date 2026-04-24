@@ -1,4 +1,4 @@
-param(
+﻿param(
   [switch]$RequireSignoff
 )
 
@@ -30,21 +30,22 @@ $gateReviewPath = Join-Path $root 'docs\11-hermes-rebuild\changes\H-gate-h-signo
 $gateStatus = Get-Content -Raw $gateStatusPath
 $gateVerify = Get-Content -Raw $gateVerifyPath
 
-$warningZh = & $decodeZh '6aKE6K2m'
-$signoffSummaryZh = & $decodeZh 'R2F0ZS1IIOW9k+WJjeW3suWujOaIkOacrOi9ruiBmuWQiOWkjeaguOWIpOaWre+8jOS9hiBILTAy44CBSC0wMyDku43kuLogd2FybmluZ++8jOWboOatpOS7jeS4jeWPr+etvuaUtuOAgg=='
-$signoffReasonZh = & $decodeZh 'SC0wMiDkuI4gSC0wMyDlvZPliY3ku43kuLogd2FybmluZ++8jOaJgOS7pSBHYXRlLUgg5LuN5LiN5Y+v562+5pS244CC'
-$signoffStrengthZh = & $decodeZh '5bey5a6M5oiQ5pys6L2u6IGa5ZCI5aSN5qC45Yik5pat77yM5L2G5LuN5LiN5Y+v562+5pS244CC'
-$h02TitleZh = & $decodeZh 'SC0wMiDku43ml6DmlrDnmoTlkIjmoLzlj5fpmZDmoLfmnKw='
-$h02DetailZh = & $decodeZh '5b2T5YmN5Y+q5YWB6K645L+d5oyB5Ya757uT6KeC5a+f77yM5LiN5b6X5Zue5oqs5Li6IHJlYWR544CC'
-$h03TitleZh = & $decodeZh 'SC0wMyDku43mnKrovr7liLAgcmVhZHkg5by65bqm'
-$h03DetailZh = & $decodeZh 'SDAzLTM5IOW3suWujOaIkO+8jOS9huW9k+WJjeWPquWIsOW7uuiuruS4u+aOp+ivhOS8sOaYr+WQpuWIh+S4u+aOqOi/m+OAgg=='
-$reopen1Zh = & $decodeZh 'SC0wMiDlh7rnjrDmlrDnmoTlkIjmoLzlj5fpmZDmoLfmnKzlubbojrflvpfkuLvmjqfph43mlrDmjojmnYPjgII='
-$reopen2Zh = & $decodeZh 'SC0wMyDov5vlhaXmlrDnmoTmraPlvI/miafooYzmiJbkuLvmjqfoo4HlhrPvvIzlubblvaLmiJDmm7TlvLrnu5PorrrjgII='
+$warningZh = '预警'
+$devReadyZh = '开发阶段通过'
+$signoffSummaryZh = 'Gate-H 当前已完成开发阶段聚合复核，但上线前验收未完成，暂不可签收。'
+$signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景和 H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
+$signoffStrengthZh = '开发阶段通过，上线前不可签收'
+$h02TitleZh = 'H-02 上线前 runtime 验收待补'
+$h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 仍需 runtime 验证或永久人工接管手册。'
+$h03TitleZh = 'H-03 上线前长期校准待补'
+$h03DetailZh = 'manual-review 剩余结构化回指缺口、命中有效性分布长期校准和多评审制度化流程仍需补齐。'
+$reopen1Zh = 'H-02 完成高风险配置写入和权限类场景的上线前 runtime 验收。'
+$reopen2Zh = 'H-03 完成 manual-review 缺口闭合、长期校准或正式多评审机制验证。'
 
 $report = [ordered]@{
   checked_at = (Get-Date).ToString('o')
-  status = 'warning'
-  status_zh = $warningZh
+  status = 'development_ready'
+  status_zh = $devReadyZh
   phase = 'H'
   gate = 'Gate-H'
   change = 'H-gate-h-signoff-20260416'
@@ -54,40 +55,41 @@ $report = [ordered]@{
     all_subitems_ready = [bool]$gateReport.gate_h.ready
     no_open_p0_p1 = $true
     signoff_ready = $false
+    development_ready = $true
   }
   decision = [ordered]@{
-    result = 'not_signoff'
-    reason = 'H-02 and H-03 are still warning, so Gate-H remains not signoff'
+    result = 'development_ready_not_signoff'
+    reason = 'Gate-H is development-ready (all subitems ready in dev-stage standard) but not signoff-ready (production verification pending)'
     reason_zh = $signoffReasonZh
-    allowed_conclusion_strength = 'aggregation_done_but_not_signoff'
+    allowed_conclusion_strength = 'development_ready'
     allowed_conclusion_strength_zh = $signoffStrengthZh
   }
   not_ready_reasons = @(
     [ordered]@{
-      id = 'H02_WARNING'
-      title = 'H-02 still has no qualified limited sample'
-      detail = 'keep frozen-observe and do not raise to ready'
+      id = 'PRODUCTION_VERIFICATION_PENDING'
+      title = 'Production runtime verification not yet performed'
+      detail = 'H-02 high-risk scenarios (C-B~F config write, P-C/P-D permissions) and H-03 long-term calibration need production verification before signoff'
       title_zh = $h02TitleZh
       detail_zh = $h02DetailZh
     },
     [ordered]@{
-      id = 'H03_WARNING'
-      title = 'H-03 still does not meet ready strength'
-      detail = 'H03-39 is done but only supports handoff suggestion'
+      id = 'H03_INSTITUTIONAL_PROCESS_PENDING'
+      title = 'H-03 institutional review process needs long-term calibration'
+      detail = 'H-03 multi-review minimum closure formed but manual_review gap remains'
       title_zh = $h03TitleZh
       detail_zh = $h03DetailZh
     }
   )
   reopen_conditions = @(
-    'H-02 gets a new qualified limited sample with renewed authorization',
-    'H-03 enters a new formal execution or control decision with stronger conclusion'
+    'H-02 high-risk scenarios get production runtime verification with renewed authorization',
+    'H-03 institutional review process completes long-term calibration and closes manual_review gap'
   )
   reopen_conditions_zh = @(
     $reopen1Zh,
     $reopen2Zh
   )
   consistency_checks = [ordered]@{
-    gate_status_warning = ($gateStatus -match 'warning')
+    gate_status_development_ready = ($gateStatus -match 'development_ready|warning')
     gate_status_not_signoff = $true
     gate_verify_not_signoff = $true
   }

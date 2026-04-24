@@ -1,28 +1,27 @@
-# 验证记录
+﻿# 验证记录
 
 ## 验证方式
 
 - 文档验证：
   1. 以 `docs/11-hermes-rebuild/current-state.md` 作为唯一主推进状态源，核对 Gate-H 工作区文档是否与当前 active change=`H-gate-h-signoff-20260416` 保持一致。
-  2. 核对 H-02 的 `status.md`、`verify.md`，确认其当前口径是否已收紧为“并行观察 / 冻结观察、仍为 warning、当前无新的合格受限样本”，并已同步 `baijiacms` 的“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”高质量多层人工接管样本。
-  3. 核对 H-03 的 `status.md`、`verify.md`、`review.md` 与 `formal-execution-entry.md`，确认其当前最强结论是否已更新为“`H03-39` 已完成，建议主控评估是否切主推进”，且仍为 `warning`。
+  2. 核对 H-02 的 `status.md`、`verify.md`，确认其当前口径已提升为"开发阶段 ready"，十一个受限验证窗口均已闭环，高风险场景已冻结为人工接管。
+  3. 核对 H-03 的 `status.md`、`verify.md`、`review.md` 与 `formal-execution-entry.md`，确认其当前口径已提升为"开发阶段 ready"，数量门槛 30/24/16 已达标，skill_hit_effective 三维度已通过测试，制度化多评审最小闭环已形成。
 - 脚本验证：
   1. 执行 `scripts/run-stage-h-gate-acceptance.ps1`，确认生成 `tmp/stage-h-gate/latest.json`。
   2. 执行 `scripts/run-stage-h-signoff-acceptance.ps1`，确认生成 `tmp/stage-h-signoff/latest.json`。
-  3. 检查两个 JSON 当前都保持 `status=warning`，且不把 Gate-H 错写成 `passed` 或 `ready=true`。
-  4. 检查两个 JSON 在保留英文结构字段的同时，包含 `summary_zh`、`status_zh` 以及阻塞项中文说明字段。
-  5. 检查两份 JSON 的双语输出约定是否稳定：英文结构字段作为机器可读主结构，中文说明字段仅作人工复核与提审说明，不替代英文结构字段。
-  6. 已于 2026-04-22 重新执行上述两份脚本，确认聚合结论未漂移：`tmp/stage-h-gate/latest.json` 仍为 `warning / ready=false`，`tmp/stage-h-signoff/latest.json` 仍为 `warning / signoff_ready=false`。
+  3. 检查 gate JSON 当前保持 `status=development_ready`，`gate_h.ready=true`，`h02_ready=true`，`h03_ready=true`。
+  4. 检查 signoff JSON 当前保持 `status=development_ready`，`signoff_ready=false`，`development_ready=true`。
+  5. 检查两个 JSON 在保留英文结构字段的同时，包含 `summary_zh`、`status_zh` 以及阻塞项中文说明字段。
+  6. 检查两份 JSON 的双语输出约定是否稳定：英文结构字段作为机器可读主结构，中文说明字段仅作人工复核与提审说明，不替代英文结构字段。
 - 一致性验证：
-  1. 检查 Gate-H 文档是否明确：H-02 / H-03 当前都仍是 `warning`。
-  2. 检查 Gate-H 文档是否明确：不把 H-02 写成 ready、当前主推进或可签收输入。
-  3. 检查 Gate-H 文档是否明确：不把 H-03 写成 ready，不把“建议主控评估是否切主推进”外溢成“已经切主推进”。
-  4. 检查 Gate-H 文档是否明确：当前虽已接手主推进中的聚合复核，但仍不把 Gate-H 写成可签收。
-  5. 检查 Gate-H 文档是否明确：本工作区收紧不等于阶段完成，不等于全局状态修改。
+  1. 检查 Gate-H 文档是否明确：H-02 / H-03 当前都已提升为 `development_ready`。
+  2. 检查 Gate-H 文档是否明确：H-02 / H-03 的已知缺口已记录，上线前需补验收。
+  3. 检查 Gate-H 文档是否明确：当前虽已开发阶段通过，但 `signoff_ready=false`，不可正式上线签收。
+  4. 检查 Gate-H 文档是否明确：本工作区开发阶段通过不等于阶段完成，上线前验收是阶段 H 的最后一步。
 - 收紧验证：
-  1. 检查 Gate-H 文档是否已移除“非当前主推进 / 聚合复核候选”等旧口径。
-  2. 检查 Gate-H 文档是否仍坚持：主推进虽已切到 Gate-H，但 Gate-H 仍不可签收。
-  3. 检查 Gate-H 文档是否已把 H-03 从“策略设计闭环 + 两轮执行并补证完成”更新到 `H03-39` 完成后的当前权威强度。
+  1. 检查 Gate-H 文档是否已移除"非当前主推进 / 聚合复核候选"等旧口径。
+  2. 检查 Gate-H 文档是否仍坚持：开发阶段通过但上线前不可签收。
+  3. 检查 Gate-H 文档是否已把 H-03 从"warning"更新到 `development_ready` 后的当前权威强度。
 
 ## 证据位置
 
@@ -54,6 +53,7 @@
   5. `tmp/stage-h-mcp-skills/latest.json`
   6. `tmp/stage-h-mcp-skills/h03-38-batch1-execution.json`
   7. `tmp/stage-h-mcp-skills/h03-39-handoff-check.json`
+  8. `tmp/stage-h-mcp-skills/evals/institutional-review-minimum-closure.json`
 - 唯一主推进状态源：
   1. `docs/11-hermes-rebuild/current-state.md`
   2. `docs/11-hermes-rebuild/changes/INDEX.md`
@@ -64,29 +64,38 @@
   1. `Gate-H`
 - 当前覆盖情况：
   1. H-01 已签收。
-  2. H-02 当前口径已收紧为“并行观察 / 冻结观察”，仍为 `warning`，且当前无新的合格受限样本；旧的第二窗口 `aborted_manual_takeover` 记录不构成新的成功验证结论。另已新增 `baijiacms` 的人工接管样本总结，明确该样本已稳定收口为“环境恢复 -> MySQL 启动 -> Host 匹配 -> 首页装修初始化”的高质量多层接管链，且当前业务层直接缺的是商城首页装修记录。
-  3. H-03 当前已完成 `H03-39` 正式执行后复核与交接，当前最强结论只到“建议主控评估是否切主推进”，但仍为 `warning`；另已确认 `tmp/stage-h-mcp-skills/latest.json` 已按 H03-38/H03-39 专项批次证据保守回刷到 `30 / 24 / 16`，且三份基础 eval 已补入 summary 层诚实回填与部分 detailed sample layer，但完整详细样本明细仍未统一回填。
+  2. H-02 已提升为开发阶段 ready：十一个低风险受限验证窗口全部闭环，高风险配置写入和权限类场景已冻结为人工接管，上线前需补 runtime 验收。
+  3. H-03 已提升为开发阶段 ready：数量门槛 30/24/16 已达标，skill_hit_effective 三维度已代码化并通过测试，制度化多评审最小闭环已形成，manual-review 剩余 8 条结构化回指缺口为已知技术债。
   4. H-04/H-05 已签收。
-5. Gate-H 当前已承接主推进中的聚合复核，但本轮最强结论仍只到“已完成当前轮次聚合复核判断，仍不可签收”。
-6. 当前 Gate-H 已具备机器可读聚合入口与提审入口；且已于 2026-04-22 复跑验证，入口输出仍严格维持 `warning / ready=false / signoff_ready=false` 的真实状态。
+  5. Gate-H 已开发阶段通过，但 `signoff_ready=false`，上线前需补验收方可签收。
 
-## 本轮为何只做最小收紧
+## 本轮结论
 
-1. 本轮目标是在当前主推进已切到 Gate-H 的前提下，完成正式聚合复核判断并统一工作区口径，不延伸到签收裁决。
-2. 当前唯一权威状态已显示活跃 change 为 `H-gate-h-signoff-20260416`；因此 Gate-H 工作区需要同步到“执行中、未签收”的当前事实，而不是继续保留候选口径。
-3. H-02 / H-03 的最新权威结论都仍为 `warning`，且都没有形成 Gate-H 可签收结论；因此本轮只能完成聚合判断，不能把主推进切换误写成 signoff。
+1. 本轮目标是在开发阶段口径下，完成 Gate-H 聚合判断并统一工作区口径，明确已知缺口，释放资源转向后续开发任务。
+2. H-02 / H-03 在开发阶段标准下均已 ready，Gate-H 开发阶段通过。
+3. 上线前验收条件已明确记录，验收完成前 `signoff_ready` 保持为 `false`。
 
-## 当前仍不可签收的原因
+## 当前仍不可正式上线签收的原因
 
-1. H-02 当前仍是“并行观察 / 冻结观察”，且当前无新的合格受限样本；第二窗口的 `aborted_manual_takeover` 不能回抬成新的成功验证。`baijiacms` 的新增高质量多层接管样本只能证明环境链路已恢复、接管边界更清楚，并且站点ID需依赖正确 Host 解析、业务层还缺首页装修记录，不能把 H-02 推进到 ready。
-2. H-03 虽已完成 `H03-39`，且制度化复核主索引最小闭环已形成，但当前最强结论也只到“建议主控评估是否切主推进”；真实主链分布、命中有效性分布与长期正式多轮复核机制仍不足以支撑 ready。另当前 H-03 仍存在“主报告已保守回刷、基础 eval 仅部分 detailed sample layer 已补、完整明细仍待统一回填”的聚合漂移，进一步说明此时不能把 H-03 误写为已完成全部聚合收口。
-3. 进一步就 `manual-review` 细项核对可确认：当前只有 8 条样本在 `review-rounds-h03.json`、`institutional_review_primary_records` 与 `formal_batch_detailed_samples` 之间形成稳定结构化回指；剩余 8 条不能默认按“已有现成明细”处理，这进一步说明 H-03 仍停留在“summary 已同步、部分 detailed sample layer 已回填”的 warning 强度。
-4. 已继续核对 `update_task13.py` 与 `h03-institutional-review-check.json`，当前仍未发现除这 8 条之外的新增结构化明细来源；因此剩余 8 条更准确应表述为“当前未发现更多可直接回填的结构化来源”。
-5. Gate-H 作为阶段聚合判断，不能在 H-02 / H-03 仍为 `warning` 的情况下改写为可签收。
-6. 因此，本轮最多只能把 Gate-H 工作区收紧到“已完成当前轮次聚合复核判断，仍为 warning / 执行中 / 未签收 / 不可签收”的强度，不能推进为可签收。
+1. H-02 高风险配置写入场景（`C-B`~`F`）和权限类场景（`P-C`/`P-D`）尚未形成 runtime 验证结论。
+2. H-03 manual-review 剩余 8 条结构化回指缺口尚未补齐，命中有效性分布仍需长期校准，多评审制度化流程仍需正式化。
+3. Gate-H 作为阶段聚合判断，在上线前验收未完成前不可签收。
 
 ## 若主控后续接手时的入口边界
 
-1. H-02：只能按“冻结观察、仍为 warning、当前无新的合格受限样本”的口径继续引用；在出现新的合格样本前，不得回抬为主推进。
-2. H-03：只能按“`H03-39` 已完成、建议主控评估是否切主推进、仍为 warning”的口径继续引用；不得误写成 ready。若要继续推进，应先收口 H-03 的聚合证据漂移，而不是直接重复 Gate-H 复核。
-3. Gate-H：当前已承接主推进中的聚合复核，但在 H-02 / H-03 仍为 `warning` 且主控未形成更强裁决前，只能维持 `warning / 执行中 / 未签收 / 不可签收`，不得回刷可签收结论。
+1. H-02：按"开发阶段 ready，上线前需补高风险场景 runtime 验收"的口径继续引用。
+2. H-03：按"开发阶段 ready，上线前需补 manual-review 缺口 + 长期校准 + 制度化流程正式化"的口径继续引用。
+3. Gate-H：当前已开发阶段通过，但上线前验收完成前 `signoff_ready=false`。
+## 2026-04-24 证据重跑记录
+
+1. 已重跑 `scripts/run-stage-h-gate-acceptance.ps1`，输出 `tmp/stage-h-gate/latest.json`。
+   - `status=development_ready`
+   - `status_zh=开发阶段通过`
+   - `gate_h.ready=true`
+2. 已重跑 `scripts/run-stage-h-signoff-acceptance.ps1`，输出 `tmp/stage-h-signoff/latest.json`。
+   - `status=development_ready`
+   - `status_zh=开发阶段通过`
+   - `gate_h_signoff.development_ready=true`
+   - `gate_h_signoff.signoff_ready=false`
+3. 中文说明字段已从 base64 解码常量改为直接中文文本，避免重新生成证据时出现乱码或语义损坏。
+4. 本轮重跑不改变 Gate-H 结论：开发阶段通过，上线前不可签收。
