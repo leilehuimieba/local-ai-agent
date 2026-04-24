@@ -45,6 +45,7 @@ pub(crate) fn list_current_memory_object_entries_limited_sqlite(
     .unwrap_or_default()
 }
 
+#[allow(dead_code)]
 pub(crate) fn sync_memory_object_entry_sqlite(
     request: &RunRequest,
     entry: &MemoryEntry,
@@ -52,6 +53,7 @@ pub(crate) fn sync_memory_object_entry_sqlite(
     with_connection(request, |conn| upsert_memory_object_version(conn, entry))
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_versions_sqlite(
     request: &RunRequest,
     object_id: &str,
@@ -60,6 +62,7 @@ pub(crate) fn list_memory_object_versions_sqlite(
         .unwrap_or_default()
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_aliases_sqlite(
     request: &RunRequest,
     object_id: &str,
@@ -67,6 +70,7 @@ pub(crate) fn list_memory_object_aliases_sqlite(
     with_connection(request, |conn| load_memory_object_aliases(conn, object_id)).unwrap_or_default()
 }
 
+#[allow(dead_code)]
 pub(crate) fn rollback_memory_object_sqlite(
     request: &RunRequest,
     object_id: &str,
@@ -183,6 +187,7 @@ pub(crate) fn memory_count(conn: &Connection, workspace_id: &str) -> Result<i64,
     count_by_workspace(conn, "long_term_memory", workspace_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn memory_object_count(conn: &Connection, workspace_id: &str) -> Result<i64, String> {
     count_by_workspace(conn, "memory_objects", workspace_id)
 }

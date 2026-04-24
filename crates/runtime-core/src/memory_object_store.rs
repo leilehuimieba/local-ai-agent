@@ -19,6 +19,7 @@ pub(crate) struct MemoryObjectVersion {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct MemoryObjectDiff {
     pub object_id: String,
     pub from_version_id: String,
@@ -32,6 +33,7 @@ pub(crate) struct MemoryObjectDiff {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct MemoryObjectRollbackResult {
     pub object_id: String,
     pub target_version_id: String,
@@ -39,6 +41,7 @@ pub(crate) struct MemoryObjectRollbackResult {
     pub canonical_uri: String,
 }
 
+#[allow(dead_code)]
 pub(crate) fn sync_memory_object_entry(
     request: &RunRequest,
     entry: &MemoryEntry,
@@ -46,6 +49,7 @@ pub(crate) fn sync_memory_object_entry(
     sync_memory_object_entry_sqlite(request, entry)
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_versions(
     request: &RunRequest,
     object_id: &str,
@@ -53,6 +57,7 @@ pub(crate) fn list_memory_object_versions(
     list_memory_object_versions_sqlite(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn get_memory_object_history(
     request: &RunRequest,
     object_id: &str,
@@ -60,10 +65,12 @@ pub(crate) fn get_memory_object_history(
     list_memory_object_versions(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_aliases(request: &RunRequest, object_id: &str) -> Vec<String> {
     list_memory_object_aliases_sqlite(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn diff_memory_object_versions(
     request: &RunRequest,
     object_id: &str,
@@ -76,6 +83,7 @@ pub(crate) fn diff_memory_object_versions(
     Ok(build_version_diff(object_id, from, to))
 }
 
+#[allow(dead_code)]
 pub(crate) fn rollback_memory_object(
     request: &RunRequest,
     object_id: &str,

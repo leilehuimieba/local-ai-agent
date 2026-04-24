@@ -1,9 +1,10 @@
 # Tasks
 
-- [ ] I-01 清理 Rust `unused`/`dead_code` warning（25 个）
+- [x] I-01 清理 Rust `unused`/`dead_code` warning（25 个）
   - 完成判据：`cargo test --workspace` 无 warning 输出。
   - 验证方式：运行测试并检查输出。
   - 证据落点：`tmp/stage-i-sustainable/cargo-test-clean.log`
+  - 实际结果：2026-04-24 完成，169 passed / 0 failed，warning 清零。
 
 - [ ] I-02 建立全量回归脚本 `scripts/run-full-regression.ps1`
   - 完成判据：单脚本可串行跑完 Rust/Go/前端/E2E 四项检查。

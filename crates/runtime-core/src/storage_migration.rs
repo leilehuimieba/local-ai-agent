@@ -6,7 +6,7 @@ use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{
     insert_knowledge_record, insert_memory_entry, knowledge_count,
-    load_memory_entries_for_workspace_conn, memory_count, memory_object_count,
+    load_memory_entries_for_workspace_conn, memory_count,
     upsert_memory_object_version,
 };
 use crate::storage::{overwrite_jsonl, read_jsonl};
