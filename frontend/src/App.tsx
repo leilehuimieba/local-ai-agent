@@ -12,8 +12,8 @@ import {
 } from "./runtime/state";
 import { LeftNav } from "./shell/LeftNav";
 import { AppShell } from "./shell/AppShell";
+import { buildHomeViewModel } from "./shell/workspaceViewModel/homeModel";
 import {
-  buildHomeViewModel,
   getSidebarProps,
   renderBottomPanel,
   renderGlobalLayers,

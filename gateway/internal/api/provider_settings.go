@@ -107,19 +107,6 @@ type providerModelsPayload struct {
 	} `json:"data"`
 }
 
-func registerProviderSettingsRoutes(
-	mux *http.ServeMux,
-	cfg config.AppConfig,
-	credentials *state.ProviderCredentialStore,
-	runtimeStore *state.RuntimeProviderStore,
-) {
-	mux.HandleFunc("/api/v1/settings/providers", providersHandler(cfg, credentials, runtimeStore))
-	mux.HandleFunc("/api/v1/settings/providers/test", providerTestHandler(cfg))
-	mux.HandleFunc("/api/v1/settings/providers/save", providerSaveHandler(cfg, credentials, runtimeStore))
-	mux.HandleFunc("/api/v1/settings/providers/apply", providerApplyHandler(cfg, credentials, runtimeStore))
-	mux.HandleFunc("/api/v1/settings/providers/remove", providerRemoveHandler(cfg, credentials, runtimeStore))
-}
-
 func providersHandler(
 	cfg config.AppConfig,
 	credentials *state.ProviderCredentialStore,
@@ -320,9 +307,9 @@ func providerSettingsView(
 	if credentialOK && savedConfigPending(credential, runtimeRecord, runtimeOK) {
 		return config.ProviderConfig{
 			ProviderID: provider.ProviderID, DisplayName: firstNonEmpty(credential.DisplayName, provider.DisplayName),
-			BaseURL: firstNonEmpty(credential.BaseURL, provider.BaseURL),
+			BaseURL:             firstNonEmpty(credential.BaseURL, provider.BaseURL),
 			ChatCompletionsPath: firstNonEmpty(credential.ChatCompletionsPath, provider.ChatCompletionsPath),
-			ModelsPath: firstNonEmpty(credential.ModelsPath, provider.ModelsPath),
+			ModelsPath:          firstNonEmpty(credential.ModelsPath, provider.ModelsPath),
 		}
 	}
 	if runtimeOK && runtimeRecord.Status == "applied" {
@@ -334,9 +321,9 @@ func providerSettingsView(
 	if credentialOK {
 		return config.ProviderConfig{
 			ProviderID: provider.ProviderID, DisplayName: firstNonEmpty(credential.DisplayName, provider.DisplayName),
-			BaseURL: firstNonEmpty(credential.BaseURL, provider.BaseURL),
+			BaseURL:             firstNonEmpty(credential.BaseURL, provider.BaseURL),
 			ChatCompletionsPath: firstNonEmpty(credential.ChatCompletionsPath, provider.ChatCompletionsPath),
-			ModelsPath: firstNonEmpty(credential.ModelsPath, provider.ModelsPath),
+			ModelsPath:          firstNonEmpty(credential.ModelsPath, provider.ModelsPath),
 		}
 	}
 	return provider
@@ -462,7 +449,9 @@ func validateProviderModels(body []byte, modelID string) (string, string) {
 	return "连接校验成功", ""
 }
 
-func containsModel(items []struct{ ID string `json:"id"` }, modelID string) bool {
+func containsModel(items []struct {
+	ID string `json:"id"`
+}, modelID string) bool {
 	if len(items) == 0 {
 		return false
 	}
@@ -515,10 +504,10 @@ func appliedRuntimeRecord(
 ) state.RuntimeProviderRecord {
 	return state.RuntimeProviderRecord{
 		ProviderID: provider.ProviderID, DisplayName: firstNonEmpty(record.DisplayName, provider.DisplayName),
-		BaseURL: firstNonEmpty(record.BaseURL, provider.BaseURL),
+		BaseURL:             firstNonEmpty(record.BaseURL, provider.BaseURL),
 		ChatCompletionsPath: firstNonEmpty(record.ChatCompletionsPath, provider.ChatCompletionsPath),
-		ModelsPath: firstNonEmpty(record.ModelsPath, provider.ModelsPath),
-		APIKey: record.APIKey, AppliedAt: appliedAt, ConfigVersion: record.UpdatedAt,
+		ModelsPath:          firstNonEmpty(record.ModelsPath, provider.ModelsPath),
+		APIKey:              record.APIKey, AppliedAt: appliedAt, ConfigVersion: record.UpdatedAt,
 		Status: "applied", PendingReload: false, LastApplyMessage: "已应用到 gateway 运行配置",
 	}
 }
@@ -555,9 +544,9 @@ func resolveModelsPath(provider config.ProviderConfig, payload ProviderTestReque
 func savedProviderRecord(provider config.ProviderConfig, payload ProviderSaveRequest) state.ProviderCredentialRecord {
 	return state.ProviderCredentialRecord{
 		ProviderID: provider.ProviderID, DisplayName: firstNonEmpty(payload.DisplayName, provider.DisplayName),
-		BaseURL: firstNonEmpty(payload.BaseURL, provider.BaseURL),
+		BaseURL:             firstNonEmpty(payload.BaseURL, provider.BaseURL),
 		ChatCompletionsPath: firstNonEmpty(payload.ChatCompletionsPath, provider.ChatCompletionsPath),
-		ModelsPath: firstNonEmpty(payload.ModelsPath, provider.ModelsPath), APIKey: payload.APIKey,
+		ModelsPath:          firstNonEmpty(payload.ModelsPath, provider.ModelsPath), APIKey: payload.APIKey,
 	}
 }
 

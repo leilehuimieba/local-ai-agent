@@ -9,10 +9,6 @@ import (
 	"local-agent/gateway/internal/providers/bestblogs"
 )
 
-func registerProviderArticleRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/api/v1/providers/bestblogs/article/read", bestblogsArticleReadHandler())
-}
-
 func bestblogsArticleReadHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		payload, ok := decodeBestblogsReadRequest(w, r)

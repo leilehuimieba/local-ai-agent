@@ -162,47 +162,15 @@ func NewRouter(
 	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
 	memoryDeps := memoryRouteDeps{store: memory.NewStore(repoRoot), state: settingsStore}
 	registerCoreRoutes(mux, cfg)
-	registerProviderSettingsRoutes(mux, cfg, credentialStore, runtimeStore)
-	registerProviderArticleRoutes(mux)
+	registerProvidersRoutes(mux, cfg, credentialStore, runtimeStore)
 	registerLearningRoutes(mux, memoryDeps)
-	registerSettingsAndLogsRoutes(mux, repoRoot, cfg, settingsStore, eventBus)
+	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore)
+	registerLogsRoutes(mux, repoRoot, cfg.RuntimePort, eventBus)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
 	knowledge.NewHandler(repoRoot).RegisterRoutes(mux, settingsStore, repoRoot, cfg)
 	mux.Handle("/", spaHandler(repoRoot))
 	return mux
-}
-
-func registerSettingsAndLogsRoutes(
-	mux *http.ServeMux,
-	repoRoot string,
-	cfg config.AppConfig,
-	settingsStore *state.SettingsStore,
-	eventBus *session.EventBus,
-) {
-	mux.HandleFunc("/api/v1/settings", settingsHandler(repoRoot, cfg, settingsStore))
-	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore))
-	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/logs", diagnosticsLogsRemediationHandler(repoRoot))
-	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/frontend-dist", diagnosticsFrontendRemediationHandler(repoRoot))
-	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/gateway", diagnosticsGatewayRemediationHandler(repoRoot, cfg.GatewayPort))
-	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/config", diagnosticsConfigRemediationHandler(repoRoot))
-	mux.HandleFunc("/api/v1/settings/external-connections/action", externalConnectionActionHandler(repoRoot, cfg, settingsStore))
-	mux.HandleFunc("/api/v1/system/info", systemInfoHandler(repoRoot, cfg.RuntimePort))
-	mux.HandleFunc("/api/v1/logs", logsHandler(eventBus))
-	mux.HandleFunc("/api/v1/artifacts/content", artifactContentHandler(repoRoot))
-}
-
-func registerMemoryRoutes(mux *http.ServeMux, deps memoryRouteDeps) {
-	mux.HandleFunc("/api/v1/memories", deps.handleMemories)
-	mux.HandleFunc("/api/v1/memories/delete", deps.handleMemoryDelete)
-}
-
-func registerChatRoutes(mux *http.ServeMux, chat *ChatHandler) {
-	mux.HandleFunc("/api/v1/chat/run", chat.Run)
-	mux.HandleFunc("/api/v1/chat/retry", chat.Retry)
-	mux.HandleFunc("/api/v1/chat/confirm", chat.Confirm)
-	mux.HandleFunc("/api/v1/chat/cancel", chat.Cancel)
-	mux.HandleFunc("/api/v1/events/stream", chat.Stream)
 }
 
 func registerCoreRoutes(mux *http.ServeMux, cfg config.AppConfig) {

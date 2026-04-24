@@ -204,8 +204,11 @@ mod tests {
     }
 
     fn sample_request() -> RunRequest {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
         let root = std::env::temp_dir().join(format!(
-            "memory-object-store-{}",
+            "memory-object-store-{}-{}",
+            COUNTER.fetch_add(1, Ordering::SeqCst),
             crate::events::timestamp_now()
         ));
         std::fs::create_dir_all(&root).unwrap();
