@@ -7,8 +7,7 @@ import { LogsPanel } from "./LogsPanel";
 describe("LogsPanel", () => {
   it("在日志工作区内渲染 Review 结构", () => {
     render(<LogsPanel logs={[testLogEntry]} />);
-    expect(screen.getByText("Logs / Review Workspace")).toBeInTheDocument();
-    expect(screen.getByText("调查记录工作区")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "记录" })).toBeInTheDocument();
     expect(screen.getByText("焦点复盘卡")).toBeInTheDocument();
     expect(screen.getByText("复盘详情栏")).toBeInTheDocument();
   });

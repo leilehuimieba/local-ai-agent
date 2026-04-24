@@ -42,7 +42,7 @@ const baseProps: ComponentProps<typeof SettingsPanel> = {
 describe("SettingsPanel", () => {
   it("渲染设置工作台主标题", () => {
     render(<SettingsPanel {...baseProps} />);
-    expect(screen.getByText("Settings Workspace")).toBeInTheDocument();
+    expect(screen.getByText("设置")).toBeInTheDocument();
     expect(screen.getByText("记忆与资源")).toBeInTheDocument();
   });
 

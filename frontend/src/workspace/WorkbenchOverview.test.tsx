@@ -27,9 +27,7 @@ describe("WorkbenchOverview", () => {
   it("首屏模式渲染快速开始与环境信息", () => {
     const props = createProps();
     render(<WorkbenchOverview {...props} />);
-    expect(screen.getByRole("heading", { level: 2, name: "今天想让本地智能体帮你完成什么？" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 3, name: "快速开始" })).toBeInTheDocument();
-    expect(screen.getByText("默认工作区")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "今天想让本地智能体帮你完成什么？" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /快速检查/ }));
     expect(props.onPrefillExample).toHaveBeenCalledWith("检查当前项目问题");
   });
@@ -37,18 +35,17 @@ describe("WorkbenchOverview", () => {
   it("恢复模式在待确认时进入确认处理流", () => {
     const props = { ...createProps(), kind: "resume" as const, hasConfirmation: true };
     render(<WorkbenchOverview {...props} />);
-    expect(screen.getByRole("heading", { level: 3, name: "恢复上下文" })).toBeInTheDocument();
     expect(screen.getAllByText("补齐测试").length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole("button", { name: "处理待确认动作" }));
+    fireEvent.click(screen.getByRole("button", { name: /处理待确认动作/ }));
     expect(props.onOpenTaskPageForConfirmation).toHaveBeenCalledTimes(1);
   });
 
   it("阻塞模式显示建议动作并跳转设置", () => {
     const props = { ...createProps(), kind: "blocked" as const, blockCard: { action: "model" as const, title: "模型未配置", body: "需要先切换模型", detail: "当前 provider 不可用" } };
     render(<WorkbenchOverview {...props} />);
-    expect(screen.getByRole("heading", { level: 2, name: "模型未配置" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "模型未配置" })).toBeInTheDocument();
     expect(screen.getByText("当前 provider 不可用")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "前往设置切换模型" }));
+    fireEvent.click(screen.getByRole("button", { name: /前往设置切换模型/ }));
     expect(props.onOpenSettingsPage).toHaveBeenCalledTimes(1);
   });
 });

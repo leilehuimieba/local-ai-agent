@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+﻿import { FormEvent } from "react";
 
 type HomeStateKind = "first_use" | "resume" | "blocked";
 
@@ -116,7 +116,8 @@ function HomeQuickActions(props: WorkbenchOverviewProps) {
 
 function FirstUseActions(props: WorkbenchOverviewProps) {
   return (
-    <section className="home-quick-actions">
+    <section className="home-quick-actions" aria-label="快速开始">
+      <h2 className="sr-only">快速开始</h2>
       {props.examples.map((item) => (
         <button
           key={item.id}
@@ -132,12 +133,13 @@ function FirstUseActions(props: WorkbenchOverviewProps) {
 }
 
 function ResumeActions(props: WorkbenchOverviewProps) {
-  const primaryLabel = props.hasConfirmation ? "处理待确认" : "继续任务";
+  const primaryLabel = props.hasConfirmation ? "处理待确认动作" : "继续任务";
   const primaryHandler = props.hasConfirmation
     ? props.onOpenTaskPageForConfirmation
     : props.onOpenTaskPage;
   return (
-    <section className="home-quick-actions">
+    <section className="home-quick-actions" aria-label="恢复上下文">
+      <h3 className="sr-only">恢复上下文</h3>
       <button type="button" className="home-action-card" onClick={primaryHandler}>
         <strong>{primaryLabel}</strong>
         <span>回到任务主线程继续推进</span>
@@ -175,6 +177,6 @@ function BlockedActions(props: WorkbenchOverviewProps) {
 function readBlockButtonLabel(action?: "reconnect" | "settings" | "workspace" | "model") {
   if (action === "reconnect") return "重新连接";
   if (action === "workspace") return "检查工作区";
-  if (action === "model") return "切换模型";
+  if (action === "model") return "前往设置切换模型";
   return "前往设置";
 }

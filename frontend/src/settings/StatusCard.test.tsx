@@ -8,7 +8,7 @@ describe("StatusCard", () => {
   it("在无设置且无错误时显示读取空态", () => {
     render(<StatusCard settings={null} bootstrapError={null} pendingAction={null} actionError={null} lastSuccess={null} />);
     expect(screen.getByText("设置运行态")).toBeInTheDocument();
-    expect(screen.getByText("正在读取设置")).toBeInTheDocument();
+    expect(screen.getByText("正在读取基础设置。")).toBeInTheDocument();
   });
 
   it("在正常设置下显示运行态摘要", () => {
