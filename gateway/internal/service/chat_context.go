@@ -85,3 +85,7 @@ func NewID(prefix string) string {
 	counter := atomic.AddUint64(&idCounter, 1)
 	return fmt.Sprintf("%s-%d-%d", prefix, time.Now().UnixMilli(), counter)
 }
+
+func timestampNow() string {
+	return fmt.Sprintf("%d", time.Now().UnixMilli())
+}

@@ -60,7 +60,7 @@ func (h *ChatHandler) approveConfirmation(
 	pending.Request.ContextHints["workspace_first_seen"] = "false"
 	pending.Request.ConfirmationDecision = &decision
 	service.ApplyCheckpointResume(&pending.Request, pending.CheckpointID)
-	go h.execute(pending.Request)
+	go service.Execute(pending.Request, h.runtimeClient, h.eventBus, h.confirmationStore, h.executionRegistry)
 	writeConfirmationResponse(w, http.StatusAccepted, decision)
 }
 
