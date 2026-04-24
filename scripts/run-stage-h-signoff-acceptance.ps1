@@ -33,13 +33,26 @@ $gateVerify = Get-Content -Raw $gateVerifyPath
 $warningZh = '预警'
 $devReadyZh = '开发阶段通过'
 $signoffSummaryZh = 'Gate-H 当前已完成开发阶段聚合复核，但上线前验收未完成，暂不可签收。'
-$signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景和 H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
+
+# H-02 人工接管手册检测
+$highRiskGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\high-risk-config-write.md'
+$permissionGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\permission-elevation-required.md'
+$h02ManualGuidesReady = (Test-Path $highRiskGuide) -and (Test-Path $permissionGuide)
+
+if ($h02ManualGuidesReady) {
+  $signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景已由永久人工接管手册覆盖，待主控确认；H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
+  $h02TitleZh = 'H-02 永久人工接管手册已补齐，待主控确认可替代 runtime 验收'
+  $h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 已由永久人工接管手册覆盖，当前待主控裁决是否可替代 runtime 验证。'
+  $reopen1Zh = 'H-02 主控确认永久人工接管手册可替代 runtime 验收，或完成高风险场景的上线前 runtime 验收。'
+} else {
+  $signoffReasonZh = 'Gate-H 已达到开发阶段 ready；H-02 高风险/权限场景和 H-03 长期校准仍需上线前验收，因此 signoff_ready=false。'
+  $h02TitleZh = 'H-02 上线前 runtime 验收待补'
+  $h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 仍需 runtime 验证或永久人工接管手册。'
+  $reopen1Zh = 'H-02 完成高风险配置写入和权限类场景的上线前 runtime 验收。'
+}
 $signoffStrengthZh = '开发阶段通过，上线前不可签收'
-$h02TitleZh = 'H-02 上线前 runtime 验收待补'
-$h02DetailZh = '高风险配置写入场景 C-B~C-F 与权限类场景 P-C/P-D 仍需 runtime 验证或永久人工接管手册。'
 $h03TitleZh = 'H-03 上线前长期校准待补'
 $h03DetailZh = 'manual-review 剩余结构化回指缺口、命中有效性分布长期校准和多评审制度化流程仍需补齐。'
-$reopen1Zh = 'H-02 完成高风险配置写入和权限类场景的上线前 runtime 验收。'
 $reopen2Zh = 'H-03 完成 manual-review 缺口闭合、长期校准或正式多评审机制验证。'
 
 $report = [ordered]@{

@@ -34,6 +34,8 @@
    - `tmp/stage-h-remediation/h02-baijiacms-homepage-check-20260421.json`
    - `tmp/stage-h-remediation/h02-baijiacms-sample-pass-summary-20260421.json`
    - `tmp/stage-h-remediation/manual-guides/baijiacms-db-prereq-missing.md`
+   - `tmp/stage-h-remediation/manual-guides/high-risk-config-write.md`（`C-B`~`C-F` 高风险配置写入永久人工接管手册）
+   - `tmp/stage-h-remediation/manual-guides/permission-elevation-required.md`（`P-C`/`P-D` 权限提升类永久人工接管手册）
    - `tmp/stage-h-remediation/baijiacms-phpstudy-8088-final-check.json`
    - `tmp/stage-h-remediation/h02-baijiacms-iis-php-blockers-20260420.json`
 4. 聚合回填证据：
@@ -224,6 +226,7 @@ H-02 在以下情况下仍只适合停留在 warning：
    - 已完成 8 条人工接管样本的实测评分证据，`guide_score_avg=4.75/5`。
    - 当前已把剩余 warning 收口为“高风险配置写入边界 + 权限类最小必测验收集”两类签收级缺口。
 3. 当前未覆盖且仍阻塞签收的内容：
-   - 更高风险配置写入的签收级验证。
-   - 更广权限类真实验收的签收级分层验证。
+   - ~~更高风险配置写入的签收级验证。~~ → 已由永久人工接管手册覆盖（`high-risk-config-write.md`）。
+   - ~~更广权限类真实验收的签收级分层验证。~~ → 已由永久人工接管手册覆盖（`permission-elevation-required.md`）。
+   - 上述手册已补齐，但 H-02 仍维持 warning 直至主控确认手册可替代 runtime 验收。
 

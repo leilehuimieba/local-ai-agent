@@ -53,4 +53,5 @@
 - 如需支持更多格式（如 .xlsx、.pptx），可进一步扩展 extract.go
 - RAG 检索：当前使用 Embedding API 向量相似度，需 provider 配置 `embeddings_path` 和 `embedding_model`
 - 向量检索失败或无 embedding 数据时，自动 fallback 到关键词匹配
+- 前端测试：API 层、Store 层、组件层均有单元测试覆盖（24 项通过）
 - 如需向量检索，可引入 sqlite-vec 或迁移到专用向量数据库

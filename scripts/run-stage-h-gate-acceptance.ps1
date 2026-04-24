@@ -57,7 +57,17 @@ $warningZh = '预警'
 $signedOffZh = '已签收'
 $gateSummaryZh = 'Gate-H 当前按开发阶段口径聚合复核：H-01、H-04、H-05 已签收，H-02、H-03 为开发阶段 ready。'
 $gateHSummaryZh = 'Gate-H 当前开发阶段通过，但上线前仍不可签收。'
-$h02BlockerZh = 'H-02 高风险配置写入和权限类场景仍需上线前 runtime 验收。'
+
+# H-02 人工接管手册检测
+$highRiskGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\high-risk-config-write.md'
+$permissionGuide = Join-Path $root 'tmp\stage-h-remediation\manual-guides\permission-elevation-required.md'
+$h02ManualGuidesReady = (Test-Path $highRiskGuide) -and (Test-Path $permissionGuide)
+
+if ($h02ManualGuidesReady) {
+  $h02BlockerZh = 'H-02 高风险配置写入和权限类场景已由永久人工接管手册覆盖，待主控确认可替代 runtime 验收。'
+} else {
+  $h02BlockerZh = 'H-02 高风险配置写入和权限类场景仍需上线前 runtime 验收。'
+}
 $h03BlockerZh = 'H-03 manual-review 结构化回指、命中有效性分布和长期多评审机制仍需上线前补齐。'
 $gateReason1Zh = 'H-02 已达到开发阶段 ready，但上线前需证明高风险自动修复不会越界触发。'
 $gateReason2Zh = 'H-03 已达到开发阶段 ready，但上线前需补长期校准与制度化流程证据。'

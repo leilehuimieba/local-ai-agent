@@ -32,3 +32,7 @@
 | KB-26 | RAG 向量检索优化 | 实现 | done | `ask.go` 优先使用 Embedding 余弦相似度排序，失败 fallback 关键词匹配；Create/Update/Upload 后异步生成 Embedding | `gateway/internal/knowledge/embedding.go`, `gateway/internal/knowledge/ask.go`, `gateway/internal/knowledge/handler.go`, `gateway/internal/knowledge/store.go`, `gateway/internal/config/config.go` |
 | KB-27 | RAG 向量检索单元测试 | 测试 | done | `embedding_test.go` 覆盖 CosineSimilarity + rankItemsKeyword | `gateway/internal/knowledge/embedding_test.go` |
 | KB-28 | RAG 向量检索构建验证 | 验证 | done | `go build` + `go test` + `npm run build` 均通过 | 构建日志 |
+| KB-29 | 前端 Knowledge API 单元测试 | 测试 | done | `api.test.ts` 覆盖 fetch CRUD + search + 错误处理 | `frontend/src/knowledge-base/api.test.ts` |
+| KB-30 | 前端 Knowledge Store 单元测试 | 测试 | done | `store.test.ts` 覆盖 store 所有方法（mock api） | `frontend/src/knowledge-base/store.test.ts` |
+| KB-31 | 前端 KnowledgeBasePanel 组件测试 | 测试 | done | `KnowledgeBasePanel.test.tsx` 覆盖加载/空态/列表/搜索/详情 | `frontend/src/knowledge-base/KnowledgeBasePanel.test.tsx` |
+| KB-32 | 前端测试构建验证 | 验证 | done | `npx vitest run src/knowledge-base/` 24 项全部通过 + `npm run build` 通过 | 构建日志 |
