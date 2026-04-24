@@ -1,14 +1,12 @@
 use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
+use crate::events::timestamp_now;
 use crate::knowledge_store::KnowledgeRecord;
 use crate::memory::{MemoryEntry, normalized_memory_entry};
-use crate::memory_object_store::{
-    MemoryObjectRollbackResult, MemoryObjectVersion,
-};
+use crate::memory_object_store::{MemoryObjectRollbackResult, MemoryObjectVersion};
 use crate::observation::ObservationRecord;
 use crate::paths::sqlite_db_path;
 use crate::storage_migration::ensure_workspace_imported;
-use crate::events::timestamp_now;
 use rusqlite::{Connection, params};
 use serde_json::{from_str, to_string};
 use std::collections::BTreeSet;
@@ -31,16 +29,20 @@ pub(crate) fn list_memory_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntr
 }
 
 pub(crate) fn list_current_memory_object_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntry> {
-    with_connection(request, |conn| load_current_memory_object_entries(conn, request))
-        .unwrap_or_default()
+    with_connection(request, |conn| {
+        load_current_memory_object_entries(conn, request)
+    })
+    .unwrap_or_default()
 }
 
 pub(crate) fn list_current_memory_object_entries_limited_sqlite(
     request: &RunRequest,
     limit: usize,
 ) -> Vec<MemoryEntry> {
-    with_connection(request, |conn| load_current_memory_object_entries_limited(conn, request, limit))
-        .unwrap_or_default()
+    with_connection(request, |conn| {
+        load_current_memory_object_entries_limited(conn, request, limit)
+    })
+    .unwrap_or_default()
 }
 
 pub(crate) fn sync_memory_object_entry_sqlite(
@@ -564,11 +566,27 @@ pub(crate) fn load_memory_entries_for_workspace_conn(
     load_memory_entries_for_workspace(conn, workspace_id)
 }
 
-fn upsert_memory_object_version(
+pub(crate) fn upsert_memory_object_version(
     conn: &Connection,
     entry: &MemoryEntry,
 ) -> Result<MemoryObjectVersion, String> {
+    if let Some(version) = load_memory_object_version_for_entry(conn, entry)? {
+        return Ok(version);
+    }
     upsert_memory_object_version_with_restore(conn, entry, "")
+}
+
+fn load_memory_object_version_for_entry(
+    conn: &Connection,
+    entry: &MemoryEntry,
+) -> Result<Option<MemoryObjectVersion>, String> {
+    let object_id = object_id_for_entry(entry);
+    let version_id = version_id_for_entry(entry);
+    match load_memory_object_version_row(conn, &object_id, &version_id) {
+        Ok(version) => Ok(Some(version)),
+        Err(error) if error.contains("Query returned no rows") => Ok(None),
+        Err(error) => Err(error),
+    }
 }
 
 fn upsert_memory_object_version_with_restore(
@@ -581,7 +599,13 @@ fn upsert_memory_object_version_with_restore(
     let canonical_uri = canonical_uri_for_entry(entry);
     insert_memory_object(conn, &object_id, &canonical_uri, entry)?;
     deactivate_current_versions(conn, &object_id)?;
-    insert_memory_object_version(conn, &object_id, &version_id, entry, restored_from_version_id)?;
+    insert_memory_object_version(
+        conn,
+        &object_id,
+        &version_id,
+        entry,
+        restored_from_version_id,
+    )?;
     insert_memory_object_alias(conn, &object_id, &canonical_uri, &entry.created_at)?;
     set_memory_object_current(conn, &object_id, &version_id, &canonical_uri, entry)?;
     Ok(build_memory_object_version(
@@ -844,7 +868,10 @@ fn build_rollback_entry(
         source_event_type: "rollback_applied".to_string(),
         source_artifact_path: String::new(),
         governance_version: "memory-object-rollback-v1".to_string(),
-        governance_reason: format!("回滚到 {target_version_id}", target_version_id = target.version_id),
+        governance_reason: format!(
+            "回滚到 {target_version_id}",
+            target_version_id = target.version_id
+        ),
         governance_source: "memory_object_store.rollback".to_string(),
         governance_at: now.clone(),
         archive_reason: String::new(),

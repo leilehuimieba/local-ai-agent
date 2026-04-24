@@ -239,10 +239,7 @@ mod tests {
     }
 
     fn sample_entry(id: &str, summary: &str) -> MemoryEntry {
-        let order = id
-            .trim_start_matches('v')
-            .parse::<u32>()
-            .unwrap_or(0);
+        let order = id.trim_start_matches('v').parse::<u32>().unwrap_or(0);
         let timestamp = format!("100{order}");
         MemoryEntry {
             id: id.to_string(),

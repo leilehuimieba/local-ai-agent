@@ -12,7 +12,11 @@ pub(crate) fn digest_layer_phrase(digest: &MemoryDigest) -> String {
     if layers.is_empty() {
         "普通长期记忆".to_string()
     } else {
-        format!("{}，对象 {} 条", layers.join(" + "), digest.current_object_count)
+        format!(
+            "{}，对象 {} 条",
+            layers.join(" + "),
+            digest.current_object_count
+        )
     }
 }
 
@@ -27,7 +31,11 @@ pub(crate) fn digest_layer_summary(digest: &MemoryDigest) -> String {
     if layers.is_empty() {
         "普通长期记忆".to_string()
     } else {
-        format!("{}（对象 {} 条）", layers.join(" + "), digest.current_object_count)
+        format!(
+            "{}（对象 {} 条）",
+            layers.join(" + "),
+            digest.current_object_count
+        )
     }
 }
 

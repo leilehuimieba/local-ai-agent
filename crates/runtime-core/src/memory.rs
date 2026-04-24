@@ -2,7 +2,8 @@ use crate::contracts::RunRequest;
 use crate::memory_schema::{MEMORY_GOVERNANCE_VERSION, StructuredMemoryEntry, canonical_kind};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
 use crate::sqlite_store::{
-    list_current_memory_object_entries_sqlite, list_memory_entries_sqlite, write_memory_entry_sqlite,
+    list_current_memory_object_entries_sqlite, list_memory_entries_sqlite,
+    write_memory_entry_sqlite,
 };
 use crate::storage::{append_jsonl, read_jsonl};
 use crate::text::score_text;
@@ -614,7 +615,10 @@ mod tests {
         let entry = ascii_entry("memory-object-1", "alphaobjectcurrent");
         write_memory_entry_sqlite(&request, &entry).unwrap();
         let hits = search_memory_entries(&request, "alphaobjectcurrent", 3);
-        assert!(hits.iter().any(|item| item.source_type == "memory_object_current"));
+        assert!(
+            hits.iter()
+                .any(|item| item.source_type == "memory_object_current")
+        );
     }
 
     #[test]

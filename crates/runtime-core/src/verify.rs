@@ -233,7 +233,12 @@ mod tests {
             &memory_recall_tool_call(),
             &sample_memory_recall_trace("system views + current memory object，对象 2 条"),
         );
-        assert!(report.outcome.summary.contains("system views + current memory object"));
+        assert!(
+            report
+                .outcome
+                .summary
+                .contains("system views + current memory object")
+        );
         assert!(
             report
                 .outcome

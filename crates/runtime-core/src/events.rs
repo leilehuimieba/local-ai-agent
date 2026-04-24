@@ -201,7 +201,10 @@ fn memory_recall_metadata(
     );
     metadata.insert("source_artifact_path".to_string(), String::new());
     metadata.insert("archive_reason".to_string(), String::new());
-    metadata.insert("memory_layer_summary".to_string(), memory_layer_summary(source));
+    metadata.insert(
+        "memory_layer_summary".to_string(),
+        memory_layer_summary(source),
+    );
     metadata.insert(
         "memory_current_object_count".to_string(),
         metadata_value(source, "memory_current_object_count"),
@@ -665,7 +668,11 @@ mod tests {
         metadata.insert("memory_has_current_objects".to_string(), "true".to_string());
         metadata.insert("memory_current_object_count".to_string(), "2".to_string());
         let prompts = prompt_snapshot_parts(&metadata);
-        assert!(prompts.2.contains("记忆分层：system views + current memory object（对象 2 条）"));
+        assert!(
+            prompts
+                .2
+                .contains("记忆分层：system views + current memory object（对象 2 条）")
+        );
     }
 
     #[test]

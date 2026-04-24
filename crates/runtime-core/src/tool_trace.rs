@@ -137,8 +137,16 @@ mod tests {
             None,
             None,
         );
-        assert!(result.summary.contains("system views + current memory object"));
-        assert!(result.reasoning_summary.contains("system views + current memory object"));
+        assert!(
+            result
+                .summary
+                .contains("system views + current memory object")
+        );
+        assert!(
+            result
+                .reasoning_summary
+                .contains("system views + current memory object")
+        );
         let _tool = ToolDefinition {
             tool_name: "memory_recall".to_string(),
             display_name: "召回记忆".to_string(),

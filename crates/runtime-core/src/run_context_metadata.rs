@@ -52,7 +52,10 @@ fn append_context_digest_metadata(
     );
     metadata.insert(
         "memory_current_object_count".to_string(),
-        context.dynamic_block.memory_current_object_count.to_string(),
+        context
+            .dynamic_block
+            .memory_current_object_count
+            .to_string(),
     );
     metadata.insert(
         "knowledge_digest".to_string(),
@@ -263,7 +266,10 @@ mod tests {
         };
         let mut metadata = BTreeMap::new();
         append_context_metadata(&mut metadata, &context);
-        assert_eq!(metadata.get("memory_has_system_views"), Some(&"true".to_string()));
+        assert_eq!(
+            metadata.get("memory_has_system_views"),
+            Some(&"true".to_string())
+        );
         assert_eq!(
             metadata.get("memory_has_current_objects"),
             Some(&"true".to_string())

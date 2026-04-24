@@ -1,7 +1,7 @@
 use crate::contracts::RunRequest;
 use crate::memory::search_memory_entries;
-use crate::sqlite_store::list_current_memory_object_entries_limited_sqlite;
 use crate::memory_views::{SystemViewSummary, select_system_view_summaries};
+use crate::sqlite_store::list_current_memory_object_entries_limited_sqlite;
 use crate::text::summarize_text;
 
 #[derive(Clone, Debug)]
@@ -121,10 +121,8 @@ mod tests {
     }
 
     fn sample_request() -> RunRequest {
-        let root = std::env::temp_dir().join(format!(
-            "memory-recall-{}",
-            crate::events::timestamp_now()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("memory-recall-{}", crate::events::timestamp_now()));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             request_id: "request-test".to_string(),
