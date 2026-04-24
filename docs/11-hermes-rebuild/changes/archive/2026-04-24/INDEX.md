@@ -2,7 +2,19 @@
 
 ## 当日归档
 
-1. [H-modularity-hardening-20260419](H-modularity-hardening-20260419/status.md)
+1. [H-gate-h-signoff-20260416](H-gate-h-signoff-20260416/status.md)
+   - 内容：Gate-H 主控裁决与签收证据收口
+   - 完成项：H-01~H-05 全部签收，H-02/H-03 以风险接受条件替代上线前闭合
+   - 归档原因：Gate-H 已签收，阶段 H 主推进完成
+   - 原始路径：`docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/`
+
+2. [H-runtime-strict-e2e-20260424](H-runtime-strict-e2e-20260424/status.md)
+   - 内容：收紧 runtime 严格 E2E 验收缺口
+   - 完成项：worker 线程修复、验收脚本严格口径、doctor FailOnError、E2E 通过
+   - 归档原因：严格 runtime terminal 闭环已通过
+   - 原始路径：`docs/11-hermes-rebuild/changes/H-runtime-strict-e2e-20260424/`
+
+3. [H-modularity-hardening-20260419](H-modularity-hardening-20260419/status.md)
    - 内容：仓库模块化收敛与热点文件减重
    - 完成项：gateway router.go 按域拆分、runtime-core 热点文件目录化、frontend 热点减重、仓库对外表达与工程护栏补齐
    - 归档原因：四批全部完成并验证通过，无遗留阻塞

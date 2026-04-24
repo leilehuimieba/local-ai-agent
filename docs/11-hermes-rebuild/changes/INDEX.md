@@ -7,15 +7,19 @@
 
 ## 当前活跃 change
 
-1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/status.md)（当前主推进：Gate-H 已签收，等待后续主推进切换）
-2. [H-runtime-strict-e2e-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-runtime-strict-e2e-20260424/status.md)（已收口：严格 runtime E2E 验收通过）
-3. 当前主推进目录以 `current-state.md` 为准：`docs/11-hermes-rebuild/changes/H-gate-h-signoff-20260416/`
+1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-gate-h-signoff-20260416/status.md)（已归档：Gate-H 已签收）
+2. [H-runtime-strict-e2e-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-runtime-strict-e2e-20260424/status.md)（已归档：严格 runtime E2E 已通过）
+3. 当前主推进目录以 `current-state.md` 为准。
 4. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
 5. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
 6. [H-memory-routing-kb-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-routing-kb-20260415/status.md)（已收口：H-05 记忆路由与知识沉淀）
 7. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（已收口：H-04 学习模式最小闭环）
 8. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
 9. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
+
+## 当前活跃 change
+
+1. [I-sustainable-delivery-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/status.md)（阶段 I 主推进：可持续交付与工程治理）
 
 ## 待启动 / 草案 change
 
