@@ -51,9 +51,20 @@ if ($h02ManualGuidesReady) {
   $reopen1Zh = 'H-02 完成高风险配置写入和权限类场景的上线前 runtime 验收。'
 }
 $signoffStrengthZh = '开发阶段通过，上线前不可签收'
-$h03TitleZh = 'H-03 上线前长期校准待补'
-$h03DetailZh = 'manual-review 剩余结构化回指缺口、命中有效性分布长期校准和多评审制度化流程仍需补齐。'
-$reopen2Zh = 'H-03 完成 manual-review 缺口闭合、长期校准或正式多评审机制验证。'
+
+# H-03 结构性缺口说明检测
+$h03GapDoc = Join-Path $root 'tmp\stage-h-mcp-skills\structural-gap-acceptance-20260424.md'
+$h03GapDocReady = Test-Path $h03GapDoc
+
+if ($h03GapDocReady) {
+  $h03TitleZh = 'H-03 结构性缺口已由风险接受条件文档覆盖，待主控确认可替代长期校准'
+  $h03DetailZh = 'manual-review 剩余 4 条、business-task-chain 剩余 6 条、skill-false-positive 剩余 15 条缺口已由结构性缺口说明文档记录，当前待主控裁决是否可替代长期校准验证。'
+  $reopen2Zh = 'H-03 主控确认结构性缺口说明可替代长期校准，或完成 manual-review 缺口闭合与长期校准验证。'
+} else {
+  $h03TitleZh = 'H-03 上线前长期校准待补'
+  $h03DetailZh = 'manual-review 剩余结构化回指缺口、命中有效性分布长期校准和多评审制度化流程仍需补齐。'
+  $reopen2Zh = 'H-03 完成 manual-review 缺口闭合、长期校准或正式多评审机制验证。'
+}
 
 $report = [ordered]@{
   checked_at = (Get-Date).ToString('o')

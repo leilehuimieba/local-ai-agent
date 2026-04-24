@@ -68,7 +68,15 @@ if ($h02ManualGuidesReady) {
 } else {
   $h02BlockerZh = 'H-02 高风险配置写入和权限类场景仍需上线前 runtime 验收。'
 }
-$h03BlockerZh = 'H-03 manual-review 结构化回指、命中有效性分布和长期多评审机制仍需上线前补齐。'
+# H-03 结构性缺口说明检测
+$h03GapDoc = Join-Path $root 'tmp\stage-h-mcp-skills\structural-gap-acceptance-20260424.md'
+$h03GapDocReady = Test-Path $h03GapDoc
+
+if ($h03GapDocReady) {
+  $h03BlockerZh = 'H-03 结构性缺口已由风险接受条件文档覆盖（business=6/false_positive=15/manual_review=4），待主控确认可替代长期校准。'
+} else {
+  $h03BlockerZh = 'H-03 manual-review 结构化回指、命中有效性分布和长期多评审机制仍需上线前补齐。'
+}
 $gateReason1Zh = 'H-02 已达到开发阶段 ready，但上线前需证明高风险自动修复不会越界触发。'
 $gateReason2Zh = 'H-03 已达到开发阶段 ready，但上线前需补长期校准与制度化流程证据。'
 $gateNextStepZh = '开发阶段可继续推进后续任务；上线前需补齐 H-02/H-03 验收后再复跑 Gate-H。'
