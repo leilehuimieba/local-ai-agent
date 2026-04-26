@@ -131,7 +131,10 @@ pub(crate) fn run_finished_summary(
     }
 }
 
-fn run_failed_summary(summary: &str, tool_trace: Option<&crate::capabilities::ToolExecutionTrace>) -> String {
+fn run_failed_summary(
+    summary: &str,
+    tool_trace: Option<&crate::capabilities::ToolExecutionTrace>,
+) -> String {
     let Some(trace) = tool_trace else {
         return summary.to_string();
     };

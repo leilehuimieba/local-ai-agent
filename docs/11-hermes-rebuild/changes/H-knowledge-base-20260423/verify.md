@@ -14,11 +14,16 @@
 - `frontend/src/shell/LeftNav.tsx`
 - `frontend/src/shell/workspaceViewModel.tsx`
 - `frontend/src/App.tsx`
+- `frontend/src/knowledge-base/api.test.ts`
+- `frontend/src/knowledge-base/store.test.ts`
+- `frontend/src/knowledge-base/KnowledgeBasePanel.test.tsx`
 - `gateway/internal/knowledge/store.go`
 - `gateway/internal/knowledge/migrate.go`
 - `gateway/internal/knowledge/store_test.go`
 - `gateway/internal/knowledge/extract.go`
 - `gateway/internal/knowledge/extract_test.go`
+- `gateway/internal/knowledge/embedding.go`
+- `gateway/internal/knowledge/embedding_test.go`
 
 ## 验收标准
 
@@ -28,4 +33,5 @@
 4. 数据刷新后仍保留（SQLite）
 5. 文件上传支持 .txt / .md / .pdf / .docx
 6. RAG 问答优先使用向量检索（Embedding 余弦相似度），失败自动 fallback 关键词匹配
+7. 前端 API/Store/Panel 均有单元测试，vitest 全绿
 5. 空状态友好提示

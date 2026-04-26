@@ -19,6 +19,7 @@ pub(crate) struct MemoryObjectVersion {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct MemoryObjectDiff {
     pub object_id: String,
     pub from_version_id: String,
@@ -32,6 +33,7 @@ pub(crate) struct MemoryObjectDiff {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct MemoryObjectRollbackResult {
     pub object_id: String,
     pub target_version_id: String,
@@ -39,6 +41,7 @@ pub(crate) struct MemoryObjectRollbackResult {
     pub canonical_uri: String,
 }
 
+#[allow(dead_code)]
 pub(crate) fn sync_memory_object_entry(
     request: &RunRequest,
     entry: &MemoryEntry,
@@ -46,6 +49,7 @@ pub(crate) fn sync_memory_object_entry(
     sync_memory_object_entry_sqlite(request, entry)
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_versions(
     request: &RunRequest,
     object_id: &str,
@@ -53,6 +57,7 @@ pub(crate) fn list_memory_object_versions(
     list_memory_object_versions_sqlite(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn get_memory_object_history(
     request: &RunRequest,
     object_id: &str,
@@ -60,10 +65,12 @@ pub(crate) fn get_memory_object_history(
     list_memory_object_versions(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn list_memory_object_aliases(request: &RunRequest, object_id: &str) -> Vec<String> {
     list_memory_object_aliases_sqlite(request, object_id)
 }
 
+#[allow(dead_code)]
 pub(crate) fn diff_memory_object_versions(
     request: &RunRequest,
     object_id: &str,
@@ -76,6 +83,7 @@ pub(crate) fn diff_memory_object_versions(
     Ok(build_version_diff(object_id, from, to))
 }
 
+#[allow(dead_code)]
 pub(crate) fn rollback_memory_object(
     request: &RunRequest,
     object_id: &str,
@@ -204,8 +212,11 @@ mod tests {
     }
 
     fn sample_request() -> RunRequest {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
         let root = std::env::temp_dir().join(format!(
-            "memory-object-store-{}",
+            "memory-object-store-{}-{}",
+            COUNTER.fetch_add(1, Ordering::SeqCst),
             crate::events::timestamp_now()
         ));
         std::fs::create_dir_all(&root).unwrap();
@@ -236,10 +247,7 @@ mod tests {
     }
 
     fn sample_entry(id: &str, summary: &str) -> MemoryEntry {
-        let order = id
-            .trim_start_matches('v')
-            .parse::<u32>()
-            .unwrap_or(0);
+        let order = id.trim_start_matches('v').parse::<u32>().unwrap_or(0);
         let timestamp = format!("100{order}");
         MemoryEntry {
             id: id.to_string(),

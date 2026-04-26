@@ -1,8 +1,8 @@
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::execution::ActionExecution;
-use crate::memory_layer::{digest_layer_phrase, digest_layer_summary};
 use crate::memory::{MemoryEntry, append_memory_entry, search_memory_entries};
+use crate::memory_layer::{digest_layer_phrase, digest_layer_summary};
 use crate::memory_recall::recall_memory_digest;
 use crate::text::summarize_text;
 
@@ -45,7 +45,11 @@ pub(crate) fn execute_memory_recall(request: &RunRequest, query: &str) -> Action
     }
     ok(
         format!("按需召回记忆：{}", query),
-        format!("已召回 {} 条相关记忆。（{}）", entries.len(), digest_layer_phrase(&digest)),
+        format!(
+            "已召回 {} 条相关记忆。（{}）",
+            entries.len(),
+            digest_layer_phrase(&digest)
+        ),
         format!(
             "已召回相关长期记忆。\n召回层：{}\n\n{}",
             digest_layer_summary(&digest),
@@ -181,9 +185,21 @@ mod tests {
         let request = sample_request("对象摘要");
         write_memory_entry_sqlite(&request, &sample_entry("对象摘要")).unwrap();
         let result = execute_memory_recall(&request, "对象摘要");
-        assert!(result.result_summary.contains("system views + current memory object"));
-        assert!(result.final_answer.contains("召回层：system views + current memory object"));
-        assert!(result.reasoning_summary.contains("本次召回层为system views + current memory object"));
+        assert!(
+            result
+                .result_summary
+                .contains("system views + current memory object")
+        );
+        assert!(
+            result
+                .final_answer
+                .contains("召回层：system views + current memory object")
+        );
+        assert!(
+            result
+                .reasoning_summary
+                .contains("本次召回层为system views + current memory object")
+        );
     }
 
     #[test]
@@ -191,7 +207,11 @@ mod tests {
         let request = sample_request("未命中");
         let result = execute_memory_recall(&request, "未命中");
         assert!(result.result_summary.contains("system views"));
-        assert!(result.reasoning_summary.contains("本次召回层为system views"));
+        assert!(
+            result
+                .reasoning_summary
+                .contains("本次召回层为system views")
+        );
     }
 
     fn sample_request(user_input: &str) -> RunRequest {

@@ -27,18 +27,17 @@ const baseProps: ComponentProps<typeof ChatPanel> = {
 };
 
 describe("ChatPanel", () => {
-  it("在无消息时显示空工作台提示和输入区", () => {
+  it("在无消息时显示空闲工作台和输入区", () => {
     render(<ChatPanel {...baseProps} />);
-    expect(screen.getByText("开始一个任务")).toBeInTheDocument();
-    expect(screen.getByText("Agent Composer")).toBeInTheDocument();
+    expect(screen.getByText("今天想让本地智能体帮你完成什么？")).toBeInTheDocument();
+    expect(screen.getByText("修改项目文件")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("输入任务，按回车发送")).toBeInTheDocument();
   });
 
-  it("在有用户消息时渲染任务输入记录", () => {
+  it("在有用户消息时渲染用户消息", () => {
     const props = { ...baseProps, currentTaskTitle: "核对前端状态", messages: [{ id: "m1", role: "user" as const, content: "请检查工作台布局" }] };
     render(<ChatPanel {...props} />);
-    expect(screen.getByText("任务输入")).toBeInTheDocument();
     expect(screen.getByText("请检查工作台布局")).toBeInTheDocument();
-    expect(screen.getByText("Agent Composer")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("输入任务，按回车发送")).toBeInTheDocument();
   });
 });

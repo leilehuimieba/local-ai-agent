@@ -440,3 +440,13 @@
 - 当前状态：仍为 warning。
 - 当前建议：建议主控评估是否切主推进。
 - 上述建议不等于已经切主推进，不等于 H-03 ready，不等于 Gate-H 可签收。
+
+## 结构性缺口说明（2026-04-24）
+
+1. 已补齐 `tmp/stage-h-mcp-skills/structural-gap-acceptance-20260424.md`，明确：
+   - `business-task-chain` 缺口 6 条、`skill-false-positive` 缺口 15 条、`manual-review` 缺口 4 条。
+   - 所有结构化来源已用尽，缺口无法通过继续补样闭合。
+   - `skill-false-positive` 目标 24 条远超当前可用独立样本数（9 条），属于结构性目标设定问题。
+   - 当前样本已覆盖主要场景，制度化多评审流程已成型。
+   - 上线前接受当前缺口率，以 runtime 观测后续回填替代强制达标。
+2. 该说明文档作为 H-03 上线前风险接受条件的正式记录，不改变 H-03 warning 状态，但可作为 Gate-H 提审时缺口已由文档化口径覆盖的输入。

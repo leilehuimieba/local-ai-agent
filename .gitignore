@@ -11,12 +11,16 @@ target-buildcheck-memory/
 
 # Logs & Temporary
 logs/
-tmp/
+tmp/*
+!tmp/
+!tmp/README.md
 tmp-*.png
 *.log
+frontend/.vite-dev.err
 
 # Project specific
 .playwright-cli/
+.playwright-mcp/
 .env*
 .DS_Store
 
@@ -37,3 +41,4 @@ config/app.json
 data/cache/
 data/sessions/
 data/storage/
+tmp/v1-capability-acceptance/install-env/

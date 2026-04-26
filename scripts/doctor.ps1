@@ -3,7 +3,8 @@ param(
   [int]$GatewayPort = 0,
   [int]$RuntimePort = 0,
   [string]$OutFile = "",
-  [switch]$RequirePass
+  [switch]$RequirePass,
+  [switch]$FailOnError
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,7 +18,7 @@ $configPath = Join-Path $RepoRoot "config\app.json"
 $configExists = Test-Path $configPath
 $config = $null
 if ($configExists) {
-  $config = Get-Content -Raw $configPath | ConvertFrom-Json
+  $config = Get-Content -Raw -Encoding UTF8 $configPath | ConvertFrom-Json
 }
 if ($GatewayPort -le 0 -and $null -ne $config) { $GatewayPort = [int]$config.gateway_port }
 if ($RuntimePort -le 0 -and $null -ne $config) { $RuntimePort = [int]$config.runtime_port }
@@ -107,6 +108,9 @@ if (-not [string]::IsNullOrWhiteSpace($OutFile)) {
   Set-Content -Path $OutFile -Value $json -Encoding UTF8
 }
 Write-Output $json
-if ($RequirePass -and -not $allPassed) {
+if (($RequirePass -or $FailOnError) -and -not $allPassed) {
   throw "doctor checks failed"
+}
+if ($FailOnError -and -not $allPassed) {
+  exit 1
 }

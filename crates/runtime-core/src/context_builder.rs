@@ -323,7 +323,11 @@ fn memory_digest_focus(digest: &MemoryDigest) -> String {
         return String::new();
     }
     let count = digest.current_object_count;
-    format!("记忆入口已按分层装配：{}（对象 {} 条）", layers.join(" + "), count)
+    format!(
+        "记忆入口已按分层装配：{}（对象 {} 条）",
+        layers.join(" + "),
+        count
+    )
 }
 
 fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {

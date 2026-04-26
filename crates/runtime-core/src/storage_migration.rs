@@ -6,8 +6,8 @@ use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{
     insert_knowledge_record, insert_memory_entry, knowledge_count,
-    load_memory_entries_for_workspace_conn, memory_count, memory_object_count,
-    sync_memory_object_entry_sqlite,
+    load_memory_entries_for_workspace_conn, memory_count,
+    upsert_memory_object_version,
 };
 use crate::storage::{overwrite_jsonl, read_jsonl};
 use rusqlite::Connection;
@@ -29,12 +29,9 @@ fn backfill_memory_objects_if_needed(
     if memory_count(conn, &request.workspace_ref.workspace_id)? == 0 {
         return Ok(());
     }
-    if memory_object_count(conn, &request.workspace_ref.workspace_id)? > 0 {
-        return Ok(());
-    }
     for entry in load_memory_entries_for_workspace_conn(conn, &request.workspace_ref.workspace_id)?
     {
-        sync_memory_object_entry_sqlite(request, &entry)?;
+        upsert_memory_object_version(conn, &entry)?;
     }
     Ok(())
 }

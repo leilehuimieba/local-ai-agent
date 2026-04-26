@@ -1,3 +1,8 @@
 @import "./tokens.css";
 @import "./base.css";
-@import "../index.css";
+@import "./app-layout.css";
+@import "./app-components.css";
+@import "./app-views.css";
+@import "./app-confirmations.css";
+@import "./app-home-task.css";
+@import "./app-knowledge-base.css";

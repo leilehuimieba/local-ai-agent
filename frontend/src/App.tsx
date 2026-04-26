@@ -10,27 +10,28 @@ import {
   getRunStateLabel,
   useRuntimeStore,
 } from "./runtime/state";
-import { LeftNav } from "./shell/LeftNav";
 import { AppShell } from "./shell/AppShell";
+import { Drawer } from "./shell/Drawer";
+import { buildHomeViewModel } from "./shell/workspaceViewModel/homeModel";
 import {
-  buildHomeViewModel,
   getSidebarProps,
-  renderBottomPanel,
+  renderDrawerContent,
   renderGlobalLayers,
+  renderMainView,
   renderTopBar,
-  renderWorkspaceContent,
+  TaskLeftNav,
 } from "./shell/workspaceViewModel";
 import { ContextSidebar } from "./workspace/ContextSidebar";
 import { useSettings } from "./settings/useSettings";
 
-export type AppView = "home" | "task" | "logs" | "settings" | "knowledge";
+export type AppView = "task" | "logs" | "release" | "settings" | "knowledge";
 export type RuntimeView = ReturnType<typeof useRuntimeView>;
 export type ViewState = ReturnType<typeof useViewState>;
 export type SettingsApi = ReturnType<typeof useSettings>;
 export type LogsApi = ReturnType<typeof useLogs>;
 export type RuntimeActions = ReturnType<typeof useRuntimeActions>;
 type ConfirmationDecision = "approve" | "reject" | "cancel";
-export type HomeIntent = "auto" | "compose";
+// Home view merged into task view; kept for backward compat in types
 export type WorkspaceAppModel = ReturnType<typeof buildAppModel>;
 
 function App() {
@@ -40,20 +41,24 @@ function App() {
 
 function AppLayout({ app }: { app: ReturnType<typeof useWorkspaceApp> }) {
   const { rightPanelOpen, toggleRightPanel } = app.view;
+  const drawerContent = renderDrawerContent(app);
   return (
     <AppShell
       topbar={renderTopBar(app, rightPanelOpen, toggleRightPanel)}
-      leftNav={
-        <LeftNav
-          currentView={app.view.currentView}
-          onViewChange={app.view.setCurrentView}
-          onNewTask={app.actions.openHomeStart}
-        />
-      }
+      leftNav={<TaskLeftNav app={app} />}
       overlays={renderGlobalLayers(app)}
-      content={renderWorkspaceContent(app)}
+      content={
+        <div className="page-transition-wrapper">
+          {renderMainView(app)}
+        </div>
+      }
       rightPanel={renderRightPanel(app, rightPanelOpen)}
-      bottomPanel={renderBottomPanel(app)}
+      bottomPanel={null}
+      drawer={drawerContent ? (
+        <Drawer title={readDrawerTitle(app.view.currentView)} onClose={() => app.view.setCurrentView("task")}>
+          {drawerContent}
+        </Drawer>
+      ) : null}
     />
   );
 }
@@ -63,7 +68,7 @@ export function useWorkspaceApp(): WorkspaceAppModel {
   const runtime = useRuntimeView();
   const view = useViewState();
   const logs = useLogs(view.currentView === "logs");
-  useHomePreview();
+  // Home view merged into task view — preview no longer needed
   const stream = useRuntimeStream(runtime, view);
   const actions = useAppActions(settingsApi, runtime, view, logs, stream.reconnect);
   return buildAppModel(settingsApi, runtime, view, logs, actions);
@@ -86,23 +91,16 @@ function useRuntimeStream(runtime: RuntimeView, view: ViewState) {
   });
 }
 
-function useHomePreview() {
-  useEffect(() => applyHomePreview(), []);
-}
+// Home preview removed — home view merged into task view
 
 function useViewState() {
   const [currentView, setCurrentView] = useState<AppView>(readPreviewView());
-  const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
-  const [homeIntent, setHomeIntent] = useState<HomeIntent>("auto");
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   return {
-    bottomPanelOpen,
     currentView,
-    homeIntent,
     rightPanelOpen,
-    setBottomPanelOpen,
-    setCurrentView: (nextView: AppView) => updateCurrentView(nextView, setCurrentView, setHomeIntent),
-    showHomeCompose: () => showHomeCompose(setCurrentView, setHomeIntent),
+    setCurrentView: (nextView: AppView) => updateCurrentView(nextView, setCurrentView),
+    showHomeCompose: () => setCurrentView("task"),
     toggleRightPanel: () => setRightPanelOpen((v) => !v),
   };
 }
@@ -196,6 +194,7 @@ function buildActions(
       void settingsApi.changeWorkspace(workspaceId),
     openHomeStart: () => openHomeStart(actions.setComposeValue, view),
     openLogsPage: () => openLogsPage(logs, view),
+    openReleasePage: () => openReleasePage(view),
     openSettingsPage: () => openSettingsPage(view),
     openTaskPage: () => openTaskPage(runtime, view),
     openTaskPageForConfirmation: () => openTaskPageForConfirmation(runtime, view),
@@ -210,10 +209,7 @@ function applyIncomingEvent(
   view: ViewState,
 ) {
   startTransition(() => applyEvent(payload));
-  if (payload.event_type === "confirmation_required" || payload.event_type === "run_failed") {
-    view.setBottomPanelOpen(true);
-  }
-    if (payload.event_type === "confirmation_required") {
+  if (payload.event_type === "confirmation_required") {
     view.setCurrentView("task");
   }
 }
@@ -288,6 +284,13 @@ function readRuntimeError(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function readDrawerTitle(view: AppView) {
+  if (view === "settings") return "设置";
+  if (view === "knowledge") return "知识库";
+  if (view === "release") return "上线向导";
+  return "";
+}
+
 function openLogsPage(logs: LogsApi, view: ViewState) {
   logs.refresh();
   view.setCurrentView("logs");
@@ -301,18 +304,20 @@ function openHomeStart(
   view.showHomeCompose();
 }
 
+function openReleasePage(view: ViewState) {
+  view.setCurrentView("release");
+}
+
 function openSettingsPage(view: ViewState) {
   view.setCurrentView("settings");
 }
 
-function openTaskPage(runtime: RuntimeView, view: ViewState) {
+function openTaskPage(_runtime: RuntimeView, view: ViewState) {
   view.setCurrentView("task");
-  if (shouldOpenBottomPanel(runtime)) view.setBottomPanelOpen(true);
 }
 
-function openTaskPageForConfirmation(runtime: RuntimeView, view: ViewState) {
+function openTaskPageForConfirmation(_runtime: RuntimeView, view: ViewState) {
   view.setCurrentView("task");
-  view.setBottomPanelOpen(true);
   focusConfirmationCard();
 }
 
@@ -325,30 +330,14 @@ function openTaskPageWithDraft(
   view.setCurrentView("task");
 }
 
-function shouldOpenBottomPanel(runtime: RuntimeView) {
-  return Boolean(
-    runtime.confirmation
-    || runtime.runState === "failed"
-    || runtime.events.length > 0,
-  );
-}
-
 function updateCurrentView(
   nextView: AppView,
   setCurrentView: (view: AppView) => void,
-  setHomeIntent: (value: HomeIntent) => void,
 ) {
-  setHomeIntent("auto");
   setCurrentView(nextView);
 }
 
-function showHomeCompose(
-  setCurrentView: (view: AppView) => void,
-  setHomeIntent: (value: HomeIntent) => void,
-) {
-  setHomeIntent("compose");
-  setCurrentView("home");
-}
+// showHomeCompose removed — home view merged into task view
 
 function applyHomePreview() {
   const preview = readHomePreview();
@@ -368,8 +357,8 @@ function readHomePreview() {
 
 function readPreviewView(): AppView {
   const value = new URLSearchParams(window.location.search).get("view");
-  if (value === "task" || value === "logs" || value === "settings") return value;
-  return "home";
+  if (value === "logs" || value === "release" || value === "settings" || value === "knowledge") return value;
+  return "task";
 }
 
 function applyFirstUsePreview() {
@@ -502,9 +491,6 @@ function renderRightPanel(app: WorkspaceAppModel, rightPanelOpen: boolean) {
   if (!rightPanelOpen) return null;
   if (app.view.currentView === "task") {
     return <ContextSidebar {...getSidebarProps(app, "task")} />;
-  }
-  if (app.view.currentView === "home") {
-    return <ContextSidebar {...getSidebarProps(app, "home")} />;
   }
   return null;
 }

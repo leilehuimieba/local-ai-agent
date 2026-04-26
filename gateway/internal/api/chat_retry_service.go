@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/service"
 	"local-agent/gateway/internal/state"
 )
 
@@ -22,7 +23,7 @@ func decodeRetryPayload(r *http.Request) (ChatRetryRequest, error) {
 }
 
 func (h *ChatHandler) buildRetryRunRequest(payload ChatRetryRequest) (contracts.RunRequest, error) {
-	record, err := h.retryCheckpoint(payload)
+	record, err := service.RetryCheckpoint(h.repoRoot, payload.RunID, payload.SessionID, payload.CheckpointID)
 	if err != nil {
 		return contracts.RunRequest{}, err
 	}
@@ -36,60 +37,10 @@ func (h *ChatHandler) buildRetryRunRequest(payload ChatRetryRequest) (contracts.
 	request.SessionID = payload.SessionID
 	request.ProviderRef = providerRef
 	request.ConfirmationDecision = nil
-	request.ContextHints = h.withKnowledgeHints(copyContextHints(request.ContextHints))
-	ensureContextBudgetHints(request.ContextHints)
-	applyRetryCheckpointResume(&request, record.CheckpointID)
+	request.ContextHints = service.WithKnowledgeHints(copyContextHints(request.ContextHints), h.appConfig.Siyuan)
+	service.EnsureContextBudgetHints(request.ContextHints)
+	service.ApplyRetryCheckpointResume(&request, record.CheckpointID)
 	return request, nil
-}
-
-func (h *ChatHandler) retryCheckpoint(payload ChatRetryRequest) (state.RuntimeCheckpointRecord, error) {
-	store := state.NewRuntimeCheckpointStore(h.repoRoot)
-	record, err := store.FindRetryable(payload.RunID, payload.SessionID, payload.CheckpointID)
-	if err != nil {
-		return state.RuntimeCheckpointRecord{}, err
-	}
-	return validateRetryCheckpoint(payload, record)
-}
-
-func validateRetryCheckpoint(
-	payload ChatRetryRequest,
-	record state.RuntimeCheckpointRecord,
-) (state.RuntimeCheckpointRecord, error) {
-	if record.SessionID != payload.SessionID || record.RunID != payload.RunID {
-		return state.RuntimeCheckpointRecord{}, fmt.Errorf("checkpoint 与当前会话或运行不匹配")
-	}
-	if !record.Resumable || record.ResumeReason != "retryable_failure" {
-		return state.RuntimeCheckpointRecord{}, fmt.Errorf("当前 checkpoint 不支持失败重试")
-	}
-	return record, nil
-}
-
-func applyCheckpointResume(request *contracts.RunRequest, checkpointID string) {
-	if checkpointID == "" {
-		return
-	}
-	request.ResumeFromCheckpointID = checkpointID
-	request.ResumeStrategy = "after_confirmation"
-}
-
-func applyRetryCheckpointResume(request *contracts.RunRequest, checkpointID string) {
-	if checkpointID == "" {
-		return
-	}
-	request.ResumeFromCheckpointID = checkpointID
-	request.ResumeStrategy = "retry_failure"
-}
-
-func ensureContextBudgetHints(hints map[string]string) {
-	if hints == nil {
-		return
-	}
-	if _, ok := hints["context_budget_tokens"]; !ok {
-		hints["context_budget_tokens"] = "512000"
-	}
-	if _, ok := hints["codex_context_tokens"]; !ok {
-		hints["codex_context_tokens"] = hints["context_budget_tokens"]
-	}
 }
 
 func writeRetryError(w http.ResponseWriter, err error) {

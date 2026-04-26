@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type AppShellProps = {
   topbar: ReactNode;
@@ -7,6 +7,7 @@ type AppShellProps = {
   content: ReactNode;
   rightPanel: ReactNode;
   bottomPanel: ReactNode;
+  drawer: ReactNode;
 };
 
 export function AppShell(props: AppShellProps) {
@@ -15,7 +16,7 @@ export function AppShell(props: AppShellProps) {
     <div className="app-layout">
       <header className="app-topbar">{props.topbar}</header>
       <div className="app-body">
-        {props.leftNav}
+        {props.leftNav ? <div className="app-left-nav">{props.leftNav}</div> : null}
         <div className="app-main">
           {props.overlays}
           <main className="app-content">{props.content}</main>
@@ -25,6 +26,7 @@ export function AppShell(props: AppShellProps) {
           <aside className="app-right-panel">{props.rightPanel}</aside>
         ) : null}
       </div>
+      {props.drawer}
     </div>
   );
 }

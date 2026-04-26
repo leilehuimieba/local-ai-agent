@@ -10,12 +10,12 @@ import {
 export const knowledgeStore = {
   async getAll(): Promise<KnowledgeItem[]> {
     const response = await fetchKnowledgeItems();
-    return response.items;
+    return response.items || [];
   },
 
   async getById(id: string): Promise<KnowledgeItem | undefined> {
     const response = await fetchKnowledgeItems();
-    return response.items.find((i) => i.id === id);
+    return (response.items || []).find((i) => i.id === id);
   },
 
   async add(
@@ -58,31 +58,33 @@ export const knowledgeStore = {
   async search(query: string): Promise<KnowledgeItem[]> {
     if (!query.trim()) {
       const response = await fetchKnowledgeItems();
-      return response.items;
+      return response.items || [];
     }
     const response = await searchKnowledgeItems(query.trim());
-    return response.items;
+    return response.items || [];
   },
 
   async filterByCategory(category: string): Promise<KnowledgeItem[]> {
     const response = await fetchKnowledgeItems();
-    if (!category || category === "全部") return response.items;
-    return response.items.filter((i) => i.category === category);
+    const items = response.items || [];
+    if (!category || category === "全部") return items;
+    return items.filter((i) => i.category === category);
   },
 
   async filterByTag(tag: string): Promise<KnowledgeItem[]> {
     const response = await fetchKnowledgeItems();
-    if (!tag) return response.items;
-    return response.items.filter((i) => i.tags.includes(tag));
+    const items = response.items || [];
+    if (!tag) return items;
+    return items.filter((i) => (i.tags || []).includes(tag));
   },
 
   async getCategories(): Promise<string[]> {
     const response = await fetchKnowledgeItems();
-    return ["全部", ...response.categories];
+    return ["全部", ...(response.categories || [])];
   },
 
   async getTags(): Promise<string[]> {
     const response = await fetchKnowledgeItems();
-    return response.tags;
+    return response.tags || [];
   },
 };

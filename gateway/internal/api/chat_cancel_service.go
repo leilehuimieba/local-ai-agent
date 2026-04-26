@@ -21,7 +21,7 @@ func (h *ChatHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if !h.cancelExecution(payload.SessionID, payload.RunID) {
+	if !h.executionRegistry.Cancel(payload.SessionID, payload.RunID) {
 		http.Error(w, "run not running", http.StatusNotFound)
 		return
 	}
