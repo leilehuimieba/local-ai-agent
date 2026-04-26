@@ -18,7 +18,7 @@ $configPath = Join-Path $RepoRoot "config\app.json"
 $configExists = Test-Path $configPath
 $config = $null
 if ($configExists) {
-  $config = Get-Content -Raw $configPath | ConvertFrom-Json
+  $config = Get-Content -Raw -Encoding UTF8 $configPath | ConvertFrom-Json
 }
 if ($GatewayPort -le 0 -and $null -ne $config) { $GatewayPort = [int]$config.gateway_port }
 if ($RuntimePort -le 0 -and $null -ne $config) { $RuntimePort = [int]$config.runtime_port }

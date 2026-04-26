@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -181,13 +182,38 @@ func spawnRuntimeProcess(root string, env []string, logPath string) error {
 
 func spawnGatewayProcess(root string, gatewayDir string, env []string, logPath string) error {
 	binary := filepath.Join(root, "gateway", executableName("server"))
-	if fileExists(binary) {
-		return spawnProcess(root, env, logPath, binary)
-	}
-	if err := runCommand(gatewayDir, env, filepath.Join(root, "logs", "gateway-build.log"), "go", "build", "-o", executableName("server"), "./cmd/server"); err != nil {
-		return err
+	if !fileExists(binary) || gatewayBuildStale(gatewayDir, binary) {
+		if err := buildGateway(root, gatewayDir, env); err != nil {
+			return err
+		}
 	}
 	return spawnProcess(root, env, logPath, binary)
+}
+
+func buildGateway(root string, gatewayDir string, env []string) error {
+	logPath := filepath.Join(root, "logs", "gateway-build.log")
+	return runCommand(gatewayDir, env, logPath, "go", "build", "-o", executableName("server"), "./cmd/server")
+}
+
+func gatewayBuildStale(gatewayDir string, binary string) bool {
+	binaryInfo, err := os.Stat(binary)
+	if err != nil {
+		return true
+	}
+	return hasNewerFile(filepath.Join(gatewayDir, "cmd"), binaryInfo.ModTime(), ".go") ||
+		hasNewerFile(filepath.Join(gatewayDir, "internal"), binaryInfo.ModTime(), ".go")
+}
+
+func hasNewerFile(root string, builtAt time.Time, suffix string) bool {
+	stale := false
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if stale || err != nil || info == nil || info.IsDir() {
+			return nil
+		}
+		stale = strings.HasSuffix(path, suffix) && info.ModTime().After(builtAt)
+		return nil
+	})
+	return stale
 }
 
 func frontendBuildStale(root string, indexFile string) bool {
@@ -341,8 +367,8 @@ func gatewayURL(port int) string {
 }
 
 type launcherSystemInfo struct {
-	RepoRoot     string `json:"repo_root"`
-	FormalEntry  string `json:"formal_entry"`
+	RepoRoot      string `json:"repo_root"`
+	FormalEntry   string `json:"formal_entry"`
 	RuntimeStatus struct {
 		OK bool `json:"ok"`
 	} `json:"runtime_status"`
