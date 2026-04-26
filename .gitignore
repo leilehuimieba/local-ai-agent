@@ -20,6 +20,7 @@ frontend/.vite-dev.err
 
 # Project specific
 .playwright-cli/
+.playwright-mcp/
 .env*
 .DS_Store
 
