@@ -18,7 +18,7 @@ function createProps() {
     systemCard: { judgement: "稳定", connection: "已连接", mode: "standard", workspace: "默认工作区" },
     blockCard: null,
     recentActivities: [{ id: "a-1", label: "最近任务", text: "补齐前端测试" }],
-    onComposeValueChange: vi.fn(), onOpenLogsPage: vi.fn(), onReconnect: vi.fn(), onOpenSettingsPage: vi.fn(),
+    onComposeValueChange: vi.fn(), onOpenLogsPage: vi.fn(), onOpenReleasePage: vi.fn(), onReconnect: vi.fn(), onOpenSettingsPage: vi.fn(),
     onOpenTaskPage: vi.fn(), onOpenTaskPageForConfirmation: vi.fn(), onPrefillExample: vi.fn(), onSubmit: vi.fn(),
   };
 }
@@ -27,7 +27,8 @@ describe("WorkbenchOverview", () => {
   it("首屏模式渲染快速开始与环境信息", () => {
     const props = createProps();
     render(<WorkbenchOverview {...props} />);
-    expect(screen.getByRole("heading", { level: 1, name: "今天想让本地智能体帮你完成什么？" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "把本地项目放心交给我推进" })).toBeInTheDocument();
+    expect(screen.getByText("从竞品迁移过来，可以先试这些")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /快速检查/ }));
     expect(props.onPrefillExample).toHaveBeenCalledWith("检查当前项目问题");
   });
@@ -38,6 +39,8 @@ describe("WorkbenchOverview", () => {
     expect(screen.getAllByText("补齐测试").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /处理待确认动作/ }));
     expect(props.onOpenTaskPageForConfirmation).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /准备上线前检查/ }));
+    expect(props.onOpenReleasePage).toHaveBeenCalledTimes(1);
   });
 
   it("阻塞模式显示建议动作并跳转设置", () => {

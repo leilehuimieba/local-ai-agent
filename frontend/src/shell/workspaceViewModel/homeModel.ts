@@ -1,4 +1,4 @@
-﻿import { readRunStateNextStep } from "../../chat/chatResultModel";
+import { readRunStateNextStep } from "../../chat/chatResultModel";
 import { isBusyRunState, useRuntimeStore } from "../../runtime/state";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../../shared/contracts";
 import type { RuntimeView } from "../../App";
@@ -34,6 +34,7 @@ export function buildHomeViewModel(
     recentActivities: readRecentActivities(app.runtime.events),
     onComposeValueChange: useRuntimeStore.getState().setComposeValue,
     onOpenLogsPage: app.actions.openLogsPage,
+    onOpenReleasePage: app.actions.openReleasePage,
     onReconnect: app.actions.handleReconnect,
     onOpenSettingsPage: app.actions.openSettingsPage,
     onOpenTaskPage: app.actions.openTaskPage,
@@ -48,13 +49,14 @@ function readHomeStateKind(
   block: HomeBlock | null,
 ): HomeStateKind {
   if (block) return "blocked" as HomeStateKind;
-  if (app.view.homeIntent === "compose") return "first_use" as HomeStateKind;
   return hasRecoverableContext(app.runtime) ? "resume" : "first_use";
 }
 
 function readHomeBlock(
   app: Pick<AppModel, "connectionLabel" | "runtime" | "settingsApi">,
 ): HomeBlock | null {
+  const preview = new URLSearchParams(window.location.search).get("home_preview");
+  if (preview === "first_use" || preview === "resume") return null;
   const settings = app.settingsApi.settings;
   if (!settings && app.settingsApi.bootstrapError) {
     return createBlock("settings", "设置当前未成功加载", "当前基础配置没有正常加载，建议先检查设置页和运行环境。", app.settingsApi.bootstrapError);

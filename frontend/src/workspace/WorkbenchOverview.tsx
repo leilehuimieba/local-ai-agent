@@ -1,4 +1,4 @@
-﻿import { FormEvent } from "react";
+import { FormEvent } from "react";
 
 type HomeStateKind = "first_use" | "resume" | "blocked";
 
@@ -37,6 +37,7 @@ type WorkbenchOverviewProps = {
   recentActivities: Array<{ id: string; label: string; text: string }>;
   onComposeValueChange: (value: string) => void;
   onOpenLogsPage: () => void;
+  onOpenReleasePage: () => void;
   onReconnect: () => void;
   onOpenSettingsPage: () => void;
   onOpenTaskPage: () => void;
@@ -81,8 +82,8 @@ function readHeroCopy(props: WorkbenchOverviewProps) {
     };
   }
   return {
-    title: "今天想让本地智能体帮你完成什么？",
-    subtitle: "它可以执行命令、处理文件、调用本地程序，并把过程和结果展示清楚。",
+    title: "把本地项目放心交给我推进",
+    subtitle: "从竞品迁移过来时，你不需要学习内部概念：直接说目标，我会理解项目状态、说明影响范围、执行修改并留下验证证据。",
   };
 }
 
@@ -95,13 +96,13 @@ function HomeComposer(props: WorkbenchOverviewProps) {
         name="home_task_input"
         rows={4}
         value={props.composeValue}
-        placeholder="例如：帮我检查这个项目为什么构建失败，并给出最小修改方案"
+        placeholder="例如：跑上线前检查；如果失败，请说明原因、影响范围和建议修复"
         onChange={(event) => props.onComposeValueChange(event.target.value)}
       />
       <div className="home-composer-footer">
-        <p>提交后会进入任务页，持续展示执行过程和结果。</p>
+        <p>提交后会进入任务页，默认先理解状态，再执行、验证并整理结果。</p>
         <button type="submit" disabled={disabled}>
-          {props.isSubmitting ? "开始任务中" : "开始任务"}
+          {props.isSubmitting ? "正在接手" : "交给本地智能体"}
         </button>
       </div>
     </form>
@@ -117,7 +118,7 @@ function HomeQuickActions(props: WorkbenchOverviewProps) {
 function FirstUseActions(props: WorkbenchOverviewProps) {
   return (
     <section className="home-quick-actions" aria-label="快速开始">
-      <h2 className="sr-only">快速开始</h2>
+      <h2 className="home-section-title">从竞品迁移过来，可以先试这些</h2>
       {props.examples.map((item) => (
         <button
           key={item.id}
@@ -145,12 +146,12 @@ function ResumeActions(props: WorkbenchOverviewProps) {
         <span>回到任务主线程继续推进</span>
       </button>
       <button type="button" className="home-action-card" onClick={props.onOpenLogsPage}>
-        <strong>查看记录</strong>
-        <span>查看历史复盘和事件轨迹</span>
+        <strong>查看工作历史</strong>
+        <span>查看上次做了什么、验证是否通过</span>
       </button>
-      <button type="button" className="home-action-card" onClick={() => props.onPrefillExample("")}>
-        <strong>新建任务</strong>
-        <span>开始一个全新的任务</span>
+      <button type="button" className="home-action-card" onClick={props.onOpenReleasePage}>
+        <strong>准备上线前检查</strong>
+        <span>生成检查清单并执行关键验证</span>
       </button>
     </section>
   );
@@ -167,8 +168,8 @@ function BlockedActions(props: WorkbenchOverviewProps) {
         <span>{props.blockCard?.detail || "请先处理阻塞问题"}</span>
       </button>
       <button type="button" className="home-action-card" onClick={props.onOpenLogsPage}>
-        <strong>查看记录</strong>
-        <span>查看最近错误和诊断信息</span>
+        <strong>查看工作历史</strong>
+        <span>查看最近错误、影响范围和诊断信息</span>
       </button>
     </section>
   );

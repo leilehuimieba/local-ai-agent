@@ -166,6 +166,7 @@ func NewRouter(
 	registerLearningRoutes(mux, memoryDeps)
 	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore)
 	registerLogsRoutes(mux, repoRoot, cfg.RuntimePort, eventBus)
+	registerReleaseRoutes(mux, repoRoot)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
 	knowledge.NewHandler(repoRoot).RegisterRoutes(mux, settingsStore, repoRoot, cfg)

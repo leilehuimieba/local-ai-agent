@@ -1,12 +1,13 @@
-# Hermes Change 索引
+﻿# Hermes Change 索引
 
-更新时间：2026-04-24
+更新时间：2026-04-26
 
 这个文件用于提供 change 目录导航。
 "当前阶段 / 当前 Gate / 当前活跃 change"的状态统一以 `docs/11-hermes-rebuild/current-state.md` 为准。
 
 ## 当前活跃 change
 
+1. [M-productization-release-wizard-20260426](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/M-productization-release-wizard-20260426/status.md)（产品化封装上线向导：上线前检查、安装包构建、Doctor 诊断、发布候选验证）
 1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-gate-h-signoff-20260416/status.md)（已归档：Gate-H 已签收）
 2. [H-runtime-strict-e2e-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-runtime-strict-e2e-20260424/status.md)（已归档：严格 runtime E2E 已通过）
 3. 当前主推进目录以 `current-state.md` 为准。
@@ -19,7 +20,11 @@
 
 ## 当前活跃 change
 
-1. [I-sustainable-delivery-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/status.md)（阶段 I 主推进：可持续交付与工程治理）
+1. [M-productization-release-wizard-20260426](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/M-productization-release-wizard-20260426/status.md)（产品化封装上线向导：上线前检查、安装包构建、Doctor 诊断、发布候选验证）
+1. [L-competitor-onboarding-20260426](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/L-competitor-onboarding-20260426/status.md)（竞品用户迁移体验优化：新手引导、能力说明、工作历史与上线前入口）
+2. [K-frontend-chat-redesign-20260425](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/K-frontend-chat-redesign-20260425/status.md)（前端聊天体验重新设计：ChatGPT 式交互 + 记录页简化）
+2. [J-frontend-unified-workspace-20260425](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/J-frontend-unified-workspace-20260425/status.md)（前端工作台统一：home+task 合并 + 导航重组，已收口）
+3. [I-sustainable-delivery-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/status.md)（阶段 I 主推进：可持续交付与工程治理，已收口）
 
 ## 待启动 / 草案 change
 
@@ -51,4 +56,6 @@
 1. 新建中等及以上变更后，将其加入索引。
 2. 切换主推进项时，先更新 `current-state.md`，再更新本索引。
 3. 某个 change 完成并收口后，移动到 `archive/<日期>/` 并补归档索引。
+
+
 

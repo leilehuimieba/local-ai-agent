@@ -1,11 +1,23 @@
 /* === Home Workspace Simplified === */
 .home-workspace {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  padding: var(--space-8) var(--space-4);
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-4);
+  animation: page-enter 0.5s var(--ease-standard) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-hero {
@@ -13,16 +25,23 @@
 }
 
 .home-hero h1 {
-  font-size: var(--text-xl);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-weight: 700;
-  margin: 0 0 var(--space-2);
-  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--text-primary) 60%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .home-hero p {
   color: var(--text-secondary);
   margin: 0;
   font-size: var(--text-md);
+  line-height: 1.6;
 }
 
 .home-composer {
@@ -42,6 +61,7 @@
   font-size: var(--text-base);
   line-height: 1.6;
   resize: vertical;
+  transition: border-color 200ms var(--ease-standard), box-shadow 200ms var(--ease-standard);
 }
 
 .home-composer textarea::placeholder {
@@ -50,7 +70,8 @@
 
 .home-composer textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 20px rgba(255, 107, 53, 0.08);
+  outline: none;
 }
 
 .home-composer-footer {
@@ -67,22 +88,42 @@
 }
 
 .home-composer-footer button {
-  padding: 10px 24px;
+  padding: 10px 28px;
   border-radius: var(--radius-md);
   background: var(--accent);
   color: var(--text-inverse);
   font-weight: 600;
   font-size: var(--text-sm);
-  transition: background 160ms var(--ease-standard);
+  font-family: var(--font-sans);
+  transition: all 200ms var(--ease-standard);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-composer-footer button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.15) 100%);
+  opacity: 0;
+  transition: opacity 200ms var(--ease-standard);
 }
 
 .home-composer-footer button:hover {
   background: var(--accent-hover);
+  box-shadow: var(--shadow-glow-sm);
+  transform: translateY(-1px);
+}
+
+.home-composer-footer button:hover::after {
+  opacity: 1;
 }
 
 .home-composer-footer button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .home-quick-actions {
@@ -91,42 +132,74 @@
   gap: var(--space-3);
 }
 
+.home-section-title {
+  flex: 0 0 100%;
+  margin: 0 0 var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 .home-example-chip {
-  padding: 8px 14px;
+  padding: 8px 16px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-pill);
   background: var(--bg-surface);
   color: var(--text-secondary);
   font-size: var(--text-sm);
+  font-family: var(--font-sans);
   cursor: pointer;
-  transition: all 160ms var(--ease-standard);
+  transition: all 200ms var(--ease-standard);
 }
 
 .home-example-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-soft);
+  box-shadow: var(--shadow-glow-sm);
+  transform: translateY(-1px);
 }
 
 .home-action-card {
   flex: 1;
   min-width: 160px;
-  padding: var(--space-4);
+  padding: var(--space-5);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background: var(--bg-surface);
   text-align: left;
   cursor: pointer;
-  transition: all 160ms var(--ease-standard);
+  transition: all 200ms var(--ease-standard);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-action-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-cyan));
+  opacity: 0;
+  transition: opacity 200ms var(--ease-standard);
 }
 
 .home-action-card:hover {
   border-color: var(--border-focus);
   background: var(--bg-elevated);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.home-action-card:hover::before {
+  opacity: 1;
 }
 
 .home-action-card strong {
   display: block;
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   color: var(--text-primary);
   margin-bottom: var(--space-1);
@@ -149,35 +222,6 @@
 
 
 /* === Task Page Simplified === */
-
-/* Stream shell: remove card wrapper */
-.task-chat-only .stream-shell {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-/* Stream header: lighter weight */
-.stream-header-simple {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.stream-header-simple strong {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-/* Thread meta: compact */
-.thread-meta {
-  padding: 8px 16px 0;
-}
-
-.thread-meta strong {
-  font-size: var(--text-base);
-  font-weight: 600;
-}
 
 /* Thread record: unified background, no gradient */
 .chat-panel-simple .thread-record {
@@ -275,18 +319,18 @@
 }
 
 .chat-panel-simple .state-record-running {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--accent-cyan);
+  background: var(--accent-cyan-soft);
 }
 
 .chat-panel-simple .state-record-failed {
   border-color: var(--status-error);
-  background: rgba(248, 113, 113, 0.08);
+  background: rgba(255, 95, 87, 0.08);
 }
 
 .chat-panel-simple .state-record-completed {
   border-color: var(--status-success);
-  background: rgba(74, 222, 128, 0.08);
+  background: rgba(61, 220, 132, 0.08);
 }
 
 /* Remove gradient stack backgrounds */

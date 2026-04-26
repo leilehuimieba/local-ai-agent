@@ -1,8 +1,9 @@
-﻿import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
-import { readRunStateNextStep, readThreadStatusClass } from "../chat/chatResultModel";
+
 import { ChatPanel } from "../chat/ChatPanel";
 import { LogsPanel } from "../logs/LogsPanel";
+import { ReleaseWizardPanel } from "../release/ReleaseWizardPanel";
 import {
   getLatestFailureEvent,
   isBusyRunState,
@@ -12,11 +13,10 @@ import {
 } from "../runtime/state";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import { KnowledgeBasePanel } from "../knowledge-base/KnowledgeBasePanel";
-import { BottomPanel } from "../workspace/BottomPanel";
 import { TopBar } from "../workspace/TopBar";
 import { WorkbenchOverview } from "../workspace/WorkbenchOverview";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
-import type { AppView, HomeIntent, LogsApi, RuntimeView, SettingsApi } from "../App";
+import type { AppView, LogsApi, RuntimeView, SettingsApi } from "../App";
 
 export type HomeStateKind = "first_use" | "resume" | "blocked";
 export type HomeAction = "reconnect" | "settings" | "workspace" | "model";
@@ -25,9 +25,6 @@ export type HomeActivity = { id: string; kind: "verification" | "memory" | "tool
 export type ResumeItem = { label: string; value: string };
 type HomeViewState = {
   currentView: AppView;
-  bottomPanelOpen: boolean;
-  homeIntent: HomeIntent;
-  setBottomPanelOpen: (open: boolean) => void;
   setCurrentView: (view: AppView) => void;
   showHomeCompose: () => void;
 };
@@ -41,6 +38,7 @@ type AppActions = {
   handleWorkspaceChange: (workspaceId: string) => void;
   openHomeStart: () => void;
   openLogsPage: () => void;
+  openReleasePage: () => void;
   openSettingsPage: () => void;
   openTaskPage: () => void;
   openTaskPageForConfirmation: () => void;
@@ -77,6 +75,7 @@ export type HomeViewModel = {
   confirmationBanner: { title: string; text: string } | null;
   onComposeValueChange: (value: string) => void;
   onOpenLogsPage: () => void;
+  onOpenReleasePage: () => void;
   onReconnect: () => void;
   onOpenSettingsPage: () => void;
   onOpenTaskPage: () => void;
@@ -102,33 +101,36 @@ type TaskNavEntry = {
 
 export const HOME_EXAMPLES = [
   {
-    id: "fix-file",
-    label: "修改项目文件",
-    prompt: "帮我检查当前项目里最需要修的一个问题，并做最小改动修复",
+    id: "project-status",
+    label: "检查项目状态",
+    prompt: "检查当前项目状态，告诉我现在做到哪、卡在哪里、下一步最小动作是什么",
   },
   {
-    id: "build-debug",
-    label: "执行命令并排错",
-    prompt: "帮我运行构建命令，定位失败原因并给出修复建议",
+    id: "prelaunch-test",
+    label: "上线前检查",
+    prompt: "运行上线前检查；如果失败，请说明原因、影响范围、不影响什么和建议修复",
   },
   {
-    id: "docs-summary",
-    label: "整理项目说明",
-    prompt: "根据 docs 和当前代码，说明这个项目现在做到什么程度",
+    id: "safe-change",
+    label: "安全修改功能",
+    prompt: "帮我修改一个最有价值的小功能；先说明会影响哪些文件，再做最小改动并验证",
   },
   {
-    id: "knowledge-search",
-    label: "检索本地知识",
-    prompt: "从本地文档中检索当前项目的正式需求和验收口径",
+    id: "continue-work",
+    label: "继续上次任务",
+    prompt: "继续上次任务：先读取当前状态和活跃 change，再给出下一步建议",
   },
 ] as const;
 
 export function renderWorkspaceContent(app: AppModel) {
-  if (app.view.currentView === "home") return renderHomeView(app);
-  if (app.view.currentView === "task") return renderTaskView(app);
-  if (app.view.currentView === "logs") return renderLogsView(app);
-  if (app.view.currentView === "knowledge") return renderKnowledgeBaseView(app);
-  return renderSettingsView(app);
+  // Home view merged into task view; drawer handles non-task views
+  return renderTaskView(app);
+}
+
+export function renderDrawerContent(app: AppModel) {
+  if (app.view.currentView === "settings") return <SettingsPanel {...getSettingsPanelProps(app)} />;
+  if (app.view.currentView === "knowledge") return <KnowledgeBasePanel />;
+  return null;
 }
 
 function renderKnowledgeBaseView(_app: AppModel) {
@@ -151,31 +153,28 @@ export function renderHomeView(app: AppModel) {
   );
 }
 
-export function renderBottomPanel(app: AppModel) {
-  if (app.view.currentView !== "task") return null;
-  return <BottomPanel {...getBottomPanelProps(app)} />;
+export function renderGlobalLayers(app: AppModel) {
+  const errorBanner = renderCriticalErrorBanner(app);
+  if (!errorBanner) return null;
+  return <section className="global-layer-stack">{errorBanner}</section>;
 }
 
-export function renderGlobalLayers(app: AppModel) {
-  const connectionBanner = renderConnectionBanner(app);
-  const errorBanner = renderCriticalErrorBanner(app);
-  const confirmationBanner = renderConfirmationBanner(app);
-  const bannerLayer = (connectionBanner || errorBanner || confirmationBanner) ? (
-    <section className="global-layer-stack">
-      {connectionBanner}
-      {errorBanner}
-      {confirmationBanner}
-    </section>
-  ) : null;
 
+export function renderMainView(app: AppModel) {
+  if (app.view.currentView === "logs") return renderLogsView(app);
+  if (app.view.currentView === "release") return renderReleaseView();
+  return renderTaskView(app);
+}
+
+function renderReleaseView() {
   return (
-    <>
-      {bannerLayer}
-    </>
+    <section className="single-view">
+      <ReleaseWizardPanel />
+    </section>
   );
 }
 
-function renderLogsView(app: AppModel) {
+export function renderLogsView(app: AppModel) {
   return (
     <section className="single-view">
       <LogsPanel logs={app.logs.logs} />
@@ -183,65 +182,15 @@ function renderLogsView(app: AppModel) {
   );
 }
 
-function renderTaskView(app: AppModel) {
+export function renderTaskView(app: AppModel) {
   return (
-    <section className="single-view">
-      <TaskPageToolbar app={app} />
+    <section className="single-view task-chat-layout">
       <ChatPanel {...getChatPanelProps(app)} />
     </section>
   );
 }
 
-function TaskPageToolbar(props: { app: AppModel }) {
-  const hasConfirmation = Boolean(props.app.runtime.confirmation);
-  const actionLabel = readTaskToolbarActionLabel(hasConfirmation, props.app.view.bottomPanelOpen);
-  return (
-    <section className="task-page-toolbar">
-      <div className="task-page-toolbar-head">
-        <div className="task-page-toolbar-copy">
-          <span className="section-kicker">任务工作区</span>
-          <h2>{props.app.runtime.currentTaskTitle || "等待任务"}</h2>
-          <p>{readRunStateNextStep({ latestEvent: props.app.runtime.events[props.app.runtime.events.length - 1], runState: props.app.runtime.runState })}</p>
-        </div>
-        <span className={`status-badge ${readThreadStatusClass(props.app.runtime.runState)}`}>{props.app.statusLine}</span>
-      </div>
-      <div className="task-page-toolbar-meta">
-        <TaskMetaChip label="运行" value={props.app.runtime.currentRunId || "尚未开始"} />
-        <TaskMetaChip label="会话" value={props.app.runtime.sessionId || "尚未创建"} />
-        <TaskMetaChip label="工作区" value={props.app.settingsApi.settings?.workspace.name || "未加载"} />
-      </div>
-      <div className="task-page-toolbar-actions">
-        <button type="button" className="primary-action" onClick={() => handleTaskToolbarPrimary(props.app, hasConfirmation)}>{actionLabel}</button>
-        <button type="button" className="secondary-button" onClick={props.app.actions.openLogsPage}>查看记录页</button>
-        <button type="button" className="secondary-button" onClick={props.app.actions.openHomeStart}>新建任务</button>
-      </div>
-    </section>
-  );
-}
-
-function handleTaskToolbarPrimary(app: AppModel, hasConfirmation: boolean) {
-  if (hasConfirmation) {
-    app.actions.openTaskPageForConfirmation();
-    return;
-  }
-  app.view.setBottomPanelOpen(!app.view.bottomPanelOpen);
-}
-
-function readTaskToolbarActionLabel(hasConfirmation: boolean, isBottomPanelOpen: boolean) {
-  if (hasConfirmation) return "处理待确认";
-  return isBottomPanelOpen ? "收起调查层" : "展开调查层";
-}
-
-function TaskMetaChip(props: { label: string; value: string }) {
-  return (
-    <div className="summary-chip">
-      <span>{props.label}</span>
-      <strong>{props.value}</strong>
-    </div>
-  );
-}
-
-function TaskLeftNav(props: { app: AppModel }) {
+export function TaskLeftNav(props: { app: AppModel }) {
   const [expanded, setExpanded] = useState(true);
   const [search, setSearch] = useState("");
   const groups = useMemo(() => buildTaskNavGroups(props.app), [props.app]);
@@ -253,10 +202,11 @@ function TaskLeftNav(props: { app: AppModel }) {
     () => filterTaskNavEntries(groups.recent, search),
     [groups.recent, search],
   );
+  const isTaskView = props.app.view.currentView === "task";
   return (
     <aside className={readTaskLeftNavClass(expanded)} aria-label="任务页导航">
       <TaskNavRail app={props.app} expanded={expanded} onToggleExpand={() => setExpanded((value) => !value)} />
-      {expanded ? (
+      {expanded && isTaskView ? (
         <TaskNavPanel
           app={props.app}
           search={search}
@@ -280,13 +230,13 @@ function readTaskLeftNavClass(expanded: boolean) {
 function TaskNavRail(props: { app: AppModel; expanded: boolean; onToggleExpand: () => void }) {
   return (
     <nav className="task-nav-rail" aria-label="任务快捷导航">
-      <button type="button" className="task-nav-button icon-only" data-label={props.expanded ? "收起侧栏" : "展开侧栏"} aria-label={props.expanded ? "收起侧栏" : "展开侧栏"} onClick={props.onToggleExpand}><span className="task-nav-icon" aria-hidden="true">☰</span></button>
-      <NavIconButton app={props.app} nav="home" icon="⌂" label="首页" />
+      <button type="button" className="task-nav-button icon-only" title={props.expanded ? "收起侧栏" : "展开侧栏"} aria-label={props.expanded ? "收起侧栏" : "展开侧栏"} onClick={props.onToggleExpand}><span className="task-nav-icon" aria-hidden="true">☰</span></button>
       <NavIconButton app={props.app} nav="task" icon="◉" label="任务" />
-      <NavIconButton app={props.app} nav="logs" icon="≡" label="记录" />
+      <NavIconButton app={props.app} nav="logs" icon="≡" label="历史" />
+      <NavIconButton app={props.app} nav="release" icon="⇧" label="上线" />
       <NavIconButton app={props.app} nav="knowledge" icon="📚" label="知识库" />
       <NavIconButton app={props.app} nav="settings" icon="⚙" label="设置" />
-      <button type="button" className="task-nav-button icon-only task-nav-action" data-label="新任务" aria-label="新任务" onClick={props.app.actions.openHomeStart}><span className="task-nav-icon" aria-hidden="true">＋</span></button>
+      <button type="button" className="task-nav-button icon-only task-nav-action" title="新任务" aria-label="新任务" onClick={props.app.actions.openHomeStart}><span className="task-nav-icon" aria-hidden="true">＋</span></button>
     </nav>
   );
 }
@@ -296,7 +246,7 @@ function NavIconButton(props: { app: AppModel; nav: AppView; icon: string; label
     <button
       type="button"
       className={readTaskNavClass(props.app.view.currentView, props.nav)}
-      data-label={props.label}
+      title={props.label}
       aria-label={props.label}
       onClick={() => props.app.view.setCurrentView(props.nav)}
     >
@@ -406,23 +356,6 @@ function renderSettingsView(app: AppModel) {
   );
 }
 
-function renderConnectionBanner(app: AppModel) {
-  if (shouldHideConnectionBanner(app.runtime.connectionState)) return null;
-  return (
-    <div className={`global-banner banner-${app.runtime.connectionState}`} role="status" aria-live="polite">
-      <div>
-        <strong>连接状态</strong>
-        <p>{app.connectionLabel}</p>
-      </div>
-      {app.runtime.canReconnect ? (
-        <button type="button" className="secondary-button" onClick={app.actions.handleReconnect}>
-          重新连接
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
 function renderCriticalErrorBanner(app: AppModel) {
   const message = readCriticalErrorBannerMessage(app);
   if (!message) return null;
@@ -450,25 +383,6 @@ function readCriticalErrorBannerMessage(
   return app.runtime.criticalError || app.settingsApi.bootstrapError;
 }
 
-function renderConfirmationBanner(app: AppModel) {
-  if (!app.home.confirmationBanner || app.view.currentView !== "home") return null;
-  return (
-    <div className="global-banner banner-confirmation" role="status" aria-live="assertive">
-      <div>
-        <strong>{app.home.confirmationBanner.title}</strong>
-        <p>{app.home.confirmationBanner.text}</p>
-      </div>
-      <button
-        type="button"
-        className="secondary-button"
-        onClick={app.actions.openTaskPageForConfirmation}
-      >
-        前往任务页处理
-      </button>
-    </div>
-  );
-}
-
 export function getChatPanelProps(app: AppModel) {
   const state = useRuntimeStore.getState();
   return {
@@ -490,6 +404,7 @@ export function getChatPanelProps(app: AppModel) {
     showRiskLevel: app.settingsApi.settings?.show_risk_level ?? true,
     statusLine: app.statusLine,
     submitError: app.runtime.submitError,
+    onExampleClick: app.actions.openTaskPageWithDraft,
   };
 }
 
@@ -558,18 +473,6 @@ function getTopBarProps(app: AppModel, rightPanelOpen: boolean, onToggleRightPan
   };
 }
 
-function getBottomPanelProps(app: AppModel) {
-  return {
-    currentRunId: app.runtime.currentRunId,
-    currentTaskTitle: app.runtime.currentTaskTitle,
-    events: app.runtime.events,
-    isOpen: app.view.bottomPanelOpen,
-    onOpenChange: app.view.setBottomPanelOpen,
-    runState: app.runtime.runState,
-    submitError: app.runtime.submitError,
-  };
-}
-
 export function getSidebarProps(app: AppModel, variant: "home" | "task") {
   return {
     bootstrapError: app.settingsApi.bootstrapError,
@@ -586,6 +489,4 @@ export function getSidebarProps(app: AppModel, variant: "home" | "task") {
   };
 }
 
-function shouldHideConnectionBanner(connectionState: AppModel["runtime"]["connectionState"]) {
-  return connectionState === "connected" || connectionState === "closed";
-}
+

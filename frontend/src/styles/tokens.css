@@ -1,42 +1,60 @@
 :root {
   color-scheme: dark;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 
-  --bg-base: #1a1d29;
-  --bg-surface: #212536;
-  --bg-elevated: #2a2f42;
-  --bg-overlay: rgba(0, 0, 0, 0.6);
+  /* === Typography === */
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "DM Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 
-  --text-primary: #f0f2f5;
-  --text-secondary: #9ca3b8;
-  --text-muted: #5e6580;
-  --text-inverse: #1a1d29;
+  /* === Background Layers === */
+  --bg-base: #0c0c0f;
+  --bg-surface: #131318;
+  --bg-elevated: #1c1c23;
+  --bg-overlay: rgba(0, 0, 0, 0.65);
 
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(91, 140, 255, 0.4);
+  /* === Text === */
+  --text-primary: #f2f0eb;
+  --text-secondary: #a39f96;
+  --text-muted: #6b675f;
+  --text-inverse: #0c0c0f;
 
-  --accent: #5b8cff;
-  --accent-hover: #78a7ff;
-  --accent-soft: rgba(91, 140, 255, 0.12);
-  --accent-glow: rgba(91, 140, 255, 0.25);
+  /* === Accents: Warm Amber + Electric Cyan === */
+  --accent: #ff6b35;
+  --accent-hover: #ff8f66;
+  --accent-soft: rgba(255, 107, 53, 0.12);
+  --accent-glow: rgba(255, 107, 53, 0.3);
 
-  --status-success: #4ade80;
-  --status-warning: #fbbf24;
-  --status-error: #f87171;
-  --status-idle: #6b7280;
-  --status-running: #5b8cff;
+  --accent-cyan: #00d4ff;
+  --accent-cyan-soft: rgba(0, 212, 255, 0.12);
+  --accent-cyan-glow: rgba(0, 212, 255, 0.25);
 
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 12px 40px rgba(0, 0, 0, 0.3);
+  /* === Borders === */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.07);
+  --border-focus: rgba(255, 107, 53, 0.45);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* === Status === */
+  --status-success: #3ddc84;
+  --status-warning: #ffb800;
+  --status-error: #ff5f57;
+  --status-idle: #5c5a55;
+  --status-running: #00d4ff;
+
+  /* === Shadows === */
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 12px 48px rgba(0, 0, 0, 0.35);
+  --shadow-glow-sm: 0 0 20px rgba(255, 107, 53, 0.15);
+  --shadow-glow-md: 0 0 40px rgba(255, 107, 53, 0.2);
+  --shadow-glow-cyan: 0 0 30px rgba(0, 212, 255, 0.15);
+
+  /* === Radius === */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-pill: 999px;
 
+  /* === Spacing === */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -45,13 +63,54 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
+  --space-16: 64px;
 
+  /* === Typography Scale === */
   --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
   --text-md: 15px;
-  --text-lg: 18px;
-  --text-xl: 24px;
+  --text-lg: 20px;
+  --text-xl: 32px;
+  --text-2xl: 48px;
 
+  /* === Easings === */
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Legacy aliases for backward compatibility === */
+  --bg-panel: var(--bg-surface);
+  --bg-panel-soft: var(--bg-elevated);
+  --bg-card: var(--bg-elevated);
+  --bg-subtle: var(--bg-surface);
+  --bg-emphasis: var(--bg-elevated);
+  --text-tertiary: var(--text-muted);
+  --border-strong: var(--border-default);
+  --accent-primary: var(--accent);
+  --accent-primary-hover: var(--accent-hover);
+  --accent-primary-soft: var(--accent-soft);
+  --accent-secondary: var(--bg-elevated);
+  --border-accent: rgba(255, 107, 53, 0.35);
+  --shadow-panel: var(--shadow-md);
+  --radius-8: var(--radius-sm);
+  --radius-12: var(--radius-md);
+  --radius-16: var(--radius-lg);
+
+  /* State colors */
+  --state-idle-bg: rgba(255, 255, 255, 0.03);
+  --state-idle-border: rgba(255, 255, 255, 0.06);
+  --state-idle-text: var(--text-muted);
+  --state-running-bg: rgba(0, 212, 255, 0.08);
+  --state-running-border: rgba(0, 212, 255, 0.22);
+  --state-running-text: var(--accent-cyan);
+  --state-awaiting-bg: rgba(255, 184, 0, 0.08);
+  --state-awaiting-border: rgba(255, 184, 0, 0.22);
+  --state-awaiting-text: var(--status-warning);
+  --state-failed-bg: rgba(255, 95, 87, 0.08);
+  --state-failed-border: rgba(255, 95, 87, 0.22);
+  --state-failed-text: var(--status-error);
+  --state-completed-bg: rgba(61, 220, 132, 0.08);
+  --state-completed-border: rgba(61, 220, 132, 0.22);
+  --state-completed-text: var(--status-success);
 }
