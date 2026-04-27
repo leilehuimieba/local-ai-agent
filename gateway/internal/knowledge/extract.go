@@ -50,7 +50,13 @@ func extractTxt(path string) ExtractResult {
 	return ExtractResult{Title: title, Content: content}
 }
 
-func extractPdf(path string) ExtractResult {
+func extractPdf(path string) (res ExtractResult) {
+	defer func() {
+		if r := recover(); r != nil {
+			res = ExtractResult{Error: fmt.Errorf("PDF解析panic: %v", r)}
+		}
+	}()
+
 	file, err := pdf.Open(path)
 	if err != nil {
 		return ExtractResult{Error: err}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -316,7 +317,7 @@ func isDuplicateColumn(err error) bool {
 }
 
 func generateID() string {
-	return "kb_" + time.Now().Format("20060102_150405_") + randomSuffix()
+	return fmt.Sprintf("kb_%d_%s", time.Now().UnixNano(), randomSuffix())
 }
 
 func randomSuffix() string {
