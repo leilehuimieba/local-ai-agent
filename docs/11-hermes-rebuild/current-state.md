@@ -9,9 +9,8 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：[R-productization-mvp-20260427](docs/11-hermes-rebuild/changes/R-productization-mvp-20260427/)
+3. 当前活跃 change：无
 4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-04-27/`
-5. 当前主推进目录：`docs/11-hermes-rebuild/changes/R-productization-mvp-20260427/`
 
 ## 2. 阶段 I 收口结论
 
@@ -26,6 +25,7 @@
 1. **O-change（2026-04-26）**：六轮清理 — 前端 API 错误统一、workspaceViewModel 拆分、router_release.go 业务下沉、useSettings 抽离、Go 工具函数收拢、tmp 清理。已归档。
 2. **P-change（2026-04-27）**：router.go 聚合逻辑拆分 — 提取 `settings_response.go`，router.go 782 行 → 547 行。已归档。
 3. **Q-change（2026-04-27）**：CSS 功能域拆分 — `app-views.css` 1564 → 440 行，`app-components.css` 1344 → 441 行，新增 12 个功能域 CSS 文件。已归档。
+4. **R-change（2026-04-27）**：产品化 MVP 治理 — 敏感信息环境变量化、LICENSE/CHANGELOG、Rust release 构建优化、前端生产配置、最小启动认证、统一构建脚本、代码质量工具。已归档。
 
 ## 4. 阶段 H 收口结论
 
