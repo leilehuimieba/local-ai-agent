@@ -1,7 +1,8 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { KnowledgeBasePanel } from "./KnowledgeBasePanel";
+import { useKnowledgeFilterStore } from "./filterStore";
 
 const sampleItems = [
   {
@@ -44,6 +45,9 @@ vi.mock("./store", () => ({
 import { knowledgeStore } from "./store";
 
 describe("KnowledgeBasePanel", () => {
+  beforeEach(() => {
+    useKnowledgeFilterStore.setState({ category: "全部", tag: "", search: "", sortBy: "updated" });
+  });
   it("加载完成后渲染知识库标题和添加按钮", async () => {
     vi.mocked(knowledgeStore.getAll).mockResolvedValue(sampleItems);
     vi.mocked(knowledgeStore.getCategories).mockResolvedValue(["全部", "技术", "运维"]);
@@ -53,7 +57,8 @@ describe("KnowledgeBasePanel", () => {
 
     await waitFor(() => {
       expect(screen.getByText("知识库")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /添加条目/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /资料源/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /\+ 添加/ })).toBeInTheDocument();
     });
   });
 
@@ -66,7 +71,7 @@ describe("KnowledgeBasePanel", () => {
 
     await waitFor(() => {
       expect(screen.getByText("还没有资料")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /添加第一篇知识/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /\+ 添加/ })).toBeInTheDocument();
     });
   });
 
@@ -92,7 +97,7 @@ describe("KnowledgeBasePanel", () => {
 
     await waitFor(() => expect(screen.getByText("项目架构")).toBeInTheDocument());
 
-    const searchInput = screen.getByPlaceholderText("搜索知识...") as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText("搜索资料...") as HTMLInputElement;
     fireEvent.change(searchInput, { target: { value: "部署" } });
 
     await waitFor(() => {

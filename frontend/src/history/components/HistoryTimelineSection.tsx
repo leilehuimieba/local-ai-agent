@@ -3,8 +3,9 @@ import { KeyboardEvent } from "react";
 import { LogEntry } from "../../shared/contracts";
 import { EmptyStateBlock, SectionHeader, StatusPill } from "../../ui/primitives";
 import { readLogType, readReviewTypeLabel } from "../logType";
-import { readUnifiedStatusMeta, UnifiedStatusKey } from "../../runtime/state";
-import { isPermissionAwaiting, isPermissionBlocked, isPermissionResolved, readPermissionSummary } from "../../shared/permissionFlow";
+import { readUnifiedStatusMeta } from "../../runtime/state";
+import { readPermissionSummary } from "../../shared/permissionFlow";
+import { readHistoryStatusKey, readTimelineTitle } from "../logStatus";
 
 type HistoryTimelineSectionProps = {
   logs: LogEntry[];
@@ -98,9 +99,7 @@ function readItemTone(log: LogEntry) {
   return "neutral";
 }
 
-function readTimelineTitle(log: LogEntry) {
-  return log.metadata?.task_title || log.task_title || log.summary || readReviewTypeLabel(readLogType(log));
-}
+
 
 function readToolName(log: LogEntry) {
   return log.tool_call_snapshot?.tool_name || log.tool_display_name || log.tool_name || "";
@@ -136,28 +135,7 @@ function readStatusClass(log: LogEntry) {
   return readUnifiedStatusMeta(readHistoryStatusKey(log)).className;
 }
 
-function readHistoryStatusKey(log: LogEntry): UnifiedStatusKey {
-  if (hasHistoryFailedSignal(log)) return "failed";
-  if (hasHistoryAwaitingSignal(log)) return "awaiting_confirmation";
-  if (hasHistoryCompletedSignal(log)) return "completed";
-  const type = readLogType(log);
-  if (type === "result" || type === "memory" || type === "verification") return "completed";
-  return "running";
-}
 
-function hasHistoryFailedSignal(log: LogEntry) {
-  return readLogType(log) === "error" || log.completion_status === "failed" || Boolean(log.error || log.metadata?.error_code) || isPermissionBlocked(log);
-}
-
-function hasHistoryAwaitingSignal(log: LogEntry) {
-  if (isPermissionAwaiting(log)) return true;
-  if (isPermissionResolved(log) || hasHistoryCompletedSignal(log)) return false;
-  return readLogType(log) === "confirmation" || log.completion_status === "confirmation_required" || Boolean(log.confirmation_id);
-}
-
-function hasHistoryCompletedSignal(log: LogEntry) {
-  return log.completion_status === "completed" || Boolean(log.final_answer) || isPermissionResolved(log);
-}
 
 function handleHistoryItemKeyDown(event: KeyboardEvent<HTMLElement>, logId: string, onSelect: (logId: string) => void) {
   if (event.key !== "Enter" && event.key !== " ") return;

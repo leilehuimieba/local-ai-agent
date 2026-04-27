@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 
 import { ChatPanel } from "../chat/ChatPanel";
+import { HistoryNavPanel } from "../history/components";
 import { LogsPanel } from "../logs/LogsPanel";
 import { ReleaseWizardPanel } from "../release/ReleaseWizardPanel";
 import {
@@ -13,6 +14,7 @@ import {
 } from "../runtime/state";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import { KnowledgeBasePanel } from "../knowledge-base/KnowledgeBasePanel";
+import { KnowledgeNavPanel } from "../knowledge-base/KnowledgeNavPanel";
 import { TopBar } from "../workspace/TopBar";
 import { WorkbenchOverview } from "../workspace/WorkbenchOverview";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
@@ -129,7 +131,6 @@ export function renderWorkspaceContent(app: AppModel) {
 
 export function renderDrawerContent(app: AppModel) {
   if (app.view.currentView === "settings") return <SettingsPanel {...getSettingsPanelProps(app)} />;
-  if (app.view.currentView === "knowledge") return <KnowledgeBasePanel />;
   return null;
 }
 
@@ -163,6 +164,7 @@ export function renderGlobalLayers(app: AppModel) {
 export function renderMainView(app: AppModel) {
   if (app.view.currentView === "logs") return renderLogsView(app);
   if (app.view.currentView === "release") return renderReleaseView();
+  if (app.view.currentView === "knowledge") return renderKnowledgeBaseView(app);
   return renderTaskView(app);
 }
 
@@ -177,7 +179,7 @@ function renderReleaseView() {
 export function renderLogsView(app: AppModel) {
   return (
     <section className="single-view">
-      <LogsPanel logs={app.logs.logs} />
+      <LogsPanel logs={app.logs.filteredLogs} />
     </section>
   );
 }
@@ -192,29 +194,44 @@ export function renderTaskView(app: AppModel) {
 
 export function TaskLeftNav(props: { app: AppModel }) {
   const [expanded, setExpanded] = useState(true);
-  const [search, setSearch] = useState("");
+  const [taskSearch, setTaskSearch] = useState("");
   const groups = useMemo(() => buildTaskNavGroups(props.app), [props.app]);
   const pinnedItems = useMemo(
-    () => filterTaskNavEntries(groups.pinned, search),
-    [groups.pinned, search],
+    () => filterTaskNavEntries(groups.pinned, taskSearch),
+    [groups.pinned, taskSearch],
   );
   const recentItems = useMemo(
-    () => filterTaskNavEntries(groups.recent, search),
-    [groups.recent, search],
+    () => filterTaskNavEntries(groups.recent, taskSearch),
+    [groups.recent, taskSearch],
   );
   const isTaskView = props.app.view.currentView === "task";
+  const isLogsView = props.app.view.currentView === "logs";
+  const isKnowledgeView = props.app.view.currentView === "knowledge";
+  const logs = props.app.logs;
   return (
     <aside className={readTaskLeftNavClass(expanded)} aria-label="任务页导航">
       <TaskNavRail app={props.app} expanded={expanded} onToggleExpand={() => setExpanded((value) => !value)} />
       {expanded && isTaskView ? (
         <TaskNavPanel
           app={props.app}
-          search={search}
+          search={taskSearch}
           pinnedItems={pinnedItems}
           recentItems={recentItems}
-          onSearchChange={setSearch}
+          onSearchChange={setTaskSearch}
         />
       ) : null}
+      {expanded && isLogsView ? (
+        <HistoryNavPanel
+          logCount={logs.filteredLogs.length}
+          search={logs.search}
+          statusFilter={logs.statusFilter}
+          timeFilter={logs.timeFilter}
+          onSearchChange={logs.setSearch}
+          onStatusFilterChange={logs.setStatusFilter}
+          onTimeFilterChange={logs.setTimeFilter}
+        />
+      ) : null}
+      {expanded && isKnowledgeView ? <KnowledgeNavPanel /> : null}
     </aside>
   );
 }

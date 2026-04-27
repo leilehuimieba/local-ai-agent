@@ -1,33 +1,97 @@
-import { useEffect, useMemo, useState } from "react";
-import { KnowledgeItem, KnowledgeFilter } from "./types";
+import { useEffect, useState } from "react";
+import { KnowledgeItem } from "./types";
 import { knowledgeStore } from "./store";
-import { KnowledgeItemCard } from "./KnowledgeItemCard";
-import { KnowledgeItemDetail } from "./KnowledgeItemDetail";
-import { AddItemModal } from "./AddItemModal";
+import { SourcesView } from "./views/SourcesView";
+import { ChatView } from "./views/ChatView";
+import { GraphView } from "./views/GraphView";
 
-type AskResult = {
-  answer: string;
-  sources: KnowledgeItem[];
-};
+const MOCK_ITEMS: KnowledgeItem[] = [
+  {
+    id: "mock-1",
+    title: "项目架构概述",
+    summary: "本地智能体整体架构：前端 React + Vite，后端 Go Gateway，运行时 Rust。",
+    content: "系统由三部分组成：\n1. 前端（React + Vite + TypeScript）\n2. 后端 Gateway（Go 1.22+）\n3. 运行时（Rust）\n\n详见 [[Rust 运行时设计]] 和 [[Gateway API 设计]]。",
+    category: "架构",
+    tags: ["架构", "设计"],
+    source: "docs/02-architecture",
+    citationCount: 12,
+    createdAt: "2026-04-01T08:00:00Z",
+    updatedAt: "2026-04-20T10:00:00Z",
+  },
+  {
+    id: "mock-2",
+    title: "Rust 运行时设计",
+    summary: "运行时核心负责进程隔离、事件流和状态管理。",
+    content: "运行时核心采用 async Rust 实现，关键模块：\n- runtime-core：事件总线与状态机\n- runtime-host：进程隔离与沙箱\n\n与 [[Gateway API 设计]] 通过 gRPC 通信。",
+    category: "架构",
+    tags: ["架构", "Rust"],
+    source: "docs/03-runtime",
+    citationCount: 8,
+    createdAt: "2026-04-02T09:00:00Z",
+    updatedAt: "2026-04-18T14:00:00Z",
+  },
+  {
+    id: "mock-3",
+    title: "Gateway API 设计",
+    summary: "Go Gateway 提供 REST API，负责路由、认证和代理。",
+    content: "Gateway 使用标准库 net/http，关键端点：\n- /api/v1/chat\n- /api/v1/settings\n- /api/v1/knowledge/items\n\n前端状态管理详见 [[前端状态管理]]。",
+    category: "API",
+    tags: ["API", "Go", "架构"],
+    source: "docs/04-api",
+    citationCount: 5,
+    createdAt: "2026-04-03T10:00:00Z",
+    updatedAt: "2026-04-19T11:00:00Z",
+  },
+  {
+    id: "mock-4",
+    title: "前端状态管理",
+    summary: "使用 Zustand 管理全局状态，React Context 用于主题和布局。",
+    content: "状态分层：\n1. RuntimeStore（Zustand）：连接、事件、消息\n2. ViewState（useState）：当前视图、右侧面板\n3. 知识库 Store：独立管理资料、标签、分类\n\n参考 [[项目架构概述]] 的整体设计。",
+    category: "前端",
+    tags: ["前端", "React"],
+    source: "docs/06-development",
+    citationCount: 3,
+    createdAt: "2026-04-04T11:00:00Z",
+    updatedAt: "2026-04-21T09:00:00Z",
+  },
+  {
+    id: "mock-5",
+    title: "知识库图谱设计",
+    summary: "Canvas 力导向图实现，支持双向链接和标签聚类。",
+    content: "图谱视图使用手写 Canvas 2D 渲染，物理引擎模拟：\n- 节点斥力（Coulomb）\n- 连线引力（Hooke）\n- 中心引力\n\n双向链接解析 [[Obsidian 双向链接]] 的 [[笔记名]] 语法。",
+    category: "设计",
+    tags: ["设计", "前端"],
+    source: "docs/11-hermes-rebuild",
+    citationCount: 2,
+    createdAt: "2026-04-22T08:00:00Z",
+    updatedAt: "2026-04-25T16:00:00Z",
+  },
+  {
+    id: "mock-6",
+    title: "Obsidian 双向链接",
+    summary: "借鉴 Obsidian 的 [[笔记名]] 语法，实现知识节点关联。",
+    content: "双向链接规则：\n1. 正则匹配 \\[[(.+?)\\]]\n2. 匹配到的标题作为目标节点\n3. 共享标签自动生成弱连线\n\n在 [[知识库图谱设计]] 中可视化呈现。",
+    category: "知识管理",
+    tags: ["设计", "知识管理"],
+    source: "docs/11-hermes-rebuild",
+    citationCount: 1,
+    createdAt: "2026-04-23T10:00:00Z",
+    updatedAt: "2026-04-24T12:00:00Z",
+  },
+];
+
+const MOCK_CATEGORIES = ["全部", "架构", "API", "前端", "设计", "知识管理"];
+const MOCK_TAGS = ["架构", "设计", "Rust", "API", "Go", "前端", "React", "知识管理"];
+
+type ViewTab = "sources" | "chat" | "graph";
 
 export function KnowledgeBasePanel() {
+  const [view, setView] = useState<ViewTab>("sources");
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [categories, setCategories] = useState<string[]>(["全部"]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<KnowledgeFilter>({
-    category: "全部",
-    tag: "",
-    search: "",
-    sortBy: "updated",
-  });
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [askQuestion, setAskQuestion] = useState("");
-  const [askLoading, setAskLoading] = useState(false);
-  const [askResult, setAskResult] = useState<AskResult | null>(null);
-  const [askError, setAskError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -42,7 +106,13 @@ export function KnowledgeBasePanel() {
       setCategories(cats);
       setAllTags(tags);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      if (import.meta.env.DEV) {
+        setItems(MOCK_ITEMS);
+        setCategories(MOCK_CATEGORIES);
+        setAllTags(MOCK_TAGS);
+      } else {
+        setError(err instanceof Error ? err.message : "加载失败");
+      }
     } finally {
       setLoading(false);
     }
@@ -52,40 +122,9 @@ export function KnowledgeBasePanel() {
     loadData();
   }, []);
 
-  const filteredItems = useMemo(() => {
-    let result = [...items];
-    if (filter.category && filter.category !== "全部") {
-      result = result.filter((i) => i.category === filter.category);
-    }
-    if (filter.tag) {
-      result = result.filter((i) => i.tags.includes(filter.tag));
-    }
-    if (filter.search.trim()) {
-      const q = filter.search.trim().toLowerCase();
-      result = result.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.summary.toLowerCase().includes(q) ||
-          i.tags.some((t) => t.toLowerCase().includes(q)),
-      );
-    }
-    result.sort((a, b) => {
-      if (filter.sortBy === "updated") return b.updatedAt.localeCompare(a.updatedAt);
-      if (filter.sortBy === "created") return b.createdAt.localeCompare(a.createdAt);
-      return b.citationCount - a.citationCount;
-    });
-    return result;
-  }, [items, filter]);
-
-  const selectedItem = useMemo(
-    () => (selectedId ? items.find((i) => i.id === selectedId) ?? null : null),
-    [selectedId, items],
-  );
-
   const handleAdd = async (data: Omit<KnowledgeItem, "id" | "createdAt" | "updatedAt" | "citationCount">) => {
     await knowledgeStore.add(data);
     await loadData();
-    setShowAdd(false);
   };
 
   const handleSave = async (id: string, patch: Partial<KnowledgeItem>) => {
@@ -95,41 +134,13 @@ export function KnowledgeBasePanel() {
 
   const handleDelete = async (id: string) => {
     await knowledgeStore.remove(id);
-    setSelectedId(null);
     await loadData();
-  };
-
-  const handleAsk = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!askQuestion.trim()) return;
-    setAskLoading(true);
-    setAskError(null);
-    setAskResult(null);
-    try {
-      const response = await fetch("/api/v1/knowledge/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: askQuestion.trim() }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `HTTP ${response.status}`);
-      }
-      const result = (await response.json()) as AskResult;
-      setAskResult(result);
-    } catch (err) {
-      setAskError(err instanceof Error ? err.message : "提问失败");
-    } finally {
-      setAskLoading(false);
-    }
   };
 
   if (loading && items.length === 0) {
     return (
       <section className="kb-panel">
-        <div className="kb-empty">
-          <p>加载中...</p>
-        </div>
+        <div className="kb-empty"><p>加载中...</p></div>
       </section>
     );
   }
@@ -149,132 +160,25 @@ export function KnowledgeBasePanel() {
     <section className="kb-panel">
       <header className="kb-toolbar">
         <h2>知识库</h2>
-        <div className="kb-toolbar-actions">
-          <input
-            type="search"
-            className="kb-search"
-            placeholder="搜索知识..."
-            value={filter.search}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-          />
-          <button type="button" className="primary-action" onClick={() => setShowAdd(true)}>
-            + 添加条目
-          </button>
+        <div className="kb-view-tabs">
+          <button type="button" className={view === "sources" ? "kb-tab active" : "kb-tab"} onClick={() => setView("sources")}>资料源</button>
+          <button type="button" className={view === "chat" ? "kb-tab active" : "kb-tab"} onClick={() => setView("chat")}>对话</button>
+          <button type="button" className={view === "graph" ? "kb-tab active" : "kb-tab"} onClick={() => setView("graph")}>图谱</button>
         </div>
       </header>
 
-      <div className="kb-filters">
-        <div className="kb-filter-group">
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={filter.category === c ? "kb-filter active" : "kb-filter"}
-              onClick={() => setFilter((f) => ({ ...f, category: c }))}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-        <div className="kb-filter-group">
-          <select
-            value={filter.tag}
-            onChange={(e) => setFilter((f) => ({ ...f, tag: e.target.value }))}
-          >
-            <option value="">全部标签</option>
-            {allTags.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <select
-            value={filter.sortBy}
-            onChange={(e) => setFilter((f) => ({ ...f, sortBy: e.target.value as KnowledgeFilter["sortBy"] }))}
-          >
-            <option value="updated">最近更新</option>
-            <option value="created">最近添加</option>
-            <option value="cited">最常引用</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="kb-layout">
-        <div className="kb-grid">
-          {filteredItems.length === 0 ? (
-            <div className="kb-empty">
-              <span className="kb-empty-icon">📚</span>
-              <p>还没有资料</p>
-              <button type="button" className="primary-action" onClick={() => setShowAdd(true)}>
-                添加第一篇知识
-              </button>
-            </div>
-          ) : (
-            filteredItems.map((item) => (
-              <KnowledgeItemCard
-                key={item.id}
-                item={item}
-                onClick={() => setSelectedId(item.id)}
-              />
-            ))
-          )}
-        </div>
-
-        {selectedItem && (
-          <KnowledgeItemDetail
-            item={selectedItem}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onClose={() => setSelectedId(null)}
-            categories={categories}
-          />
-        )}
-      </div>
-
-      <div className="kb-ask-section">
-        <h3>基于这些资料提问</h3>
-        <form className="kb-ask-form" onSubmit={handleAsk}>
-          <input
-            type="text"
-            className="kb-ask-input"
-            placeholder="输入问题，例如：项目的架构是什么？"
-            value={askQuestion}
-            onChange={(e) => setAskQuestion(e.target.value)}
-          />
-          <button type="submit" className="primary-action" disabled={askLoading}>
-            {askLoading ? "思考中..." : "提问"}
-          </button>
-        </form>
-        {askError && <p className="kb-error">{askError}</p>}
-        {askResult && (
-          <div className="kb-ask-result">
-            <div className="kb-answer">
-              <strong>回答</strong>
-              <pre>{askResult.answer}</pre>
-            </div>
-            {askResult.sources.length > 0 && (
-              <div className="kb-sources">
-                <strong>引用来源</strong>
-                <ul>
-                  {askResult.sources.map((s) => (
-                    <li key={s.id}>
-                      <button type="button" className="kb-source-link" onClick={() => setSelectedId(s.id)}>
-                        {s.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showAdd && (
-        <AddItemModal
-          onSave={handleAdd}
-          onClose={() => setShowAdd(false)}
+      {view === "sources" && (
+        <SourcesView
+          items={items}
           categories={categories}
+          allTags={allTags}
+          onAdd={handleAdd}
+          onSave={handleSave}
+          onDelete={handleDelete}
         />
       )}
+      {view === "chat" && <ChatView items={items} />}
+      {view === "graph" && <GraphView items={items} onSelectItem={(id) => setView("sources")} />}
     </section>
   );
 }

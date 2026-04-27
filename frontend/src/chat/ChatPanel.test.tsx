@@ -40,4 +40,52 @@ describe("ChatPanel", () => {
     expect(screen.getByText("请检查工作台布局")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("输入任务，按回车发送")).toBeInTheDocument();
   });
+
+  it("消息按时间正序排列（用户消息在 assistant 消息之前）", () => {
+    const props = {
+      ...baseProps,
+      messages: [
+        { id: "m1", role: "user" as const, content: "第一条用户消息" },
+        { id: "m2", role: "assistant" as const, content: "第一条 AI 回复" },
+        { id: "m3", role: "user" as const, content: "第二条用户消息" },
+      ],
+    };
+    render(<ChatPanel {...props} />);
+    const texts = screen.getAllByText(/第.*条/);
+    expect(texts[0]).toHaveTextContent("第一条用户消息");
+    expect(texts[1]).toHaveTextContent("第一条 AI 回复");
+    expect(texts[2]).toHaveTextContent("第二条用户消息");
+  });
+
+  it("assistant 消息含详细过程时显示可折叠按钮", () => {
+    const props = {
+      ...baseProps,
+      messages: [
+        { id: "m1", role: "user" as const, content: "执行任务" },
+        {
+          id: "m2",
+          role: "assistant" as const,
+          content: "执行结论",
+          runId: "run-1",
+        },
+      ],
+      events: [
+        {
+          event_id: "e1",
+          event_type: "run_finished",
+          session_id: "s1",
+          run_id: "run-1",
+          sequence: 1,
+          timestamp: "2026-04-26T10:00:00Z",
+          stage: "verify",
+          summary: "运行完成",
+          result_summary: "结果说明",
+          metadata: { next_step: "建议下一步" },
+        },
+      ],
+    };
+    render(<ChatPanel {...props} />);
+    expect(screen.getByText("执行结论")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "查看详细过程" })).toBeInTheDocument();
+  });
 });

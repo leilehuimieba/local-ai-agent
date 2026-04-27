@@ -192,7 +192,8 @@
   gap: 0;
   padding: 12px 0 16px;
   background: var(--bg-panel-soft);
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .task-left-nav.expanded {
@@ -270,6 +271,7 @@
   padding: 4px 12px 12px;
   border-left: 1px solid var(--border-default);
   background: var(--bg-panel-soft);
+  overflow-y: auto;
 }
 
 .task-nav-panel-head {
@@ -285,6 +287,44 @@
 .task-nav-panel-head span {
   color: var(--text-tertiary);
   font-size: 12px;
+}
+
+.history-nav-panel .history-filter-group {
+  display: grid;
+  gap: 6px;
+}
+
+.history-nav-panel .history-filter-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.history-nav-panel .history-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-nav-panel .history-filter-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.history-nav-panel .history-filter-chip:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.history-nav-panel .history-filter-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 53, 0.08);
 }
 
 .task-nav-primary {
@@ -675,6 +715,40 @@
 .chat-panel-simple .result-block-stack {
   display: grid;
   gap: 10px;
+}
+
+.chat-panel-simple .process-card {
+  display: grid;
+  gap: 8px;
+}
+
+.chat-panel-simple .process-toggle {
+  justify-self: start;
+  padding: 4px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.chat-panel-simple .process-toggle:hover {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.chat-panel-simple .process-details {
+  display: grid;
+  gap: 8px;
+  animation: fade-in 0.2s ease both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .chat-panel-simple .result-block-stack-recovery .result-block-action,

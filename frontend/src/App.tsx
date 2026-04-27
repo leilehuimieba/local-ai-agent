@@ -286,7 +286,6 @@ function readRuntimeError(error: unknown, fallback: string) {
 
 function readDrawerTitle(view: AppView) {
   if (view === "settings") return "设置";
-  if (view === "knowledge") return "知识库";
   if (view === "release") return "上线向导";
   return "";
 }

@@ -22,12 +22,35 @@ async function readErrorText(response: Response): Promise<string> {
   return text || `HTTP ${response.status}`;
 }
 
+function normalizeItem(raw: any): KnowledgeItem {
+  return {
+    id: raw.id ?? "",
+    title: raw.title ?? "",
+    summary: raw.summary ?? "",
+    content: raw.content ?? "",
+    category: raw.category ?? "",
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    source: raw.source ?? "",
+    citationCount: typeof raw.citation_count === "number" ? raw.citation_count : 0,
+    createdAt: raw.created_at ?? "",
+    updatedAt: raw.updated_at ?? "",
+  };
+}
+
+function normalizeListResponse(raw: any): ListResponse {
+  return {
+    items: (raw.items || []).map(normalizeItem),
+    categories: raw.categories || [],
+    tags: raw.tags || [],
+  };
+}
+
 export async function fetchKnowledgeItems(): Promise<ListResponse> {
   const response = await fetch("/api/v1/knowledge/items");
   if (!response.ok) {
     throw new Error(`获取知识库失败: ${await readErrorText(response)}`);
   }
-  return (await response.json()) as ListResponse;
+  return normalizeListResponse(await response.json());
 }
 
 export async function createKnowledgeItem(
@@ -73,5 +96,5 @@ export async function searchKnowledgeItems(query: string): Promise<ListResponse>
   if (!response.ok) {
     throw new Error(`搜索知识库失败: ${await readErrorText(response)}`);
   }
-  return (await response.json()) as ListResponse;
+  return normalizeListResponse(await response.json());
 }

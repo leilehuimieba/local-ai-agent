@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { ConfirmationCard } from "../confirmations/ConfirmationCard";
 import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
@@ -54,10 +54,26 @@ export function ChatPanel(props: ChatPanelProps) {
 }
 
 function TaskThread(props: { props: ChatPanelProps }) {
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  useEffect(() => {
+    if (autoScroll && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+  }, [props.props.messages.length, props.props.events.length, autoScroll]);
+
+  const handleScroll = () => {
+    const el = messagesRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    setAutoScroll(nearBottom);
+  };
+
   return (
     <section className="stream-shell">
       <div className="sr-only" aria-live="polite">{getStreamLiveLabel(props.props.runState, props.props.messages.length)}</div>
-      <div className="messages" aria-live="polite" aria-relevant="additions text">
+      <div ref={messagesRef} className="messages" onScroll={handleScroll} aria-live="polite" aria-relevant="additions text">
         <ThreadContent props={props.props} />
       </div>
       <TaskComposer props={props.props} />
@@ -103,7 +119,7 @@ function ThreadRecords(props: { props: ChatPanelProps }) {
   const tailRecord = readThreadTailRecord(props.props);
   return (
     <>
-      {[...props.props.messages].reverse().map((message, index) => (
+      {props.props.messages.map((message, index) => (
         <MessageRecord
           key={message.id}
           index={index}
@@ -180,10 +196,30 @@ function ResultBlockStack(props: {
   summary: string;
   sections: ResultSection[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasSections = props.sections.length > 0;
   return (
     <div className={`thread-record-copy result-block-stack result-block-stack-${props.mode}`}>
       <ResultSummary label={props.summaryLabel} mode={props.mode} summary={props.summary} />
-      {props.sections.map((section, index) => <ResultBlock key={`${props.messageId}-${index}`} section={section} />)}
+      {hasSections ? (
+        <div className="process-card">
+          <button
+            type="button"
+            className="process-toggle"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+          >
+            {expanded ? "收起详细过程" : "查看详细过程"}
+          </button>
+          {expanded ? (
+            <div className="process-details">
+              {props.sections.map((section, index) => (
+                <ResultBlock key={`${props.messageId}-${index}`} section={section} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
