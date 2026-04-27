@@ -9,8 +9,9 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：无
+3. 当前活跃 change：[R-productization-mvp-20260427](docs/11-hermes-rebuild/changes/R-productization-mvp-20260427/)
 4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-04-27/`
+5. 当前主推进目录：`docs/11-hermes-rebuild/changes/R-productization-mvp-20260427/`
 
 ## 2. 阶段 I 收口结论
 

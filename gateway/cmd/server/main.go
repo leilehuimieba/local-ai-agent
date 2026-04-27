@@ -11,6 +11,7 @@ import (
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
 	"local-agent/gateway/internal/state"
+	"local-agent/gateway/internal/token"
 )
 
 func main() {
@@ -18,6 +19,12 @@ func main() {
 	cfg, err := config.Load(root)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[local-agent] load config failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	tok, err := token.LoadOrCreate(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[local-agent] token init failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -41,6 +48,7 @@ func main() {
 		confirmationStore,
 		credentialStore,
 		runtimeStore,
+		tok,
 	)); err != nil {
 		fmt.Fprintf(os.Stderr, "[local-agent] gateway stopped: %v\n", err)
 		os.Exit(1)

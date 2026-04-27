@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import type { ConfirmationRequest } from "../../shared/contracts";
 import type { AppView, LogsApi, RuntimeView, SettingsApi } from "../../App";
+export type { AppView } from "../../App";
 
 export type HomeStateKind = "first_use" | "resume" | "blocked";
 export type HomeAction = "reconnect" | "settings" | "workspace" | "model";

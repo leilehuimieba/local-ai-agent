@@ -2,6 +2,9 @@
 name = "runtime-core"
 version = "0.1.0"
 edition = "2024"
+description = "本地智能体运行时核心：事件流、状态机、记忆路由、checkpoint"
+license = "MIT"
+repository = "https://github.com/leilehuimieba/local-ai-agent"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

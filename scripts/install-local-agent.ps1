@@ -69,12 +69,12 @@ function Build-ReleaseBinaries {
   Assert-CommandAvailable -Name "cargo"
   Assert-CommandAvailable -Name "go"
   $runtimeTarget = Join-Path $BuildRoot "cargo-target"
-  $runtimeExe = Join-Path $runtimeTarget "debug\runtime-host.exe"
-  Invoke-LoggedCommand -WorkDir $Root -OutPath (Join-Path $LogRoot "runtime-build.stdout.log") -ErrPath (Join-Path $LogRoot "runtime-build.stderr.log") -File "cargo" -Arguments @("build", "-p", "runtime-host", "--target-dir", $runtimeTarget)
+  $runtimeExe = Join-Path $runtimeTarget "release\runtime-host.exe"
+  Invoke-LoggedCommand -WorkDir $Root -OutPath (Join-Path $LogRoot "runtime-build.stdout.log") -ErrPath (Join-Path $LogRoot "runtime-build.stderr.log") -File "cargo" -Arguments @("build", "--release", "-p", "runtime-host", "--target-dir", $runtimeTarget)
   Invoke-LoggedCommand -WorkDir (Join-Path $Root "gateway") -OutPath (Join-Path $LogRoot "gateway-server-build.stdout.log") -ErrPath (Join-Path $LogRoot "gateway-server-build.stderr.log") -File "go" -Arguments @("build", "-o", (Join-Path $StageRoot "gateway\server.exe"), "./cmd/server")
   Invoke-LoggedCommand -WorkDir (Join-Path $Root "gateway") -OutPath (Join-Path $LogRoot "gateway-launcher-build.stdout.log") -ErrPath (Join-Path $LogRoot "gateway-launcher-build.stderr.log") -File "go" -Arguments @("build", "-o", (Join-Path $StageRoot "gateway\launcher.exe"), "./cmd/launcher")
   if (-not (Test-Path $runtimeExe)) { throw "runtime-host.exe missing" }
-  Copy-Item -LiteralPath $runtimeExe -Destination (Join-Path $StageRoot "target\debug\runtime-host.exe") -Force
+  Copy-Item -LiteralPath $runtimeExe -Destination (Join-Path $StageRoot "target\release\runtime-host.exe") -Force
 }
 
 function Write-StartScript {
@@ -162,7 +162,7 @@ $report = [ordered]@{
   artifacts = [ordered]@{
     launcher = (Join-Path $currentDir "gateway\launcher.exe")
     server = (Join-Path $currentDir "gateway\server.exe")
-    runtime = (Join-Path $currentDir "target\debug\runtime-host.exe")
+    runtime = (Join-Path $currentDir "target\release\runtime-host.exe")
     frontend_index = (Join-Path $currentDir "frontend\dist\index.html")
     config = (Join-Path $currentDir "config\app.json")
     start_script = (Join-Path $currentDir "start-agent.ps1")

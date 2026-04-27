@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type ModelRef struct {
@@ -118,5 +119,16 @@ func applyEnvOverrides(cfg *AppConfig) {
 	cfg.DefaultModel.Available = true
 	if value := os.Getenv("LOCAL_AGENT_WORKSPACE_ROOT"); value != "" {
 		cfg.DefaultWorkspace.RootPath = value
+	}
+
+	for i := range cfg.Providers {
+		envKey := "LOCAL_AGENT_API_KEY_" + strings.ToUpper(cfg.Providers[i].ProviderID)
+		if value := os.Getenv(envKey); value != "" {
+			cfg.Providers[i].APIKey = value
+		}
+		envBase := "LOCAL_AGENT_BASE_URL_" + strings.ToUpper(cfg.Providers[i].ProviderID)
+		if value := os.Getenv(envBase); value != "" {
+			cfg.Providers[i].BaseURL = value
+		}
 	}
 }

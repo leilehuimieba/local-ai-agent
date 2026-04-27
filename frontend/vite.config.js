@@ -10,4 +10,16 @@ export default defineConfig({
             "/health": "http://127.0.0.1:8897",
         },
     },
+    build: {
+        sourcemap: true,
+        rollupOptions: {
+            output: {
+                manualChunks: function (id) {
+                    if (id.indexOf("node_modules/react") !== -1 || id.indexOf("node_modules/react-dom") !== -1) {
+                        return "vendor";
+                    }
+                },
+            },
+        },
+    },
 });

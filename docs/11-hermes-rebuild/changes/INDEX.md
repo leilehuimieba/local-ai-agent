@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-（无）
+1. [R-productization-mvp-20260427](R-productization-mvp-20260427/)：产品化 MVP 治理（敏感信息、LICENSE、构建优化、认证、质量工具）
 
 ## 归档入口
 

@@ -2,6 +2,9 @@
 name = "runtime-host"
 version = "0.1.0"
 edition = "2024"
+description = "本地智能体运行时宿主：进程管理、系统交互"
+license = "MIT"
+repository = "https://github.com/leilehuimieba/local-ai-agent"
 
 [dependencies]
 serde_json = "1"

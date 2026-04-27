@@ -330,13 +330,21 @@ func healthOK(url string) bool {
 }
 
 func systemReady(port int, repoRoot string) bool {
-	info, ok := systemInfo(gatewayURL(port))
+	info, ok := systemInfo(gatewayURL(port), repoRoot)
 	return ok && info.matches(repoRoot)
 }
 
-func systemInfo(gatewayURL string) (launcherSystemInfo, bool) {
+func systemInfo(gatewayURL string, repoRoot string) (launcherSystemInfo, bool) {
+	tok := readToken(repoRoot)
+	req, err := http.NewRequest("GET", gatewayURL+"/api/v1/system/info", nil)
+	if err != nil {
+		return launcherSystemInfo{}, false
+	}
+	if tok != "" {
+		req.Header.Set("X-Local-Agent-Token", tok)
+	}
 	client := http.Client{Timeout: time.Second}
-	resp, err := client.Get(gatewayURL + "/api/v1/system/info")
+	resp, err := client.Do(req)
 	if err != nil {
 		return launcherSystemInfo{}, false
 	}
@@ -349,6 +357,15 @@ func systemInfo(gatewayURL string) (launcherSystemInfo, bool) {
 		return launcherSystemInfo{}, false
 	}
 	return payload, true
+}
+
+func readToken(repoRoot string) string {
+	path := filepath.Join(repoRoot, "data", ".gateway_token")
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(raw))
 }
 
 func waitForSystemReady(port int, repoRoot string, timeout time.Duration) error {

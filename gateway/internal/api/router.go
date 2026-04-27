@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"local-agent/gateway/internal/config"
@@ -17,6 +18,7 @@ import (
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
 	"local-agent/gateway/internal/state"
+	"local-agent/gateway/internal/token"
 )
 
 type RuntimeStatus struct {
@@ -156,6 +158,7 @@ func NewRouter(
 	confirmationStore *state.ConfirmationStore,
 	credentialStore *state.ProviderCredentialStore,
 	runtimeStore *state.RuntimeProviderStore,
+	tok *token.Manager,
 ) http.Handler {
 	mux := http.NewServeMux()
 	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
@@ -169,8 +172,8 @@ func NewRouter(
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
 	knowledge.NewHandler(repoRoot).RegisterRoutes(mux, settingsStore, repoRoot, cfg)
-	mux.Handle("/", spaHandler(repoRoot))
-	return mux
+	mux.Handle("/", spaHandler(repoRoot, tok.Value()))
+	return tok.Middleware(mux)
 }
 
 func registerCoreRoutes(mux *http.ServeMux, cfg config.AppConfig) {
@@ -546,7 +549,7 @@ func providerOptions(items []config.ProviderConfig) []ProviderOption {
 	return options
 }
 
-func spaHandler(repoRoot string) http.Handler {
+func spaHandler(repoRoot string, tokenValue string) http.Handler {
 	distDir := filepath.Join(repoRoot, "frontend", "dist")
 	indexFile := filepath.Join(distDir, "index.html")
 	fileServer := http.FileServer(http.Dir(distDir))
@@ -564,8 +567,32 @@ func spaHandler(repoRoot string) http.Handler {
 			return
 		}
 
+		if tokenValue != "" {
+			injectTokenAndServe(w, r, indexFile, tokenValue)
+			return
+		}
 		http.ServeFile(w, r, indexFile)
 	})
+}
+
+func injectTokenAndServe(w http.ResponseWriter, r *http.Request, indexFile string, tokenValue string) {
+	raw, err := os.ReadFile(indexFile)
+	if err != nil {
+		http.ServeFile(w, r, indexFile)
+		return
+	}
+	body := string(raw)
+	meta := fmt.Sprintf(`<meta name="local-agent-token" content="%s" />`, tokenValue)
+	if strings.Contains(body, `<meta name="local-agent-token"`) {
+		body = strings.ReplaceAll(body, meta, "")
+	}
+	if idx := strings.Index(body, `<meta charset="UTF-8"`); idx != -1 {
+		before := body[:idx]
+		after := body[idx:]
+		body = before + meta + "\n    " + after
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(body))
 }
 
 func fetchRuntimeStatus(runtimePort int) RuntimeStatus {
