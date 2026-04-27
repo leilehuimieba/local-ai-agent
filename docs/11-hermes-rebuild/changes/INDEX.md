@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-1. [O-modularity-audit-cleanup-20260426](O-modularity-audit-cleanup-20260426/)：模块化审计后第一轮清理（前端 API 错误处理统一 + Go pathExists 统一）
+无（自由迭代期）。当前主推进目录以 `current-state.md` 为准。
 
 ## 归档入口
 

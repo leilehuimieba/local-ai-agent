@@ -33,3 +33,7 @@
 24. [N-frontend-experience-redesign-20260426](N-frontend-experience-redesign-20260426/status.md) — 前端体验重设计：对话流/历史页/知识库（已收口）
 25. [H-mcp-skills-quality-20260415](H-mcp-skills-quality-20260415/status.md) — H-03 技能质量评估（已收口，保留 warning 归档）
 26. [H-remediation-playbook-20260415](H-remediation-playbook-20260415/status.md) — H-02 修复与接管手册（已收口，保留冻结观察归档）
+
+### 工程治理与模块化清理
+
+27. [O-modularity-audit-cleanup-20260426](O-modularity-audit-cleanup-20260426/status.md) — 模块化审计后六轮清理（前端 API 统一 + VM 拆分 + Release service 化 + Settings 拆分 + 工具函数归位 + tmp 清理）（已收口）
