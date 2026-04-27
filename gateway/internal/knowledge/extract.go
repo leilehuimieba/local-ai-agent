@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"unicode/utf8"
 
@@ -38,10 +40,31 @@ func ExtractText(path string) ExtractResult {
 	if isMostlyGarbled(res.Content) {
 		res.Content = ""
 	}
-	if isMostlyGarbled(res.Title) {
-		res.Title = filepath.Base(path)
-	}
+	res.Title = pickTitle(res.Title, res.Content, path)
 	return res
+}
+
+func pickTitle(title, content, path string) string {
+	candidates := []string{title}
+	for _, line := range strings.Split(content, "\n") {
+		s := strings.TrimSpace(line)
+		if s != "" {
+			candidates = append(candidates, s)
+			if len(candidates) >= 5 {
+				break
+			}
+		}
+	}
+	for _, c := range candidates {
+		truncated := c
+		if len(truncated) > 200 {
+			truncated = truncated[:200]
+		}
+		if !isMostlyGarbled(truncated) && !strings.ContainsRune(truncated, utf8.RuneError) {
+			return truncated
+		}
+	}
+	return filepath.Base(path)
 }
 
 func isMostlyGarbled(s string) bool {
@@ -87,6 +110,11 @@ func extractPdf(path string) (res ExtractResult) {
 		}
 	}()
 
+	// 优先使用 pdftotext（对中文支持更好），不可用时回退到 rsc.io/pdf
+	if findPdftotext() != "" {
+		return fallbackPdftotext(path, nil)
+	}
+
 	file, err := pdf.Open(path)
 	if err != nil {
 		return ExtractResult{Error: err}
@@ -106,6 +134,98 @@ func extractPdf(path string) (res ExtractResult) {
 	}
 
 	result := content.String()
+	if isMostlyGarbled(result) || strings.TrimSpace(result) == "" {
+		return ExtractResult{Error: fmt.Errorf("PDF内容为空或乱码")}
+	}
+
+	title := filepath.Base(path)
+	lines := strings.Split(result, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			title = trimmed
+			break
+		}
+	}
+	return ExtractResult{Title: title, Content: result}
+}
+
+func findPdftotext() string {
+	if runtime.GOOS == "windows" {
+		candidates := []string{
+			`third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`,
+			`..\third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`,
+		}
+		for _, c := range candidates {
+			if _, err := os.Stat(c); err == nil {
+				abs, _ := filepath.Abs(c)
+				return abs
+			}
+		}
+	}
+	if p, err := exec.LookPath("pdftotext"); err == nil {
+		return p
+	}
+	return ""
+}
+
+func popplerPrefix() string {
+	pt := findPdftotext()
+	if pt == "" {
+		return ""
+	}
+	dir := filepath.Dir(pt)
+	// bin is under Library/bin, share is under Library/../share
+	share := filepath.Join(dir, "..", "..", "share")
+	if abs, err := filepath.Abs(share); err == nil {
+		if _, err := os.Stat(abs); err == nil {
+			return filepath.Dir(abs)
+		}
+	}
+	return ""
+}
+
+func fallbackPdftotext(path string, priorErr error) ExtractResult {
+	pt := findPdftotext()
+	if pt == "" {
+		if priorErr != nil {
+			return ExtractResult{Error: priorErr}
+		}
+		return ExtractResult{Error: fmt.Errorf("pdftotext 不可用")}
+	}
+
+	workPath := path
+	cleanPath := false
+	if runtime.GOOS == "windows" {
+		tmpDir := os.TempDir()
+		base := filepath.Base(path)
+		tmpPath := filepath.Join(tmpDir, base)
+		if data, err := os.ReadFile(path); err == nil {
+			if err := os.WriteFile(tmpPath, data, 0o600); err == nil {
+				workPath = tmpPath
+				cleanPath = true
+			}
+		}
+	}
+	if cleanPath {
+		defer os.Remove(workPath)
+	}
+
+	cmd := exec.Command(pt, "-enc", "UTF-8", "-layout", workPath, "-")
+	if prefix := popplerPrefix(); prefix != "" {
+		cmd.Env = append(os.Environ(), "POPPLER_PREFIX="+prefix)
+	}
+	var stderrBuf strings.Builder
+	cmd.Stderr = &stderrBuf
+	out, err := cmd.Output()
+	if err != nil {
+		if priorErr != nil {
+			return ExtractResult{Error: priorErr}
+		}
+		return ExtractResult{Error: fmt.Errorf("pdftotext 失败: %w", err)}
+	}
+
+	result := string(out)
 	title := filepath.Base(path)
 	lines := strings.Split(result, "\n")
 	for _, line := range lines {

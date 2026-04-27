@@ -28,6 +28,7 @@ frontend/.vite-dev.err
 gateway/**/*.exe
 gateway/**/*.pdb
 gateway/**/*.exe~
+gateway/third_party/
 
 # Runtime/user data (generated locally)
 data/
