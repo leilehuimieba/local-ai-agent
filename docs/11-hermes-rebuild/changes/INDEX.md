@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-无（自由迭代期）。当前主推进目录以 `current-state.md` 为准。
+1. [P-router-service-extraction-20260427](P-router-service-extraction-20260427/)：router.go 聚合逻辑拆分至 api/settings_response.go
 
 ## 归档入口
 
