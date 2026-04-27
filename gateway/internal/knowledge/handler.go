@@ -224,6 +224,7 @@ func (h *Handler) generateEmbedding(workspaceID, itemID string) {
 		return
 	}
 	text := item.Title + "\n" + item.Summary + "\n" + item.Content
+	text = truncateText(text, 6000)
 	embed, err := GetEmbedding(text, provider, currentModel.ModelID)
 	if err != nil {
 		return
