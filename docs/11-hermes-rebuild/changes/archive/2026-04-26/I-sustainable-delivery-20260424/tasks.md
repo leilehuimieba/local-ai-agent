@@ -18,7 +18,7 @@
   - 证据落点：`.gitattributes` + `git add --renormalize .` 执行记录
   - 实际结果：2026-04-24 完成，新增 `.gitattributes`，仅 1 个文件需标准化。
 
-- [ ] I-04 建立发布标签规范并打基线标签
+- [x] I-04 建立发布标签规范并打基线标签
   - 完成判据：存在 `v1.0.0-20260424` 标签，且 `git checkout` 后可编译。
   - 验证方式：`git tag` 查看并 checkout 验证编译。
   - 证据落点：`tmp/stage-i-sustainable/tag-verify.log`

@@ -7,33 +7,16 @@
 
 ## 当前活跃 change
 
-1. [H-gate-h-signoff-20260416](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-gate-h-signoff-20260416/status.md)（已归档：Gate-H 已签收）
-2. [H-runtime-strict-e2e-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/H-runtime-strict-e2e-20260424/status.md)（已归档：严格 runtime E2E 已通过）
-3. 当前主推进目录以 `current-state.md` 为准。
-4. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
-5. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
-6. [H-memory-routing-kb-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-memory-routing-kb-20260415/status.md)（已收口：H-05 记忆路由与知识沉淀）
-7. [H-learning-mode-browser-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-learning-mode-browser-20260415/status.md)（已收口：H-04 学习模式最小闭环）
-8. [H-stage-definition-prep-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-stage-definition-prep-20260415/status.md)（已签收：阶段定义与切换准备）
-9. [G-stage-switch-signoff-20260414](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/G-stage-switch-signoff-20260414/status.md)（上一阶段切换签收）
+无（自由迭代期）。当前主推进目录以 `current-state.md` 为准。
 
-## 已收口（未归档）
+## 观察/裁决中
 
-1. [J-frontend-unified-workspace-20260425](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/J-frontend-unified-workspace-20260425/status.md)（前端工作台统一：home+task 合并 + 导航重组，已收口）
-2. [I-sustainable-delivery-20260424](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/I-sustainable-delivery-20260424/status.md)（阶段 I 主推进：可持续交付与工程治理，已收口）
-
-## 待启动 / 草案 change
-
-1. [H-knowledge-base-20260423](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-knowledge-base-20260423/status.md)（已完成：前端 UI + localStorage mock，不阻塞 Gate-H）
-
-## 保留观察项
-
-1. [D-memory-skill-foundation](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/D-memory-skill-foundation/status.md)（历史进行中状态，当前不作为主推进）
-2. [E-low-quality-scoring-upgrade](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/E-low-quality-scoring-upgrade/status.md)（历史收口，保留观察）
+1. [H-mcp-skills-quality-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-mcp-skills-quality-20260415/status.md)（已交回主控裁决：H-03 已完成 H03-39，作为 Gate-H 聚合输入，当前仍为 warning）
+2. [H-remediation-playbook-20260415](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/H-remediation-playbook-20260415/status.md)（并行观察：H-02 修复与接管，冻结观察）
 
 ## 归档入口
 
-1. [archive/2026-04-26/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-26/INDEX.md)（K/L/M/N 与 H-memory-object-review 归档入口）
+1. [archive/2026-04-26/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-26/INDEX.md)（D~N 阶段收口项与近期活跃 change 归档入口，共 24 项）
 2. [archive/2026-04-24/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
 3. [archive/2026-04-23/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
 4. [archive/2026-04-15/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
