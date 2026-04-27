@@ -1,4 +1,4 @@
-param(
+﻿param(
   [ValidateSet("install", "upgrade")]
   [string]$Mode = "install",
   [string]$InstallRoot = "$env:LOCALAPPDATA\LocalAgent",
@@ -128,7 +128,7 @@ if (Test-Path $releaseDir) { throw "release version exists: $Version" }
 
 Ensure-Dir $releaseDir
 Ensure-Dir (Join-Path $releaseDir "gateway")
-Ensure-Dir (Join-Path $releaseDir "target\debug")
+Ensure-Dir (Join-Path $releaseDir "target\release")
 Ensure-Dir (Join-Path $releaseDir "config")
 Ensure-Dir (Join-Path $releaseDir "frontend\dist")
 Ensure-Dir (Join-Path $releaseDir "workspace")
