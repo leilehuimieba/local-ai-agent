@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"rsc.io/pdf"
 )
@@ -20,16 +21,45 @@ type ExtractResult struct {
 
 func ExtractText(path string) ExtractResult {
 	ext := strings.ToLower(filepath.Ext(path))
+	var res ExtractResult
 	switch ext {
 	case ".txt", ".md", ".markdown":
-		return extractTxt(path)
+		res = extractTxt(path)
 	case ".pdf":
-		return extractPdf(path)
+		res = extractPdf(path)
 	case ".docx":
-		return extractDocx(path)
+		res = extractDocx(path)
 	default:
 		return ExtractResult{Error: fmt.Errorf("不支持的文件类型: %s", ext)}
 	}
+	if res.Error != nil {
+		return res
+	}
+	if isMostlyGarbled(res.Content) {
+		res.Content = ""
+		if res.Title == "" || res.Title == filepath.Base(path) {
+			res.Title = filepath.Base(path)
+		}
+	}
+	return res
+}
+
+func isMostlyGarbled(s string) bool {
+	if s == "" {
+		return false
+	}
+	runes := []rune(s)
+	valid := 0
+	for _, r := range runes {
+		if r == utf8.RuneError {
+			continue
+		}
+		if r < 32 && r != '\n' && r != '\t' && r != '\r' {
+			continue
+		}
+		valid++
+	}
+	return float64(valid)/float64(len(runes)) < 0.7
 }
 
 func extractTxt(path string) ExtractResult {
