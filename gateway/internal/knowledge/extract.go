@@ -37,9 +37,9 @@ func ExtractText(path string) ExtractResult {
 	}
 	if isMostlyGarbled(res.Content) {
 		res.Content = ""
-		if res.Title == "" || res.Title == filepath.Base(path) {
-			res.Title = filepath.Base(path)
-		}
+	}
+	if isMostlyGarbled(res.Title) {
+		res.Title = filepath.Base(path)
 	}
 	return res
 }
