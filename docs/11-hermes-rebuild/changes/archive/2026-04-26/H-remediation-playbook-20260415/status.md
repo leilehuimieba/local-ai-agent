@@ -1,7 +1,7 @@
 ﻿# H-remediation-playbook-20260415（status）
 
-最近更新时间：2026-04-23（已执行第二受限验证窗口 `frontend_dist_missing_build_ready_rebuild`）
-状态：进行中（并行观察，冻结观察；第二窗口已成功执行，但仍为 warning）
+最近更新时间：2026-04-26（已执行第二受限验证窗口 `frontend_dist_missing_build_ready_rebuild`）
+状态：已收口（第二窗口已成功执行；最小自动修复链路、人工接管模板与真实 replay 样本均已补齐；不再自动进入第三个窗口；保留冻结观察归档）
 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 
 ## 当前状态

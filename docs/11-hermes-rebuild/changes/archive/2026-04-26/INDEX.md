@@ -31,3 +31,5 @@
 22. [L-competitor-onboarding-20260426](L-competitor-onboarding-20260426/status.md) — 竞品用户迁移体验优化（已收口）
 23. [M-productization-release-wizard-20260426](M-productization-release-wizard-20260426/status.md) — 产品化封装上线向导（已收口）
 24. [N-frontend-experience-redesign-20260426](N-frontend-experience-redesign-20260426/status.md) — 前端体验重设计：对话流/历史页/知识库（已收口）
+25. [H-mcp-skills-quality-20260415](H-mcp-skills-quality-20260415/status.md) — H-03 技能质量评估（已收口，保留 warning 归档）
+26. [H-remediation-playbook-20260415](H-remediation-playbook-20260415/status.md) — H-02 修复与接管手册（已收口，保留冻结观察归档）
