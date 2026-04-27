@@ -81,7 +81,15 @@ export function KnowledgeItemDetail({
           </div>
           {item.source && <p className="kb-detail-source">来源：{item.source}</p>}
           <hr />
-          <pre className="kb-detail-content">{item.content}</pre>
+          {item.content.trim() === "" ? (
+            <div className="kb-detail-empty">
+              <span>⏳</span>
+              <p>内容待识别</p>
+              <small>该资料正文暂未提取成功，稍后自动重试</small>
+            </div>
+          ) : (
+            <pre className="kb-detail-content">{item.content}</pre>
+          )}
         </div>
       )}
     </aside>

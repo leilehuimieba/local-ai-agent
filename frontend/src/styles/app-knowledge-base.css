@@ -289,6 +289,27 @@
   word-break: break-word;
 }
 
+.kb-detail-empty {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-tertiary);
+}
+
+.kb-detail-empty span {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.kb-detail-empty p {
+  font-size: var(--text-base);
+  margin-bottom: var(--space-1);
+}
+
+.kb-detail-empty small {
+  font-size: var(--text-xs);
+}
+
 .kb-detail-form label {
   display: block;
   margin-bottom: var(--space-3);
