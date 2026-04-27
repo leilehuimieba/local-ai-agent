@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"database/sql"
@@ -124,7 +124,7 @@ func sampleAppConfig() config.AppConfig {
 		RuntimePort:  19090,
 		DefaultMode:  "standard",
 		DefaultModel: sampleModel(),
-		AvailableModels: []config.ModelRef{
+		AvailableModels: []contracts.ModelRef{
 			sampleModel(),
 		},
 		Providers: []config.ProviderConfig{
@@ -137,15 +137,15 @@ func sampleAppConfig() config.AppConfig {
 			},
 		},
 		DefaultWorkspace: sampleWorkspace(),
-		Workspaces: []config.WorkspaceRef{
+		Workspaces: []contracts.WorkspaceRef{
 			sampleWorkspace(),
 		},
 		Siyuan: config.SiyuanConfig{},
 	}
 }
 
-func sampleModel() config.ModelRef {
-	return config.ModelRef{
+func sampleModel() contracts.ModelRef {
+	return contracts.ModelRef{
 		ProviderID:  "provider-1",
 		ModelID:     "model-1",
 		DisplayName: "Model 1",
@@ -154,8 +154,8 @@ func sampleModel() config.ModelRef {
 	}
 }
 
-func sampleWorkspace() config.WorkspaceRef {
-	return config.WorkspaceRef{
+func sampleWorkspace() contracts.WorkspaceRef {
+	return contracts.WorkspaceRef{
 		WorkspaceID: "workspace-1",
 		Name:        "Workspace 1",
 		RootPath:    "D:/workspace",
@@ -202,7 +202,7 @@ func checkpointFixture(
 			UserInput: "retry me",
 			Mode:      "standard",
 			ModelRef:  sampleModel(),
-			WorkspaceRef: config.WorkspaceRef{
+			WorkspaceRef: contracts.WorkspaceRef{
 				WorkspaceID: "workspace-1",
 				Name:        "Workspace 1",
 				RootPath:    "D:/workspace",

@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"context"
@@ -37,8 +37,8 @@ type ChatRunRequest struct {
 	TraceID         string              `json:"trace_id,omitempty"`
 	UserInput       string              `json:"user_input"`
 	Mode            string              `json:"mode"`
-	Model           config.ModelRef     `json:"model"`
-	Workspace       config.WorkspaceRef `json:"workspace"`
+	Model           contracts.ModelRef     `json:"model"`
+	Workspace       contracts.WorkspaceRef `json:"workspace"`
 	ContextHints    map[string]string   `json:"context_hints,omitempty"`
 	KnowledgeBaseID string              `json:"knowledge_base_id,omitempty"`
 }

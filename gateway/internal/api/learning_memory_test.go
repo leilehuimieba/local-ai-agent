@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/contracts"
 	"local-agent/gateway/internal/memory"
 	"local-agent/gateway/internal/providers/bestblogs"
 	"local-agent/gateway/internal/state"
@@ -169,9 +170,9 @@ func newLearningMemoryDeps(t *testing.T) memoryRouteDeps {
 }
 
 func learningMemoryTestConfig(repoRoot string) config.AppConfig {
-	workspace := config.WorkspaceRef{WorkspaceID: "main", Name: "test", RootPath: repoRoot, IsActive: true}
-	model := config.ModelRef{ProviderID: "test", ModelID: "test", DisplayName: "test", Enabled: true, Available: true}
-	return config.AppConfig{DefaultMode: "standard", DefaultModel: model, AvailableModels: []config.ModelRef{model}, DefaultWorkspace: workspace, Workspaces: []config.WorkspaceRef{workspace}}
+	workspace := contracts.WorkspaceRef{WorkspaceID: "main", Name: "test", RootPath: repoRoot, IsActive: true}
+	model := contracts.ModelRef{ProviderID: "test", ModelID: "test", DisplayName: "test", Enabled: true, Available: true}
+	return config.AppConfig{DefaultMode: "standard", DefaultModel: model, AvailableModels: []contracts.ModelRef{model}, DefaultWorkspace: workspace, Workspaces: []contracts.WorkspaceRef{workspace}}
 }
 
 func initLearningMemoryDB(t *testing.T, repoRoot string) {

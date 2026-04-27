@@ -1,4 +1,4 @@
-package state
+﻿package state
 
 import (
 	"database/sql"
@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
 
 	"github.com/stretchr/testify/require"
@@ -116,12 +115,12 @@ func checkpointFixture(
 			TraceID:   "trace-1",
 			UserInput: "retry me",
 			Mode:      "standard",
-			ModelRef: config.ModelRef{
+			ModelRef: contracts.ModelRef{
 				ProviderID:  "provider-1",
 				ModelID:     "model-1",
 				DisplayName: "Model 1",
 			},
-			WorkspaceRef: config.WorkspaceRef{
+			WorkspaceRef: contracts.WorkspaceRef{
 				WorkspaceID: "workspace-1",
 				Name:        "Workspace 1",
 				RootPath:    "D:/workspace",

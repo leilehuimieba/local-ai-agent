@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"fmt"
@@ -6,15 +6,16 @@ import (
 	"time"
 
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/contracts"
 	"local-agent/gateway/internal/state"
 )
 
 func ResolveRunContext(
 	sessionID, mode string,
-	model config.ModelRef,
-	workspaceInput config.WorkspaceRef,
+	model contracts.ModelRef,
+	workspaceInput contracts.WorkspaceRef,
 	settingsStore *state.SettingsStore,
-) (string, string, config.ModelRef, config.WorkspaceRef, bool, error) {
+) (string, string, contracts.ModelRef, contracts.WorkspaceRef, bool, error) {
 	if sessionID == "" {
 		sessionID = NewID("session")
 	}
@@ -27,23 +28,23 @@ func ResolveRunContext(
 	}
 	workspace, err := ResolveWorkspace(workspaceInput, currentWorkspace, settingsStore)
 	if err != nil {
-		return "", "", config.ModelRef{}, config.WorkspaceRef{}, false, err
+		return "", "", contracts.ModelRef{}, contracts.WorkspaceRef{}, false, err
 	}
 	firstSeen := directoryPromptEnabled && !settingsStore.IsWorkspaceApproved(workspace.WorkspaceID)
 	return sessionID, mode, model, workspace, firstSeen, nil
 }
 
 func ResolveWorkspace(
-	input config.WorkspaceRef,
-	fallback config.WorkspaceRef,
+	input contracts.WorkspaceRef,
+	fallback contracts.WorkspaceRef,
 	settingsStore *state.SettingsStore,
-) (config.WorkspaceRef, error) {
+) (contracts.WorkspaceRef, error) {
 	if input.WorkspaceID == "" {
 		return fallback, nil
 	}
 	workspace, ok := settingsStore.WorkspaceByID(input.WorkspaceID)
 	if !ok {
-		return config.WorkspaceRef{}, fmt.Errorf("workspace not found")
+		return contracts.WorkspaceRef{}, fmt.Errorf("workspace not found")
 	}
 	return workspace, nil
 }

@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"database/sql"
@@ -30,11 +30,11 @@ type RuntimeStatus struct {
 type SettingsResponse struct {
 	AppName                string                   `json:"app_name"`
 	Mode                   string                   `json:"mode"`
-	Model                  config.ModelRef          `json:"model"`
-	AvailableModels        []config.ModelRef        `json:"available_models"`
+	Model                  contracts.ModelRef          `json:"model"`
+	AvailableModels        []contracts.ModelRef        `json:"available_models"`
 	Providers              []ProviderOption         `json:"providers"`
-	Workspace              config.WorkspaceRef      `json:"workspace"`
-	AvailableWorkspaces    []config.WorkspaceRef    `json:"available_workspaces"`
+	Workspace              contracts.WorkspaceRef      `json:"workspace"`
+	AvailableWorkspaces    []contracts.WorkspaceRef    `json:"available_workspaces"`
 	ApprovedDirectories    []DirectoryApproval      `json:"approved_directories"`
 	DirectoryPromptEnabled bool                     `json:"directory_prompt_enabled"`
 	ShowRiskLevel          bool                     `json:"show_risk_level"`
@@ -201,7 +201,7 @@ func applySettingsUpdate(w http.ResponseWriter, r *http.Request, store *state.Se
 	}
 	var payload struct {
 		Mode                   string          `json:"mode"`
-		Model                  config.ModelRef `json:"model"`
+		Model                  contracts.ModelRef `json:"model"`
 		WorkspaceID            string          `json:"workspace_id"`
 		DirectoryPromptEnabled *bool           `json:"directory_prompt_enabled"`
 		ShowRiskLevel          *bool           `json:"show_risk_level"`
@@ -424,7 +424,7 @@ func applyConnectionCheck(slot ExternalConnectionSlot, err error) ExternalConnec
 	return slot
 }
 
-func validateLocalFilesProject(repoRoot string, workspace config.WorkspaceRef) error {
+func validateLocalFilesProject(repoRoot string, workspace contracts.WorkspaceRef) error {
 	return errors.Join(
 		checkAccessibleDirectory("项目根目录", repoRoot),
 		checkAccessibleDirectory("工作区根目录", workspace.RootPath),

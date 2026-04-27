@@ -8,15 +8,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-)
 
-type ModelRef struct {
-	ProviderID  string `json:"provider_id"`
-	ModelID     string `json:"model_id"`
-	DisplayName string `json:"display_name"`
-	Enabled     bool   `json:"enabled"`
-	Available   bool   `json:"available"`
-}
+	"local-agent/gateway/internal/contracts"
+)
 
 type ProviderConfig struct {
 	ProviderID          string `json:"provider_id"`
@@ -27,13 +21,6 @@ type ProviderConfig struct {
 	ModelsPath          string `json:"models_path"`
 	APIKey              string `json:"api_key"`
 	EmbeddingModel      string `json:"embedding_model"`
-}
-
-type WorkspaceRef struct {
-	WorkspaceID string `json:"workspace_id"`
-	Name        string `json:"name"`
-	RootPath    string `json:"root_path"`
-	IsActive    bool   `json:"is_active"`
 }
 
 type SiyuanConfig struct {
@@ -58,11 +45,11 @@ type AppConfig struct {
 	GatewayPort      int              `json:"gateway_port"`
 	RuntimePort      int              `json:"runtime_port"`
 	DefaultMode      string           `json:"default_mode"`
-	DefaultModel     ModelRef         `json:"default_model"`
-	AvailableModels  []ModelRef       `json:"available_models"`
-	Providers        []ProviderConfig `json:"providers"`
-	DefaultWorkspace WorkspaceRef     `json:"default_workspace"`
-	Workspaces       []WorkspaceRef   `json:"workspaces"`
+	DefaultModel     contracts.ModelRef         `json:"default_model"`
+	AvailableModels  []contracts.ModelRef       `json:"available_models"`
+	Providers        []ProviderConfig           `json:"providers"`
+	DefaultWorkspace contracts.WorkspaceRef     `json:"default_workspace"`
+	Workspaces       []contracts.WorkspaceRef   `json:"workspaces"`
 	OCR              OCRConfig        `json:"ocr"`
 	Siyuan           SiyuanConfig     `json:"siyuan"`
 }
@@ -91,13 +78,13 @@ func Load(repoRoot string) (AppConfig, error) {
 		cfg.DefaultMode = "standard"
 	}
 	if len(cfg.AvailableModels) == 0 {
-		cfg.AvailableModels = []ModelRef{cfg.DefaultModel}
+		cfg.AvailableModels = []contracts.ModelRef{cfg.DefaultModel}
 	}
 	if cfg.DefaultModel.ModelID == "" && len(cfg.AvailableModels) > 0 {
 		cfg.DefaultModel = cfg.AvailableModels[0]
 	}
 	if len(cfg.Workspaces) == 0 {
-		cfg.Workspaces = []WorkspaceRef{cfg.DefaultWorkspace}
+		cfg.Workspaces = []contracts.WorkspaceRef{cfg.DefaultWorkspace}
 	}
 
 	return cfg, nil

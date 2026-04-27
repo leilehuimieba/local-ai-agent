@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/contracts"
 	"local-agent/gateway/internal/memory"
 	"local-agent/gateway/internal/state"
 	"local-agent/gateway/internal/util"
@@ -33,7 +34,7 @@ func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.S
 	}
 }
 
-func buildMemoryPolicy(repoRoot string, workspace config.WorkspaceRef) MemoryPolicyStatus {
+func buildMemoryPolicy(repoRoot string, workspace contracts.WorkspaceRef) MemoryPolicyStatus {
 	storageRoot := filepath.Join(repoRoot, "data")
 	longTermPath := filepath.Join(storageRoot, "long_term_memory", fmt.Sprintf("%s.jsonl", workspace.WorkspaceID))
 	knowledgePath := filepath.Join(storageRoot, "knowledge_base", fmt.Sprintf("%s.jsonl", workspace.WorkspaceID))
@@ -126,7 +127,7 @@ func withSiyuanDiagnostics(status DiagnosticsStatus, siyuan config.SiyuanConfig)
 	return status
 }
 
-func buildExternalConnections(repoRoot string, cfg config.AppConfig, workspace config.WorkspaceRef) []ExternalConnectionSlot {
+func buildExternalConnections(repoRoot string, cfg config.AppConfig, workspace contracts.WorkspaceRef) []ExternalConnectionSlot {
 	return []ExternalConnectionSlot{
 		localFilesConnection(repoRoot, workspace),
 		localNotesConnection(repoRoot, cfg),
@@ -135,7 +136,7 @@ func buildExternalConnections(repoRoot string, cfg config.AppConfig, workspace c
 	}
 }
 
-func localFilesConnection(repoRoot string, workspace config.WorkspaceRef) ExternalConnectionSlot {
+func localFilesConnection(repoRoot string, workspace contracts.WorkspaceRef) ExternalConnectionSlot {
 	slot := makeExternalConnection("local_files_project", "本地文件与项目目录", 1, "active", []string{"workspace_list", "workspace_read", "workspace_write", "workspace_delete", "run_command"}, "继续作为主链路第一优先级，不引入外部 SaaS 依赖。", "本地项目目录校验通过，可继续使用目录读写与命令能力。")
 	return applyConnectionCheck(slot, validateLocalFilesProject(repoRoot, workspace))
 }

@@ -1,4 +1,4 @@
-package state
+﻿package state
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/contracts"
 )
 
 type persistedSettings struct {
@@ -33,19 +34,19 @@ type SettingsStore struct {
 	mu                     sync.RWMutex
 	path                   string
 	mode                   string
-	model                  config.ModelRef
-	models                 []config.ModelRef
-	workspace              config.WorkspaceRef
-	workspaces             []config.WorkspaceRef
+	model                  contracts.ModelRef
+	models                 []contracts.ModelRef
+	workspace              contracts.WorkspaceRef
+	workspaces             []contracts.WorkspaceRef
 	directoryPromptEnabled bool
 	showRiskLevel          bool
 	approvedDirectories    map[string]ApprovedDirectoryRecord
 }
 
 func NewSettingsStore(repoRoot string, cfg config.AppConfig) *SettingsStore {
-	workspaces := make([]config.WorkspaceRef, len(cfg.Workspaces))
+	workspaces := make([]contracts.WorkspaceRef, len(cfg.Workspaces))
 	copy(workspaces, cfg.Workspaces)
-	models := make([]config.ModelRef, len(cfg.AvailableModels))
+	models := make([]contracts.ModelRef, len(cfg.AvailableModels))
 	copy(models, cfg.AvailableModels)
 
 	store := &SettingsStore{
@@ -65,10 +66,10 @@ func NewSettingsStore(repoRoot string, cfg config.AppConfig) *SettingsStore {
 
 func (s *SettingsStore) Snapshot() (
 	string,
-	config.ModelRef,
-	[]config.ModelRef,
-	config.WorkspaceRef,
-	[]config.WorkspaceRef,
+	contracts.ModelRef,
+	[]contracts.ModelRef,
+	contracts.WorkspaceRef,
+	[]contracts.WorkspaceRef,
 	bool,
 	bool,
 	[]ApprovedDirectoryRecord,
@@ -76,9 +77,9 @@ func (s *SettingsStore) Snapshot() (
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	models := make([]config.ModelRef, len(s.models))
+	models := make([]contracts.ModelRef, len(s.models))
 	copy(models, s.models)
-	workspaces := make([]config.WorkspaceRef, len(s.workspaces))
+	workspaces := make([]contracts.WorkspaceRef, len(s.workspaces))
 	copy(workspaces, s.workspaces)
 	approved := s.approvedDirectoryListLocked()
 	return s.mode, s.model, models, s.workspace, workspaces, s.directoryPromptEnabled, s.showRiskLevel, approved
@@ -86,7 +87,7 @@ func (s *SettingsStore) Snapshot() (
 
 func (s *SettingsStore) Update(
 	mode string,
-	model config.ModelRef,
+	model contracts.ModelRef,
 	workspaceID string,
 	directoryPromptEnabled *bool,
 	showRiskLevel *bool,
@@ -138,7 +139,7 @@ preferenceUpdate:
 	return nil
 }
 
-func (s *SettingsStore) WorkspaceByID(workspaceID string) (config.WorkspaceRef, bool) {
+func (s *SettingsStore) WorkspaceByID(workspaceID string) (contracts.WorkspaceRef, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -148,7 +149,7 @@ func (s *SettingsStore) WorkspaceByID(workspaceID string) (config.WorkspaceRef, 
 		}
 	}
 
-	return config.WorkspaceRef{}, false
+	return contracts.WorkspaceRef{}, false
 }
 
 func (s *SettingsStore) IsWorkspaceApproved(workspaceID string) bool {
@@ -180,7 +181,7 @@ func (s *SettingsStore) ApproveWorkspace(workspaceID string) {
 	s.ApproveDirectory(workspace)
 }
 
-func (s *SettingsStore) ApproveDirectory(workspace config.WorkspaceRef) {
+func (s *SettingsStore) ApproveDirectory(workspace contracts.WorkspaceRef) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.approvedDirectories[workspace.RootPath] = approvalRecord(workspace)
@@ -245,7 +246,7 @@ func (s *SettingsStore) loadApprovedDirectories(persisted persistedSettings) {
 	}
 }
 
-func resolvePersistedModel(models []config.ModelRef, persisted persistedSettings, fallback config.ModelRef) config.ModelRef {
+func resolvePersistedModel(models []contracts.ModelRef, persisted persistedSettings, fallback contracts.ModelRef) contracts.ModelRef {
 	for _, item := range models {
 		if item.ModelID == persisted.ModelID && item.ProviderID == persisted.ModelProviderID {
 			return item
@@ -316,13 +317,13 @@ func containsApproval(items []ApprovedDirectoryRecord, rootPath string) bool {
 	return false
 }
 
-func defaultApprovedDirectories(workspace config.WorkspaceRef) map[string]ApprovedDirectoryRecord {
+func defaultApprovedDirectories(workspace contracts.WorkspaceRef) map[string]ApprovedDirectoryRecord {
 	return map[string]ApprovedDirectoryRecord{
 		workspace.RootPath: approvalRecord(workspace),
 	}
 }
 
-func approvedDirectoriesFromIDs(workspaces []config.WorkspaceRef, ids []string) map[string]ApprovedDirectoryRecord {
+func approvedDirectoriesFromIDs(workspaces []contracts.WorkspaceRef, ids []string) map[string]ApprovedDirectoryRecord {
 	items := make(map[string]ApprovedDirectoryRecord, len(ids))
 	for _, workspaceID := range ids {
 		if workspace, ok := workspaceFromID(workspaces, workspaceID); ok {
@@ -342,16 +343,16 @@ func mapApprovedDirectories(items []ApprovedDirectoryRecord) map[string]Approved
 	return mapped
 }
 
-func workspaceFromID(workspaces []config.WorkspaceRef, workspaceID string) (config.WorkspaceRef, bool) {
+func workspaceFromID(workspaces []contracts.WorkspaceRef, workspaceID string) (contracts.WorkspaceRef, bool) {
 	for _, workspace := range workspaces {
 		if workspace.WorkspaceID == workspaceID {
 			return workspace, true
 		}
 	}
-	return config.WorkspaceRef{}, false
+	return contracts.WorkspaceRef{}, false
 }
 
-func approvalRecord(workspace config.WorkspaceRef) ApprovedDirectoryRecord {
+func approvalRecord(workspace contracts.WorkspaceRef) ApprovedDirectoryRecord {
 	return ApprovedDirectoryRecord{
 		ApprovalID:  workspace.WorkspaceID,
 		WorkspaceID: workspace.WorkspaceID,
