@@ -43,6 +43,16 @@ type SiyuanConfig struct {
 	SyncEnabled      bool   `json:"sync_enabled"`
 }
 
+type BaiduOCRConfig struct {
+	APIKey    string `json:"api_key"`
+	SecretKey string `json:"secret_key"`
+}
+
+type OCRConfig struct {
+	Provider string         `json:"provider"`
+	Baidu    BaiduOCRConfig `json:"baidu"`
+}
+
 type AppConfig struct {
 	AppName          string           `json:"app_name"`
 	GatewayPort      int              `json:"gateway_port"`
@@ -53,6 +63,7 @@ type AppConfig struct {
 	Providers        []ProviderConfig `json:"providers"`
 	DefaultWorkspace WorkspaceRef     `json:"default_workspace"`
 	Workspaces       []WorkspaceRef   `json:"workspaces"`
+	OCR              OCRConfig        `json:"ocr"`
 	Siyuan           SiyuanConfig     `json:"siyuan"`
 }
 

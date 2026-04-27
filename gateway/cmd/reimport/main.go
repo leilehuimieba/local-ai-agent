@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/knowledge"
 )
 
@@ -15,6 +16,11 @@ func main() {
 	repoRoot := `D:\newwork\本地智能体`
 	if len(os.Args) > 1 {
 		repoRoot = os.Args[1]
+	}
+
+	cfg, err := config.Load(repoRoot)
+	if err == nil && cfg.OCR.Baidu.APIKey != "" {
+		knowledge.SetOCRConfig(cfg.OCR.Baidu.APIKey, cfg.OCR.Baidu.SecretKey)
 	}
 
 	dbPath := filepath.Join(repoRoot, "data", "storage", "main.db")

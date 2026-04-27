@@ -21,6 +21,13 @@ type ExtractResult struct {
 	Error   error
 }
 
+var ocrAPIKey, ocrSecretKey string
+
+func SetOCRConfig(apiKey, secretKey string) {
+	ocrAPIKey = apiKey
+	ocrSecretKey = secretKey
+}
+
 func ExtractText(path string) ExtractResult {
 	ext := strings.ToLower(filepath.Ext(path))
 	var res ExtractResult
@@ -60,11 +67,20 @@ func pickTitle(title, content, path string) string {
 		if len(truncated) > 200 {
 			truncated = truncated[:200]
 		}
-		if !isMostlyGarbled(truncated) && !strings.ContainsRune(truncated, utf8.RuneError) {
+		if !isMostlyGarbled(truncated) && !strings.ContainsRune(truncated, utf8.RuneError) && !containsControlChars(truncated) {
 			return truncated
 		}
 	}
 	return filepath.Base(path)
+}
+
+func containsControlChars(s string) bool {
+	for _, r := range s {
+		if r < 32 && r != '\n' && r != '\t' && r != '\r' {
+			return true
+		}
+	}
+	return false
 }
 
 func isMostlyGarbled(s string) bool {
@@ -112,7 +128,18 @@ func extractPdf(path string) (res ExtractResult) {
 
 	// 优先使用 pdftotext（对中文支持更好），不可用时回退到 rsc.io/pdf
 	if findPdftotext() != "" {
-		return fallbackPdftotext(path, nil)
+		res = fallbackPdftotext(path, nil)
+		if res.Error == nil && strings.TrimSpace(res.Content) != "" {
+			return res
+		}
+		// pdftotext 提取为空，尝试 OCR
+		if ocrAPIKey != "" && ocrSecretKey != "" {
+			ocrRes := extractPdfWithOCR(path, ocrAPIKey, ocrSecretKey)
+			if ocrRes.Error == nil {
+				return ocrRes
+			}
+		}
+		return res
 	}
 
 	file, err := pdf.Open(path)
