@@ -1,6 +1,6 @@
 import { cloneElement, ReactElement } from "react";
 import { readRunStateBody, readRunStateNextStep } from "../chat/chatResultModel";
-import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
+import { eventLikeMemory, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel } from "../history/logType";
 import { ConnectionState, readUnifiedStatusFromLabel, readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { ConfirmationRequest, RunEvent, SettingsResponse } from "../shared/contracts";
 
@@ -513,19 +513,6 @@ function readMemoryFacet(event?: RunEvent) {
 function readMemoryGovernance(event?: RunEvent) {
   if (!event) return "暂无治理";
   return readMemoryGovernanceLabel(eventLikeMemory(event));
-}
-
-function eventLikeMemory(event: RunEvent) {
-  return {
-    event_type: event.event_type,
-    kind: event.metadata?.memory_kind || event.record_type || event.output_kind,
-    metadata: event.metadata,
-    reason: event.detail || event.summary,
-    source_type: event.source_type,
-    summary: event.summary,
-    title: event.metadata?.task_title || event.summary,
-    verified: event.verification_snapshot?.passed,
-  };
 }
 
 function readInspectorStatusClass(status: string) {

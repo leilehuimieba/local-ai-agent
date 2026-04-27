@@ -1,5 +1,6 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
+import { fetchKnowledgeItems } from "../knowledge-base/api";
 import { ConfirmationCard } from "../confirmations/ConfirmationCard";
 import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
 import {
@@ -514,10 +515,9 @@ function readSubmitLabel(isRunning: boolean) {
 function KnowledgeBaseSelector() {
   const [items, setItems] = useState<Array<{ id: string; title: string }>>([]);
   useEffect(() => {
-    fetch("/api/v1/knowledge/items")
-      .then((r) => r.json())
-      .then((data: { items: Array<{ id: string; title: string }> }) => {
-        setItems(data.items || []);
+    fetchKnowledgeItems()
+      .then((data) => {
+        setItems(data.items.map((item) => ({ id: item.id, title: item.title })));
       })
       .catch(() => setItems([]));
   }, []);

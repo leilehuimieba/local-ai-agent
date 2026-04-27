@@ -8,7 +8,7 @@ import {
   readRunStateNextStep,
 } from "../chat/chatResultModel";
 import { EventTimeline } from "../events/EventTimeline";
-import { readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
+import { isBusyRunState, readUnifiedStatusFromRunState, readUnifiedStatusMeta, RunState } from "../runtime/state";
 import { RunEvent } from "../shared/contracts";
 import { MetaGrid, SectionHeader } from "../ui/primitives";
 
@@ -432,6 +432,4 @@ function readEventCountLabel(totalCount: number, progress: ReturnType<typeof use
   return `${progress.newEventCount} 条本轮事件`;
 }
 
-function isBusyRunState(runState: RunState) {
-  return runState === "submitting" || runState === "streaming" || runState === "resuming";
-}
+

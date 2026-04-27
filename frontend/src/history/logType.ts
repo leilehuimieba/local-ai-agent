@@ -268,3 +268,16 @@ function hasAnyKeyword(values: Array<string | undefined>, keywords: string[]) {
 function hasKeyword(value: string | undefined, keyword: string) {
   return (value || "").toLowerCase().includes(keyword.toLowerCase());
 }
+
+export function eventLikeMemory(event: RunEvent) {
+  return {
+    event_type: event.event_type,
+    kind: event.metadata?.memory_kind || event.record_type || event.output_kind,
+    metadata: event.metadata,
+    reason: event.detail || event.summary,
+    source_type: event.source_type,
+    summary: event.summary,
+    title: event.metadata?.task_title || event.summary,
+    verified: event.verification_snapshot?.passed,
+  };
+}

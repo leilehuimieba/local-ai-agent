@@ -1,7 +1,7 @@
 import { KeyboardEvent, useEffect, useMemo, useRef } from "react";
 
 import { RunEvent, RuntimeContextSnapshot } from "../shared/contracts";
-import { readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
+import { eventLikeMemory, readMemoryActivityLabel, readMemoryFacetLabel, readMemoryGovernanceLabel, readReviewTypeLabel, readRunEventType } from "../history/logType";
 import { readUnifiedStatusMeta, UnifiedStatusKey } from "../runtime/state";
 import { isPermissionAwaiting, isPermissionBlocked, isPermissionResolved, readPermissionSummary } from "../shared/permissionFlow";
 import { EmptyStateBlock, InfoCard, StatusPill } from "../ui/primitives";
@@ -333,19 +333,6 @@ function isMemoryEvent(event: RunEvent) {
 function readMemoryReason(event: RunEvent) {
   if (!isMemoryEvent(event)) return "";
   return event.detail || event.summary ? `原因：${event.detail || event.summary}` : "";
-}
-
-function eventLikeMemory(event: RunEvent) {
-  return {
-    event_type: event.event_type,
-    kind: event.metadata?.memory_kind || event.record_type || event.output_kind,
-    metadata: event.metadata,
-    reason: event.detail || event.summary,
-    source_type: event.source_type,
-    summary: event.summary,
-    title: event.metadata?.task_title || event.summary,
-    verified: event.verification_snapshot?.passed,
-  };
 }
 
 function handleTimelineScroll(
