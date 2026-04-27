@@ -1,6 +1,6 @@
 # Hermes Change 索引
 
-更新时间：2026-04-26
+更新时间：2026-04-27
 
 这个文件用于提供 change 目录导航。
 "当前阶段 / 当前 Gate / 当前活跃 change"的状态统一以 `docs/11-hermes-rebuild/current-state.md` 为准。
@@ -11,7 +11,7 @@
 
 ## 归档入口
 
-1. [archive/2026-04-27/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-27/INDEX.md)（O/P/Q CSS 与 router 拆分归档入口）
+1. [archive/2026-04-27/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-27/INDEX.md)（P/Q/R 产品化治理与模块化收口归档入口）
 2. [archive/2026-04-26/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-26/INDEX.md)（D~N 阶段收口项与 H-02/H-03 保留观察归档入口，共 26 项）
 2. [archive/2026-04-24/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
 3. [archive/2026-04-23/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
