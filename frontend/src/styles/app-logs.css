@@ -1,0 +1,95 @@
+.logs-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.logs-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.logs-timeline-panel .investigation-list {
+  max-height: calc(100dvh - 320px);
+}
+/* Drawer-adaptive logs layout */
+.drawer-body .logs-grid {
+  grid-template-columns: 1fr;
+}
+.drawer-body .logs-detail-stack {
+  position: static;
+}
+.drawer-body .logs-timeline-panel .investigation-list {
+  max-height: calc(100dvh - 280px);
+}
+.logs-detail-stack {
+  position: sticky;
+  top: var(--space-4);
+}
+.logs-detail-rail {
+  padding: 0;
+  background: transparent;
+}
+.logs-filter-toolbar,
+.logs-timeline-panel {
+  background: linear-gradient(180deg, rgba(29, 34, 45, 0.94), rgba(22, 26, 35, 0.94));
+}
+.logs-detail-rail .section-header {
+  align-items: flex-start;
+}
+.logs-detail-rail .section-header p {
+  max-width: 620px;
+}
+.logs-filter-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-8);
+  background: rgba(255, 255, 255, 0.04);
+}
+.logs-filter-note strong {
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}.filter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: end;
+}.history-focus-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+}.focus-chip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-8);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+}.focus-chip strong {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-primary);
+}.focus-chip span {
+  font-size: 11px;
+  line-height: 1.35;
+}.focus-chip.active {
+  border-color: rgba(26, 110, 243, 0.32);
+  background: rgba(26, 110, 243, 0.1);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px rgba(26, 110, 243, 0.16) inset;
+}.detail-anchor.focused .detail-card {
+  border-color: rgba(26, 110, 243, 0.36);
+  box-shadow: 0 0 0 1px rgba(26, 110, 243, 0.15) inset;
+}.simplified-logs-page {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  gap: var(--space-4);
+}

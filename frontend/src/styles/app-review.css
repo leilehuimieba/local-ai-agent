@@ -1,0 +1,19 @@
+.summary-card,
+.review-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: 14px;
+}.summary-card span,
+.review-card span {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}.summary-card.tone-danger,
+.review-card.tone-danger {
+  border-color: var(--state-failed-border);
+}.summary-card.tone-warning,
+.review-card.tone-warning {
+  border-color: var(--state-awaiting-border);
+}.summary-card.tone-calm,
+.review-card.tone-calm {
+  border-color: var(--state-running-border);
+}

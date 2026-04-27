@@ -1,0 +1,165 @@
+.timeline-tags {
+  gap: 5px;
+}
+.timeline-tags span {
+  min-height: 20px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(194, 201, 214, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+}
+.timeline-tags span:last-child {
+  color: var(--text-secondary);
+}
+.timeline-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.timeline-chip-row-warning .status-badge,
+.timeline-chip-row-warning .timeline-focus-badge-warning {
+  box-shadow: inset 0 0 0 1px rgba(249, 174, 71, 0.16);
+}
+.timeline-chip-row-danger .status-badge,
+.timeline-chip-row-danger .timeline-focus-badge-danger {
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 122, 0.16);
+}
+.timeline-chip-row-calm .status-badge,
+.timeline-chip-row-calm .timeline-focus-badge-calm {
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 53, 0.16);
+}
+.timeline-chip-row-selected .status-badge,
+.timeline-chip-row-selected .timeline-focus-badge {
+  background: rgba(255, 255, 255, 0.08);
+}
+.timeline-detail-group {
+  display: grid;
+  gap: 5px;
+}
+.timeline-detail-list {
+  display: grid;
+  gap: 4px;
+}
+.timeline-head-copy strong {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.timeline-head-copy p {
+  margin: 0;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+.timeline-summary {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.timeline-summary-danger {
+  color: #ffb8b4;
+}
+.timeline-summary-warning {
+  color: #ffd89a;
+}
+.timeline-summary-calm {
+  color: #a8eeff;
+}
+.timeline-primary-detail {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.timeline-primary-detail-danger {
+  color: #ffc2c0;
+}
+.timeline-primary-detail-warning {
+  color: #ffe0a0;
+}
+.timeline-primary-detail-calm {
+  color: #b0e8ff;
+}
+.timeline-detail-row {
+  padding-left: 9px;
+  border-left: 2px solid var(--border-subtle);
+  color: rgba(201, 208, 220, 0.88);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.timeline-detail-row-danger {
+  border-left-color: rgba(255, 95, 87, 0.5);
+}
+.timeline-detail-row-warning {
+  border-left-color: rgba(249, 174, 71, 0.5);
+}
+.timeline-detail-row-calm {
+  border-left-color: rgba(0, 212, 255, 0.45);
+}.simple-logs-hero {
+  background: transparent;
+}.simple-logs-timeline {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}.simple-timeline-list {
+  display: grid;
+  gap: var(--space-3);
+}.simple-timeline-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: 16px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  background: var(--bg-panel-soft);
+  cursor: pointer;
+  transition:
+    border-color 180ms var(--ease-standard),
+    background-color 180ms var(--ease-standard),
+    transform 180ms var(--ease-standard);
+}.simple-timeline-item:hover,
+.simple-timeline-item.selected {
+  border-color: var(--border-strong);
+  background: var(--bg-panel);
+  transform: translateY(-1px);
+}.simple-timeline-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: center;
+}.simple-timeline-head div {
+  display: grid;
+  gap: 4px;
+}.simple-timeline-head time {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}.simple-timeline-head strong {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}.simple-expand-hint {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}.simple-timeline-summary {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}.simple-timeline-details {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}.simple-timeline-details div {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: var(--space-3);
+}.simple-timeline-details dt,
+.simple-timeline-details dd {
+  margin: 0;
+  line-height: 1.55;
+  font-size: var(--text-sm);
+}.simple-timeline-details dt {
+  color: var(--text-tertiary);
+}.simple-timeline-details dd {
+  color: var(--text-secondary);
+}

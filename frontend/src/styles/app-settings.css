@@ -1,0 +1,42 @@
+.settings-feedback {
+  display: grid;
+  gap: var(--space-2);
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-12);
+  background: var(--bg-panel);
+}
+.settings-feedback-running {
+  background: var(--state-running-bg);
+  border-color: var(--state-running-border);
+}
+.settings-feedback-failed {
+  background: var(--state-failed-bg);
+  border-color: var(--state-failed-border);
+}
+.settings-feedback-completed {
+  background: var(--state-completed-bg);
+  border-color: var(--state-completed-border);
+}
+.settings-inline-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-8);
+  line-height: 1.6;
+}
+.settings-inline-feedback-running {
+  background: var(--state-running-bg);
+  border-color: var(--state-running-border);
+  color: var(--state-running-text);
+}
+.settings-inline-feedback-failed {
+  background: var(--state-failed-bg);
+  border-color: var(--state-failed-border);
+  color: var(--state-failed-text);
+}
+.settings-inline-feedback-completed {
+  background: var(--state-completed-bg);
+  border-color: var(--state-completed-border);
+  color: var(--state-completed-text);
+}

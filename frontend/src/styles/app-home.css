@@ -1,0 +1,65 @@
+.home-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+.home-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-hero-section,
+.home-card-section,
+.home-block-section {
+  padding: 18px;
+}
+.home-hero-section {
+  background:
+    radial-gradient(circle at top right, rgba(255, 107, 53, 0.16), transparent 34%),
+    radial-gradient(circle at left center, rgba(0, 212, 255, 0.12), transparent 28%),
+    var(--bg-panel-soft);
+}
+.home-block-section {
+  background:
+    linear-gradient(135deg, rgba(255, 120, 110, 0.12), rgba(255, 120, 110, 0.04)),
+    var(--bg-panel-soft);
+}
+.home-compose-form,
+.home-example-list,
+.home-metric-grid,
+.home-capability-list,
+.home-activity-list,
+.home-block-detail {
+  display: grid;
+  gap: var(--space-3);
+}
+.home-compose-label {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.home-compose-input {
+  min-height: 132px;
+}
+.home-compose-footer,
+.home-primary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.home-compose-footer p,
+.home-block-detail p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.home-block-detail strong {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.home-example-list,
+.home-capability-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-metric-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

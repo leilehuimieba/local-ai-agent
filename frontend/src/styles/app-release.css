@@ -1,0 +1,105 @@
+.release-wizard-page {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  gap: var(--space-4);
+}
+.release-hero,
+.release-decision-card {
+  padding: 16px 18px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-16);
+  background: var(--bg-panel-soft);
+}
+.release-step-list {
+  display: grid;
+  gap: var(--space-3);
+}
+.release-step-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  background: var(--bg-panel);
+}
+.release-step-index {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+.release-step-body {
+  display: grid;
+  gap: var(--space-3);
+}
+.release-step-body h3,
+.release-step-body p,
+.release-decision-card p {
+  margin: 0;
+}
+.release-step-body h3,
+.release-decision-card strong {
+  color: var(--text-primary);
+}
+.release-step-body > p,
+.release-decision-card p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.release-meta-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+.release-meta-row span {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+.release-meta-row p,
+.release-meta-row code {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.release-meta-row code {
+  display: block;
+  padding: 8px 10px;
+  border-radius: var(--radius-8);
+  background: var(--bg-elevated);
+  color: var(--accent-cyan);
+  white-space: pre-wrap;
+}
+.release-step-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: 4px;
+}
+.release-step-action button {
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-999);
+  background: var(--accent);
+  color: var(--text-inverse);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+.release-step-action button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+.release-result-passed {
+  color: var(--status-success);
+  font-weight: 700;
+}
+.release-result-failed {
+  color: var(--status-error);
+  font-weight: 700;
+}

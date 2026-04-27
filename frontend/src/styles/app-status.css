@@ -1,0 +1,33 @@
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-running {
+  background: var(--state-running-bg);
+  color: var(--state-running-text);
+  border-color: var(--state-running-border);
+}
+.status-awaiting {
+  background: var(--state-awaiting-bg);
+  color: var(--state-awaiting-text);
+  border-color: var(--state-awaiting-border);
+}
+.status-failed,
+.status-disconnected {
+  background: var(--state-failed-bg);
+  color: var(--state-failed-text);
+  border-color: var(--state-failed-border);
+}
+.status-completed {
+  background: var(--state-completed-bg);
+  color: var(--state-completed-text);
+  border-color: var(--state-completed-border);
+}
+.status-badge.status-running,
+.status-badge.status-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
