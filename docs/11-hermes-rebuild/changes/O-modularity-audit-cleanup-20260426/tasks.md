@@ -1,0 +1,28 @@
+# 任务清单
+
+- [x] O-01 创建 `frontend/src/shared/apiUtils.ts`
+- [x] O-02 修改 `frontend/src/chat/api.ts` 引用 apiUtils
+- [x] O-03 修改 `frontend/src/settings/api.ts` 引用 apiUtils
+- [x] O-04 修改 `frontend/src/release/api.ts` 引用 apiUtils
+- [x] O-05 修改 `frontend/src/knowledge-base/api.ts` 引用 apiUtils
+- [x] O-06 创建 `gateway/internal/util/path.go`
+- [x] O-07 修改 `gateway/internal/api/router.go` 引用 util.PathExists
+- [x] O-08 修改 `gateway/internal/service/diagnostics.go` 引用 util.PathExists
+- [x] O-09 运行前端测试 `npm test -- --run`
+- [x] O-10 运行 Go 测试 `go test ./internal/service/`
+- [x] O-11 运行 Go 构建 `go build ./...`
+- [x] O-12 补全 verify.md
+- [x] O-13 创建 `gateway/internal/service/release.go`
+- [x] O-14 重写 `gateway/internal/api/router_release.go` 为 HTTP 适配层
+- [x] O-15 迁移测试到 `service/release_test.go`
+- [x] O-16 运行 Go 构建 `go build ./...`
+- [x] O-17 运行 Go 测试 `go test ./internal/service/ ./internal/api/ -run TestRelease`
+- [x] O-18 创建 `frontend/src/settings/actionRunner.ts`
+- [x] O-19 重写 `frontend/src/settings/useSettings.ts` 引用 actionRunner
+- [x] O-20 运行前端测试 `npm test -- --run`
+- [x] O-21 运行 TypeScript 检查 `npx tsc --noEmit`
+- [x] O-22 创建 `gateway/internal/util/file.go`（CountJSONLLines + CountDirEntries）
+- [x] O-23 修改 `gateway/internal/api/router.go` 引用 util 函数
+- [x] O-24 运行 Go 构建 `go build ./...`
+- [x] O-25 运行 Go 测试 `go test ./internal/service/ ./internal/api/ -run TestRelease`
+- [x] O-26 清理 tmp/ 超过 7 天的历史验收目录（11 个目录，释放 ~1MB）

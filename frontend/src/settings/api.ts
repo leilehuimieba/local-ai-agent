@@ -1,3 +1,4 @@
+import { readErrorText } from "../shared/apiUtils";
 import {
   DiagnosticsCheckResponse,
   ExternalConnectionActionRequest,
@@ -129,10 +130,6 @@ function downloadJSON(fileName: string, payload: unknown) {
   return `${fileName} 已开始导出。`;
 }
 
-async function readErrorText(response: Response): Promise<string> {
-  const text = (await response.text()).trim();
-  return text || String(response.status);
-}
 
 async function postProviderAction<T>(url: string, payload: unknown): Promise<T> {
   const response = await fetch(url, {

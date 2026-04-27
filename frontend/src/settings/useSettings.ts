@@ -1,16 +1,26 @@
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   DiagnosticsCheckResponse,
   ExternalConnectionActionResponse,
-  ProviderApplyResponse,
-  ProviderRemoveResponse,
-  ProviderSaveResponse,
   ProviderSettingsResponse,
-  ProviderTestResponse,
   SettingsResponse,
 } from "../shared/contracts";
 import { useMemories } from "../resources/useMemories";
+import {
+  applyDiagnosticsResult,
+  applyNextSettings,
+  buildActionRunner,
+  createFeedback,
+  isActionPending,
+  mergeExternalConnections,
+  runProviderAction,
+  runSettingsAction,
+  type ActionRunner,
+  type ProviderActionState,
+  type SettingsActionFeedback,
+  type SettingsActionKind,
+} from "./actionRunner";
 import {
   applyProviderCredential,
   checkDiagnostics,
@@ -26,39 +36,7 @@ import {
 type PendingActions = Partial<Record<SettingsActionKind, true>>;
 type ProviderActions = Record<string, ProviderActionState>;
 
-export type SettingsActionKind =
-  | "model"
-  | "mode"
-  | "workspace"
-  | "directoryPrompt"
-  | "riskLevel"
-  | "revokeApproval"
-  | "externalConnection"
-  | "diagnosticsCheck";
-
-export type SettingsActionFeedback = {
-  action: SettingsActionKind;
-  title: string;
-  detail: string;
-};
-
-export type ProviderActionState = {
-  pending?: boolean;
-  success?: string;
-  error?: string;
-};
-
-type ActionRunner<T> = {
-  action: SettingsActionFeedback;
-  execute: () => Promise<T>;
-  onSuccess?: (result: T) => Promise<void> | void;
-  setActionError: Dispatch<SetStateAction<SettingsActionFeedback | null>>;
-  setBootstrapError: Dispatch<SetStateAction<string | null>>;
-  setLastSuccess: Dispatch<SetStateAction<SettingsActionFeedback | null>>;
-  setPendingAction: Dispatch<SetStateAction<SettingsActionFeedback | null>>;
-  setPendingActions: Dispatch<SetStateAction<PendingActions>>;
-  successDetail: string;
-};
+export type { SettingsActionKind, SettingsActionFeedback, ProviderActionState };
 
 export function useSettings() {
   const state = useSettingsState();
@@ -120,17 +98,8 @@ function buildSettingsApi(
   };
 }
 
-function applyNextSettings(
-  setSettings: Dispatch<SetStateAction<SettingsResponse | null>>,
-) {
-  return (nextSettings: SettingsResponse) => {
-    setSettings(nextSettings);
-    return nextSettings;
-  };
-}
-
 function syncMemoryCount(
-  setSettings: Dispatch<SetStateAction<SettingsResponse | null>>,
+  setSettings: React.Dispatch<React.SetStateAction<SettingsResponse | null>>,
   count: number,
 ) {
   setSettings((current) => current ? ({
@@ -267,12 +236,12 @@ function createWorkspaceChange(
     const settings = state.settings;
     if (!settings || workspaceId === settings.workspace.workspace_id || feedback.isActionPending("workspace")) return settings;
     const name = readWorkspaceName(settings, workspaceId);
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("workspace", "工作区切换", `正在切换到 ${name}。`),
       execute: async () => updateSettings({ workspace_id: workspaceId }),
       onSuccess: async () => { await memoriesApi.refreshMemories(); },
       successDetail: `已切换到 ${name}。`,
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -283,11 +252,11 @@ function createModeChange(
   return async (mode: string) => {
     const settings = state.settings;
     if (!settings || mode === settings.mode || feedback.isActionPending("mode")) return settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("mode", "运行模式切换", `正在切换到${readModeLabel(mode)}。`),
       execute: async () => updateSettings({ mode }),
       successDetail: `当前模式已更新为${readModeLabel(mode)}。`,
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -300,11 +269,11 @@ function createModelChange(
     if (!settings || feedback.isActionPending("model")) return settings;
     const targetModel = findTargetModel(settings, modelKey);
     if (isCurrentModel(settings, targetModel)) return settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("model", "模型切换", `正在切换到 ${targetModel.display_name}。`),
       execute: async () => updateSettings({ model: targetModel }),
       successDetail: `当前模型已切换为 ${targetModel.display_name}。`,
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -315,11 +284,11 @@ function createDirectoryPromptChange(
   return async (enabled: boolean) => {
     const settings = state.settings;
     if (!settings || enabled === settings.directory_prompt_enabled || feedback.isActionPending("directoryPrompt")) return settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("directoryPrompt", "目录提醒开关", readTogglePendingText("新目录首次接触提醒", enabled)),
       execute: async () => updateSettings({ directory_prompt_enabled: enabled }),
       successDetail: readToggleSuccessText("新目录首次接触提醒", enabled),
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -330,11 +299,11 @@ function createRiskLevelChange(
   return async (enabled: boolean) => {
     const settings = state.settings;
     if (!settings || enabled === settings.show_risk_level || feedback.isActionPending("riskLevel")) return settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("riskLevel", "风险等级展示开关", readTogglePendingText("显示风险等级", enabled)),
       execute: async () => updateSettings({ show_risk_level: enabled }),
       successDetail: readToggleSuccessText("显示风险等级", enabled),
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -344,11 +313,11 @@ function createApprovalRevoke(
 ) {
   return async (rootPath: string) => {
     if (!state.settings || feedback.isActionPending("revokeApproval")) return state.settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("revokeApproval", "移除目录授权", `正在移除目录授权：${rootPath}`),
       execute: async () => updateSettings({ revoke_directory_root: rootPath }),
       successDetail: `已移除目录授权：${rootPath}`,
-    })).then(applyNextSettings(state.setSettings));
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }
 
@@ -358,7 +327,7 @@ function createExternalConnectionAction(
 ) {
   return async (slotId: string, action: "validate" | "recheck") => {
     if (!state.settings || feedback.isActionPending("externalConnection")) return state.settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("externalConnection", "外部连接动作", `正在处理 ${slotId} 的${readExternalActionLabel(action)}。`),
       execute: async () => {
         const result = await runExternalConnectionAction({ slot_id: slotId, action });
@@ -367,7 +336,7 @@ function createExternalConnectionAction(
         return result;
       },
       successDetail: `${slotId} ${readExternalActionLabel(action)}完成。`,
-    }));
+    }, feedback, state));
   };
 }
 
@@ -377,73 +346,12 @@ function createDiagnosticsCheck(
 ) {
   return async () => {
     if (!state.settings || feedback.isActionPending("diagnosticsCheck")) return state.settings;
-    return runSettingsAction(buildActionRunner(state, feedback, {
+    return runSettingsAction(buildActionRunner({
       action: createFeedback("diagnosticsCheck", "环境重新检测", "正在重新检测当前环境。"),
       execute: checkDiagnostics,
       successDetail: "诊断结果已更新。",
-    })).then(applyDiagnosticsResult(state.setSettings));
+    }, feedback, state)).then(applyDiagnosticsResult(state.setSettings));
   };
-}
-
-function buildActionRunner<T>(
-  state: ReturnType<typeof useSettingsState>,
-  feedback: ReturnType<typeof useSettingsFeedback>,
-  options: Pick<ActionRunner<T>, "action" | "execute" | "onSuccess" | "successDetail">,
-) {
-  return {
-    ...options,
-    setActionError: feedback.setActionError,
-    setBootstrapError: state.setBootstrapError,
-    setLastSuccess: feedback.setLastSuccess,
-    setPendingAction: feedback.setPendingAction,
-    setPendingActions: feedback.setPendingActions,
-  };
-}
-
-async function runSettingsAction<T>(args: ActionRunner<T>) {
-  setActionStarted(args);
-  try {
-    const result = await args.execute();
-    await args.onSuccess?.(result);
-    args.setLastSuccess(createFeedback(args.action.action, args.action.title, args.successDetail));
-    args.setBootstrapError(null);
-    return result;
-  } catch (error) {
-    args.setActionError(createFeedback(args.action.action, args.action.title, readErrorMessage(error, `${args.action.title}失败`)));
-    throw error;
-  } finally {
-    clearActionPending(args);
-  }
-}
-
-function setActionStarted<T>(args: ActionRunner<T>) {
-  args.setPendingAction(args.action);
-  args.setPendingActions((current) => ({ ...current, [args.action.action]: true }));
-  args.setActionError(null);
-  args.setLastSuccess(null);
-}
-
-function clearActionPending<T>(args: ActionRunner<T>) {
-  args.setPendingAction((current) => current?.action === args.action.action ? null : current);
-  args.setPendingActions((current) => clearPendingState(current, args.action.action));
-}
-
-function clearPendingState(current: PendingActions, action: SettingsActionKind) {
-  const next = { ...current };
-  delete next[action];
-  return next;
-}
-
-function isActionPending(current: PendingActions, action: SettingsActionKind) {
-  return Boolean(current[action]);
-}
-
-function createFeedback(action: SettingsActionKind, title: string, detail: string) {
-  return { action, detail, title };
-}
-
-function readErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
 }
 
 function readWorkspaceName(settings: SettingsResponse, workspaceId: string) {
@@ -483,81 +391,4 @@ function findTargetModel(settings: SettingsResponse, modelKey: string) {
 function isCurrentModel(settings: SettingsResponse, targetModel: SettingsResponse["model"]) {
   return targetModel.model_id === settings.model.model_id
     && targetModel.provider_id === settings.model.provider_id;
-}
-
-function applyDiagnosticsResult(
-  setSettings: Dispatch<SetStateAction<SettingsResponse | null>>,
-) {
-  return (result: DiagnosticsCheckResponse) => {
-    setSettings((current) => current ? mergeDiagnostics(current, result) : current);
-    return null;
-  };
-}
-
-function mergeExternalConnections(settings: SettingsResponse, result: ExternalConnectionActionResponse) {
-  if (result.external_connections?.length) {
-    return { ...settings, external_connections: result.external_connections };
-  }
-  if (!result.updated_slot) return settings;
-  return {
-    ...settings,
-    external_connections: settings.external_connections.map((slot) =>
-      slot.slot_id === result.updated_slot?.slot_id ? result.updated_slot : slot),
-  };
-}
-
-function mergeDiagnostics(settings: SettingsResponse, result: DiagnosticsCheckResponse) {
-  return {
-    ...settings,
-    diagnostics: {
-      ...result.diagnostics,
-      checked_at: result.checked_at,
-      warnings: result.warnings,
-      errors: result.errors,
-    },
-  };
-}
-
-async function runProviderAction<T>(
-  state: ReturnType<typeof useSettingsState>,
-  providerId: string,
-  execute: () => Promise<T>,
-) {
-  setProviderActionPending(state.setProviderActions, providerId);
-  try {
-    const result = await execute();
-    setProviderActionSuccess(state.setProviderActions, providerId, readProviderSuccessMessage(result));
-    return result;
-  } catch (error) {
-    setProviderActionError(state.setProviderActions, providerId, readErrorMessage(error, "操作失败"));
-    throw error;
-  }
-}
-
-function setProviderActionPending(
-  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
-  providerId: string,
-) {
-  setProviderActions((current) => ({ ...current, [providerId]: { pending: true } }));
-}
-
-function setProviderActionSuccess(
-  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
-  providerId: string,
-  message: string,
-) {
-  setProviderActions((current) => ({ ...current, [providerId]: { success: message } }));
-}
-
-function setProviderActionError(
-  setProviderActions: Dispatch<SetStateAction<ProviderActions>>,
-  providerId: string,
-  message: string,
-) {
-  setProviderActions((current) => ({ ...current, [providerId]: { error: message } }));
-}
-
-function readProviderSuccessMessage(result: unknown) {
-  const data = result as ProviderTestResponse | ProviderSaveResponse | ProviderApplyResponse | ProviderRemoveResponse;
-  return data.message || "操作成功";
 }

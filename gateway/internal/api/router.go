@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bufio"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -18,6 +17,7 @@ import (
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
 	"local-agent/gateway/internal/state"
+	"local-agent/gateway/internal/util"
 )
 
 type RuntimeStatus struct {
@@ -256,8 +256,8 @@ func buildMemoryPolicy(repoRoot string, workspace config.WorkspaceRef) MemoryPol
 		LongTermMemoryPath:  longTermPath,
 		KnowledgeBasePath:   knowledgePath,
 		LongTermMemoryCount: memoryCount(repoRoot, workspace.WorkspaceID),
-		KnowledgeCount:      countJSONLLines(knowledgePath),
-		WorkingMemoryFiles:  countDirEntries(filepath.Join(storageRoot, "working_memory")),
+		KnowledgeCount:      util.CountJSONLLines(knowledgePath),
+		WorkingMemoryFiles:  util.CountDirEntries(filepath.Join(storageRoot, "working_memory")),
 	}
 }
 
@@ -304,17 +304,17 @@ func buildDiagnosticsBase(args diagnosticsBaseArgs) DiagnosticsStatus {
 	return DiagnosticsStatus{
 		CheckedAt:               fmt.Sprintf("%d", time.Now().UnixMilli()),
 		RepoRoot:                args.repoRoot,
-		RepoRootExists:          pathExists(args.repoRoot),
+		RepoRootExists:          util.PathExists(args.repoRoot),
 		StorageRoot:             args.storageRoot,
-		StorageRootExists:       pathExists(args.storageRoot),
+		StorageRootExists:       util.PathExists(args.storageRoot),
 		SettingsPath:            args.settingsPath,
-		SettingsPathExists:      pathExists(args.settingsPath),
+		SettingsPathExists:      util.PathExists(args.settingsPath),
 		RunLogPath:              args.runLogPath,
-		RunLogPathExists:        pathExists(args.runLogPath),
+		RunLogPathExists:        util.PathExists(args.runLogPath),
 		EventLogPath:            args.eventLogPath,
-		EventLogPathExists:      pathExists(args.eventLogPath),
-		WorkingMemoryDirExists:  pathExists(filepath.Join(args.storageRoot, "working_memory")),
-		KnowledgeBasePathExists: pathExists(filepath.Join(args.storageRoot, "knowledge_base")),
+		EventLogPathExists:      util.PathExists(args.eventLogPath),
+		WorkingMemoryDirExists:  util.PathExists(filepath.Join(args.storageRoot, "working_memory")),
+		KnowledgeBasePathExists: util.PathExists(filepath.Join(args.storageRoot, "knowledge_base")),
 		RuntimeReachable:        args.runtimeStatus.OK,
 		RuntimeVersion:          fmt.Sprintf("%s / %s", args.runtimeStatus.Name, args.runtimeStatus.Version),
 		ProviderCount:           args.providerCount,
@@ -326,9 +326,9 @@ func buildDiagnosticsBase(args diagnosticsBaseArgs) DiagnosticsStatus {
 
 func withSiyuanDiagnostics(status DiagnosticsStatus, siyuan config.SiyuanConfig) DiagnosticsStatus {
 	status.SiyuanRoot = siyuan.RootDir
-	status.SiyuanRootExists = pathExists(siyuan.RootDir)
+	status.SiyuanRootExists = util.PathExists(siyuan.RootDir)
 	status.SiyuanExportDir = siyuan.ExportDir
-	status.SiyuanExportDirExists = pathExists(siyuan.ExportDir)
+	status.SiyuanExportDirExists = util.PathExists(siyuan.ExportDir)
 	status.SiyuanAutoWriteEnabled = siyuan.AutoWriteEnabled
 	status.SiyuanSyncEnabled = siyuan.SyncEnabled
 	return status
@@ -377,25 +377,6 @@ func supportedExternalConnectionActions(slotID string) []string {
 	return nil
 }
 
-func countJSONLLines(path string) int {
-	file, err := os.Open(path)
-	if err != nil {
-		return 0
-	}
-	defer file.Close()
-	count := 0
-	for scanner := bufio.NewScanner(file); scanner.Scan(); count++ {
-	}
-	return count
-}
-
-func countDirEntries(path string) int {
-	items, err := os.ReadDir(path)
-	if err != nil {
-		return 0
-	}
-	return len(items)
-}
 
 func memoryCount(repoRoot string, workspaceID string) int {
 	items, err := memory.NewStore(repoRoot).List(workspaceID)
@@ -700,14 +681,6 @@ func appendIfMissing(items *[]string, condition bool, message string) {
 	if condition {
 		*items = append(*items, message)
 	}
-}
-
-func pathExists(path string) bool {
-	if path == "" {
-		return false
-	}
-	_, err := os.Stat(path)
-	return err == nil
 }
 
 func toContractMemories(items []memory.Entry) []contracts.MemoryEntry {

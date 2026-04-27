@@ -1,3 +1,4 @@
+import { readErrorText } from "../shared/apiUtils";
 import { ChatRetryRequest, ChatRunAccepted, ModelRef, WorkspaceRef } from "../shared/contracts";
 
 type SubmitChatRunPayload = {
@@ -48,7 +49,3 @@ export async function submitChatRetry(payload: ChatRetryRequest): Promise<ChatRu
   return (await response.json()) as ChatRunAccepted;
 }
 
-async function readErrorText(response: Response): Promise<string> {
-  const text = (await response.text()).trim();
-  return text || String(response.status);
-}

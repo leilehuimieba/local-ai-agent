@@ -8,12 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"local-agent/gateway/internal/util"
 )
 
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
 type logsRemediationState struct {
 	LogsDir  string `json:"logs_dir"`
 	Exists   bool   `json:"exists"`
@@ -175,9 +173,9 @@ func ReadFrontendRemediationState(repoRoot string) frontendRemediationState {
 	packageJSON := filepath.Join(frontendDir, "package.json")
 	nodeModules := filepath.Join(frontendDir, "node_modules")
 	return frontendRemediationState{
-		FrontendDir: frontendDir, DistIndex: distIndex, Exists: pathExists(distIndex),
-		PackageJSONExists: pathExists(packageJSON), NodeModulesExists: pathExists(nodeModules),
-		BuildReady: pathExists(packageJSON) && pathExists(nodeModules),
+		FrontendDir: frontendDir, DistIndex: distIndex, Exists: util.PathExists(distIndex),
+		PackageJSONExists: util.PathExists(packageJSON), NodeModulesExists: util.PathExists(nodeModules),
+		BuildReady: util.PathExists(packageJSON) && util.PathExists(nodeModules),
 	}
 }
 
@@ -186,7 +184,7 @@ func ReadGatewayRemediationState(repoRoot string, port int) gatewayRemediationSt
 	entryPath := filepath.Join(gatewayDir, "cmd", "server", "main.go")
 	return gatewayRemediationState{
 		GatewayDir: gatewayDir, EntryPath: entryPath, HealthURL: fmt.Sprintf("http://127.0.0.1:%d/health", port),
-		SourceReady: pathExists(entryPath), GoAvailable: ToolAvailable("go"), Reachable: gatewayHealthChecker(port),
+		SourceReady: util.PathExists(entryPath), GoAvailable: ToolAvailable("go"), Reachable: gatewayHealthChecker(port),
 	}
 }
 

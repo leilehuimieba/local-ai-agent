@@ -1,3 +1,5 @@
+import { readErrorText } from "../shared/apiUtils";
+
 export type ReleaseStepId = "prelaunch" | "package" | "doctor" | "rc";
 
 export type ReleaseRunResponse = {
@@ -23,7 +25,3 @@ export async function runReleaseStep(step: ReleaseStepId): Promise<ReleaseRunRes
   return (await response.json()) as ReleaseRunResponse;
 }
 
-async function readErrorText(response: Response): Promise<string> {
-  const text = (await response.text()).trim();
-  return text || `HTTP ${response.status}`;
-}

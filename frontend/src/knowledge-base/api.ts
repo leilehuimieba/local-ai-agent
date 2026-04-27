@@ -1,3 +1,4 @@
+import { readErrorText } from "../shared/apiUtils";
 import { KnowledgeItem } from "./types";
 
 export type CreateKnowledgeItemRequest = {
@@ -16,11 +17,6 @@ export type ListResponse = {
   categories: string[];
   tags: string[];
 };
-
-async function readErrorText(response: Response): Promise<string> {
-  const text = (await response.text()).trim();
-  return text || `HTTP ${response.status}`;
-}
 
 function normalizeItem(raw: any): KnowledgeItem {
   return {
