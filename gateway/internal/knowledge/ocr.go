@@ -147,7 +147,10 @@ func extractPdfWithOCR(path string, apiKey, secretKey string) ExtractResult {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	cmd := exec.Command(ppm, "-png", "-r", "100", workPath, filepath.Join(tmpDir, "page"))
+	cmd := exec.Command(ppm, "-png", "-f", "1", "-l", "8", "-r", "100", workPath, filepath.Join(tmpDir, "page"))
+	if prefix := popplerPrefix(); prefix != "" {
+		cmd.Env = append(os.Environ(), "POPPLER_PREFIX="+prefix)
+	}
 	if err := cmd.Run(); err != nil {
 		return ExtractResult{Error: fmt.Errorf("PDF转图片失败: %w", err)}
 	}
@@ -155,11 +158,18 @@ func extractPdfWithOCR(path string, apiKey, secretKey string) ExtractResult {
 	client := newBaiduOCRClient(apiKey, secretKey)
 	var pages []string
 	entries, _ := os.ReadDir(tmpDir)
+	var pngFiles []string
 	for _, entry := range entries {
-		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
-			continue
+		if strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
+			pngFiles = append(pngFiles, entry.Name())
 		}
-		imgPath := filepath.Join(tmpDir, entry.Name())
+	}
+	// 限制最多处理前 8 页，避免耗时过长
+	if len(pngFiles) > 8 {
+		pngFiles = pngFiles[:8]
+	}
+	for _, name := range pngFiles {
+		imgPath := filepath.Join(tmpDir, name)
 		imgData, err := os.ReadFile(imgPath)
 		if err != nil {
 			continue

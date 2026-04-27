@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"rsc.io/pdf"
@@ -47,8 +48,46 @@ func ExtractText(path string) ExtractResult {
 	if isMostlyGarbled(res.Content) {
 		res.Content = ""
 	}
+	res.Content = strings.ReplaceAll(res.Content, "\x00", "")
+	res.Content = cleanWatermark(res.Content)
 	res.Title = pickTitle(res.Title, res.Content, path)
 	return res
+}
+
+var watermarkKeywords = []string{
+	"淘宝店铺：", "淘宝：", "掌柜旺旺：", "认准淘宝店铺：",
+	"叮当考研", "谈辰图书", "光速考研工作室", "学海无涯教育",
+}
+
+func cleanWatermark(content string) string {
+	lines := strings.Split(content, "\n")
+	var out []string
+	lastEmpty := false
+	for _, line := range lines {
+		if hasWatermarkLine(line) {
+			lastEmpty = true
+			continue
+		}
+		if strings.TrimSpace(line) == "" {
+			if !lastEmpty {
+				out = append(out, "")
+				lastEmpty = true
+			}
+			continue
+		}
+		out = append(out, line)
+		lastEmpty = false
+	}
+	return strings.TrimSpace(strings.Join(out, "\n"))
+}
+
+func hasWatermarkLine(line string) bool {
+	for _, kw := range watermarkKeywords {
+		if strings.Contains(line, kw) {
+			return true
+		}
+	}
+	return false
 }
 
 func pickTitle(title, content, path string) string {
@@ -96,9 +135,18 @@ func isMostlyGarbled(s string) bool {
 		if r < 32 && r != '\n' && r != '\t' && r != '\r' {
 			continue
 		}
+		if r >= 0x80 && r <= 0x9F {
+			continue
+		}
+		if r == ' ' {
+			continue
+		}
+		if unicode.Is(unicode.Cf, r) {
+			continue
+		}
 		valid++
 	}
-	return float64(valid)/float64(len(runes)) < 0.7
+	return float64(valid)/float64(len(runes)) < 0.3
 }
 
 func extractTxt(path string) ExtractResult {
@@ -129,10 +177,20 @@ func extractPdf(path string) (res ExtractResult) {
 	// 优先使用 pdftotext（对中文支持更好），不可用时回退到 rsc.io/pdf
 	if findPdftotext() != "" {
 		res = fallbackPdftotext(path, nil)
-		if res.Error == nil && strings.TrimSpace(res.Content) != "" {
-			return res
+		if res.Error == nil && strings.TrimSpace(res.Content) != "" && !isMostlyGarbled(res.Content) && !strings.Contains(res.Content, "\x00") {
+			// 如果控制字符比例过高，说明字体映射有问题，尝试 OCR
+			runes := []rune(res.Content)
+			ctrl := 0
+			for _, r := range runes {
+				if r < 32 && r != '\n' && r != '\t' && r != '\r' {
+					ctrl++
+				}
+			}
+			if float64(ctrl)/float64(len(runes)) < 0.15 {
+				return res
+			}
 		}
-		// pdftotext 提取为空，尝试 OCR
+		// pdftotext 提取为空或乱码，尝试 OCR
 		if ocrAPIKey != "" && ocrSecretKey != "" {
 			ocrRes := extractPdfWithOCR(path, ocrAPIKey, ocrSecretKey)
 			if ocrRes.Error == nil {
@@ -183,6 +241,13 @@ func findPdftotext() string {
 			`third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`,
 			`..\third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`,
 		}
+		if exe, err := os.Executable(); err == nil {
+			exeDir := filepath.Dir(exe)
+			candidates = append(candidates,
+				filepath.Join(exeDir, `third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`),
+				filepath.Join(exeDir, `..\third_party\poppler\poppler-24.08.0\Library\bin\pdftotext.exe`),
+			)
+		}
 		for _, c := range candidates {
 			if _, err := os.Stat(c); err == nil {
 				abs, _ := filepath.Abs(c)
@@ -196,6 +261,15 @@ func findPdftotext() string {
 	return ""
 }
 
+func hasNonASCII(s string) bool {
+	for _, r := range s {
+		if r > 127 {
+			return true
+		}
+	}
+	return false
+}
+
 func popplerPrefix() string {
 	pt := findPdftotext()
 	if pt == "" {
@@ -206,7 +280,16 @@ func popplerPrefix() string {
 	share := filepath.Join(dir, "..", "..", "share")
 	if abs, err := filepath.Abs(share); err == nil {
 		if _, err := os.Stat(abs); err == nil {
-			return filepath.Dir(abs)
+			prefix := filepath.Dir(abs)
+			if runtime.GOOS == "windows" && hasNonASCII(prefix) {
+				junction := filepath.Join(os.TempDir(), "poppler-prefix")
+				_ = os.RemoveAll(junction)
+				_ = exec.Command("cmd", "/c", "mklink", "/J", junction, prefix).Run()
+				if _, err := os.Stat(junction); err == nil {
+					return junction
+				}
+			}
+			return prefix
 		}
 	}
 	return ""

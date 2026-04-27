@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/knowledge"
@@ -22,8 +24,17 @@ func main() {
 		fmt.Println("OCR not configured, skipping")
 	}
 
+	limit := 30
+	if len(os.Args) > 1 {
+		if n, err := strconv.Atoi(os.Args[1]); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	fmt.Printf("limit=%d\n", limit)
+
 	dbPath := filepath.Join(repoRoot, "data", "storage", "main.db")
-	cmd := exec.Command("sqlite3", dbPath, `SELECT id, workspace_id, source FROM knowledge_items WHERE LENGTH(content) = 0;`)
+	query := fmt.Sprintf(`SELECT id, workspace_id, source FROM knowledge_items WHERE LENGTH(content) = 0 ORDER BY source LIMIT %d;`, limit)
+	cmd := exec.Command("sqlite3", dbPath, query)
 	out, err := cmd.Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "query failed: %v\n", err)
@@ -40,9 +51,11 @@ func main() {
 		ws := strings.TrimSpace(parts[1])
 		source := strings.TrimSpace(parts[2])
 
+		start := time.Now()
 		extracted := knowledge.ExtractText(source)
+		elapsed := time.Since(start)
 		if extracted.Error != nil {
-			fmt.Printf("SKIP: %s -> %v\n", filepath.Base(source), extracted.Error)
+			fmt.Printf("SKIP (%v): %s -> %v\n", elapsed, filepath.Base(source), extracted.Error)
 			skipped++
 			continue
 		}
@@ -63,7 +76,7 @@ func main() {
 		if extracted.Content == "" {
 			action = "OK (empty)"
 		}
-		fmt.Printf("%s: %s -> title=%q content_len=%d\n", action, filepath.Base(source), extracted.Title, len(extracted.Content))
+		fmt.Printf("%s (%v): %s -> title=%q content_len=%d\n", action, elapsed, filepath.Base(source), extracted.Title, len(extracted.Content))
 	}
 	fmt.Printf("\nupdated=%d skipped=%d failed=%d\n", updated, skipped, failed)
 }
