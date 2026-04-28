@@ -39,7 +39,7 @@ export function RightDrawer() {
 
   // Elapsed time counter
   useEffect(() => {
-    let interval: NodeJS.Timeout
+    let interval: ReturnType<typeof setInterval>
     if (runState === "running") {
       interval = setInterval(() => {
         setElapsedTime((prev) => prev + 1)

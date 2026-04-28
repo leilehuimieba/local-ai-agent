@@ -17,7 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useLogsStore } from "@/lib/local-agent/store"
-import type { LogRun, LogStatus } from "@/lib/local-agent/types"
+import type { LogRun } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
 
 type TimeFilter = "today" | "7days" | "30days"
@@ -73,11 +73,9 @@ export function LogsView() {
     statusFilter,
     timeFilter,
     searchQuery,
-    selectedRun,
     setStatusFilter,
     setTimeFilter,
     setSearchQuery,
-    setSelectedRun,
     loadLogs,
   } = useLogsStore()
 
@@ -91,7 +89,7 @@ export function LogsView() {
     return runs.filter((log) => {
       if (statusFilter !== "all" && log.status !== statusFilter) return false
       if (searchQuery && !log.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
-      const logDate = new Date(log.startedAt || log.started_at)
+      const logDate = new Date(log.started_at)
       const now = new Date()
       const diffDays = Math.floor((now.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24))
       if (timeFilter === "today" && diffDays > 0) return false

@@ -30,6 +30,8 @@ interface RuntimeStore extends RuntimeState {
   setSubmitError: (error: string | null) => void
   clearMessages: () => void
   startNewRun: (taskTitle: string) => void
+  acceptRun: (sessionId: string, runId: string) => void
+  applyEvent: (event: RuntimeEvent) => void
   completeRun: () => void
   failRun: (error: string) => void
 }
@@ -93,14 +95,14 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
       submitError: null,
     }),
 
-  acceptRun: (sessionId, runId) =>
+  acceptRun: (sessionId: string, runId: string) =>
     set({
       sessionId,
       currentRunId: runId,
       runState: "running",
     }),
 
-  applyEvent: (event) =>
+  applyEvent: (event: RuntimeEvent) =>
     set((state) => {
       const events = [...state.events, event]
       if (event.event_type === "confirmation_required") {

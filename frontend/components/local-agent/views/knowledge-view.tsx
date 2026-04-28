@@ -22,7 +22,6 @@ import {
   Database,
   Plus,
   Upload,
-  X,
   Loader2,
 } from "lucide-react"
 import { useKnowledgeStore } from "@/lib/local-agent/store"
@@ -550,7 +549,7 @@ function GraphTab() {
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const nodesRef = useRef<GraphNode[]>([])
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
 
   // Initialize nodes
   useEffect(() => {

@@ -28,11 +28,11 @@ import {
   Check,
 } from "lucide-react"
 import { useRuntimeStore, useSettingsStore } from "@/lib/local-agent/store"
-import type { Message, RuntimeEvent, ResultBlock, Confirmation } from "@/lib/local-agent/types"
+import type { Message, RuntimeEvent, ResultBlock, Confirmation, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
 import { submitChatRun, submitConfirmationDecision, type SubmitChatRunPayload } from "@/lib/local-agent/api"
 import { useSessionEventStream } from "@/hooks/useSessionEventStream"
-import type { ConnectionState } from "@/hooks/useSessionEventStream"
+import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
 
 const quickPrompts = [
   { icon: Database, label: "查询数据库" },
@@ -76,8 +76,8 @@ export function TaskView() {
     onEvent: (event) => {
       applyEvent(event)
     },
-    onConnectionChange: (state: ConnectionState) => {
-      setConnectionState(state as any)
+    onConnectionChange: (state: StreamConnectionState) => {
+      setConnectionState(state as ConnectionState)
     },
     onStreamError: (message) => {
       setCriticalError(message)

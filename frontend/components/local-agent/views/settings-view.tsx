@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, forwardRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -40,7 +40,7 @@ import {
   EyeOff,
 } from "lucide-react"
 import { useSettingsStore, useRuntimeStore, useMemoryStore } from "@/lib/local-agent/store"
-import type { AgentMode, Provider } from "@/lib/local-agent/types"
+import type { AgentMode } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
 
 const settingsModules = [
