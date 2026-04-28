@@ -224,7 +224,7 @@ func (h *Handler) classifyByLLM(title, content string) (string, []string, error)
 		}
 	}
 
-	_, currentModel, _, _, _, _, _, _ := h.settingsStore.Snapshot()
+	_, currentModel, _, _, _, _, _, _, _ := h.settingsStore.Snapshot()
 	provider := FindProvider(h.cfg, currentModel.ProviderID)
 	if provider.ProviderID == "" || provider.APIKey == "" {
 		return "", nil, fmt.Errorf("LLM not configured")

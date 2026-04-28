@@ -33,6 +33,7 @@ type UpdateSettingsPayload = {
   directory_prompt_enabled?: boolean;
   show_risk_level?: boolean;
   revoke_directory_root?: string;
+  embedding_provider_id?: string;
 };
 
 export async function updateSettings(payload: UpdateSettingsPayload): Promise<SettingsResponse> {

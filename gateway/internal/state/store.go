@@ -20,6 +20,7 @@ type persistedSettings struct {
 	ShowRiskLevel          *bool    `json:"show_risk_level,omitempty"`
 	ApprovedWorkspaceIDs   []string `json:"approved_workspace_ids"`
 	ApprovedDirectories    []ApprovedDirectoryRecord `json:"approved_directories,omitempty"`
+	EmbeddingProviderID    string   `json:"embedding_provider_id,omitempty"`
 }
 
 type ApprovedDirectoryRecord struct {
@@ -41,6 +42,7 @@ type SettingsStore struct {
 	directoryPromptEnabled bool
 	showRiskLevel          bool
 	approvedDirectories    map[string]ApprovedDirectoryRecord
+	embeddingProviderID    string
 }
 
 func NewSettingsStore(repoRoot string, cfg config.AppConfig) *SettingsStore {
@@ -59,6 +61,7 @@ func NewSettingsStore(repoRoot string, cfg config.AppConfig) *SettingsStore {
 		directoryPromptEnabled: true,
 		showRiskLevel:          true,
 		approvedDirectories:    defaultApprovedDirectories(cfg.DefaultWorkspace),
+		embeddingProviderID:    cfg.Embedding.ProviderID,
 	}
 	store.loadPersisted()
 	return store
@@ -73,6 +76,7 @@ func (s *SettingsStore) Snapshot() (
 	bool,
 	bool,
 	[]ApprovedDirectoryRecord,
+	string,
 ) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -82,7 +86,7 @@ func (s *SettingsStore) Snapshot() (
 	workspaces := make([]contracts.WorkspaceRef, len(s.workspaces))
 	copy(workspaces, s.workspaces)
 	approved := s.approvedDirectoryListLocked()
-	return s.mode, s.model, models, s.workspace, workspaces, s.directoryPromptEnabled, s.showRiskLevel, approved
+	return s.mode, s.model, models, s.workspace, workspaces, s.directoryPromptEnabled, s.showRiskLevel, approved, s.embeddingProviderID
 }
 
 func (s *SettingsStore) Update(
@@ -91,6 +95,17 @@ func (s *SettingsStore) Update(
 	workspaceID string,
 	directoryPromptEnabled *bool,
 	showRiskLevel *bool,
+) error {
+	return s.UpdateFull(mode, model, workspaceID, directoryPromptEnabled, showRiskLevel, "")
+}
+
+func (s *SettingsStore) UpdateFull(
+	mode string,
+	model contracts.ModelRef,
+	workspaceID string,
+	directoryPromptEnabled *bool,
+	showRiskLevel *bool,
+	embeddingProviderID string,
 ) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -133,6 +148,9 @@ preferenceUpdate:
 	}
 	if showRiskLevel != nil {
 		s.showRiskLevel = *showRiskLevel
+	}
+	if embeddingProviderID != "" {
+		s.embeddingProviderID = embeddingProviderID
 	}
 
 	s.saveLocked()
@@ -232,6 +250,9 @@ func (s *SettingsStore) applyPersistedCore(persisted persistedSettings) {
 	if persisted.ShowRiskLevel != nil {
 		s.showRiskLevel = *persisted.ShowRiskLevel
 	}
+	if persisted.EmbeddingProviderID != "" {
+		s.embeddingProviderID = persisted.EmbeddingProviderID
+	}
 }
 
 func (s *SettingsStore) loadApprovedDirectories(persisted persistedSettings) {
@@ -268,6 +289,7 @@ func (s *SettingsStore) saveLocked() {
 		DirectoryPromptEnabled: boolPtr(s.directoryPromptEnabled),
 		ShowRiskLevel:          boolPtr(s.showRiskLevel),
 		ApprovedDirectories:    s.approvedDirectoryListLocked(),
+		EmbeddingProviderID:    s.embeddingProviderID,
 	}
 	payload.ApprovedWorkspaceIDs = approvedWorkspaceIDs(payload.ApprovedDirectories)
 

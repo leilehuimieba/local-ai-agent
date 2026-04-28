@@ -86,7 +86,7 @@
   border-radius: var(--radius-16);
   background: var(--bg-panel-soft);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-sm);
 }
 .logs-workspace-stack {
@@ -111,7 +111,7 @@
   border-radius: var(--radius-16);
   background: var(--bg-panel-soft);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-sm);
 }
 /* Drawer-adaptive panels */
@@ -334,7 +334,7 @@
   padding: 4px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-12);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--glass-highlight);
 }
 .topbar-nav-compact {
   gap: 4px;

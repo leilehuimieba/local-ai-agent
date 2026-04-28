@@ -19,7 +19,7 @@ func ResolveRunContext(
 	if sessionID == "" {
 		sessionID = NewID("session")
 	}
-	currentMode, currentModel, _, currentWorkspace, _, directoryPromptEnabled, _, _ := settingsStore.Snapshot()
+	currentMode, currentModel, _, currentWorkspace, _, directoryPromptEnabled, _, _, _ := settingsStore.Snapshot()
 	if mode == "" {
 		mode = currentMode
 	}

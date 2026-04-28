@@ -142,6 +142,7 @@ function buildSettingsActions(
     changeModel: createModelChange(state, feedback),
     changeDirectoryPromptEnabled: createDirectoryPromptChange(state, feedback),
     changeShowRiskLevel: createRiskLevelChange(state, feedback),
+    changeEmbeddingProvider: createEmbeddingProviderChange(state, feedback),
     revokeDirectoryApproval: createApprovalRevoke(state, feedback),
     runExternalConnectionAction: createExternalConnectionAction(state, feedback),
     checkDiagnostics: createDiagnosticsCheck(state, feedback),
@@ -303,6 +304,21 @@ function createRiskLevelChange(
       action: createFeedback("riskLevel", "风险等级展示开关", readTogglePendingText("显示风险等级", enabled)),
       execute: async () => updateSettings({ show_risk_level: enabled }),
       successDetail: readToggleSuccessText("显示风险等级", enabled),
+    }, feedback, state)).then(applyNextSettings(state.setSettings));
+  };
+}
+
+function createEmbeddingProviderChange(
+  state: ReturnType<typeof useSettingsState>,
+  feedback: ReturnType<typeof useSettingsFeedback>,
+) {
+  return async (providerId: string) => {
+    const settings = state.settings;
+    if (!settings || providerId === settings.embedding?.provider_id || feedback.isActionPending("embedding")) return settings;
+    return runSettingsAction(buildActionRunner({
+      action: createFeedback("embedding", "嵌入服务方切换", `正在切换到 ${providerId}。`),
+      execute: async () => updateSettings({ embedding_provider_id: providerId }),
+      successDetail: `嵌入服务方已切换为 ${providerId}。`,
     }, feedback, state)).then(applyNextSettings(state.setSettings));
   };
 }

@@ -4,9 +4,9 @@
 .timeline-tags span {
   min-height: 20px;
   padding: 0 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--glass-highlight);
   color: rgba(194, 201, 214, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-highlight);
   font-size: 11px;
 }
 .timeline-tags span:last-child {
@@ -32,7 +32,7 @@
 }
 .timeline-chip-row-selected .status-badge,
 .timeline-chip-row-selected .timeline-focus-badge {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-highlight-strong);
 }
 .timeline-detail-group {
   display: grid;

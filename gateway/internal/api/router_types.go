@@ -116,6 +116,7 @@ type ProviderOption struct {
 	BaseURL             string `json:"base_url"`
 	ChatCompletionsPath string `json:"chat_completions_path"`
 	ModelsPath          string `json:"models_path"`
+	EmbeddingModel      string `json:"embedding_model"`
 }
 
 type ExternalConnectionActionRequest struct {

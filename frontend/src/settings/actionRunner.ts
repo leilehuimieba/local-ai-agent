@@ -8,6 +8,7 @@ export type SettingsActionKind =
   | "directoryPrompt"
   | "riskLevel"
   | "revokeApproval"
+  | "embedding"
   | "externalConnection"
   | "diagnosticsCheck";
 

@@ -28,30 +28,76 @@ import {
 } from "./settingsHelpers";
 
 const SETTINGS_MODULE_ORDER = ["runtime", "model", "provider", "embedding", "workspace", "risk", "resources", "diagnostics"] as const;
+const MODULE_TITLES: Record<(typeof SETTINGS_MODULE_ORDER)[number], string> = {
+  runtime: "运行环境",
+  model: "模型与模式",
+  provider: "Provider 凭证",
+  embedding: "向量化与嵌入",
+  workspace: "工作区与授权",
+  risk: "风险与权限",
+  resources: "记忆与资源",
+  diagnostics: "诊断与导出",
+};
+function readModuleBadge(key: (typeof SETTINGS_MODULE_ORDER)[number], props: SettingsModulesProps): string {
+  if (key === "runtime") return props.settings.runtime_status.ok ? "正常" : "已断开";
+  if (key === "model") return readControlBadge(props, ["model", "mode"]);
+  if (key === "provider") return props.providerSettings ? `${props.providerSettings.providers.length} 个` : "加载中";
+  if (key === "embedding") return props.settings.embedding?.model_name ? "已配置" : "未配置";
+  if (key === "workspace") return readControlBadge(props, ["workspace", "revokeApproval"]);
+  if (key === "risk") return readControlBadge(props, ["directoryPrompt", "riskLevel"]);
+  if (key === "resources") return props.settings.memory_policy.enabled ? "已启用" : "未启用";
+  return readDiagnosticsBadge(props);
+}
 type DiagnosticsActionKey = "logs" | "settings" | "snapshot";
 type DiagnosticsFeedback = { tone: "running" | "failed" | "completed"; detail: string };
 
 export function SettingsModules(props: SettingsModulesProps) {
-  return <div className="settings-stack">{buildSettingsModules(props).map((item) => item.node)}</div>;
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggle = (key: string) => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  return (
+    <div className="settings-stack">
+      {buildSettingsModules(props, collapsed, toggle).map((item) => item.node)}
+    </div>
+  );
 }
 
 export function SettingsEmptyState() {
   return <EmptyStateBlock compact title="设置加载中" text="环境状态返回后显示控制项。" />;
 }
 
-function buildSettingsModules(props: SettingsModulesProps) {
-  return SETTINGS_MODULE_ORDER.map((key) => createSettingsModule(key, props));
+function buildSettingsModules(
+  props: SettingsModulesProps,
+  collapsed: Record<string, boolean>,
+  toggle: (key: string) => void,
+) {
+  return SETTINGS_MODULE_ORDER.map((key) => createSettingsModule(key, props, collapsed[key], toggle));
 }
 
-function createSettingsModule(key: typeof SETTINGS_MODULE_ORDER[number], props: SettingsModulesProps) {
-  if (key === "runtime") return { key, node: <RuntimeModule key={key} settings={props.settings} /> };
-  if (key === "model") return { key, node: <ModelModule key={key} props={props} /> };
-  if (key === "provider") return { key, node: <ProviderModule key={key} props={props} /> };
-	if (key === "embedding") return { key, node: <EmbeddingModule key={key} props={props} /> };
-  if (key === "workspace") return { key, node: <WorkspaceModule key={key} props={props} /> };
-  if (key === "risk") return { key, node: <RiskModule key={key} props={props} /> };
-  if (key === "resources") return { key, node: <ResourcesModule key={key} props={props} /> };
-  return { key, node: <DiagnosticsModule key={key} props={props} /> };
+function createSettingsModule(
+  key: typeof SETTINGS_MODULE_ORDER[number],
+  props: SettingsModulesProps,
+  isCollapsed: boolean,
+  toggle: (key: string) => void,
+) {
+  const header = <CollapsibleModuleHeader title={MODULE_TITLES[key]} badge={readModuleBadge(key, props)} collapsed={!!isCollapsed} onToggle={() => toggle(key)} />;
+  let content: React.ReactNode = null;
+  if (key === "runtime") content = <RuntimeModule settings={props.settings} />;
+  if (key === "model") content = <ModelModule props={props} />;
+  if (key === "provider") content = <ProviderModule props={props} />;
+  if (key === "embedding") content = <EmbeddingModule props={props} />;
+  if (key === "workspace") content = <WorkspaceModule props={props} />;
+  if (key === "risk") content = <RiskModule props={props} />;
+  if (key === "resources") content = <ResourcesModule props={props} />;
+  if (key === "diagnostics") content = <DiagnosticsModule props={props} />;
+  return {
+    key,
+    node: (
+      <section key={key} id={`settings-module-${key}`} className="settings-module control-module">
+        {header}
+        {!isCollapsed ? content : null}
+      </section>
+    ),
+  };
 }
 
 function ProviderModule(props: { props: SettingsModulesProps }) {
@@ -72,44 +118,53 @@ function ProviderModule(props: { props: SettingsModulesProps }) {
 
 function EmbeddingModule(props: { props: SettingsModulesProps }) {
   const embedding = props.props.settings.embedding;
-  const provider = props.props.settings.providers.find((p) => p.provider_id === embedding?.provider_id);
-  const displayProvider = provider?.display_name || embedding?.provider_id || "未配置";
-  const modelName = embedding?.model_name || "未配置";
+  const pending = props.props.isActionPending("embedding");
+  const providers = props.props.settings.providers.filter((p) => p.embedding_model);
   return (
-    <section id="settings-module-embedding" className="settings-module control-module">
-      <ModuleHeader title="向量化与嵌入" badge={embedding?.model_name ? "已配置" : "未配置"} />
+    <>
       <div className="settings-control-grid">
-        <div className="detail-card">
-          <strong>当前嵌入服务方</strong>
-          <p>{displayProvider}</p>
-        </div>
+        <label className="control-field">
+          <span>当前嵌入服务方</span>
+          <select name="embedding_provider" value={embedding?.provider_id || ""} disabled={pending} onChange={(event) => props.props.onEmbeddingProviderChange(event.target.value)}>
+            {providers.map((p) => <option key={p.provider_id} value={p.provider_id}>{p.display_name}</option>)}
+          </select>
+        </label>
         <div className="detail-card muted-card">
           <strong>当前嵌入模型</strong>
-          <p>{modelName}</p>
+          <p>{embedding?.model_name || "未配置"}</p>
         </div>
       </div>
-      <p className="workspace-root" style={{ marginTop: 12 }}>嵌入模型在 config/app.json 中配置，修改后需重启生效。向量维度由模型决定，切换模型后需重建知识库索引。</p>
-    </section>
+      <p className="workspace-root" style={{ marginTop: 12 }}>切换嵌入服务方将使用 config/app.json 中配置的对应模型，向量维度变化后需重建知识库索引。</p>
+    </>
   );
 }
 function RuntimeModule(props: { settings: SettingsResponse }) {
+  const ok = props.settings.runtime_status.ok;
   return (
-    <section id="settings-module-runtime" className="settings-module control-module">
-      <ModuleHeader title="运行环境" badge={props.settings.runtime_status.ok ? readUnifiedStatusMeta("completed").label : "已断开"} />
-      <MetaGrid items={buildRuntimeRows(props.settings)} />
-    </section>
+    <>
+      <div className="settings-control-grid">
+        <div className="detail-card">
+          <strong>运行时连接</strong>
+          <p>{ok ? "运行时正常响应" : "运行时不可达"}</p>
+          <p className="workspace-root">{props.settings.runtime_status.name} / {props.settings.runtime_status.version || "未知版本"}</p>
+        </div>
+        <div className="detail-card muted-card">
+          <strong>服务端口</strong>
+          <p>网关 {props.settings.ports.gateway} / 运行时 {props.settings.ports.runtime}</p>
+          <p className="workspace-root">工作区 {props.settings.workspace.name}</p>
+        </div>
+      </div>
+    </>
   );
 }
 
 function ModelModule(props: { props: SettingsModulesProps }) {
-  const badge = readControlBadge(props.props, ["model", "mode"]);
   return (
-    <section id="settings-module-model" className="settings-module control-module">
-      <ModuleHeader title="模型与模式" badge={badge} />
+    <>
       <ModelControls props={props.props} />
       <ActionHint props={props.props} actions={["model", "mode"]} />
       <ModelSummary settings={props.props.settings} />
-    </section>
+    </>
   );
 }
 
@@ -152,14 +207,12 @@ function ModelSummary(props: { settings: SettingsResponse }) {
 }
 
 function WorkspaceModule(props: { props: SettingsModulesProps }) {
-  const badge = readControlBadge(props.props, ["workspace", "revokeApproval"]);
   return (
-    <section id="settings-module-workspace" className="settings-module control-module">
-      <ModuleHeader title="工作区与授权" badge={badge} />
+    <>
       <WorkspaceControlGrid props={props.props} />
       <ActionHint props={props.props} actions={["workspace", "revokeApproval"]} />
       <ApprovalList props={props.props} />
-    </section>
+    </>
   );
 }
 
@@ -212,38 +265,57 @@ function ApprovalItem(props: {
 }
 
 function RiskModule(props: { props: SettingsModulesProps }) {
-  const badge = readControlBadge(props.props, ["directoryPrompt", "riskLevel"]);
   return (
-    <section id="settings-module-risk" className="settings-module control-module">
-      <ModuleHeader title="风险与权限" badge={badge} />
+    <>
       <div className="settings-control-grid">
         <ToggleTile name="directory_prompt_enabled" title="新目录首次接触提醒" description="进入新目录时，先提示授权边界。" checked={props.props.settings.directory_prompt_enabled} isRunning={props.props.isActionPending("directoryPrompt")} onChange={props.props.onDirectoryPromptEnabledChange} />
         <ToggleTile name="show_risk_level" title="显示风险等级" description="在确认流中展示风险等级。" checked={props.props.settings.show_risk_level} isRunning={props.props.isActionPending("riskLevel")} onChange={props.props.onShowRiskLevelChange} />
       </div>
       <ActionHint props={props.props} actions={["directoryPrompt", "riskLevel"]} />
-    </section>
+    </>
   );
 }
 
 function ResourcesModule(props: { props: SettingsModulesProps }) {
   const actionState = readMemoryActionState(props.props);
+  const [showMemories, setShowMemories] = useState(false);
+  const [showConnections, setShowConnections] = useState(false);
   return (
-    <section id="settings-module-resources" className="settings-module control-module">
-      <ModuleHeader title="记忆与资源" badge={props.props.settings.memory_policy.enabled ? "已启用" : "未启用"} />
+    <>
       <MemoryOverviewCards memories={props.props.memories} />
-      <ResourcesEntrySection
-        actionState={actionState}
-        deletingId={props.props.deletingMemoryId}
-        settings={props.props.settings}
-        memories={props.props.memories}
-        error={props.props.memoryError}
-        isRunning={props.props.isRunning}
-        isRefreshing={props.props.memoryPendingAction?.action === "refresh"}
-        onDeleteMemory={props.props.onDeleteMemory}
-        onRefreshMemories={props.props.onRefreshMemories}
-      />
-      <ExternalConnectionsSection props={props.props} />
-    </section>
+      <div className="settings-subsection">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setShowMemories((v) => !v)}
+        >
+          {showMemories ? "收起记忆列表" : `展开记忆列表 (${props.props.memories.length})`}
+        </button>
+        {showMemories ? (
+          <ResourcesEntrySection
+            actionState={actionState}
+            deletingId={props.props.deletingMemoryId}
+            settings={props.props.settings}
+            memories={props.props.memories}
+            error={props.props.memoryError}
+            isRunning={props.props.isRunning}
+            isRefreshing={props.props.memoryPendingAction?.action === "refresh"}
+            onDeleteMemory={props.props.onDeleteMemory}
+            onRefreshMemories={props.props.onRefreshMemories}
+          />
+        ) : null}
+      </div>
+      <div className="settings-subsection">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setShowConnections((v) => !v)}
+        >
+          {showConnections ? "收起外部连接" : `展开外部连接 (${(props.props.settings.external_connections || []).length})`}
+        </button>
+        {showConnections ? <ExternalConnectionsSection props={props.props} /> : null}
+      </div>
+    </>
   );
 }
 
@@ -312,13 +384,12 @@ function ExternalConnectionItem(props: {
 
 function DiagnosticsModule(props: { props: SettingsModulesProps }) {
   return (
-    <section id="settings-module-diagnostics" className="settings-module control-module">
-      <ModuleHeader title="诊断与导出" badge={readDiagnosticsBadge(props.props)} />
+    <>
       <DiagnosticsGroupedSummary settings={props.props.settings} />
       <DiagnosticsActions props={props.props} />
       <DiagnosticsAlerts settings={props.props.settings} />
       <DiagnosticsPathCard settings={props.props.settings} />
-    </section>
+    </>
   );
 }
 
@@ -446,6 +517,18 @@ function DiagnosticsPathCard(props: { settings: SettingsResponse }) {
 
 function ModuleHeader(props: { title: string; badge: string }) {
   return <SectionHeader kind="head" kicker="Module" title={props.title} action={<StatusPill className={readModuleStatusClass(props.badge)} label={props.badge} />} />;
+}
+
+function CollapsibleModuleHeader(props: { title: string; badge: string; collapsed: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" className="settings-module-header" onClick={props.onToggle} aria-expanded={!props.collapsed}>
+      <span className="settings-module-header-title">
+        <span className={`settings-module-chevron ${props.collapsed ? "" : "expanded"}`}>▸</span>
+        {props.title}
+      </span>
+      <StatusPill className={readModuleStatusClass(props.badge)} label={props.badge} />
+    </button>
+  );
 }
 
 function PlaceholderRow(props: { title: string; text: string }) {

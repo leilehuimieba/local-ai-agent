@@ -32,6 +32,7 @@ export type SettingsModulesProps = {
   onWorkspaceChange: (workspaceId: string) => void;
   onDirectoryPromptEnabledChange: (enabled: boolean) => void;
   onShowRiskLevelChange: (enabled: boolean) => void;
+  onEmbeddingProviderChange: (providerId: string) => void;
   onRevokeDirectoryApproval: (rootPath: string) => void;
   onRunExternalConnectionAction: (slotId: string, action: "validate" | "recheck") => void;
   onCheckDiagnostics: () => void;

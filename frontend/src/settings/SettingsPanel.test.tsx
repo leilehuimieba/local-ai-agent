@@ -26,6 +26,7 @@ const baseProps: ComponentProps<typeof SettingsPanel> = {
   onWorkspaceChange: vi.fn(),
   onDirectoryPromptEnabledChange: vi.fn(),
   onShowRiskLevelChange: vi.fn(),
+  onEmbeddingProviderChange: vi.fn(),
   onRevokeDirectoryApproval: vi.fn(),
   onRunExternalConnectionAction: vi.fn(),
   onCheckDiagnostics: vi.fn(),

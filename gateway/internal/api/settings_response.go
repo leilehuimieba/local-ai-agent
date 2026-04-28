@@ -13,7 +13,7 @@ import (
 )
 
 func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.SettingsStore) SettingsResponse {
-	mode, model, models, workspace, workspaces, directoryPromptEnabled, showRiskLevel, approvals := store.Snapshot()
+	mode, model, models, workspace, workspaces, directoryPromptEnabled, showRiskLevel, approvals, embeddingProviderID := store.Snapshot()
 	runtimeStatus := fetchRuntimeStatus(cfg.RuntimePort)
 	return SettingsResponse{
 		AppName:                cfg.AppName,
@@ -31,7 +31,7 @@ func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.S
 		MemoryPolicy:           buildMemoryPolicy(repoRoot, workspace),
 		Diagnostics:            buildDiagnostics(repoRoot, cfg, runtimeStatus, len(models), len(workspaces), len(approvals)),
 		ExternalConnections:    buildExternalConnections(repoRoot, cfg, workspace),
-		Embedding:              buildEmbeddingInfo(cfg),
+		Embedding:              buildEmbeddingInfo(cfg, embeddingProviderID),
 	}
 }
 
@@ -180,10 +180,14 @@ func memoryCount(repoRoot string, workspaceID string) int {
 	return len(items)
 }
 
-func buildEmbeddingInfo(cfg config.AppConfig) EmbeddingInfo {
-	info := EmbeddingInfo{ProviderID: cfg.Embedding.ProviderID}
+func buildEmbeddingInfo(cfg config.AppConfig, embeddingProviderID string) EmbeddingInfo {
+	providerID := embeddingProviderID
+	if providerID == "" {
+		providerID = cfg.Embedding.ProviderID
+	}
+	info := EmbeddingInfo{ProviderID: providerID}
 	for _, provider := range cfg.Providers {
-		if provider.ProviderID == cfg.Embedding.ProviderID && provider.EmbeddingModel != "" {
+		if provider.ProviderID == providerID && provider.EmbeddingModel != "" {
 			info.ModelName = provider.EmbeddingModel
 			break
 		}

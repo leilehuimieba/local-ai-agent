@@ -68,6 +68,7 @@ function buildSettingsPanelHandlers(app: AppModel) {
     onCheckDiagnostics: () => void app.settingsApi.checkDiagnostics(),
     onSaveProvider: (providerId: string, apiKey: string) => app.settingsApi.saveProvider(providerId, apiKey),
     onShowRiskLevelChange: (enabled: boolean) => void app.settingsApi.changeShowRiskLevel(enabled),
+    onEmbeddingProviderChange: (providerId: string) => void app.settingsApi.changeEmbeddingProvider(providerId),
     onTestProvider: (providerId: string, apiKey: string, baseURL?: string) => app.settingsApi.testProvider(providerId, apiKey, baseURL),
     onRefreshMemories: () => void app.settingsApi.refreshMemories(),
     onWorkspaceChange: app.actions.handleWorkspaceChange,

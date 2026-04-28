@@ -55,7 +55,7 @@ func (deps catalogRouteDeps) capabilityMode(r *http.Request) string {
 	if mode != "" {
 		return mode
 	}
-	currentMode, _, _, _, _, _, _, _ := deps.state.Snapshot()
+	currentMode, _, _, _, _, _, _, _, _ := deps.state.Snapshot()
 	return currentMode
 }
 

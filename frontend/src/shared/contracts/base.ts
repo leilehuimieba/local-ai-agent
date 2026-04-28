@@ -22,6 +22,7 @@ export type ProviderRef = {
   base_url: string;
   chat_completions_path: string;
   models_path: string;
+  embedding_model?: string;
 };
 
 export type WorkspaceRef = {

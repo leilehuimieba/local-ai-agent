@@ -63,6 +63,7 @@ func providerOptions(items []config.ProviderConfig) []ProviderOption {
 			BaseURL:             item.BaseURL,
 			ChatCompletionsPath: item.ChatCompletionsPath,
 			ModelsPath:          item.ModelsPath,
+			EmbeddingModel:      item.EmbeddingModel,
 		})
 	}
 	return options

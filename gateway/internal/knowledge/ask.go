@@ -312,7 +312,7 @@ func tokenizeQuery(q string) []string {
 }
 
 func callLLM(cfg config.AppConfig, settingsStore *state.SettingsStore, question string, sources []Item) (string, error) {
-	_, currentModel, _, _, _, _, _, _ := settingsStore.Snapshot()
+	_, currentModel, _, _, _, _, _, _, _ := settingsStore.Snapshot()
 	if currentModel.ProviderID == "" || currentModel.ModelID == "" {
 		return "", fmt.Errorf("模型未配置")
 	}

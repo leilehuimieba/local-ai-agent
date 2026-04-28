@@ -226,7 +226,7 @@
 .bottom-panel,
 .status-card {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-panel);
 }
 
@@ -252,7 +252,7 @@
 .overview-resume-section,
 .overview-health-section {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-sm);
 }
 
@@ -289,7 +289,7 @@
   z-index: 200;
   display: flex;
   justify-content: flex-end;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   animation: drawer-fade-in 0.22s var(--ease-standard) both;
 }
@@ -315,7 +315,7 @@
   flex-direction: column;
   background: var(--bg-base);
   border-left: 1px solid var(--border-default);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+  box-shadow: -8px 0 32px var(--glass-shadow);
   animation: drawer-slide-in 0.3s var(--ease-standard) both;
 }
 
@@ -341,7 +341,7 @@
   gap: var(--space-3);
   padding: 14px 18px;
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-panel-soft);
+  background: var(--bg-elevated);
 }
 
 .drawer-header strong {

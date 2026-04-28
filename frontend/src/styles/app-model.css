@@ -5,16 +5,16 @@
   gap: 10px;
   min-height: 40px;
   padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--border-default);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03)),
-    rgba(32, 35, 42, 0.9);
+    linear-gradient(180deg, var(--glass-highlight-strong), var(--glass-highlight)),
+    var(--bg-elevated);
   color: var(--text-primary);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-    0 10px 24px rgba(0, 0, 0, 0.24);
+    inset 0 1px 0 var(--glass-highlight-strong),
+    inset 0 -1px 0 var(--glass-shadow),
+    var(--panel-shadow);
   transition:
     transform 140ms var(--ease-standard),
     box-shadow 180ms var(--ease-standard),
@@ -25,16 +25,16 @@
   transform: translateY(-1px) scale(1.01);
   border-color: rgba(154, 166, 255, 0.32);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-    0 14px 28px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 var(--glass-highlight-strong),
+    inset 0 -1px 0 var(--glass-shadow),
+    var(--panel-shadow-hover);
 }
 .model-pill.open {
   border-color: rgba(154, 166, 255, 0.4);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 18px 38px rgba(0, 0, 0, 0.34);
+    inset 0 1px 0 var(--glass-highlight-strong),
+    inset 0 -1px 0 var(--glass-shadow),
+    var(--panel-shadow-open);
 }
 .model-pill-status {
   position: relative;
@@ -78,12 +78,12 @@
   gap: 6px;
   min-width: 280px;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-default);
   border-radius: 18px;
-  background: rgba(22, 23, 28, 0.94);
+  background: var(--bg-surface);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 24px 48px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 var(--glass-highlight),
+    var(--shadow-md);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   transform: translateX(-50%);
@@ -98,7 +98,7 @@
   padding: 11px 12px;
   border: 1px solid transparent;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass-highlight);
   color: var(--text-primary);
   text-align: left;
 }
@@ -106,7 +106,7 @@
   transform: translateY(-1px);
   border-color: rgba(154, 166, 255, 0.22);
   background: rgba(255, 107, 53, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 .model-option.active {
   border-color: rgba(104, 243, 161, 0.22);

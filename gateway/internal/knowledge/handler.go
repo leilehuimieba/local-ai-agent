@@ -273,7 +273,7 @@ func (h *Handler) embeddingProvider() config.ProviderConfig {
 }
 
 func currentWorkspaceID(store *state.SettingsStore) (string, bool) {
-	_, _, _, workspace, _, _, _, _ := store.Snapshot()
+	_, _, _, workspace, _, _, _, _, _ := store.Snapshot()
 	if workspace.WorkspaceID == "" {
 		return "", false
 	}

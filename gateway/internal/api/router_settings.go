@@ -44,12 +44,13 @@ func applySettingsUpdate(w http.ResponseWriter, r *http.Request, store *state.Se
 		DirectoryPromptEnabled *bool              `json:"directory_prompt_enabled"`
 		ShowRiskLevel          *bool              `json:"show_risk_level"`
 		RevokeDirectoryRoot    string             `json:"revoke_directory_root"`
+		EmbeddingProviderID    string             `json:"embedding_provider_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid json body", http.StatusBadRequest)
 		return err
 	}
-	if err := store.Update(payload.Mode, payload.Model, payload.WorkspaceID, payload.DirectoryPromptEnabled, payload.ShowRiskLevel); err != nil {
+	if err := store.UpdateFull(payload.Mode, payload.Model, payload.WorkspaceID, payload.DirectoryPromptEnabled, payload.ShowRiskLevel, payload.EmbeddingProviderID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}

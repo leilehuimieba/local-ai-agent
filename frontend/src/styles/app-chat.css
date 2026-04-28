@@ -58,7 +58,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-sm);
 }
 .idle-example-chip:hover {
@@ -67,7 +67,7 @@
   color: var(--text-primary);
   box-shadow:
     0 0 12px rgba(255, 107, 53, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1px 0 var(--glass-highlight);
   transform: translateY(-1px);
 }
 .idle-example-arrow {
@@ -89,14 +89,14 @@
   border-radius: var(--radius-12);
   background: var(--bg-panel);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-sm);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 .chat-panel-simple .thread-record:hover {
   border-color: var(--border-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     0 4px 16px rgba(0, 0, 0, 0.18);
 }
 .chat-panel-simple .thread-record-head {
@@ -167,12 +167,12 @@
   background: var(--bg-panel-soft);
 }
 .chat-panel-simple .result-block-strong {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 .chat-panel-simple .result-block-subtle {
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.018);
-  border-color: rgba(255, 255, 255, 0.05);
+  background: var(--glass-highlight);
+  border-color: var(--glass-highlight);
   opacity: 0.94;
 }
 .chat-panel-simple .result-block strong {
@@ -401,9 +401,9 @@
   padding: 14px 16px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-12);
-  background: rgba(24, 26, 31, 0.82);
+  background: var(--bg-surface);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 var(--glass-highlight),
     var(--shadow-md);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
@@ -474,11 +474,11 @@
   padding: 14px 16px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-16);
-  background: linear-gradient(180deg, rgba(26, 31, 43, 0.96), rgba(20, 24, 34, 0.96));
+  background: linear-gradient(180deg, var(--bg-surface), var(--bg-elevated));
   backdrop-filter: blur(18px) saturate(130%);
   -webkit-backdrop-filter: blur(18px) saturate(130%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 var(--glass-highlight-strong),
     var(--shadow-panel);
 }.bottom-panel-summary {
   display: flex;
