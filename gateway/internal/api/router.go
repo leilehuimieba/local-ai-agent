@@ -106,7 +106,11 @@ func injectTokenAndServe(w http.ResponseWriter, r *http.Request, indexFile strin
 	if strings.Contains(body, `<meta name="local-agent-token"`) {
 		body = strings.ReplaceAll(body, meta, "")
 	}
-	if idx := strings.Index(body, `<meta charset="UTF-8"`); idx != -1 {
+	idx := strings.Index(body, `<meta charset="UTF-8"`)
+	if idx == -1 {
+		idx = strings.Index(body, `<meta charSet="utf-8"`)
+	}
+	if idx != -1 {
 		before := body[:idx]
 		after := body[idx:]
 		body = before + meta + "\n    " + after
