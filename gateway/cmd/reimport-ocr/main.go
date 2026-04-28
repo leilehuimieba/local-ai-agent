@@ -19,9 +19,13 @@ func main() {
 	cfg, err := config.Load(repoRoot)
 	if err == nil && cfg.OCR.Baidu.APIKey != "" {
 		knowledge.SetOCRConfig(cfg.OCR.Baidu.APIKey, cfg.OCR.Baidu.SecretKey)
-		fmt.Println("OCR enabled:", cfg.OCR.Provider)
+	}
+	if knowledge.FindTesseract() != "" {
+		fmt.Println("Tesseract OCR available")
+	} else if cfg.OCR.Baidu.APIKey != "" {
+		fmt.Println("Baidu OCR enabled")
 	} else {
-		fmt.Println("OCR not configured, skipping")
+		fmt.Println("OCR not available")
 	}
 
 	limit := 30

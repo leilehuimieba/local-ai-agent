@@ -315,6 +315,68 @@ export function readDiagnosticsBadge(props: SettingsModulesProps) {
   return readUnifiedStatusMeta(readDiagnosticsOverallStatusKey(props.settings)).label;
 }
 
+export type RepairAdvice = {
+  issue: string;
+  advice: string;
+};
+
+export function readRepairAdvice(settings: SettingsResponse): RepairAdvice[] {
+  const diagnostics = settings.diagnostics;
+  const messages: string[] = [];
+  if (diagnostics.errors) messages.push(...diagnostics.errors);
+  if (diagnostics.warnings) messages.push(...diagnostics.warnings);
+  if (!diagnostics.runtime_reachable) messages.push("运行时不可达");
+
+  const advice: RepairAdvice[] = [];
+  const seen = new Set<string>();
+
+  for (const msg of messages) {
+    const result = matchRepairAdvice(msg);
+    if (result && !seen.has(result.advice)) {
+      seen.add(result.advice);
+      advice.push(result);
+    }
+  }
+
+  if (advice.length === 0 && messages.length > 0) {
+    advice.push({ issue: "存在未识别的问题", advice: "请尝试重新检测，或查看运行日志排查具体原因。" });
+  }
+
+  return advice;
+}
+
+function matchRepairAdvice(message: string): RepairAdvice | null {
+  const lower = message.toLowerCase();
+  if (lower.includes("不可达") || lower.includes("unreachable")) {
+    return { issue: message, advice: "Runtime 服务可能未启动，请检查终端是否运行了 runtime 进程，或尝试重启 Gateway。" };
+  }
+  if (lower.includes("ollama")) {
+    return { issue: message, advice: "Ollama 服务可能未启动，请运行 `ollama serve` 并确认模型已下载。" };
+  }
+  if (lower.includes("端口") || lower.includes("port")) {
+    return { issue: message, advice: "端口可能被占用或配置不正确，请检查 gateway/runtime 端口是否冲突，或确认防火墙规则。" };
+  }
+  if (lower.includes("工作区") || lower.includes("workspace") || lower.includes("root_path")) {
+    return { issue: message, advice: "工作区路径不可访问，请检查目录是否存在并确认文件系统权限。" };
+  }
+  if (lower.includes("模型") || lower.includes("model")) {
+    return { issue: message, advice: "模型配置不可用或已下线，请前往「模型与模式」模块切换可用模型。" };
+  }
+  if (lower.includes("provider") || lower.includes("服务方")) {
+    return { issue: message, advice: "Provider 凭证可能已过期或未配置，请前往「Provider 凭证」模块检查 API Key 与连通性。" };
+  }
+  if (lower.includes("siyuan") || lower.includes("思源")) {
+    return { issue: message, advice: "思源笔记目录不可访问，请确认思源笔记已启动且导出目录路径正确。" };
+  }
+  if (lower.includes("设置") || lower.includes("settings")) {
+    return { issue: message, advice: "设置文件路径不可访问，请检查 data/settings 目录是否存在并被 Gateway 正确初始化。" };
+  }
+  if (lower.includes("日志") || lower.includes("log")) {
+    return { issue: message, advice: "日志文件路径不可访问，请确认 logs/ 目录存在且 Gateway 有写入权限。" };
+  }
+  return null;
+}
+
 export function readExternalConnectionAction(slot: ExternalConnectionSlot) {
   if (slot.supported_actions?.includes("recheck")) return "recheck";
   if (slot.supported_actions?.includes("validate")) return "validate";

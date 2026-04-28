@@ -195,13 +195,20 @@ func extractPdf(path string) (res ExtractResult) {
 				// 清理后内容太短（可能只有水印），继续尝试 OCR
 			}
 		}
-		// pdftotext 提取为空或乱码，尝试 OCR
+		// pdftotext 提取为空或乱码，优先尝试本地 Tesseract OCR
+		tessPath := FindTesseract()
+		if tessPath != "" {
+			ocrRes := extractPdfWithTesseract(path, tessPath)
+			if ocrRes.Error == nil {
+				return ocrRes
+			}
+			// Tesseract 失败时继续尝试百度 OCR
+		}
 		if ocrAPIKey != "" && ocrSecretKey != "" {
 			ocrRes := extractPdfWithOCR(path, ocrAPIKey, ocrSecretKey)
 			if ocrRes.Error == nil {
 				return ocrRes
 			}
-			// OCR 失败时标记错误，让上层知道原因
 			res.Error = ocrRes.Error
 		}
 		return res

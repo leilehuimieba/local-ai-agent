@@ -33,7 +33,7 @@ func NewRouter(
 	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
 	memoryDeps := memoryRouteDeps{store: memory.NewStore(repoRoot), state: settingsStore}
 	registerCoreRoutes(mux, cfg)
-	registerProvidersRoutes(mux, cfg, credentialStore, runtimeStore)
+	registerProvidersRoutes(mux, cfg, credentialStore, runtimeStore, repoRoot)
 	registerLearningRoutes(mux, memoryDeps)
 	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore)
 	registerLogsRoutes(mux, repoRoot, cfg.RuntimePort, eventBus)

@@ -35,9 +35,14 @@ type BaiduOCRConfig struct {
 	SecretKey string `json:"secret_key"`
 }
 
+type TesseractConfig struct {
+	CmdPath string `json:"cmd_path"`
+}
+
 type OCRConfig struct {
-	Provider string         `json:"provider"`
-	Baidu    BaiduOCRConfig `json:"baidu"`
+	Provider  string          `json:"provider"`
+	Baidu     BaiduOCRConfig  `json:"baidu"`
+	Tesseract TesseractConfig `json:"tesseract"`
 }
 
 type EmbeddingConfig struct {

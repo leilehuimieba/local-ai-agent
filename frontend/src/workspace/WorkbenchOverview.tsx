@@ -49,10 +49,55 @@ export function WorkbenchOverview(props: WorkbenchOverviewProps) {
   return (
     <div className="home-workspace">
       <HomeHero {...props} />
+      <SystemStatusBar systemCard={props.systemCard} />
+      {props.kind === "resume" && props.recentActivities.length > 0 ? (
+        <RecentActivities items={props.recentActivities} />
+      ) : null}
       {props.kind !== "blocked" ? <HomeComposer {...props} /> : null}
       <HomeQuickActions {...props} />
     </div>
   );
+}
+
+function SystemStatusBar(props: { systemCard: WorkbenchOverviewProps["systemCard"] }) {
+  const items = [
+    { label: "判断", value: props.systemCard.judgement },
+    { label: "模式", value: props.systemCard.mode },
+    { label: "工作区", value: props.systemCard.workspace },
+    { label: "连接", value: props.systemCard.connection },
+  ];
+  return (
+    <div className="home-system-bar" aria-label="系统状态">
+      {items.map((item) => (
+        <div key={item.label} className="home-system-item">
+          <span className="home-system-item-label">{item.label}</span>
+          <span className="home-system-item-value">{item.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivities(props: { items: WorkbenchOverviewProps["recentActivities"] }) {
+  return (
+    <section className="home-recent-activities" aria-label="最近活动">
+      <h3 className="home-section-title">最近活动</h3>
+      <div className="home-activity-list">
+        {props.items.map((item) => (
+          <div key={item.id} className={`home-activity-item home-activity-${readActivityKind(item.label)}`}>
+            <span className="home-activity-label">{item.label}</span>
+            <span className="home-activity-text">{item.text}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function readActivityKind(label: string): string {
+  if (label.includes("验证")) return "verification";
+  if (label.includes("记忆")) return "memory";
+  return "tool";
 }
 
 function HomeHero(props: WorkbenchOverviewProps) {

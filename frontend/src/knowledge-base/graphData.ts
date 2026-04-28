@@ -83,20 +83,28 @@ export function buildGraphData(items: KnowledgeItem[]): GraphData {
         }
       }
     });
+  });
 
-    items.forEach((other) => {
-      if (other.id === item.id) return;
-      const sharedTags = item.tags.filter((t) => other.tags.includes(t));
-      if (sharedTags.length > 0) {
-        const key = [item.id, other.id].sort().join("-");
+  const tagToItems = new Map<string, string[]>();
+  items.forEach((item) => {
+    item.tags.forEach((tag) => {
+      if (!tagToItems.has(tag)) tagToItems.set(tag, []);
+      tagToItems.get(tag)!.push(item.id);
+    });
+  });
+
+  tagToItems.forEach((ids) => {
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const key = [ids[i], ids[j]].sort().join("-");
         const existing = edgeMap.get(key);
         if (existing) {
-          existing.strength += sharedTags.length * 0.5;
+          existing.strength += 0.5;
         } else {
-          edgeMap.set(key, { source: item.id, target: other.id, strength: sharedTags.length * 0.5 });
+          edgeMap.set(key, { source: ids[i], target: ids[j], strength: 0.5 });
         }
       }
-    });
+    }
   });
 
   return { nodes, edges: Array.from(edgeMap.values()) };

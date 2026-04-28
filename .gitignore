@@ -43,3 +43,10 @@ data/cache/
 data/sessions/
 data/storage/
 tmp/v1-capability-acceptance/install-env/
+
+# Temporary files
+*.bak
+frontend/.vite-dev.out
+home.yml
+*.png
+

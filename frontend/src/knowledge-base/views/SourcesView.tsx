@@ -56,7 +56,7 @@ export function SourcesView(props: SourcesViewProps) {
           <input
             type="search"
             className="kb-search"
-            placeholder="搜索资料..."
+            placeholder="搜索标题、摘要、标签..."
             value={filter.search}
             onChange={(e) => filter.setSearch(e.target.value)}
           />

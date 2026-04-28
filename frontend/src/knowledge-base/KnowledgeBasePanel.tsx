@@ -92,11 +92,13 @@ export function KnowledgeBasePanel() {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingMock, setUsingMock] = useState(false);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
+      setUsingMock(false);
       const [allItems, cats, tags] = await Promise.all([
         knowledgeStore.getAll(),
         knowledgeStore.getCategories(),
@@ -110,6 +112,7 @@ export function KnowledgeBasePanel() {
         setItems(MOCK_ITEMS);
         setCategories(MOCK_CATEGORIES);
         setAllTags(MOCK_TAGS);
+        setUsingMock(true);
       } else {
         setError(err instanceof Error ? err.message : "加载失败");
       }
@@ -160,12 +163,32 @@ export function KnowledgeBasePanel() {
     <section className="kb-panel">
       <header className="kb-toolbar">
         <h2>知识库</h2>
-        <div className="kb-view-tabs">
-          <button type="button" className={view === "sources" ? "kb-tab active" : "kb-tab"} onClick={() => setView("sources")}>资料源</button>
-          <button type="button" className={view === "chat" ? "kb-tab active" : "kb-tab"} onClick={() => setView("chat")}>对话</button>
-          <button type="button" className={view === "graph" ? "kb-tab active" : "kb-tab"} onClick={() => setView("graph")}>图谱</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" className="secondary-button" disabled={loading} onClick={loadData} title="刷新知识库数据">
+            {loading ? "刷新中..." : "刷新"}
+          </button>
+          <div className="kb-view-tabs">
+            <button type="button" className={view === "sources" ? "kb-tab active" : "kb-tab"} onClick={() => setView("sources")}>资料源</button>
+            <button type="button" className={view === "chat" ? "kb-tab active" : "kb-tab"} onClick={() => setView("chat")}>对话</button>
+            <button type="button" className={view === "graph" ? "kb-tab active" : "kb-tab"} onClick={() => setView("graph")}>图谱</button>
+          </div>
         </div>
       </header>
+
+      {usingMock ? (
+        <div className="kb-mock-banner">
+          <span>当前使用示例数据，请确认知识库服务可用后</span>
+          <button type="button" className="kb-banner-refresh" onClick={loadData}>刷新</button>
+        </div>
+      ) : null}
+
+      {!loading && items.length === 0 && !usingMock ? (
+        <div className="kb-empty">
+          <span className="kb-empty-icon">📚</span>
+          <p>知识库还没有内容</p>
+          <p className="kb-empty-hint">通过任务让智能体阅读和整理本地文档，或点击「+ 添加」手动导入资料</p>
+        </div>
+      ) : null}
 
       {view === "sources" && (
         <SourcesView

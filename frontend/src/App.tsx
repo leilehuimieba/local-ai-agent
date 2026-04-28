@@ -42,6 +42,35 @@ function App() {
 function AppLayout({ app }: { app: ReturnType<typeof useWorkspaceApp> }) {
   const { rightPanelOpen, toggleRightPanel } = app.view;
   const drawerContent = renderDrawerContent(app);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && event.key === "k") {
+        event.preventDefault();
+        document.getElementById("home-task-input")?.focus();
+        return;
+      }
+      if (mod && event.shiftKey && event.key === "S") {
+        event.preventDefault();
+        app.view.setCurrentView("settings");
+        return;
+      }
+      if (mod && event.shiftKey && event.key === "H") {
+        event.preventDefault();
+        app.view.setCurrentView("task");
+        return;
+      }
+      if (event.key === "Escape") {
+        if (app.view.rightPanelOpen) {
+          app.view.toggleRightPanel();
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [app.view]);
+
   return (
     <AppShell
       topbar={renderTopBar(app, rightPanelOpen, toggleRightPanel)}

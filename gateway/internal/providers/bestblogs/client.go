@@ -84,6 +84,90 @@ func (c *Client) fetchArticle(
 	return decodeEnvelope(resp)
 }
 
+func (c *Client) ListArticles(ctx context.Context, req ListArticlesRequest) (ListArticlesResponse, error) {
+	page := req.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := req.PageSize
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	lang := normalizeLanguage(req.Language)
+
+	target := fmt.Sprintf("%s/api/proxy/resources?language=%s&page=%d&pageSize=%d",
+		c.baseURL, url.QueryEscape(lang), page, pageSize)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return ListArticlesResponse{}, newInvalidInputError("BestBlogs 列表请求构造失败")
+	}
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return ListArticlesResponse{}, newUpstreamHTTPError(http.StatusBadGateway, err)
+	}
+	defer resp.Body.Close()
+
+	envelope, err := decodeListEnvelope(resp)
+	if err != nil {
+		return ListArticlesResponse{}, err
+	}
+	if !envelope.Success {
+		return ListArticlesResponse{}, newUpstreamNotSuccessError()
+	}
+
+	items := make([]ArticleListItem, 0, len(envelope.Data.DataList))
+	for _, item := range envelope.Data.DataList {
+		items = append(items, ArticleListItem{
+			ArticleID:          stripRawPrefix(item.ID),
+			Title:              item.Title,
+			OneSentenceSummary: item.OneSentenceSummary,
+			Summary:            item.Summary,
+			Tags:               item.Tags,
+			URL:                item.URL,
+			ReadURL:            item.ReadURL,
+			Domain:             item.Domain,
+			Cover:              item.Cover,
+			SourceName:         item.SourceName,
+			Authors:            item.Authors,
+			PublishTime:        item.PublishDateTimeStr,
+			Category:           item.CategoryDesc,
+			ResourceType:       item.ResourceTypeDesc,
+			WordCount:          item.WordCount,
+			ReadCount:          item.ReadCount,
+		})
+	}
+
+	return ListArticlesResponse{
+		OK:          true,
+		Provider:    "bestblogs",
+		CurrentPage: envelope.Data.CurrentPage,
+		PageSize:    envelope.Data.PageSize,
+		TotalCount:  envelope.Data.TotalCount,
+		PageCount:   envelope.Data.PageCount,
+		Items:       items,
+	}, nil
+}
+
+func stripRawPrefix(id string) string {
+	return strings.TrimPrefix(id, "RAW_")
+}
+
+func decodeListEnvelope(resp *http.Response) (upstreamListEnvelope, error) {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return upstreamListEnvelope{}, newDecodeError(err)
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return upstreamListEnvelope{}, newUpstreamHTTPError(resp.StatusCode, nil)
+	}
+	clean := bytes.ToValidUTF8(body, []byte{})
+	var envelope upstreamListEnvelope
+	if err := json.Unmarshal(clean, &envelope); err != nil {
+		return upstreamListEnvelope{}, newDecodeError(err)
+	}
+	return envelope, nil
+}
+
 func decodeEnvelope(resp *http.Response) (upstreamEnvelope, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

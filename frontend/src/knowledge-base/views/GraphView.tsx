@@ -9,6 +9,9 @@ export type GraphViewProps = {
   onSelectItem: (id: string) => void;
 };
 
+const SIM_STOP_THRESHOLD = 0.05;
+const MAX_LABEL_LEN = 20;
+
 export function GraphView(props: GraphViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dataRef = useRef<{ nodes: (GraphNode & Vec2 & { vx: number; vy: number })[]; edges: GraphEdge[] }>({ nodes: [], edges: [] });
@@ -16,6 +19,8 @@ export function GraphView(props: GraphViewProps) {
   const draggingRef = useRef<string | null>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animRef = useRef<number>(0);
+  const simTickRef = useRef(0);
+  const stableRef = useRef(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const initData = useCallback(() => {
@@ -31,6 +36,8 @@ export function GraphView(props: GraphViewProps) {
     }));
     dataRef.current = { nodes, edges: data.edges };
     transformRef.current = { x: width / 2, y: height / 2, scale: 1 };
+    simTickRef.current = 0;
+    stableRef.current = false;
   }, [props.items]);
 
   useEffect(() => {
@@ -55,7 +62,18 @@ export function GraphView(props: GraphViewProps) {
     window.addEventListener("resize", resize);
 
     const step = () => {
-      simulate(dataRef.current.nodes, dataRef.current.edges, canvas.width, canvas.height);
+      const nodes = dataRef.current.nodes;
+      if (!stableRef.current && nodes.length > 0) {
+        const shouldSim = nodes.length <= 150 || simTickRef.current % 2 === 0;
+        if (shouldSim) {
+          simulate(nodes, dataRef.current.edges, canvas.width, canvas.height);
+          const energy = nodes.reduce((s, n) => s + Math.hypot(n.vx, n.vy), 0) / nodes.length;
+          if (energy < SIM_STOP_THRESHOLD && simTickRef.current > 60) {
+            stableRef.current = true;
+          }
+        }
+        simTickRef.current++;
+      }
       render(ctx, canvas.width, canvas.height, dataRef.current.nodes, dataRef.current.edges, transformRef.current, selectedId);
       animRef.current = requestAnimationFrame(step);
     };
@@ -183,6 +201,11 @@ function simulate(
   });
 }
 
+function truncateLabel(label: string, max: number): string {
+  if (label.length <= max) return label;
+  return label.slice(0, max) + "…";
+}
+
 function render(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -197,10 +220,24 @@ function render(
   ctx.translate(transform.x, transform.y);
   ctx.scale(transform.scale, transform.scale);
 
+  const invScale = 1 / transform.scale;
+  const viewLeft = -transform.x * invScale;
+  const viewTop = -transform.y * invScale;
+  const viewRight = (width - transform.x) * invScale;
+  const viewBottom = (height - transform.y) * invScale;
+  const margin = 50 * invScale;
+
+  const isOutside = (x: number, y: number, r: number) =>
+    x + r < viewLeft - margin ||
+    x - r > viewRight + margin ||
+    y + r < viewTop - margin ||
+    y - r > viewBottom + margin;
+
   edges.forEach((edge) => {
     const a = nodes.find((n) => n.id === edge.source);
     const b = nodes.find((n) => n.id === edge.target);
     if (!a || !b) return;
+    if (isOutside(a.x, a.y, 0) && isOutside(b.x, b.y, 0)) return;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -209,7 +246,10 @@ function render(
     ctx.stroke();
   });
 
+  const hideLabels = transform.scale < 0.5 || nodes.length > 300;
   nodes.forEach((n) => {
+    if (isOutside(n.x, n.y, n.radius)) return;
+
     ctx.beginPath();
     ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
     ctx.fillStyle = n.color;
@@ -220,10 +260,12 @@ function render(
       ctx.stroke();
     }
 
-    ctx.fillStyle = "#c9d1d9";
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(n.label, n.x, n.y + n.radius + 14);
+    if (!hideLabels || n.id === selectedId) {
+      ctx.fillStyle = "#c9d1d9";
+      ctx.font = "12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(truncateLabel(n.label, MAX_LABEL_LEN), n.x, n.y + n.radius + 14);
+    }
   });
 
   ctx.restore();

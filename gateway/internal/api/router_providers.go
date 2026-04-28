@@ -12,9 +12,10 @@ func registerProvidersRoutes(
 	cfg config.AppConfig,
 	credentialStore *state.ProviderCredentialStore,
 	runtimeStore *state.RuntimeProviderStore,
+	repoRoot string,
 ) {
 	registerProviderSettingsRoutes(mux, cfg, credentialStore, runtimeStore)
-	registerProviderArticleRoutes(mux)
+	registerProviderArticleRoutes(mux, repoRoot)
 }
 
 func registerProviderSettingsRoutes(
@@ -30,6 +31,8 @@ func registerProviderSettingsRoutes(
 	mux.HandleFunc("/api/v1/settings/providers/remove", providerRemoveHandler(cfg, credentials, runtimeStore))
 }
 
-func registerProviderArticleRoutes(mux *http.ServeMux) {
+func registerProviderArticleRoutes(mux *http.ServeMux, repoRoot string) {
 	mux.HandleFunc("/api/v1/providers/bestblogs/article/read", bestblogsArticleReadHandler())
+	mux.HandleFunc("/api/v1/providers/bestblogs/articles", bestblogsArticleListHandler())
+	mux.HandleFunc("/api/v1/providers/bestblogs/scrape", bestblogsScrapeHandler(repoRoot))
 }

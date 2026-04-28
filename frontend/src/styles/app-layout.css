@@ -104,11 +104,55 @@
   .app-right-panel {
     display: none;
   }
+
+  .settings-page {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
   .app-content {
     padding: var(--space-2);
+  }
+
+  .app-left-nav {
+    display: none;
+  }
+
+  .topbar-brand-minimal {
+    font-size: var(--text-sm);
+  }
+
+  .home-workspace {
+    padding: var(--space-4) var(--space-2);
+    gap: var(--space-6);
+  }
+
+  .home-hero h1 {
+    font-size: var(--text-lg);
+  }
+
+  .home-system-bar {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: 8px 10px;
+  }
+
+  .home-system-item {
+    flex: 0 0 calc(50% - 4px);
+  }
+
+  .settings-control-grid,
+  .home-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .kb-sources-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .kb-sources-detail {
+    display: none;
   }
 }
 

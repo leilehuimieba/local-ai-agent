@@ -22,6 +22,7 @@ import {
   readMemoryActionState,
   readModelValue,
   readModuleStatusClass,
+  readRepairAdvice,
   readToggleState,
   renderModelOption,
   renderWorkspaceOption,
@@ -468,18 +469,32 @@ function DiagnosticsGroupedSummary(props: { settings: SettingsResponse }) {
 function DiagnosticsAlerts(props: { settings: SettingsResponse }) {
   const warnings = props.settings.diagnostics.warnings || [];
   const errors = props.settings.diagnostics.errors || [];
+  const repairAdvice = readRepairAdvice(props.settings);
   if (warnings.length === 0 && errors.length === 0) return null;
   return (
-    <div className="settings-control-grid">
-      <div className="detail-card muted-card">
-        <strong>警告</strong>
-        {warnings.length === 0 ? <p>当前没有警告。</p> : warnings.map((item) => <p key={item}>{item}</p>)}
+    <>
+      <div className="settings-control-grid">
+        <div className="detail-card muted-card">
+          <strong>警告</strong>
+          {warnings.length === 0 ? <p>当前没有警告。</p> : warnings.map((item) => <p key={item}>{item}</p>)}
+        </div>
+        <div className="detail-card muted-card">
+          <strong>错误</strong>
+          {errors.length === 0 ? <p>当前没有错误。</p> : errors.map((item) => <p key={item}>{item}</p>)}
+        </div>
       </div>
-      <div className="detail-card muted-card">
-        <strong>错误</strong>
-        {errors.length === 0 ? <p>当前没有错误。</p> : errors.map((item) => <p key={item}>{item}</p>)}
-      </div>
-    </div>
+      {repairAdvice.length > 0 ? (
+        <div className="diagnostics-repair-list">
+          <strong>修复建议</strong>
+          {repairAdvice.map((item) => (
+            <div key={item.advice} className="diagnostics-repair-item">
+              <p className="diagnostics-repair-issue">{item.issue}</p>
+              <p className="diagnostics-repair-advice">{item.advice}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </>
   );
 }
 

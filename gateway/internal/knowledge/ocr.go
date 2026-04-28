@@ -31,12 +31,12 @@ type baiduOCRResponse struct {
 }
 
 type baiduOCRClient struct {
-	apiKey      string
-	secretKey   string
-	token       string
-	expiresAt   time.Time
-	tokenMu     sync.Mutex
-	httpClient  *http.Client
+	apiKey     string
+	secretKey  string
+	token      string
+	expiresAt  time.Time
+	tokenMu    sync.Mutex
+	httpClient *http.Client
 }
 
 func newBaiduOCRClient(apiKey, secretKey string) *baiduOCRClient {
@@ -179,6 +179,107 @@ func extractPdfWithOCR(path string, apiKey, secretKey string) ExtractResult {
 		if err != nil {
 			continue
 		}
+		if strings.TrimSpace(text) != "" {
+			pages = append(pages, text)
+		}
+	}
+
+	result := strings.Join(pages, "\n")
+	if strings.TrimSpace(result) == "" {
+		return ExtractResult{Error: fmt.Errorf("OCR 未识别到文字")}
+	}
+
+	title := filepath.Base(path)
+	lines := strings.Split(result, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			title = trimmed
+			break
+		}
+	}
+	return ExtractResult{Title: title, Content: result}
+}
+
+func FindTesseract() string {
+	if p, err := exec.LookPath("tesseract"); err == nil {
+		return p
+	}
+	candidates := []string{
+		`C:\Program Files\Tesseract-OCR\tesseract.exe`,
+		`C:\Program Files (x86)\Tesseract-OCR\tesseract.exe`,
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return c
+		}
+	}
+	return ""
+}
+
+func extractPdfWithTesseract(path string, cmdPath string) ExtractResult {
+	ppm := findPdftoppm()
+	if ppm == "" {
+		return ExtractResult{Error: fmt.Errorf("pdftoppm 不可用，无法进行 OCR")}
+	}
+
+	workPath := path
+	if runtime.GOOS == "windows" {
+		tmpPath := filepath.Join(os.TempDir(), filepath.Base(path))
+		if data, err := os.ReadFile(path); err == nil {
+			_ = os.WriteFile(tmpPath, data, 0o600)
+			workPath = tmpPath
+			defer os.Remove(tmpPath)
+		}
+	}
+
+	tmpDir, err := os.MkdirTemp("", "pdf-ocr-*")
+	if err != nil {
+		return ExtractResult{Error: fmt.Errorf("创建临时目录失败: %w", err)}
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cmd := exec.Command(ppm, "-png", "-f", "1", "-l", "8", "-r", "300", workPath, filepath.Join(tmpDir, "page"))
+	if prefix := popplerPrefix(); prefix != "" {
+		cmd.Env = append(os.Environ(), "POPPLER_PREFIX="+prefix)
+	}
+	if err := cmd.Run(); err != nil {
+		return ExtractResult{Error: fmt.Errorf("PDF转图片失败: %w", err)}
+	}
+
+	if cmdPath == "" {
+		cmdPath = FindTesseract()
+	}
+	if cmdPath == "" {
+		return ExtractResult{Error: fmt.Errorf("tesseract 未找到")}
+	}
+
+	var pages []string
+	entries, _ := os.ReadDir(tmpDir)
+	var pngFiles []string
+	for _, entry := range entries {
+		if strings.HasSuffix(strings.ToLower(entry.Name()), ".png") {
+			pngFiles = append(pngFiles, entry.Name())
+		}
+	}
+	if len(pngFiles) > 8 {
+		pngFiles = pngFiles[:8]
+	}
+
+	tessdata := os.Getenv("TESSDATA_PREFIX")
+	if tessdata == "" {
+		tessdata = filepath.Join(filepath.Dir(cmdPath), "tessdata")
+	}
+
+	for _, name := range pngFiles {
+		imgPath := filepath.Join(tmpDir, name)
+		out := exec.Command(cmdPath, imgPath, "stdout", "-l", "chi_sim+eng")
+		out.Env = append(os.Environ(), "TESSDATA_PREFIX="+tessdata)
+		textBytes, err := out.Output()
+		if err != nil {
+			continue
+		}
+		text := string(textBytes)
 		if strings.TrimSpace(text) != "" {
 			pages = append(pages, text)
 		}

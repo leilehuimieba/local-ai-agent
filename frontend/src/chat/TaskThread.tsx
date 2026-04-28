@@ -87,6 +87,7 @@ function ConfirmationOnlyState(props: { props: ChatPanelProps }) {
 
 function ThreadRecords(props: { props: ChatPanelProps }) {
   const tailRecord = readThreadTailRecord(props.props);
+  const liveEvents = readLiveEvents(props.props);
   return (
     <>
       {props.props.messages.map((message, index) => (
@@ -97,6 +98,18 @@ function ThreadRecords(props: { props: ChatPanelProps }) {
           runEvent={findTerminalRunEvent(props.props, message.runId)}
         />
       ))}
+      {liveEvents.length > 0 ? (
+        <div className="live-event-stream">
+          {liveEvents.map((event) => (
+            <StateRecord
+              key={event.event_id}
+              state="running"
+              body={event.tool_display_name || event.tool_name || event.summary || "正在执行工具调用"}
+              advice={event.detail || event.next_action_hint || ""}
+            />
+          ))}
+        </div>
+      ) : null}
       {tailRecord}
     </>
   );
@@ -427,4 +440,31 @@ function findTerminalRunEvent(props: ChatPanelProps, runId?: string) {
     if (event.run_id !== runId) return false;
     return event.event_type === "run_finished" || event.event_type === "run_failed";
   });
+}
+
+function readLiveEvents(props: ChatPanelProps): RunEvent[] {
+  if (!props.currentRunId) return [];
+  if (props.runState === "completed" || props.runState === "failed" || props.runState === "idle") return [];
+  if (props.confirmation) return [];
+  if (props.messages.length === 0) return [];
+
+  const hasTerminalEvent = props.events.some(
+    (e) => e.run_id === props.currentRunId && (e.event_type === "run_finished" || e.event_type === "run_failed"),
+  );
+  if (hasTerminalEvent) return [];
+
+  const hasAssistantMessage = props.messages.some(
+    (m) => m.role === "assistant" && m.runId === props.currentRunId,
+  );
+
+  return [...props.events]
+    .reverse()
+    .filter((e) => {
+      if (e.run_id !== props.currentRunId) return false;
+      if (e.event_type === "run_finished" || e.event_type === "run_failed") return false;
+      if (!hasAssistantMessage) return true;
+      return e.tool_name || e.tool_display_name;
+    })
+    .slice(0, 3)
+    .reverse();
 }
