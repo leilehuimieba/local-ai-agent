@@ -1,12 +1,7 @@
-﻿package api
+package api
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"sync/atomic"
-	"time"
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
@@ -65,13 +60,6 @@ type ChatRunAccepted struct {
 	CancelEndpoint  string `json:"cancel_endpoint"`
 }
 
-var idCounter uint64
-
-const (
-	chatEntryID         = "gateway.chat.entry1"
-	chatProtocolVersion = "v1"
-)
-
 func NewChatHandler(
 	repoRoot string,
 	cfg config.AppConfig,
@@ -117,12 +105,6 @@ func (h *ChatHandler) Run(w http.ResponseWriter, r *http.Request) {
 	}
 	go service.Execute(runRequest, h.runtimeClient, h.eventBus, h.confirmationStore, h.executionRegistry)
 	writeJSON(w, http.StatusAccepted, newChatRunAccepted(runRequest))
-}
-
-func decodeRunPayload(r *http.Request) (ChatRunRequest, error) {
-	var payload ChatRunRequest
-	err := json.NewDecoder(r.Body).Decode(&payload)
-	return payload, err
 }
 
 func (h *ChatHandler) Confirm(w http.ResponseWriter, r *http.Request) {
@@ -176,95 +158,4 @@ func (h *ChatHandler) Stream(w http.ResponseWriter, r *http.Request) {
 	stream, cancel := h.eventBus.Subscribe(sessionID)
 	defer cancel()
 	streamSessionEvents(r.Context(), w, flusher, stream)
-}
-
-func validateStreamRequest(w http.ResponseWriter, r *http.Request) (string, http.Flusher, bool) {
-	sessionID := r.URL.Query().Get("session_id")
-	if sessionID == "" {
-		http.Error(w, "session_id is required", http.StatusBadRequest)
-		return "", nil, false
-	}
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
-		return "", nil, false
-	}
-	return sessionID, flusher, true
-}
-
-func setStreamHeaders(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-}
-
-func (h *ChatHandler) flushSnapshot(sessionID string, w http.ResponseWriter, flusher http.Flusher) {
-	for _, item := range h.eventBus.Snapshot(sessionID) {
-		writeSSE(w, item)
-	}
-	flusher.Flush()
-}
-
-func streamSessionEvents(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, stream <-chan contracts.RunEvent) {
-	heartbeat := time.NewTicker(15 * time.Second)
-	defer heartbeat.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case item, ok := <-stream:
-			if !ok {
-				return
-			}
-			writeSSE(w, item)
-			flusher.Flush()
-		case <-heartbeat.C:
-			_, _ = fmt.Fprint(w, ": keep-alive\n\n")
-			flusher.Flush()
-		}
-	}
-}
-
-func copyContextHints(source map[string]string) map[string]string {
-	if source == nil {
-		return map[string]string{}
-	}
-	target := make(map[string]string, len(source))
-	for key, value := range source {
-		target[key] = value
-	}
-	return target
-}
-
-func writeSSE(w http.ResponseWriter, item contracts.RunEvent) {
-	payload, _ := json.Marshal(item)
-	_, _ = fmt.Fprintf(w, "event: run_event\n")
-	_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
-}
-
-func newID(prefix string) string {
-	counter := atomic.AddUint64(&idCounter, 1)
-	return fmt.Sprintf("%s-%d-%d", prefix, time.Now().UnixMilli(), counter)
-}
-
-func timestampNow() string {
-	return fmt.Sprintf("%d", time.Now().UnixMilli())
-}
-
-func newChatRunAccepted(runRequest contracts.RunRequest) ChatRunAccepted {
-	return ChatRunAccepted{
-		Accepted:        true,
-		SessionID:       runRequest.SessionID,
-		RunID:           runRequest.RunID,
-		RequestID:       runRequest.RequestID,
-		TraceID:         runRequest.TraceID,
-		InitialStatus:   "accepted",
-		EntryID:         chatEntryID,
-		ProtocolVersion: chatProtocolVersion,
-		StreamEndpoint:  "/api/v1/events/stream?session_id={session_id}",
-		LogsEndpoint:    "/api/v1/logs?session_id={session_id}&run_id={run_id}",
-		ConfirmEndpoint: "/api/v1/chat/confirm",
-		RetryEndpoint:   "/api/v1/chat/retry",
-		CancelEndpoint:  "/api/v1/chat/cancel",
-	}
 }

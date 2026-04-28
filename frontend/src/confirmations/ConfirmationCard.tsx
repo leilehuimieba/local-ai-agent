@@ -9,7 +9,7 @@ type ConfirmationFeedback = {
 };
 
 type ConfirmationCardProps = {
-  confirmation: ConfirmationRequest;
+  confirmation: ConfirmationRequest | null;
   rememberChoice: boolean;
   showRiskLevel: boolean;
   onRememberChoiceChange: (checked: boolean) => void;
@@ -22,7 +22,8 @@ export function ConfirmationCard(props: ConfirmationCardProps) {
   useEffect(() => {
     setPendingDecision(null);
     setFeedback(null);
-  }, [props.confirmation.confirmation_id]);
+  }, [props.confirmation?.confirmation_id]);
+  if (!props.confirmation) return null;
   const riskClass = props.confirmation.risk_level === 'high' ? 'risk-high' : '';
   return (
     <div className={`confirmation-card confirmation-card-warning ${riskClass}`}>

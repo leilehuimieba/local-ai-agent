@@ -74,7 +74,7 @@ function ProviderModule(props: { props: SettingsModulesProps }) {
 
 function RuntimeModule(props: { settings: SettingsResponse }) {
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-runtime" className="settings-module control-module">
       <ModuleHeader title="运行环境" badge={props.settings.runtime_status.ok ? readUnifiedStatusMeta("completed").label : "已断开"} />
       <MetaGrid items={buildRuntimeRows(props.settings)} />
     </section>
@@ -84,7 +84,7 @@ function RuntimeModule(props: { settings: SettingsResponse }) {
 function ModelModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["model", "mode"]);
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-model" className="settings-module control-module">
       <ModuleHeader title="模型与模式" badge={badge} />
       <ModelControls props={props.props} />
       <ActionHint props={props.props} actions={["model", "mode"]} />
@@ -134,7 +134,7 @@ function ModelSummary(props: { settings: SettingsResponse }) {
 function WorkspaceModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["workspace", "revokeApproval"]);
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-workspace" className="settings-module control-module">
       <ModuleHeader title="工作区与授权" badge={badge} />
       <WorkspaceControlGrid props={props.props} />
       <ActionHint props={props.props} actions={["workspace", "revokeApproval"]} />
@@ -194,7 +194,7 @@ function ApprovalItem(props: {
 function RiskModule(props: { props: SettingsModulesProps }) {
   const badge = readControlBadge(props.props, ["directoryPrompt", "riskLevel"]);
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-risk" className="settings-module control-module">
       <ModuleHeader title="风险与权限" badge={badge} />
       <div className="settings-control-grid">
         <ToggleTile name="directory_prompt_enabled" title="新目录首次接触提醒" description="进入新目录时，先提示授权边界。" checked={props.props.settings.directory_prompt_enabled} isRunning={props.props.isActionPending("directoryPrompt")} onChange={props.props.onDirectoryPromptEnabledChange} />
@@ -208,7 +208,7 @@ function RiskModule(props: { props: SettingsModulesProps }) {
 function ResourcesModule(props: { props: SettingsModulesProps }) {
   const actionState = readMemoryActionState(props.props);
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-resources" className="settings-module control-module">
       <ModuleHeader title="记忆与资源" badge={props.props.settings.memory_policy.enabled ? "已启用" : "未启用"} />
       <MemoryOverviewCards memories={props.props.memories} />
       <ResourcesEntrySection
@@ -292,7 +292,7 @@ function ExternalConnectionItem(props: {
 
 function DiagnosticsModule(props: { props: SettingsModulesProps }) {
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-diagnostics" className="settings-module control-module">
       <ModuleHeader title="诊断与导出" badge={readDiagnosticsBadge(props.props)} />
       <DiagnosticsGroupedSummary settings={props.props.settings} />
       <DiagnosticsActions props={props.props} />

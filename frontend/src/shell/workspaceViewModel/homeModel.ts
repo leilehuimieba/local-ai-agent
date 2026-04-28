@@ -34,7 +34,6 @@ export function buildHomeViewModel(
     recentActivities: readRecentActivities(app.runtime.events),
     onComposeValueChange: useRuntimeStore.getState().setComposeValue,
     onOpenLogsPage: app.actions.openLogsPage,
-    onOpenReleasePage: app.actions.openReleasePage,
     onReconnect: app.actions.handleReconnect,
     onOpenSettingsPage: app.actions.openSettingsPage,
     onOpenTaskPage: app.actions.openTaskPage,

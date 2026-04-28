@@ -1,6 +1,5 @@
 import { ChatPanel } from "../../chat/ChatPanel";
 import { LogsPanel } from "../../logs/LogsPanel";
-import { ReleaseWizardPanel } from "../../release/ReleaseWizardPanel";
 import { SettingsPanel } from "../../settings/SettingsPanel";
 import { KnowledgeBasePanel } from "../../knowledge-base/KnowledgeBasePanel";
 import { WorkbenchOverview } from "../../workspace/WorkbenchOverview";
@@ -12,8 +11,7 @@ export function renderWorkspaceContent(app: AppModel) {
   return renderTaskView(app);
 }
 
-export function renderDrawerContent(app: AppModel) {
-  if (app.view.currentView === "settings") return <SettingsPanel {...getSettingsPanelProps(app)} />;
+export function renderDrawerContent(_app: AppModel) {
   return null;
 }
 
@@ -45,17 +43,9 @@ export function renderGlobalLayers(app: AppModel) {
 
 export function renderMainView(app: AppModel) {
   if (app.view.currentView === "logs") return renderLogsView(app);
-  if (app.view.currentView === "release") return renderReleaseView();
+  if (app.view.currentView === "settings") return renderSettingsView(app);
   if (app.view.currentView === "knowledge") return renderKnowledgeBaseView(app);
   return renderTaskView(app);
-}
-
-function renderReleaseView() {
-  return (
-    <section className="single-view">
-      <ReleaseWizardPanel />
-    </section>
-  );
 }
 
 export function renderLogsView(app: AppModel) {

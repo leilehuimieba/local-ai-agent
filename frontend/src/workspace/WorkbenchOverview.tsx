@@ -37,7 +37,6 @@ type WorkbenchOverviewProps = {
   recentActivities: Array<{ id: string; label: string; text: string }>;
   onComposeValueChange: (value: string) => void;
   onOpenLogsPage: () => void;
-  onOpenReleasePage: () => void;
   onReconnect: () => void;
   onOpenSettingsPage: () => void;
   onOpenTaskPage: () => void;
@@ -96,7 +95,7 @@ function HomeComposer(props: WorkbenchOverviewProps) {
         name="home_task_input"
         rows={4}
         value={props.composeValue}
-        placeholder="例如：跑上线前检查；如果失败，请说明原因、影响范围和建议修复"
+        placeholder="例如：帮我检查当前项目的代码质量，告诉我在哪、卡在哪里、下一步建议"
         onChange={(event) => props.onComposeValueChange(event.target.value)}
       />
       <div className="home-composer-footer">
@@ -148,10 +147,6 @@ function ResumeActions(props: WorkbenchOverviewProps) {
       <button type="button" className="home-action-card" onClick={props.onOpenLogsPage}>
         <strong>查看工作历史</strong>
         <span>查看上次做了什么、验证是否通过</span>
-      </button>
-      <button type="button" className="home-action-card" onClick={props.onOpenReleasePage}>
-        <strong>准备上线前检查</strong>
-        <span>生成检查清单并执行关键验证</span>
       </button>
     </section>
   );

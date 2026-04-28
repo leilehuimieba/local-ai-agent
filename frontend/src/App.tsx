@@ -24,7 +24,7 @@ import {
 import { ContextSidebar } from "./workspace/ContextSidebar";
 import { useSettings } from "./settings/useSettings";
 
-export type AppView = "task" | "logs" | "release" | "settings" | "knowledge";
+export type AppView = "task" | "logs" | "settings" | "knowledge";
 export type RuntimeView = ReturnType<typeof useRuntimeView>;
 export type ViewState = ReturnType<typeof useViewState>;
 export type SettingsApi = ReturnType<typeof useSettings>;
@@ -194,7 +194,6 @@ function buildActions(
       void settingsApi.changeWorkspace(workspaceId),
     openHomeStart: () => openHomeStart(actions.setComposeValue, view),
     openLogsPage: () => openLogsPage(logs, view),
-    openReleasePage: () => openReleasePage(view),
     openSettingsPage: () => openSettingsPage(view),
     openTaskPage: () => openTaskPage(runtime, view),
     openTaskPageForConfirmation: () => openTaskPageForConfirmation(runtime, view),
@@ -284,9 +283,7 @@ function readRuntimeError(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function readDrawerTitle(view: AppView) {
-  if (view === "settings") return "设置";
-  if (view === "release") return "上线向导";
+function readDrawerTitle(_view: AppView) {
   return "";
 }
 
@@ -301,10 +298,6 @@ function openHomeStart(
 ) {
   setComposeValue("");
   view.showHomeCompose();
-}
-
-function openReleasePage(view: ViewState) {
-  view.setCurrentView("release");
 }
 
 function openSettingsPage(view: ViewState) {
@@ -356,7 +349,7 @@ function readHomePreview() {
 
 function readPreviewView(): AppView {
   const value = new URLSearchParams(window.location.search).get("view");
-  if (value === "logs" || value === "release" || value === "settings" || value === "knowledge") return value;
+  if (value === "logs" || value === "settings" || value === "knowledge") return value;
   return "task";
 }
 

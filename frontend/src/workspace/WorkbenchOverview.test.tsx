@@ -18,7 +18,7 @@ function createProps() {
     systemCard: { judgement: "稳定", connection: "已连接", mode: "standard", workspace: "默认工作区" },
     blockCard: null,
     recentActivities: [{ id: "a-1", label: "最近任务", text: "补齐前端测试" }],
-    onComposeValueChange: vi.fn(), onOpenLogsPage: vi.fn(), onOpenReleasePage: vi.fn(), onReconnect: vi.fn(), onOpenSettingsPage: vi.fn(),
+    onComposeValueChange: vi.fn(), onOpenLogsPage: vi.fn(), onReconnect: vi.fn(), onOpenSettingsPage: vi.fn(),
     onOpenTaskPage: vi.fn(), onOpenTaskPageForConfirmation: vi.fn(), onPrefillExample: vi.fn(), onSubmit: vi.fn(),
   };
 }
@@ -39,8 +39,6 @@ describe("WorkbenchOverview", () => {
     expect(screen.getAllByText("补齐测试").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /处理待确认动作/ }));
     expect(props.onOpenTaskPageForConfirmation).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: /准备上线前检查/ }));
-    expect(props.onOpenReleasePage).toHaveBeenCalledTimes(1);
   });
 
   it("阻塞模式显示建议动作并跳转设置", () => {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { HistoryNavPanel } from "../../../history/components";
 import { KnowledgeNavPanel } from "../../../knowledge-base/KnowledgeNavPanel";
+import { SettingsNavPanel } from "../../../settings/SettingsNavPanel";
 import { isBusyRunState, readUnifiedStatusFromRunState, readUnifiedStatusMeta, useRuntimeStore } from "../../../runtime/state";
 import { HOME_EXAMPLES, type AppModel, type AppView, type TaskNavEntry } from "../types";
 
@@ -19,6 +20,7 @@ export function TaskLeftNav(props: { app: AppModel }) {
   const isTaskView = props.app.view.currentView === "task";
   const isLogsView = props.app.view.currentView === "logs";
   const isKnowledgeView = props.app.view.currentView === "knowledge";
+  const isSettingsView = props.app.view.currentView === "settings";
   const logs = props.app.logs;
   return (
     <aside className={readTaskLeftNavClass(expanded)} aria-label="任务页导航">
@@ -44,6 +46,7 @@ export function TaskLeftNav(props: { app: AppModel }) {
         />
       ) : null}
       {expanded && isKnowledgeView ? <KnowledgeNavPanel /> : null}
+      {expanded && isSettingsView ? <SettingsNavPanel /> : null}
     </aside>
   );
 }
@@ -58,7 +61,6 @@ function TaskNavRail(props: { app: AppModel; expanded: boolean; onToggleExpand: 
       <button type="button" className="task-nav-button icon-only" title={props.expanded ? "收起侧栏" : "展开侧栏"} aria-label={props.expanded ? "收起侧栏" : "展开侧栏"} onClick={props.onToggleExpand}><span className="task-nav-icon" aria-hidden="true">☰</span></button>
       <NavIconButton app={props.app} nav="task" icon="◉" label="任务" />
       <NavIconButton app={props.app} nav="logs" icon="≡" label="历史" />
-      <NavIconButton app={props.app} nav="release" icon="⇧" label="上线" />
       <NavIconButton app={props.app} nav="knowledge" icon="📚" label="知识库" />
       <NavIconButton app={props.app} nav="settings" icon="⚙" label="设置" />
       <button type="button" className="task-nav-button icon-only task-nav-action" title="新任务" aria-label="新任务" onClick={props.app.actions.openHomeStart}><span className="task-nav-icon" aria-hidden="true">＋</span></button>

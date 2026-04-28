@@ -23,7 +23,7 @@ type ProviderFeedback = {
 
 export function ProviderCredentialsSection(props: ProviderCredentialsSectionProps) {
   return (
-    <section className="settings-module control-module">
+    <section id="settings-module-provider" className="settings-module control-module">
       <SectionHeader
         kind="head"
         kicker="控制"

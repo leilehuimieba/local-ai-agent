@@ -22,14 +22,21 @@ export function useHistoryReview(logs: LogEntry[]) {
   );
   const recentLogs = useMemo(() => sortLogsByTimestamp(filteredLogs).slice(0, 48), [filteredLogs]);
   const stats = useMemo(() => getLogStats(logs), [logs]);
+  const toggleSelectLog = makeToggleSelect(filters);
   const focusLog = useFocusLog(recentLogs, filters.selectedLogId);
   return {
     focusLog,
     recentLogs,
-    selectLog: filters.setSelectedLogId,
+    selectLog: toggleSelectLog,
     stats,
     detailFocusSection: readDetailFocusSection(filters.values.focusFilter),
     toolbarProps: buildToolbarProps(filteredLogs.length, filters),
+  };
+}
+
+function makeToggleSelect(filters: ReturnType<typeof useReviewFilters>) {
+  return (logId: string) => {
+    filters.setSelectedLogId((current) => (current === logId ? "" : logId));
   };
 }
 

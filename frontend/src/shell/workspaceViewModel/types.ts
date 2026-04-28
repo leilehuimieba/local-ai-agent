@@ -25,7 +25,6 @@ export type AppActions = {
   handleWorkspaceChange: (workspaceId: string) => void;
   openHomeStart: () => void;
   openLogsPage: () => void;
-  openReleasePage: () => void;
   openSettingsPage: () => void;
   openTaskPage: () => void;
   openTaskPageForConfirmation: () => void;
@@ -63,7 +62,6 @@ export type HomeViewModel = {
   confirmationBanner: { title: string; text: string } | null;
   onComposeValueChange: (value: string) => void;
   onOpenLogsPage: () => void;
-  onOpenReleasePage: () => void;
   onReconnect: () => void;
   onOpenSettingsPage: () => void;
   onOpenTaskPage: () => void;
@@ -94,11 +92,6 @@ export const HOME_EXAMPLES = [
     id: "project-status",
     label: "检查项目状态",
     prompt: "检查当前项目状态，告诉我现在做到哪、卡在哪里、下一步最小动作是什么",
-  },
-  {
-    id: "prelaunch-test",
-    label: "上线前检查",
-    prompt: "运行上线前检查；如果失败，请说明原因、影响范围、不影响什么和建议修复",
   },
   {
     id: "safe-change",
