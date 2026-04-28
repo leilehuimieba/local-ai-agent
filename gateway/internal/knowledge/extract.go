@@ -187,7 +187,12 @@ func extractPdf(path string) (res ExtractResult) {
 				}
 			}
 			if float64(ctrl)/float64(len(runes)) < 0.15 {
-				return res
+				cleaned := cleanWatermark(res.Content)
+				if len(strings.TrimSpace(cleaned)) >= 100 {
+					res.Content = cleaned
+					return res
+				}
+				// 清理后内容太短（可能只有水印），继续尝试 OCR
 			}
 		}
 		// pdftotext 提取为空或乱码，尝试 OCR
@@ -196,6 +201,8 @@ func extractPdf(path string) (res ExtractResult) {
 			if ocrRes.Error == nil {
 				return ocrRes
 			}
+			// OCR 失败时标记错误，让上层知道原因
+			res.Error = ocrRes.Error
 		}
 		return res
 	}
