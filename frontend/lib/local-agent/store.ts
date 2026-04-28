@@ -105,6 +105,19 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
   applyEvent: (event: RuntimeEvent) =>
     set((state) => {
       const events = [...state.events, event]
+
+      function makeAssistantMessage(): Message | null {
+        const answer = event.metadata?.final_answer || event.metadata?.result_summary || ""
+        if (!answer && event.event_type !== "run_failed") return null
+        const content = answer || event.summary || "任务结束"
+        return {
+          id: generateId(),
+          role: "assistant",
+          content,
+          timestamp: new Date().toISOString(),
+        }
+      }
+
       if (event.event_type === "confirmation_required") {
         return {
           events,
@@ -121,12 +134,26 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
           } as Confirmation,
         }
       }
+
       if (event.event_type === "run_finished" || event.event_type === "completion") {
-        return { events, runState: "completed" }
+        const msg = makeAssistantMessage()
+        return {
+          events,
+          runState: "completed",
+          messages: msg ? [...state.messages, msg] : state.messages,
+        }
       }
-      if (event.event_type === "error") {
-        return { events, runState: "failed", criticalError: event.summary }
+
+      if (event.event_type === "run_failed" || event.event_type === "error") {
+        const msg = makeAssistantMessage()
+        return {
+          events,
+          runState: "failed",
+          criticalError: event.summary,
+          messages: msg ? [...state.messages, msg] : state.messages,
+        }
       }
+
       return { events }
     }),
 

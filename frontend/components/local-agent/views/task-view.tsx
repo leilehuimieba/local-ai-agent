@@ -30,7 +30,7 @@ import {
 import { useRuntimeStore, useSettingsStore } from "@/lib/local-agent/store"
 import type { Message, RuntimeEvent, ResultBlock, Confirmation, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
-import { submitChatRun, submitConfirmationDecision, type SubmitChatRunPayload } from "@/lib/local-agent/api"
+import { submitChatRun, submitChatRetry, submitConfirmationDecision, type SubmitChatRunPayload } from "@/lib/local-agent/api"
 import { useSessionEventStream } from "@/hooks/useSessionEventStream"
 import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
 
@@ -137,9 +137,20 @@ export function TaskView() {
     }
   }
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
+    const currentRunId = useRuntimeStore.getState().currentRunId
+    if (!currentRunId) {
+      failRun("没有可重试的任务")
+      return
+    }
     setRunState("running")
-    startNewRun("重试之前的任务")
+    setCriticalError(null)
+    try {
+      const result = await submitChatRetry({ session_id: sessionId, run_id: currentRunId })
+      acceptRun(result.session_id, result.run_id)
+    } catch (err) {
+      failRun(err instanceof Error ? err.message : "重试失败")
+    }
   }
 
   const hasMessages = messages.length > 0
