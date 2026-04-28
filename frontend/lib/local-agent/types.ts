@@ -190,37 +190,4 @@ export interface Memory {
   sourceRunId?: string
 }
 
-// Diagnostics Types
-export interface DiagnosticResult {
-  category: string
-  status: "ok" | "warning" | "error"
-  message: string
-  details?: string
-}
 
-// External Connection Types
-export interface ExternalConnection {
-  slot_id: string
-  name: string
-  type: string
-  status: "connected" | "disconnected" | "error"
-  last_connected?: string
-}
-
-// API Response Types
-export interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-}
-
-export interface ChatRunResponse {
-  session_id: string
-  run_id: string
-}
-
-export interface SystemInfo {
-  repo_root: string
-  runtime_status: ConnectionState
-  version: string
-}
