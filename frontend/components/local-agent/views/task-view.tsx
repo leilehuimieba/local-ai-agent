@@ -46,6 +46,7 @@ export function TaskView() {
     messages,
     events,
     runState,
+    connectionState,
     confirmation,
     composeValue,
     criticalError,
@@ -72,7 +73,7 @@ export function TaskView() {
 
   // SSE event stream
   const sessionId = useRuntimeStore((s) => s.sessionId)
-  useSessionEventStream(sessionId, {
+  const { reconnect } = useSessionEventStream(sessionId, {
     onEvent: (event) => {
       applyEvent(event)
     },
@@ -229,6 +230,17 @@ export function TaskView() {
       {/* Bottom Composer */}
       <div className="shrink-0 border-t border-border bg-card p-4">
         <div className="mx-auto max-w-3xl">
+          {connectionState === "disconnected" && (
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
+              <div className="flex items-center gap-2 text-sm text-warning">
+                <AlertTriangle className="h-4 w-4" />
+                事件流连接已断开
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={reconnect}>
+                重连
+              </Button>
+            </div>
+          )}
           {submitError && (
             <div className="mb-3 flex items-center gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4" />

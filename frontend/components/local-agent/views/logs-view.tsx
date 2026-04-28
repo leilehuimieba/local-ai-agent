@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { useLogsStore } from "@/lib/local-agent/store"
 import type { LogRun } from "@/lib/local-agent/types"
+import { fetchLogs } from "@/lib/local-agent/api"
 import { cn } from "@/lib/utils"
 
 type TimeFilter = "today" | "7days" | "30days"
@@ -204,6 +205,59 @@ function LogCard({
   expanded: boolean
   onToggle: () => void
 }) {
+  const [details, setDetails] = useState<LogRunWithDetails | null>(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+
+  useEffect(() => {
+    if (!expanded || details || loadingDetails) return
+    setLoadingDetails(true)
+    fetchLogs("events", { run_id: log.run_id, limit: 100 })
+      .then((data) => {
+        const items = data.items
+        const toolCalls: string[] = []
+        const validation: { passed: boolean; message: string }[] = []
+        const risks: { level: string; description: string }[] = []
+        const metadata: Record<string, string> = {}
+        const context: Record<string, string> = {}
+        let summary = ""
+
+        for (const item of items) {
+          if (item.tool_name && !toolCalls.includes(item.tool_name)) {
+            toolCalls.push(item.tool_display_name || item.tool_name)
+          }
+          if (item.risk_level && item.summary) {
+            risks.push({ level: item.risk_level, description: item.summary })
+          }
+          if (item.result_summary) {
+            validation.push({ passed: item.level !== "error", message: item.result_summary })
+          }
+          if (item.metadata) {
+            Object.assign(metadata, item.metadata)
+          }
+          if (item.final_answer) {
+            summary = item.final_answer
+          }
+        }
+
+        setDetails({
+          ...log,
+          summary: summary || log.title,
+          toolCalls,
+          validation,
+          risks,
+          metadata: Object.keys(metadata).length ? metadata : undefined,
+          context: Object.keys(context).length ? context : undefined,
+        })
+      })
+      .catch(() => {
+        setDetails({ ...log, summary: log.title })
+      })
+      .finally(() => {
+        setLoadingDetails(false)
+      })
+  }, [expanded, log, details, loadingDetails])
+
+  const display = details || log
   const statusConfig = {
     completed: {
       icon: CheckCircle,
@@ -225,7 +279,7 @@ function LogCard({
     },
   }
 
-  const config = statusConfig[log.status]
+  const config = statusConfig[display.status]
   const Icon = config.icon
 
   return (
@@ -254,16 +308,16 @@ function LogCard({
             className={cn(
               "h-5 w-5 shrink-0",
               config.color,
-              log.status === "running" && "animate-spin"
+              display.status === "running" && "animate-spin"
             )}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{log.title}</p>
-            <p className="text-xs text-muted-foreground">{formatTimestamp(log.started_at)}</p>
+            <p className="text-sm font-medium text-foreground truncate">{display.title}</p>
+            <p className="text-xs text-muted-foreground">{formatTimestamp(display.started_at)}</p>
           </div>
           <Badge variant="secondary" className="shrink-0 text-xs gap-1">
             <Clock className="h-3 w-3" />
-            {formatDuration(log.duration_ms)}
+            {formatDuration(display.duration_ms)}
           </Badge>
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
@@ -275,105 +329,95 @@ function LogCard({
         {/* Expanded Content */}
         {expanded && (
           <div className="border-t border-border p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <Tabs defaultValue="summary" className="w-full">
-              <TabsList className="mb-4 h-auto flex-wrap">
-                <TabsTrigger value="summary" className="text-xs">Summary</TabsTrigger>
-                <TabsTrigger value="tools" className="text-xs">Tool Calls</TabsTrigger>
-                <TabsTrigger value="validation" className="text-xs">Validation</TabsTrigger>
-                <TabsTrigger value="risks" className="text-xs">Risks</TabsTrigger>
-                <TabsTrigger value="metadata" className="text-xs">Metadata</TabsTrigger>
-                <TabsTrigger value="context" className="text-xs">Context</TabsTrigger>
-              </TabsList>
+            {loadingDetails ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Tabs defaultValue="summary" className="w-full">
+                <TabsList className="mb-4 h-auto flex-wrap">
+                  <TabsTrigger value="summary" className="text-xs">摘要</TabsTrigger>
+                  <TabsTrigger value="tools" className="text-xs">工具调用</TabsTrigger>
+                  <TabsTrigger value="validation" className="text-xs">验证</TabsTrigger>
+                  <TabsTrigger value="risks" className="text-xs">风险</TabsTrigger>
+                  <TabsTrigger value="metadata" className="text-xs">元数据</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="summary" className="mt-0">
-                <p className="text-sm text-muted-foreground">
-                  {log.summary || "No summary available."}
-                </p>
-              </TabsContent>
+                <TabsContent value="summary" className="mt-0">
+                  <p className="text-sm text-muted-foreground">
+                    {display.summary || "无摘要"}
+                  </p>
+                </TabsContent>
 
-              <TabsContent value="tools" className="mt-0">
-                {log.toolCalls?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {log.toolCalls.map((tool, i) => (
-                      <Badge key={i} variant="outline" className="font-mono text-xs">
-                        {tool}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No tool calls recorded.</p>
-                )}
-              </TabsContent>
+                <TabsContent value="tools" className="mt-0">
+                  {display.toolCalls?.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {display.toolCalls.map((tool, i) => (
+                        <Badge key={i} variant="outline" className="font-mono text-xs">
+                          {tool}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">无工具调用记录</p>
+                  )}
+                </TabsContent>
 
-              <TabsContent value="validation" className="mt-0">
-                {log.validation?.length ? (
-                  <ul className="space-y-2">
-                    {log.validation.map((v, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        {v.passed ? (
-                          <CheckCircle className="h-4 w-4 text-success shrink-0" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-destructive shrink-0" />
-                        )}
-                        <span className={v.passed ? "text-muted-foreground" : "text-destructive"}>
-                          {v.message}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No validation steps.</p>
-                )}
-              </TabsContent>
+                <TabsContent value="validation" className="mt-0">
+                  {display.validation?.length ? (
+                    <ul className="space-y-2">
+                      {display.validation.map((v, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm">
+                          {v.passed ? (
+                            <CheckCircle className="h-4 w-4 text-success shrink-0" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                          )}
+                          <span className={v.passed ? "text-muted-foreground" : "text-destructive"}>
+                            {v.message}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">无验证步骤</p>
+                  )}
+                </TabsContent>
 
-              <TabsContent value="risks" className="mt-0">
-                {log.risks?.length ? (
-                  <ul className="space-y-2">
-                    {log.risks.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <AlertTriangle className={cn(
-                          "h-4 w-4 shrink-0 mt-0.5",
-                          r.level === "high" ? "text-destructive" : "text-warning"
-                        )} />
-                        <span className="text-muted-foreground">{r.description}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No risks identified.</p>
-                )}
-              </TabsContent>
+                <TabsContent value="risks" className="mt-0">
+                  {display.risks?.length ? (
+                    <ul className="space-y-2">
+                      {display.risks.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <AlertTriangle className={cn(
+                            "h-4 w-4 shrink-0 mt-0.5",
+                            r.level === "high" ? "text-destructive" : "text-warning"
+                          )} />
+                          <span className="text-muted-foreground">{r.description}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">无风险记录</p>
+                  )}
+                </TabsContent>
 
-              <TabsContent value="metadata" className="mt-0">
-                {log.metadata && Object.keys(log.metadata).length ? (
-                  <div className="space-y-2">
-                    {Object.entries(log.metadata).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="font-medium text-foreground font-mono">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No metadata available.</p>
-                )}
-              </TabsContent>
-
-              <TabsContent value="context" className="mt-0">
-                {log.context && Object.keys(log.context).length ? (
-                  <div className="space-y-2">
-                    {Object.entries(log.context).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="font-medium text-foreground font-mono">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No context available.</p>
-                )}
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="metadata" className="mt-0">
+                  {display.metadata && Object.keys(display.metadata).length ? (
+                    <div className="space-y-2">
+                      {Object.entries(display.metadata).map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{key}</span>
+                          <span className="font-medium text-foreground font-mono">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">无元数据</p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
           </div>
         )}
       </div>

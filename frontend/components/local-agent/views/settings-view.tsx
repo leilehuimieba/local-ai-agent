@@ -41,6 +41,7 @@ import {
 } from "lucide-react"
 import { useSettingsStore, useRuntimeStore, useMemoryStore } from "@/lib/local-agent/store"
 import type { AgentMode } from "@/lib/local-agent/types"
+import { runDiagnosticsCheck } from "@/lib/local-agent/api"
 import { cn } from "@/lib/utils"
 
 const settingsModules = [
@@ -572,19 +573,32 @@ const DiagnosticsSection = forwardRef<HTMLDivElement>((_, ref) => {
   const [isRunning, setIsRunning] = useState(false)
   const [results, setResults] = useState<{ category: string; status: "ok" | "error"; message: string }[]>([])
 
-  const runHealthCheck = () => {
+  const runHealthCheck = async () => {
     setIsRunning(true)
     setResults([])
 
-    setTimeout(() => {
-      setResults([
-        { category: "连接", status: "ok", message: "所有服务已连接" },
-        { category: "数据库", status: "ok", message: "结构有效" },
-        { category: "记忆", status: "ok", message: "已加载 4 条记录" },
-        { category: "服务商", status: "ok", message: "2 个服务商活跃" },
-      ])
+    try {
+      const data = await runDiagnosticsCheck()
+      const checks = [
+        { category: "仓库", status: data.diagnostics.repo_root_exists ? "ok" : "error", message: data.diagnostics.repo_root_exists ? "可访问" : "不可访问" },
+        { category: "存储", status: data.diagnostics.storage_root_exists ? "ok" : "error", message: data.diagnostics.storage_root_exists ? "可访问" : "不可访问" },
+        { category: "Runtime", status: data.diagnostics.runtime_reachable ? "ok" : "error", message: data.diagnostics.runtime_reachable ? `可达 (${data.diagnostics.runtime_version})` : "不可达" },
+        { category: "服务商", status: data.diagnostics.provider_count > 0 ? "ok" : "error", message: `${data.diagnostics.provider_count} 个已配置` },
+        { category: "模型", status: data.diagnostics.model_count > 0 ? "ok" : "error", message: `${data.diagnostics.model_count} 个可用` },
+        { category: "工作区", status: data.diagnostics.workspace_count > 0 ? "ok" : "error", message: `${data.diagnostics.workspace_count} 个已配置` },
+      ]
+      if (data.warnings.length > 0) {
+        checks.push({ category: "警告", status: "error", message: data.warnings.join("；") })
+      }
+      if (data.errors.length > 0) {
+        checks.push({ category: "错误", status: "error", message: data.errors.join("；") })
+      }
+      setResults(checks)
+    } catch {
+      setResults([{ category: "检查", status: "error", message: "健康检查请求失败" }])
+    } finally {
       setIsRunning(false)
-    }, 2000)
+    }
   }
 
   return (

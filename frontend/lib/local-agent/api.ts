@@ -235,6 +235,14 @@ export type LogEntry = {
   category: string;
   source: string;
   summary: string;
+  detail?: string;
+  tool_name?: string;
+  tool_display_name?: string;
+  tool_category?: string;
+  risk_level?: string;
+  result_summary?: string;
+  final_answer?: string;
+  metadata?: Record<string, string>;
 };
 
 export type LogRun = {
@@ -248,9 +256,10 @@ export type LogRun = {
   event_count: number;
 };
 
-export async function fetchLogs(view: "runs" | "events", params?: { session_id?: string; limit?: number }): Promise<{ items: LogEntry[]; runs?: LogRun[] }> {
+export async function fetchLogs(view: "runs" | "events", params?: { session_id?: string; run_id?: string; limit?: number }): Promise<{ items: LogEntry[]; runs?: LogRun[] }> {
   const search = new URLSearchParams({ view });
   if (params?.session_id) search.set("session_id", params.session_id);
+  if (params?.run_id) search.set("run_id", params.run_id);
   if (params?.limit) search.set("limit", String(params.limit));
   const response = await fetch(`${API_BASE}/api/v1/logs?${search.toString()}`);
   if (!response.ok) throw new Error(`获取日志失败: ${await readError(response)}`);
@@ -269,6 +278,35 @@ export async function fetchSystemInfo(): Promise<SystemInfo> {
   const response = await fetch(`${API_BASE}/api/v1/system/info`);
   if (!response.ok) throw new Error(`获取系统信息失败: ${await readError(response)}`);
   return (await response.json()) as SystemInfo;
+}
+
+// ========== Diagnostics APIs ==========
+
+export type DiagnosticsCheckResponse = {
+  checked_at: string;
+  overall_ok: boolean;
+  diagnostics: {
+    checked_at: string;
+    repo_root: string;
+    repo_root_exists: boolean;
+    storage_root: string;
+    storage_root_exists: boolean;
+    runtime_reachable: boolean;
+    runtime_version: string;
+    provider_count: number;
+    model_count: number;
+    workspace_count: number;
+  };
+  warnings: string[];
+  errors: string[];
+};
+
+export async function runDiagnosticsCheck(): Promise<DiagnosticsCheckResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/settings/diagnostics/check`, {
+    method: "POST",
+  });
+  if (!response.ok) throw new Error(`健康检查失败: ${await readError(response)}`);
+  return (await response.json()) as DiagnosticsCheckResponse;
 }
 
 // ========== Memory APIs ==========
