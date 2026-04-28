@@ -41,10 +41,16 @@ export interface Message {
 // Event Types
 export interface RuntimeEvent {
   event_id: string
-  event_type: "tool_call" | "tool_result" | "thinking" | "error" | "confirmation" | "completion"
-  stage: "start" | "progress" | "end"
+  event_type: string
+  stage: string
   summary: string
   timestamp: string
+  run_id?: string
+  session_id?: string
+  sequence?: number
+  trace_id?: string
+  detail?: string
+  metadata?: Record<string, unknown>
   details?: Record<string, unknown>
 }
 
@@ -176,8 +182,10 @@ export interface Risk {
 // Memory Types
 export interface Memory {
   id: string
+  kind: string
+  title: string
+  summary: string
   content: string
-  type: "fact" | "preference" | "context"
   createdAt: string
   sourceRunId?: string
 }

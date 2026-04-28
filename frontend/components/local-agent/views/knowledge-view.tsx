@@ -26,8 +26,9 @@ import {
   Loader2,
 } from "lucide-react"
 import { useKnowledgeStore } from "@/lib/local-agent/store"
-import { mockKnowledgeItems, categoryColors } from "@/lib/local-agent/mock-data"
+import { categoryColors } from "@/lib/local-agent/mock-data"
 import type { KnowledgeItem } from "@/lib/local-agent/types"
+import { askKnowledgeBase } from "@/lib/local-agent/api"
 import { cn } from "@/lib/utils"
 
 const categories = [
@@ -398,29 +399,25 @@ function AskTab() {
     setQuestion("")
     setIsLoading(true)
 
-    // Simulate RAG response
-    setTimeout(() => {
-      const relevantSources = items
-        .filter((item) =>
-          question.toLowerCase().split(" ").some((word) =>
-            item.title.toLowerCase().includes(word) ||
-            item.content.toLowerCase().includes(word)
-          )
-        )
-        .slice(0, 2)
-
+    try {
+      const result = await askKnowledgeBase(question)
       const assistantMessage: AskMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: relevantSources.length > 0
-          ? `Based on your knowledge base, I found relevant information about "${question}". ${relevantSources[0]?.summary || "The documentation covers this topic in detail."}`
-          : "I couldn't find specific information about this in your knowledge base. Try rephrasing your question or adding relevant sources.",
-        sources: relevantSources.map((s) => s.title),
+        content: result.answer,
+        sources: result.sources,
       }
-
       setMessages((prev) => [...prev, assistantMessage])
+    } catch {
+      const assistantMessage: AskMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "抱歉，知识库问答服务暂时不可用。请稍后重试。",
+      }
+      setMessages((prev) => [...prev, assistantMessage])
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   useEffect(() => {

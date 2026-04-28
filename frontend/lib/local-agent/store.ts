@@ -12,7 +12,7 @@ import type {
   Memory,
   ViewType,
 } from "./types"
-import { submitChatRun, submitConfirmationDecision, type SubmitChatRunPayload, fetchKnowledgeItems, fetchSettings, fetchLogs, type SettingsResponse } from "./api"
+import { submitChatRun, submitConfirmationDecision, type SubmitChatRunPayload, fetchKnowledgeItems, fetchSettings, fetchLogs, fetchMemories, type SettingsResponse } from "./api"
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
@@ -350,13 +350,14 @@ interface MemoryStore {
   setMemories: (memories: Memory[]) => void
   addMemory: (memory: Memory) => void
   removeMemory: (id: string) => void
+  loadMemories: () => Promise<void>
 }
 
 export const useMemoryStore = create<MemoryStore>((set) => ({
   memories: [],
 
   setMemories: (memories) => set({ memories }),
-  
+
   addMemory: (memory) =>
     set((state) => ({
       memories: [...state.memories, memory],
@@ -366,4 +367,23 @@ export const useMemoryStore = create<MemoryStore>((set) => ({
     set((state) => ({
       memories: state.memories.filter((m) => m.id !== id),
     })),
+
+  loadMemories: async () => {
+    try {
+      const data = await fetchMemories()
+      set({
+        memories: data.items.map((item) => ({
+          id: item.id,
+          kind: item.kind,
+          title: item.title,
+          summary: item.summary,
+          content: item.content,
+          createdAt: item.created_at,
+          sourceRunId: item.source_run_id,
+        })),
+      })
+    } catch {
+      // ignore load errors
+    }
+  },
 }))

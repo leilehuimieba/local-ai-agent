@@ -270,3 +270,35 @@ export async function fetchSystemInfo(): Promise<SystemInfo> {
   if (!response.ok) throw new Error(`获取系统信息失败: ${await readError(response)}`);
   return (await response.json()) as SystemInfo;
 }
+
+// ========== Memory APIs ==========
+
+export type MemoryEntry = {
+  id: string;
+  kind: string;
+  title: string;
+  summary: string;
+  content: string;
+  created_at: string;
+  source_run_id?: string;
+};
+
+export type MemoryListResponse = {
+  items: MemoryEntry[];
+};
+
+export async function fetchMemories(): Promise<MemoryListResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/memories`);
+  if (!response.ok) throw new Error(`获取记忆失败: ${await readError(response)}`);
+  return (await response.json()) as MemoryListResponse;
+}
+
+export async function deleteMemory(memoryId: string): Promise<MemoryListResponse> {
+  const response = await fetch(`${API_BASE}/api/v1/memories/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ memory_id: memoryId }),
+  });
+  if (!response.ok) throw new Error(`删除记忆失败: ${await readError(response)}`);
+  return (await response.json()) as MemoryListResponse;
+}

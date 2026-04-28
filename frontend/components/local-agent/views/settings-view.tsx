@@ -40,7 +40,6 @@ import {
   EyeOff,
 } from "lucide-react"
 import { useSettingsStore, useRuntimeStore, useMemoryStore } from "@/lib/local-agent/store"
-import { mockMemories } from "@/lib/local-agent/mock-data"
 import type { AgentMode, Provider } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
 
@@ -514,13 +513,11 @@ RiskSection.displayName = "RiskSection"
 
 // Memory Section
 const MemorySection = forwardRef<HTMLDivElement>((_, ref) => {
-  const { memories, setMemories, removeMemory } = useMemoryStore()
+  const { memories, loadMemories, removeMemory } = useMemoryStore()
 
   useEffect(() => {
-    if (memories.length === 0) {
-      setMemories(mockMemories)
-    }
-  }, [memories.length, setMemories])
+    loadMemories()
+  }, [loadMemories])
 
   return (
     <SettingsSection
@@ -536,10 +533,10 @@ const MemorySection = forwardRef<HTMLDivElement>((_, ref) => {
             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border p-3 hover:bg-muted transition-colors [&[data-state=open]>svg]:rotate-90">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs capitalize">
-                  {memory.type}
+                  {memory.kind}
                 </Badge>
                 <span className="text-sm font-medium text-foreground line-clamp-1">
-                  {memory.content.slice(0, 40)}...
+                  {memory.title.slice(0, 40) || memory.content.slice(0, 40)}...
                 </span>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform duration-200" />

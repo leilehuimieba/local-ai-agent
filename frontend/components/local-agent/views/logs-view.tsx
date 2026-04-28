@@ -44,10 +44,8 @@ const timeFilters: { id: TimeFilter; label: string }[] = [
   { id: "30days", label: "30天" },
 ]
 
-const enrichedLogs: LogRunWithDetails[] = []
-
 function formatDuration(ms: number): string {
-  if (ms === 0) return "In progress..."
+  if (ms === 0) return "进行中..."
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
@@ -63,8 +61,8 @@ function formatTimestamp(isoString: string): string {
   const diffDays = Math.floor(diffHours / 24)
 
   if (diffMins < 1) return "刚刚"
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffMins < 60) return `${diffMins}分钟前`
+  if (diffHours < 24) return `${diffHours}小时前`
   if (diffDays === 1) return "昨天"
   return date.toLocaleDateString()
 }
@@ -171,9 +169,9 @@ export function LogsView() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No runs yet</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">暂无运行记录</h3>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Your task history will appear here once you start running tasks.
+              开始运行任务后，历史记录将显示在这里。
             </p>
           </div>
         ) : (

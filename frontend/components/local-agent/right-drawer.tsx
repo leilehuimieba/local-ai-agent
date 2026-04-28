@@ -16,7 +16,6 @@ import {
   Clock,
 } from "lucide-react"
 import { useUIStore, useRuntimeStore, useMemoryStore } from "@/lib/local-agent/store"
-import { mockMemories } from "@/lib/local-agent/mock-data"
 import type { RunState } from "@/lib/local-agent/types"
 
 const runStateConfig: Record<RunState, { label: string; color: string; icon: React.ReactNode }> = {
@@ -30,13 +29,13 @@ const runStateConfig: Record<RunState, { label: string; color: string; icon: Rea
 export function RightDrawer() {
   const { rightDrawerOpen, setRightDrawerOpen, activeView } = useUIStore()
   const { runState, currentTaskTitle, events, confirmation, messages } = useRuntimeStore()
-  const { memories, setMemories } = useMemoryStore()
+  const { memories, loadMemories } = useMemoryStore()
   const [elapsedTime, setElapsedTime] = useState(0)
 
   // Initialize memories
   useEffect(() => {
-    setMemories(mockMemories)
-  }, [setMemories])
+    loadMemories()
+  }, [loadMemories])
 
   // Elapsed time counter
   useEffect(() => {
@@ -189,15 +188,15 @@ export function RightDrawer() {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs capitalize">
-                        {memory.type}
+                        {memory.kind}
                       </Badge>
                     </div>
-                    <p className="text-xs text-foreground line-clamp-2">{memory.content}</p>
+                    <p className="text-xs text-foreground line-clamp-2">{memory.title || memory.content}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">No memories recorded</p>
+              <p className="text-xs text-muted-foreground">暂无记忆记录</p>
             )}
           </section>
 

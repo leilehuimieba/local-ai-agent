@@ -48,7 +48,7 @@ export function TaskView() {
     runState,
     confirmation,
     composeValue,
-    critical错误,
+    criticalError,
     submitError,
     addMessage,
     setComposeValue,
@@ -137,9 +137,9 @@ export function TaskView() {
     }
   }
 
-  const handle重试 = () => {
+  const handleRetry = () => {
     setRunState("running")
-    startNewRun("重试 previous task")
+    startNewRun("重试之前的任务")
   }
 
   const hasMessages = messages.length > 0
