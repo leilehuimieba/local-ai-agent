@@ -33,18 +33,38 @@ func (h *Handler) handleAsk(w http.ResponseWriter, r *http.Request, workspaceID 
 		return
 	}
 
+	chunks, err := h.store.ListChunksByWorkspace(workspaceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	items, err := h.store.List(workspaceID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	sources := rankItemsWithVector(items, req.Question, cfg, settingsStore)
+	// 如果没有 chunks（旧数据），回退到 item 级别检索
+	if len(chunks) == 0 {
+		sources := rankItemsByKeyword(items, req.Question)
+		if len(sources) > 3 {
+			sources = sources[:3]
+		}
+		h.finishAsk(w, req.Question, sources, cfg, settingsStore, workspaceID)
+		return
+	}
+
+	sources := rankChunksHybrid(chunks, items, req.Question, cfg, settingsStore)
 	if len(sources) > 3 {
 		sources = sources[:3]
 	}
 
-	answer, err := callLLM(cfg, settingsStore, req.Question, sources)
+	h.finishAsk(w, req.Question, sources, cfg, settingsStore, workspaceID)
+}
+
+func (h *Handler) finishAsk(w http.ResponseWriter, question string, sources []Item, cfg config.AppConfig, settingsStore *state.SettingsStore, workspaceID string) {
+	answer, err := callLLM(cfg, settingsStore, question, sources)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -54,101 +74,197 @@ func (h *Handler) handleAsk(w http.ResponseWriter, r *http.Request, workspaceID 
 		answer = warning + "\n\n" + answer
 	}
 
+	// 异步更新引用计数
+	for _, src := range sources {
+		go func(itemID string) {
+			_ = h.store.IncrementCitationCount(workspaceID, itemID)
+		}(src.ID)
+	}
+
 	writeJSON(w, http.StatusOK, AskResponse{Answer: answer, Sources: sources})
 }
 
-func rankItemsWithVector(items []Item, query string, cfg config.AppConfig, settingsStore *state.SettingsStore) []Item {
-	_, currentModel, _, _, _, _, _, _ := settingsStore.Snapshot()
-	provider := findProvider(cfg, currentModel.ProviderID)
-	queryEmbed, err := GetEmbedding(query, provider, currentModel.ModelID)
-	if err != nil || len(queryEmbed) == 0 {
-		return rankItemsKeyword(items, query)
+func rankItemsByKeyword(items []Item, query string) []Item {
+	q := strings.ToLower(query)
+	keywords := tokenizeQuery(q)
+	if len(keywords) == 0 {
+		return nil
 	}
-
-	hasAnyEmbedding := false
-	for _, it := range items {
-		if len(it.Embedding) > 0 {
-			hasAnyEmbedding = true
-			break
-		}
-	}
-	if !hasAnyEmbedding {
-		return rankItemsKeyword(items, query)
-	}
-
-	scored := make([]struct {
+	type scored struct {
 		item  Item
-		score float64
-	}, 0, len(items))
+		score int
+	}
+	var list []scored
 	for _, item := range items {
-		if len(item.Embedding) == 0 {
-			continue
+		text := strings.ToLower(item.Title + " " + item.Summary + " " + item.Content + " " + strings.Join(item.Tags, " "))
+		s := 0
+		for _, kw := range keywords {
+			if strings.Contains(text, kw) {
+				s++
+			}
 		}
-		sim := CosineSimilarity(queryEmbed, item.Embedding)
-		if sim > 0 {
-			scored = append(scored, struct {
-				item  Item
-				score float64
-			}{item: item, score: sim})
+		if s > 0 {
+			list = append(list, scored{item: item, score: s})
 		}
 	}
-
-	for i := 0; i < len(scored); i++ {
-		for j := i + 1; j < len(scored); j++ {
-			if scored[j].score > scored[i].score {
-				scored[i], scored[j] = scored[j], scored[i]
+	for i := 0; i < len(list); i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[j].score > list[i].score {
+				list[i], list[j] = list[j], list[i]
 			}
 		}
 	}
-
-	result := make([]Item, 0, len(scored))
-	for _, s := range scored {
+	result := make([]Item, 0, len(list))
+	for _, s := range list {
 		result = append(result, s.item)
 	}
 	return result
 }
 
-func rankItemsKeyword(items []Item, query string) []Item {
+const rrfK = 60
+
+type chunkRank struct {
+	chunkID string
+	itemID  string
+	score   float64
+}
+
+func rankChunksHybrid(chunks []Chunk, items []Item, query string, cfg config.AppConfig, settingsStore *state.SettingsStore) []Item {
+	// 并行收集两路排名
+	vecRanks := rankChunksVector(chunks, query, cfg, settingsStore)
+	kwRanks := rankChunksKeyword(chunks, query)
+
+	// RRF 合并
+	merged := make(map[string]float64)
+	for chunkID, rank := range vecRanks {
+		merged[chunkID] = 1.0 / float64(rrfK+rank)
+	}
+	for chunkID, rank := range kwRanks {
+		merged[chunkID] += 1.0 / float64(rrfK+rank)
+	}
+
+	// 按 RRF 分数排序
+	sorted := make([]chunkRank, 0, len(merged))
+	for chunkID, score := range merged {
+		itemID := ""
+		for _, c := range chunks {
+			if c.ID == chunkID {
+				itemID = c.ItemID
+				break
+			}
+		}
+		sorted = append(sorted, chunkRank{chunkID: chunkID, itemID: itemID, score: score})
+	}
+	for i := 0; i < len(sorted); i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			if sorted[j].score > sorted[i].score {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			}
+		}
+	}
+
+	// 按 item 去重，保留最高分的 chunk 所属 item
+	itemMap := make(map[string]Item, len(items))
+	for _, it := range items {
+		itemMap[it.ID] = it
+	}
+
+	seen := make(map[string]bool)
+	var result []Item
+	for _, cr := range sorted {
+		if seen[cr.itemID] {
+			continue
+		}
+		seen[cr.itemID] = true
+		if item, ok := itemMap[cr.itemID]; ok {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func rankChunksVector(chunks []Chunk, query string, cfg config.AppConfig, settingsStore *state.SettingsStore) map[string]int {
+	providerID := cfg.Embedding.ProviderID
+	if providerID == "" {
+		return nil
+	}
+	provider := FindProvider(cfg, providerID)
+	if provider.EmbeddingModel == "" {
+		return nil
+	}
+	queryEmbed, err := GetEmbedding(query, provider, provider.EmbeddingModel)
+	if err != nil || len(queryEmbed) == 0 {
+		return nil
+	}
+
+	type scored struct {
+		id    string
+		score float64
+	}
+	var list []scored
+	for _, c := range chunks {
+		if len(c.Embedding) == 0 {
+			continue
+		}
+		sim := CosineSimilarity(queryEmbed, c.Embedding)
+		if sim > 0 {
+			list = append(list, scored{id: c.ID, score: sim})
+		}
+	}
+
+	for i := 0; i < len(list); i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[j].score > list[i].score {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+	}
+
+	ranks := make(map[string]int, len(list))
+	for i, s := range list {
+		ranks[s.id] = i + 1
+	}
+	return ranks
+}
+
+func rankChunksKeyword(chunks []Chunk, query string) map[string]int {
 	q := strings.ToLower(query)
 	keywords := tokenizeQuery(q)
 	if len(keywords) == 0 {
 		return nil
 	}
 
-	scored := make([]struct {
-		item  Item
+	type scored struct {
+		id    string
 		score int
-	}, 0, len(items))
-
-	for _, item := range items {
-		score := 0
-		text := strings.ToLower(item.Title + " " + item.Summary + " " + item.Content + " " + strings.Join(item.Tags, " "))
+	}
+	var list []scored
+	for _, c := range chunks {
+		text := strings.ToLower(c.Content)
+		s := 0
 		for _, kw := range keywords {
 			if strings.Contains(text, kw) {
-				score++
+				s++
 			}
 		}
-		if score > 0 {
-			scored = append(scored, struct {
-				item  Item
-				score int
-			}{item: item, score: score})
+		if s > 0 {
+			list = append(list, scored{id: c.ID, score: s})
 		}
 	}
 
-	for i := 0; i < len(scored); i++ {
-		for j := i + 1; j < len(scored); j++ {
-			if scored[j].score > scored[i].score {
-				scored[i], scored[j] = scored[j], scored[i]
+	for i := 0; i < len(list); i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[j].score > list[i].score {
+				list[i], list[j] = list[j], list[i]
 			}
 		}
 	}
 
-	result := make([]Item, 0, len(scored))
-	for _, s := range scored {
-		result = append(result, s.item)
+	ranks := make(map[string]int, len(list))
+	for i, s := range list {
+		ranks[s.id] = i + 1
 	}
-	return result
+	return ranks
 }
 
 func tokenizeQuery(q string) []string {
@@ -201,7 +317,7 @@ func callLLM(cfg config.AppConfig, settingsStore *state.SettingsStore, question 
 		return "", fmt.Errorf("模型未配置")
 	}
 
-	provider := findProvider(cfg, currentModel.ProviderID)
+	provider := FindProvider(cfg, currentModel.ProviderID)
 	if provider.ProviderID == "" {
 		return "", fmt.Errorf("provider 未找到: %s", currentModel.ProviderID)
 	}
@@ -213,7 +329,7 @@ func callLLM(cfg config.AppConfig, settingsStore *state.SettingsStore, question 
 	return sendChatCompletion(provider, currentModel.ModelID, prompt)
 }
 
-func findProvider(cfg config.AppConfig, providerID string) config.ProviderConfig {
+func FindProvider(cfg config.AppConfig, providerID string) config.ProviderConfig {
 	for _, p := range cfg.Providers {
 		if p.ProviderID == providerID {
 			return p

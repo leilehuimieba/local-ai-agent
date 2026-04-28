@@ -108,7 +108,8 @@ func (h *Handler) handleList(w http.ResponseWriter, _ *http.Request, workspaceID
 	}
 	cats, _ := h.store.Categories(workspaceID)
 	tags, _ := h.store.Tags(workspaceID)
-	writeJSON(w, http.StatusOK, ListResponse{Items: items, Categories: cats, Tags: tags})
+	categoryTree := BuildCategoryTree(cats)
+	writeJSON(w, http.StatusOK, ListResponse{Items: items, Categories: cats, CategoryTree: categoryTree, Tags: tags})
 }
 
 func (h *Handler) handleGet(w http.ResponseWriter, _ *http.Request, workspaceID string, id string) {
@@ -135,7 +136,7 @@ func (h *Handler) handleCreate(w http.ResponseWriter, r *http.Request, workspace
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	go h.generateEmbedding(workspaceID, item.ID)
+	go h.generateChunkEmbeddings(workspaceID, item)
 	writeJSON(w, http.StatusCreated, item)
 }
 
@@ -150,11 +151,15 @@ func (h *Handler) handleUpdate(w http.ResponseWriter, r *http.Request, workspace
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	go h.generateEmbedding(workspaceID, item.ID)
+	if req.Content != "" || req.Title != "" || req.Summary != "" {
+		_ = h.store.DeleteChunksByItemID(id)
+		go h.generateChunkEmbeddings(workspaceID, item)
+	}
 	writeJSON(w, http.StatusOK, item)
 }
 
 func (h *Handler) handleDelete(w http.ResponseWriter, _ *http.Request, workspaceID string, id string) {
+	_ = h.store.DeleteChunksByItemID(id)
 	if err := h.store.Delete(workspaceID, id); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -168,6 +173,23 @@ func (h *Handler) handleSearch(w http.ResponseWriter, r *http.Request, workspace
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	for key, values := range r.URL.Query() {
+		for _, v := range values {
+			if strings.HasPrefix(key, "dim:") {
+				dim := strings.TrimPrefix(key, "dim:")
+				items = FilterByTagDimension(items, dim, v)
+			}
+		}
+	}
+	if cat := r.URL.Query().Get("category"); cat != "" {
+		var filtered []Item
+		for _, it := range items {
+			if it.Category == cat || strings.HasPrefix(it.Category, cat+"/") {
+				filtered = append(filtered, it)
+			}
+		}
+		items = filtered
 	}
 	writeJSON(w, http.StatusOK, ListResponse{Items: items})
 }
@@ -197,39 +219,57 @@ func (h *Handler) handleUpload(w http.ResponseWriter, r *http.Request, workspace
 	if len(summary) > 200 {
 		summary = summary[:200] + "..."
 	}
+	category, tags := h.classifyContent(extracted.Title, extracted.Content, header.Filename)
 	item, err := h.store.Create(workspaceID, CreateRequest{
 		Title:    extracted.Title,
 		Summary:  summary,
 		Content:  extracted.Content,
-		Category: "文档",
-		Tags:     []string{"上传"},
+		Category: category,
+		Tags:     tags,
 		Source:   header.Filename,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	go h.generateEmbedding(workspaceID, item.ID)
+	go h.generateChunkEmbeddings(workspaceID, item)
 	writeJSON(w, http.StatusCreated, item)
 }
 
-func (h *Handler) generateEmbedding(workspaceID, itemID string) {
+func (h *Handler) generateChunkEmbeddings(workspaceID string, item *Item) {
 	if h.settingsStore == nil {
 		return
 	}
-	_, currentModel, _, _, _, _, _, _ := h.settingsStore.Snapshot()
-	provider := findProvider(h.cfg, currentModel.ProviderID)
-	item, err := h.store.Get(workspaceID, itemID)
-	if err != nil {
+	provider := h.embeddingProvider()
+	if provider.ProviderID == "" || provider.EmbeddingModel == "" {
 		return
 	}
-	text := item.Title + "\n" + item.Summary + "\n" + item.Content
-	text = truncateText(text, 6000)
-	embed, err := GetEmbedding(text, provider, currentModel.ModelID)
-	if err != nil {
+
+	chunks := BuildChunks(item.ID, item.Content)
+	if len(chunks) == 0 {
 		return
 	}
-	_, _ = h.store.Update(workspaceID, itemID, UpdateRequest{Embedding: embed})
+	if err := h.store.CreateChunks(chunks); err != nil {
+		return
+	}
+
+	for i := range chunks {
+		text := item.Title + "\n" + item.Summary + "\n" + chunks[i].Content
+		text = truncateText(text, 6000)
+		embed, err := GetEmbedding(text, provider, provider.EmbeddingModel)
+		if err != nil {
+			continue
+		}
+		_ = h.store.UpdateChunkEmbedding(chunks[i].ID, embed)
+	}
+}
+
+func (h *Handler) embeddingProvider() config.ProviderConfig {
+	providerID := h.cfg.Embedding.ProviderID
+	if providerID == "" {
+		return config.ProviderConfig{}
+	}
+	return FindProvider(h.cfg, providerID)
 }
 
 func currentWorkspaceID(store *state.SettingsStore) (string, bool) {

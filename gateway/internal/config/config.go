@@ -40,6 +40,10 @@ type OCRConfig struct {
 	Baidu    BaiduOCRConfig `json:"baidu"`
 }
 
+type EmbeddingConfig struct {
+	ProviderID string `json:"provider_id"`
+}
+
 type AppConfig struct {
 	AppName          string           `json:"app_name"`
 	GatewayPort      int              `json:"gateway_port"`
@@ -52,6 +56,7 @@ type AppConfig struct {
 	Workspaces       []contracts.WorkspaceRef   `json:"workspaces"`
 	OCR              OCRConfig        `json:"ocr"`
 	Siyuan           SiyuanConfig     `json:"siyuan"`
+	Embedding        EmbeddingConfig  `json:"embedding"`
 }
 
 func Load(repoRoot string) (AppConfig, error) {

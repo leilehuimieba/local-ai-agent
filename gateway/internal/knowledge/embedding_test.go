@@ -29,7 +29,7 @@ func TestRankItemsKeyword(t *testing.T) {
 		{ID: "2", Title: "Python 教程", Content: "Python 是动态类型语言"},
 		{ID: "3", Title: "Rust 入门", Content: "Rust 注重内存安全"},
 	}
-	result := rankItemsKeyword(items, "Rust")
+	result := rankItemsByKeyword(items, "Rust")
 	assert.Len(t, result, 1)
 	assert.Equal(t, "3", result[0].ID)
 }

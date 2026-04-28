@@ -78,6 +78,7 @@ func (s *Store) Create(workspaceID string, req CreateRequest) (*Item, error) {
 		Content:       strings.TrimSpace(req.Content),
 		Category:      req.Category,
 		Tags:          req.Tags,
+		Metadata:      req.Metadata,
 		Source:        strings.TrimSpace(req.Source),
 		CitationCount: 0,
 		CreatedAt:     now,
@@ -113,6 +114,9 @@ func (s *Store) Update(workspaceID string, id string, req UpdateRequest) (*Item,
 	}
 	if req.Tags != nil {
 		item.Tags = req.Tags
+	}
+	if req.Metadata != "" {
+		item.Metadata = req.Metadata
 	}
 	if req.Source != "" {
 		item.Source = strings.TrimSpace(req.Source)
@@ -169,6 +173,87 @@ func (s *Store) Search(workspaceID string, query string) ([]Item, error) {
 	}
 	defer rows.Close()
 	return scanItems(rows)
+}
+
+func (s *Store) CreateChunks(chunks []Chunk) error {
+	if len(chunks) == 0 {
+		return nil
+	}
+	db, err := s.openDB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	for _, c := range chunks {
+		embedRaw, _ := json.Marshal(c.Embedding)
+		if _, err := db.Exec(
+			`insert into knowledge_chunks (id, item_id, chunk_index, content, embedding, created_at) values (?, ?, ?, ?, ?, ?)`,
+			c.ID, c.ItemID, c.ChunkIndex, c.Content, string(embedRaw), c.CreatedAt,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) ListChunksByWorkspace(workspaceID string) ([]Chunk, error) {
+	db, err := s.openDB()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	rows, err := db.Query(listChunksByWorkspaceSQL, workspaceID)
+	if err != nil {
+		if isMissingTable(err) {
+			return []Chunk{}, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+	var chunks []Chunk
+	for rows.Next() {
+		var c Chunk
+		var embedRaw sql.NullString
+		if err := rows.Scan(&c.ID, &c.ItemID, &c.ChunkIndex, &c.Content, &embedRaw, &c.CreatedAt); err != nil {
+			return nil, err
+		}
+		if embedRaw.Valid && embedRaw.String != "" {
+			_ = json.Unmarshal([]byte(embedRaw.String), &c.Embedding)
+		}
+		chunks = append(chunks, c)
+	}
+	return chunks, rows.Err()
+}
+
+func (s *Store) UpdateChunkEmbedding(chunkID string, embedding []float32) error {
+	db, err := s.openDB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	embedRaw, _ := json.Marshal(embedding)
+	_, err = db.Exec(`update knowledge_chunks set embedding = ? where id = ?`, string(embedRaw), chunkID)
+	return err
+}
+
+func (s *Store) DeleteChunksByItemID(itemID string) error {
+	db, err := s.openDB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	_, err = db.Exec(`delete from knowledge_chunks where item_id = ?`, itemID)
+	return err
+}
+
+func (s *Store) IncrementCitationCount(workspaceID, itemID string) error {
+	db, err := s.openDB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	_, err = db.Exec(`update knowledge_items set citation_count = citation_count + 1 where workspace_id = ? and id = ?`, workspaceID, itemID)
+	return err
 }
 
 func (s *Store) Categories(workspaceID string) ([]string, error) {
@@ -251,6 +336,7 @@ func scanItemRow(scanner interface{ Scan(dest ...any) error }) (Item, error) {
 	var item Item
 	var tagsRaw string
 	var embedRaw sql.NullString
+	var metadataRaw sql.NullString
 	err := scanner.Scan(
 		&item.ID,
 		&item.Title,
@@ -259,6 +345,7 @@ func scanItemRow(scanner interface{ Scan(dest ...any) error }) (Item, error) {
 		&item.Category,
 		&tagsRaw,
 		&item.Source,
+		&metadataRaw,
 		&item.CitationCount,
 		&embedRaw,
 		&item.CreatedAt,
@@ -271,6 +358,9 @@ func scanItemRow(scanner interface{ Scan(dest ...any) error }) (Item, error) {
 	if embedRaw.Valid && embedRaw.String != "" {
 		_ = json.Unmarshal([]byte(embedRaw.String), &item.Embedding)
 	}
+	if metadataRaw.Valid && metadataRaw.String != "" {
+		item.Metadata = metadataRaw.String
+	}
 	return item, nil
 }
 
@@ -279,7 +369,7 @@ func knowledgeArgs(workspaceID string, item Item) []any {
 	embedRaw, _ := json.Marshal(item.Embedding)
 	return []any{
 		item.ID, workspaceID, item.Title, item.Summary, item.Content,
-		item.Category, string(tagsRaw), item.Source, item.CitationCount,
+		item.Category, string(tagsRaw), item.Source, item.Metadata, item.CitationCount,
 		string(embedRaw), item.CreatedAt, item.UpdatedAt,
 	}
 }
@@ -289,7 +379,7 @@ func updateArgs(workspaceID string, id string, item Item) []any {
 	embedRaw, _ := json.Marshal(item.Embedding)
 	return []any{
 		item.Title, item.Summary, item.Content, item.Category,
-		string(tagsRaw), item.Source, string(embedRaw), item.UpdatedAt,
+		string(tagsRaw), item.Source, item.Metadata, string(embedRaw), item.UpdatedAt,
 		workspaceID, id,
 	}
 }
@@ -351,6 +441,7 @@ var createKnowledgeTableSQLs = []string{
 		category text not null default '',
 		tags text not null default '[]',
 		source text not null default '',
+		metadata text not null default '{}',
 		citation_count integer not null default 0,
 		embedding text,
 		created_at text not null,
@@ -358,34 +449,44 @@ var createKnowledgeTableSQLs = []string{
 	)`,
 	`create index if not exists idx_knowledge_workspace on knowledge_items(workspace_id)`,
 	`create index if not exists idx_knowledge_category on knowledge_items(category)`,
+	`create table if not exists knowledge_chunks (
+		id text primary key,
+		item_id text not null,
+		chunk_index integer not null,
+		content text not null,
+		embedding text,
+		created_at text not null
+	)`,
+	`create index if not exists idx_chunks_item on knowledge_chunks(item_id)`,
 }
 
 var knowledgeMigrationSQLs = []string{
 	`alter table knowledge_items add column embedding text`,
+	`alter table knowledge_items add column metadata text not null default '{}'`,
 }
 
 const listKnowledgeSQL = `
-select id, title, summary, content, category, tags, source, citation_count, embedding, created_at, updated_at
+select id, title, summary, content, category, tags, source, metadata, citation_count, embedding, created_at, updated_at
 from knowledge_items
 where workspace_id = ?
 order by updated_at desc
 `
 
 const getKnowledgeSQL = `
-select id, title, summary, content, category, tags, source, citation_count, embedding, created_at, updated_at
+select id, title, summary, content, category, tags, source, metadata, citation_count, embedding, created_at, updated_at
 from knowledge_items
 where workspace_id = ? and id = ?
 `
 
 const insertKnowledgeSQL = `
 insert into knowledge_items (
-	id, workspace_id, title, summary, content, category, tags, source, citation_count, embedding, created_at, updated_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	id, workspace_id, title, summary, content, category, tags, source, metadata, citation_count, embedding, created_at, updated_at
+) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 const updateKnowledgeSQL = `
 update knowledge_items
-set title = ?, summary = ?, content = ?, category = ?, tags = ?, source = ?, embedding = ?, updated_at = ?
+set title = ?, summary = ?, content = ?, category = ?, tags = ?, source = ?, metadata = ?, embedding = ?, updated_at = ?
 where workspace_id = ? and id = ?
 `
 
@@ -395,7 +496,7 @@ where workspace_id = ? and id = ?
 `
 
 const searchKnowledgeSQL = `
-select id, title, summary, content, category, tags, source, citation_count, embedding, created_at, updated_at
+select id, title, summary, content, category, tags, source, metadata, citation_count, embedding, created_at, updated_at
 from knowledge_items
 where workspace_id = ? and (title like ? or summary like ? or content like ?)
 order by updated_at desc
@@ -403,6 +504,14 @@ order by updated_at desc
 
 const categoriesSQL = `
 select distinct category from knowledge_items where workspace_id = ? order by category
+`
+
+const listChunksByWorkspaceSQL = `
+select c.id, c.item_id, c.chunk_index, c.content, c.embedding, c.created_at
+from knowledge_chunks c
+join knowledge_items i on c.item_id = i.id
+where i.workspace_id = ?
+order by c.item_id, c.chunk_index
 `
 
 const tagsSQL = `
