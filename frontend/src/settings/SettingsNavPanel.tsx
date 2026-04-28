@@ -2,6 +2,7 @@ const SETTINGS_SECTIONS = [
   { id: "settings-module-runtime", label: "运行环境" },
   { id: "settings-module-model", label: "模型与模式" },
   { id: "settings-module-provider", label: "Provider 凭证" },
+  { id: "settings-module-embedding", label: "向量化与嵌入" },
   { id: "settings-module-workspace", label: "工作区与授权" },
   { id: "settings-module-risk", label: "风险与权限" },
   { id: "settings-module-resources", label: "记忆与资源" },

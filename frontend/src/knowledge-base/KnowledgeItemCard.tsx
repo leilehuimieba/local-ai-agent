@@ -1,4 +1,5 @@
 import { KnowledgeItem } from "./types";
+import { cleanTitle, fallbackSummary } from "./utils";
 
 export function KnowledgeItemCard({
   item,
@@ -22,8 +23,8 @@ export function KnowledgeItemCard({
         <span className="kb-card-category">{item.category}</span>
         <span className="kb-card-time">{timeStr}</span>
       </header>
-      <h3 className="kb-card-title">{item.title}</h3>
-      <p className="kb-card-summary">{item.summary}</p>
+      <h3 className="kb-card-title">{cleanTitle(item)}</h3>
+      <p className="kb-card-summary">{fallbackSummary(item)}</p>
       <footer className="kb-card-foot">
         <div className="kb-card-tags">
           {item.tags.map((t) => (

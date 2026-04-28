@@ -28,6 +28,12 @@ type SettingsResponse struct {
 	MemoryPolicy           MemoryPolicyStatus       `json:"memory_policy"`
 	Diagnostics            DiagnosticsStatus        `json:"diagnostics"`
 	ExternalConnections    []ExternalConnectionSlot `json:"external_connections"`
+	Embedding              EmbeddingInfo            `json:"embedding"`
+}
+
+type EmbeddingInfo struct {
+	ProviderID string `json:"provider_id"`
+	ModelName  string `json:"model_name"`
 }
 
 type MemoryPolicyStatus struct {

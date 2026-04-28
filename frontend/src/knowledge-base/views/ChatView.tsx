@@ -67,7 +67,7 @@ export function ChatView(props: ChatViewProps) {
           messages.map((msg) => (
             <article key={msg.id} className={msg.role === "user" ? "kb-chat-message user" : "kb-chat-message assistant"}>
               <div className="kb-chat-bubble">
-                <pre>{msg.content}</pre>
+                <div className="kb-chat-text">{msg.content}</div>
                 {msg.sources && msg.sources.length > 0 && (
                   <div className="kb-chat-sources">
                     <span>引用：</span>

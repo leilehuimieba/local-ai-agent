@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { KnowledgeItem } from "./types";
+import { MarkdownContent } from "./MarkdownContent";
+import { cleanTitle, fallbackSummary } from "./utils";
 
 export function KnowledgeItemDetail({
   item,
@@ -71,7 +73,7 @@ export function KnowledgeItemDetail({
       ) : (
         <div className="kb-detail-view">
           <span className="kb-detail-category">{item.category}</span>
-          <h2>{item.title}</h2>
+          <h2>{cleanTitle(item)}</h2>
           <div className="kb-detail-meta">
             <span>更新于 {new Date(item.updatedAt).toLocaleString("zh-CN")}</span>
             <span>引用 {item.citationCount} 次</span>
@@ -88,7 +90,9 @@ export function KnowledgeItemDetail({
               <small>该资料正文暂未提取成功，稍后自动重试</small>
             </div>
           ) : (
-            <pre className="kb-detail-content">{item.content}</pre>
+            <div className="kb-detail-content">
+              <MarkdownContent text={item.content} />
+            </div>
           )}
         </div>
       )}

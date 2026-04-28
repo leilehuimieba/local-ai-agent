@@ -47,6 +47,7 @@ export const testSettings: SettingsResponse = {
     errors: [],
   },
   external_connections: [],
+  embedding: { provider_id: "", model_name: "" },
 };
 
 export const testMemory: MemoryEntry = {

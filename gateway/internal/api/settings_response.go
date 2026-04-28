@@ -31,6 +31,7 @@ func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.S
 		MemoryPolicy:           buildMemoryPolicy(repoRoot, workspace),
 		Diagnostics:            buildDiagnostics(repoRoot, cfg, runtimeStatus, len(models), len(workspaces), len(approvals)),
 		ExternalConnections:    buildExternalConnections(repoRoot, cfg, workspace),
+		Embedding:              buildEmbeddingInfo(cfg),
 	}
 }
 
@@ -177,6 +178,17 @@ func memoryCount(repoRoot string, workspaceID string) int {
 		return 0
 	}
 	return len(items)
+}
+
+func buildEmbeddingInfo(cfg config.AppConfig) EmbeddingInfo {
+	info := EmbeddingInfo{ProviderID: cfg.Embedding.ProviderID}
+	for _, provider := range cfg.Providers {
+		if provider.ProviderID == cfg.Embedding.ProviderID && provider.EmbeddingModel != "" {
+			info.ModelName = provider.EmbeddingModel
+			break
+		}
+	}
+	return info
 }
 
 func approvedDirectories(items []state.ApprovedDirectoryRecord) []DirectoryApproval {

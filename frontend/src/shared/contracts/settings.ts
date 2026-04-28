@@ -160,6 +160,11 @@ export type DiagnosticsCheckResponse = {
   errors: string[];
 };
 
+export type EmbeddingInfo = {
+  provider_id: string;
+  model_name: string;
+};
+
 export type SettingsResponse = {
   app_name: string;
   mode: string;
@@ -183,4 +188,5 @@ export type SettingsResponse = {
   memory_policy: MemoryPolicyStatus;
   diagnostics: DiagnosticsStatus;
   external_connections: ExternalConnectionSlot[];
+  embedding: EmbeddingInfo;
 };

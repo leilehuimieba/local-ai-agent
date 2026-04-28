@@ -9,7 +9,6 @@ import { ProviderCredentialsSection } from "./ProviderCredentialsSection";
 import { ProviderActionState, SettingsActionFeedback, SettingsActionKind } from "./useSettings";
 import {
   SettingsModulesProps,
-  buildDiagnosticsGroupModels,
   buildExternalConnectionModel,
   buildExternalConnectionRows,
   buildMemoryOverviewRows,
@@ -19,19 +18,16 @@ import {
   readControlBadge,
   readDiagnosticsBadge,
   readDiagnosticsCheckTime,
-  readDiagnosticsInventorySummary,
-  readDiagnosticsRuntimeSummary,
+  readDiagnosticsOverallStatusKey,
   readMemoryActionState,
   readModelValue,
   readModuleStatusClass,
-  readSiyuanSummary,
   readToggleState,
   renderModelOption,
   renderWorkspaceOption,
-  DiagnosticsGroupModel,
 } from "./settingsHelpers";
 
-const SETTINGS_MODULE_ORDER = ["runtime", "model", "provider", "workspace", "risk", "resources", "diagnostics"] as const;
+const SETTINGS_MODULE_ORDER = ["runtime", "model", "provider", "embedding", "workspace", "risk", "resources", "diagnostics"] as const;
 type DiagnosticsActionKey = "logs" | "settings" | "snapshot";
 type DiagnosticsFeedback = { tone: "running" | "failed" | "completed"; detail: string };
 
@@ -51,6 +47,7 @@ function createSettingsModule(key: typeof SETTINGS_MODULE_ORDER[number], props: 
   if (key === "runtime") return { key, node: <RuntimeModule key={key} settings={props.settings} /> };
   if (key === "model") return { key, node: <ModelModule key={key} props={props} /> };
   if (key === "provider") return { key, node: <ProviderModule key={key} props={props} /> };
+	if (key === "embedding") return { key, node: <EmbeddingModule key={key} props={props} /> };
   if (key === "workspace") return { key, node: <WorkspaceModule key={key} props={props} /> };
   if (key === "risk") return { key, node: <RiskModule key={key} props={props} /> };
   if (key === "resources") return { key, node: <ResourcesModule key={key} props={props} /> };
@@ -72,6 +69,29 @@ function ProviderModule(props: { props: SettingsModulesProps }) {
   );
 }
 
+
+function EmbeddingModule(props: { props: SettingsModulesProps }) {
+  const embedding = props.props.settings.embedding;
+  const provider = props.props.settings.providers.find((p) => p.provider_id === embedding?.provider_id);
+  const displayProvider = provider?.display_name || embedding?.provider_id || "未配置";
+  const modelName = embedding?.model_name || "未配置";
+  return (
+    <section id="settings-module-embedding" className="settings-module control-module">
+      <ModuleHeader title="向量化与嵌入" badge={embedding?.model_name ? "已配置" : "未配置"} />
+      <div className="settings-control-grid">
+        <div className="detail-card">
+          <strong>当前嵌入服务方</strong>
+          <p>{displayProvider}</p>
+        </div>
+        <div className="detail-card muted-card">
+          <strong>当前嵌入模型</strong>
+          <p>{modelName}</p>
+        </div>
+      </div>
+      <p className="workspace-root" style={{ marginTop: 12 }}>嵌入模型在 config/app.json 中配置，修改后需重启生效。向量维度由模型决定，切换模型后需重建知识库索引。</p>
+    </section>
+  );
+}
 function RuntimeModule(props: { settings: SettingsResponse }) {
   return (
     <section id="settings-module-runtime" className="settings-module control-module">
@@ -352,47 +372,25 @@ async function runDiagnosticsAction(
 }
 
 function DiagnosticsGroupedSummary(props: { settings: SettingsResponse }) {
-  const groups = buildDiagnosticsGroupModels(props.settings);
+  const diagnostics = props.settings.diagnostics;
+  const status = readUnifiedStatusMeta(readDiagnosticsOverallStatusKey(props.settings));
+  const warnings = (diagnostics.warnings || []).length;
+  const errors = (diagnostics.errors || []).length;
   return (
-    <div className="settings-diagnostics-grid">
-      {groups.map((group) => <DiagnosticsGroupCard key={group.key} group={group} />)}
-    </div>
-  );
-}
-
-function DiagnosticsGroupCard(props: { group: DiagnosticsGroupModel }) {
-  const status = readUnifiedStatusMeta(props.group.status);
-  return (
-    <section className="detail-card muted-card diagnostics-group-card">
+    <section className="detail-card muted-card">
       <div className="diagnostics-group-head">
-        <strong>{props.group.title}</strong>
+        <strong>诊断摘要</strong>
         <StatusPill className={status.className} label={status.label} />
       </div>
-      <p>{props.group.summary}</p>
-      <ul className="diagnostics-group-list">
-        {props.group.details.map((item) => <li key={`${props.group.key}-${item}`}>{item}</li>)}
-      </ul>
+      <MetaGrid items={[
+        { label: "检测时间", value: readDiagnosticsCheckTime(props.settings) },
+        { label: "运行时", value: diagnostics.runtime_reachable ? "可达" : "不可达" },
+        { label: "版本", value: diagnostics.runtime_version || "未提供" },
+        { label: "服务方/模型", value: `${diagnostics.provider_count} 个 / ${diagnostics.model_count} 个` },
+        { label: "工作区/授权目录", value: `${diagnostics.workspace_count} 个 / ${diagnostics.approved_directory_count} 个` },
+        { label: "警告/错误", value: `${warnings} 条 / ${errors} 条` },
+      ]} />
     </section>
-  );
-}
-
-function DiagnosticsHealthSummary(props: { settings: SettingsResponse }) {
-  return (
-    <div className="settings-control-grid">
-      <div className="detail-card">
-        <strong>健康摘要</strong>
-        <p>{readDiagnosticsRuntimeSummary(props.settings)}</p>
-        <p>{readDiagnosticsInventorySummary(props.settings)}</p>
-        <p>{readDiagnosticsCheckTime(props.settings)}</p>
-        <p>{`已记住 ${props.settings.diagnostics.approved_directory_count} 个授权目录。`}</p>
-      </div>
-      <div className="detail-card muted-card">
-        <strong>思源链路</strong>
-        <p>{readSiyuanSummary(props.settings)}</p>
-        <p className="workspace-root">{props.settings.diagnostics.siyuan_root || "未提供思源根目录"}</p>
-        <p className="workspace-root">{props.settings.diagnostics.siyuan_export_dir || "未提供导出目录"}</p>
-      </div>
-    </div>
   );
 }
 

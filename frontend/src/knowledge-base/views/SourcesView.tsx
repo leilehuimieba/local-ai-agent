@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { KnowledgeItem } from "../types";
 import { useKnowledgeFilterStore } from "../filterStore";
-import { KnowledgeItemCard } from "../KnowledgeItemCard";
 import { KnowledgeItemDetail } from "../KnowledgeItemDetail";
 import { AddItemModal } from "../AddItemModal";
+import { cleanTitle, fallbackSummary } from "../utils";
 
 export type SourcesViewProps = {
   items: KnowledgeItem[];
@@ -78,8 +78,24 @@ export function SourcesView(props: SourcesViewProps) {
                 className={selectedId === item.id ? "kb-source-row active" : "kb-source-row"}
                 onClick={() => setSelectedId(item.id)}
               >
-                <strong>{item.title}</strong>
-                <span>{item.summary.slice(0, 60)}</span>
+                <div className="kb-source-row-main">
+                  <strong>{cleanTitle(item)}</strong>
+                  <span className="kb-source-row-meta">
+                    <span className="kb-source-row-cat">{item.category}</span>
+                    <span className="kb-source-row-cite">引用 {item.citationCount}</span>
+                    <span className="kb-source-row-time">
+                      {new Date(item.updatedAt).toLocaleDateString("zh-CN")}
+                    </span>
+                  </span>
+                </div>
+                <span className="kb-source-row-summary">{fallbackSummary(item)}</span>
+                {item.tags.length > 0 && (
+                  <span className="kb-source-row-tags">
+                    {item.tags.slice(0, 3).map((t) => (
+                      <span key={t} className="kb-tag">#{t}</span>
+                    ))}
+                  </span>
+                )}
               </button>
             ))
           )}
