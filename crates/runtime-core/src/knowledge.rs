@@ -49,11 +49,7 @@ pub(crate) struct KnowledgeHit {
     pub reason: String,
 }
 
-pub(crate) fn search_knowledge(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> Vec<KnowledgeHit> {
+pub(crate) fn search_knowledge(request: &RunRequest, query: &str, limit: usize) -> Vec<KnowledgeHit> {
     let local_hits = search_local_knowledge(request, query, limit);
     let remain = limit.saturating_sub(local_hits.len());
     let external_hits = if remain > 0 {
@@ -169,13 +165,7 @@ fn search_external_knowledge(request: &RunRequest, query: &str, limit: usize) ->
     if fallback_query == query {
         return primary;
     }
-    cortex_result_or_empty(recall_cortex_hits(
-        request,
-        &flag,
-        &token,
-        &fallback_query,
-        limit,
-    ))
+    cortex_result_or_empty(recall_cortex_hits(request, &flag, &token, &fallback_query, limit))
 }
 
 fn cortex_result_or_empty(result: Result<Vec<KnowledgeHit>, String>) -> Vec<KnowledgeHit> {
@@ -207,22 +197,11 @@ fn recall_cortex_hits(
         .unwrap_or(CORTEX_RETRY_ATTEMPTS);
     let result = retry.and_then(|(body, _)| parse_cortex_recall_hits(&body));
     let _ = fs::remove_file(body_path);
-    write_cortex_recall_audit(
-        request,
-        flag,
-        query,
-        started.elapsed().as_millis(),
-        attempts,
-        &result,
-    );
+    write_cortex_recall_audit(request, flag, query, started.elapsed().as_millis(), attempts, &result);
     result
 }
 
-fn retry_cortex_recall(
-    flag: &CortexFlag,
-    token: &str,
-    body_path: &Path,
-) -> Result<(String, u8), String> {
+fn retry_cortex_recall(flag: &CortexFlag, token: &str, body_path: &Path) -> Result<(String, u8), String> {
     let mut last_error = String::new();
     for attempt in 1..=CORTEX_RETRY_ATTEMPTS {
         match run_cortex_recall(flag, token, body_path) {
@@ -267,8 +246,7 @@ fn sensitive_query_marker(text: &str) -> bool {
 }
 
 fn contains_cjk(text: &str) -> bool {
-    text.chars()
-        .any(|ch| ('\u{4E00}'..='\u{9FFF}').contains(&ch))
+    text.chars().any(|ch| ('\u{4E00}'..='\u{9FFF}').contains(&ch))
 }
 
 fn chinese_recall_fallback_query(query: &str) -> Option<String> {
@@ -575,12 +553,7 @@ fn search_siyuan_index(request: &RunRequest, query: &str, limit: usize) -> Vec<K
     scored.into_iter().map(|(_, hit)| hit).take(limit).collect()
 }
 
-fn collect_search_files(
-    root: &Path,
-    files: &mut Vec<PathBuf>,
-    seen: &mut BTreeSet<String>,
-    depth: usize,
-) {
+fn collect_search_files(root: &Path, files: &mut Vec<PathBuf>, seen: &mut BTreeSet<String>, depth: usize) {
     if depth > 4 || !root.exists() {
         return;
     }
@@ -625,8 +598,8 @@ fn collect_search_files(
 #[cfg(test)]
 mod tests {
     use super::{
-        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits,
-        merge_knowledge_hits, parse_cortex_recall_hits, recall_source,
+        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits, merge_knowledge_hits,
+        parse_cortex_recall_hits, recall_source,
     };
     use crate::paths::external_memory_audit_path;
 
@@ -763,10 +736,7 @@ mod tests {
 
     #[test]
     fn recall_merge_prefers_local_when_limit_is_full() {
-        let local = vec![
-            test_hit("run:1", "local one"),
-            test_hit("run:2", "local two"),
-        ];
+        let local = vec![test_hit("run:1", "local one"), test_hit("run:2", "local two")];
         let external = vec![test_hit("cortex://1", "external one")];
         let hits = merge_knowledge_hits(local, external, 2);
         assert_eq!(hits.len(), 2);

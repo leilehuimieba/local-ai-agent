@@ -27,9 +27,7 @@ fn artifact_from_verification_snapshot(event: &RunEvent) -> Option<String> {
         .and_then(artifact_from_verification_evidence)
 }
 
-fn artifact_from_verification_evidence(
-    snapshot: &crate::contracts::VerificationSnapshot,
-) -> Option<String> {
+fn artifact_from_verification_evidence(snapshot: &crate::contracts::VerificationSnapshot) -> Option<String> {
     snapshot
         .evidence
         .iter()

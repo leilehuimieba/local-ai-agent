@@ -5,9 +5,7 @@ use crate::knowledge::KnowledgeHit;
 use crate::knowledge_store::{
     KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, search_knowledge_records,
 };
-use crate::paths::{
-    siyuan_auto_write_enabled, siyuan_export_dir, siyuan_root_dir, siyuan_sync_enabled,
-};
+use crate::paths::{siyuan_auto_write_enabled, siyuan_export_dir, siyuan_root_dir, siyuan_sync_enabled};
 use crate::text::summarize_text;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -47,11 +45,7 @@ pub(crate) fn execute_siyuan_read(request: &RunRequest, path: &str) -> ActionExe
         Ok(content) => ActionExecution::bypass_ok(
             format!("读取思源正文：{}", target.display()),
             format!("思源正文读取成功，摘要：{}", summarize_text(&content)),
-            format!(
-                "思源正文读取完成：{}\n{}",
-                target.display(),
-                summarize_text(&content)
-            ),
+            format!("思源正文读取完成：{}\n{}", target.display(), summarize_text(&content)),
             "直接读取指定思源文档并压缩成可展示摘要。".to_string(),
             CACHE_DEPENDS_FS,
         ),
@@ -90,11 +84,7 @@ fn planned_siyuan_export_path(request: &RunRequest) -> Option<PathBuf> {
 }
 
 fn export_siyuan_note(request: &RunRequest, path: &Path) -> Result<&'static str, String> {
-    let content = format!(
-        "# {}\n\n{}",
-        request.user_input,
-        summarize_text(&request.user_input)
-    );
+    let content = format!("# {}\n\n{}", request.user_input, summarize_text(&request.user_input));
     ensure_parent_dir(path).map_err(|error| error.to_string())?;
     fs::write(path, content).map_err(|error| error.to_string())?;
     append_siyuan_record(request, path)?;
@@ -150,8 +140,7 @@ fn search_siyuan_index_hits(request: &RunRequest, query: &str) -> Vec<KnowledgeH
 
 fn score_siyuan_record(record: KnowledgeRecord, query: &str) -> Option<(i32, KnowledgeHit)> {
     let haystack = format!("{} {} {}", record.title, record.summary, record.content);
-    let score = crate::text::score_text(query, &haystack)
-        + crate::knowledge::knowledge_path_priority(&record.source);
+    let score = crate::text::score_text(query, &haystack) + crate::knowledge::knowledge_path_priority(&record.source);
     (score > 0).then_some((
         score,
         KnowledgeHit {
@@ -201,8 +190,7 @@ fn score_siyuan_file(path: PathBuf, query: &str) -> Option<(i32, KnowledgeHit)> 
     let snippet = summarize_text(&content);
     let path_text = path.display().to_string();
     let haystack = format!("{} {}", path_text, content);
-    let score = crate::text::score_text(query, &haystack)
-        + crate::knowledge::knowledge_path_priority(&path_text);
+    let score = crate::text::score_text(query, &haystack) + crate::knowledge::knowledge_path_priority(&path_text);
     (score > 0).then_some((
         score,
         KnowledgeHit {
@@ -235,10 +223,7 @@ fn reusable_siyuan_path(request: &RunRequest, title: &str, summary: &str) -> Opt
 
 fn create_siyuan_path(request: &RunRequest) -> Option<PathBuf> {
     let export_dir = siyuan_export_dir(request)?;
-    Some(export_dir.join(format!(
-        "{}-{}.md",
-        request.workspace_ref.workspace_id, request.run_id
-    )))
+    Some(export_dir.join(format!("{}-{}.md", request.workspace_ref.workspace_id, request.run_id)))
 }
 
 fn append_siyuan_record(request: &RunRequest, path: &Path) -> Result<(), String> {
@@ -250,10 +235,7 @@ fn append_siyuan_record(request: &RunRequest, path: &Path) -> Result<(), String>
         title,
         summary,
         content: format!("思源导出知识：{}", request.user_input),
-        tags: vec![
-            "siyuan".to_string(),
-            request.workspace_ref.workspace_id.clone(),
-        ],
+        tags: vec!["siyuan".to_string(), request.workspace_ref.workspace_id.clone()],
         source: path.display().to_string(),
         source_type: "siyuan".to_string(),
         verified: true,

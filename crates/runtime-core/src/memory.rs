@@ -2,8 +2,7 @@ use crate::contracts::RunRequest;
 use crate::memory_schema::{MEMORY_GOVERNANCE_VERSION, StructuredMemoryEntry, canonical_kind};
 use crate::paths::{long_term_memory_file_path, memory_file_path, memory_tombstone_file_path};
 use crate::sqlite_store::{
-    list_current_memory_object_entries_sqlite, list_memory_entries_sqlite,
-    write_memory_entry_sqlite,
+    list_current_memory_object_entries_sqlite, list_memory_entries_sqlite, write_memory_entry_sqlite,
 };
 use crate::storage::{append_jsonl, read_jsonl};
 use crate::text::score_text;
@@ -56,19 +55,11 @@ pub(crate) fn append_memory_entry(request: &RunRequest, entry: &MemoryEntry) -> 
     append_jsonl(long_term_memory_file_path(request), &record)
 }
 
-pub(crate) fn search_memory_entries(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> Vec<MemoryEntry> {
+pub(crate) fn search_memory_entries(request: &RunRequest, query: &str, limit: usize) -> Vec<MemoryEntry> {
     let query_text = query.trim();
     let mut scored = score_memory_entries(request, query_text);
     sort_memory_entries(&mut scored);
-    scored
-        .into_iter()
-        .map(|(_, entry)| entry)
-        .take(limit)
-        .collect()
+    scored.into_iter().map(|(_, entry)| entry).take(limit).collect()
 }
 
 fn to_memory_entry(entry: StructuredMemoryEntry) -> MemoryEntry {
@@ -152,9 +143,7 @@ fn all_memory_entries(request: &RunRequest) -> Vec<MemoryEntry> {
     let sqlite_entries = list_memory_entries_sqlite(request);
     if sqlite_entries.is_empty() {
         entries.extend(read_structured_entries(&memory_file_path(request)));
-        entries.extend(read_structured_entries(&long_term_memory_file_path(
-            request,
-        )));
+        entries.extend(read_structured_entries(&long_term_memory_file_path(request)));
     } else {
         entries.extend(sqlite_entries);
     }
@@ -186,11 +175,7 @@ fn deleted_memory_ids(request: &RunRequest) -> BTreeSet<String> {
         .collect()
 }
 
-fn score_memory_entry(
-    request: &RunRequest,
-    query_text: &str,
-    entry: MemoryEntry,
-) -> Option<(i32, MemoryEntry)> {
+fn score_memory_entry(request: &RunRequest, query_text: &str, entry: MemoryEntry) -> Option<(i32, MemoryEntry)> {
     let mut score = base_memory_score(query_text, &entry);
     score += memory_source_priority(&entry);
     score += memory_priority_bonus(entry.priority);
@@ -207,12 +192,7 @@ fn score_memory_entry(
 fn base_memory_score(query_text: &str, entry: &MemoryEntry) -> i32 {
     let haystack = format!(
         "{} {} {} {} {} {}",
-        entry.kind,
-        entry.title,
-        entry.summary,
-        entry.content,
-        entry.source,
-        entry.source_artifact_path
+        entry.kind, entry.title, entry.summary, entry.content, entry.source, entry.source_artifact_path
     );
     let mut score = score_text(query_text, &haystack);
     if query_text.is_empty() {
@@ -359,12 +339,7 @@ pub(crate) fn normalized_memory_entry(entry: &MemoryEntry) -> MemoryEntry {
     item.governance_version = choose_text(&[&item.governance_version, MEMORY_GOVERNANCE_VERSION]);
     item.governance_source = choose_text(&[&item.governance_source, &source]);
     item.governance_reason = choose_text(&[&item.governance_reason, &reason]);
-    item.governance_at = choose_text(&[
-        &item.governance_at,
-        &item.updated_at,
-        &item.created_at,
-        &item.timestamp,
-    ]);
+    item.governance_at = choose_text(&[&item.governance_at, &item.updated_at, &item.created_at, &item.timestamp]);
     item.archive_reason = normalize_archive_reason(&item);
     item
 }
@@ -372,18 +347,10 @@ pub(crate) fn normalized_memory_entry(entry: &MemoryEntry) -> MemoryEntry {
 fn derived_governance_source(entry: &MemoryEntry) -> String {
     match entry.source_type.as_str() {
         "seed" => "seed_baseline".to_string(),
-        "runtime" if entry.source_event_type == "memory_written" => {
-            "runtime_manual_write".to_string()
-        }
-        "runtime" if entry.source_event_type == "run_failed" => {
-            "runtime_failure_lesson".to_string()
-        }
-        "runtime" if entry.source_event_type == "run_finished" => {
-            "runtime_finish_memory".to_string()
-        }
-        "runtime" if entry.source_event_type == "verification_completed" => {
-            "runtime_verified_memory".to_string()
-        }
+        "runtime" if entry.source_event_type == "memory_written" => "runtime_manual_write".to_string(),
+        "runtime" if entry.source_event_type == "run_failed" => "runtime_failure_lesson".to_string(),
+        "runtime" if entry.source_event_type == "run_finished" => "runtime_finish_memory".to_string(),
+        "runtime" if entry.source_event_type == "verification_completed" => "runtime_verified_memory".to_string(),
         "runtime" => "runtime_memory".to_string(),
         _ => "memory_append".to_string(),
     }
@@ -392,18 +359,10 @@ fn derived_governance_source(entry: &MemoryEntry) -> String {
 fn derived_governance_reason(entry: &MemoryEntry) -> String {
     match entry.source_type.as_str() {
         "seed" => "基线记忆已按当前治理版本固化。".to_string(),
-        "runtime" if entry.source_event_type == "memory_written" => {
-            "用户显式写入长期记忆。".to_string()
-        }
-        "runtime" if entry.source_event_type == "run_failed" => {
-            "失败教训已纳入长期记忆治理。".to_string()
-        }
-        "runtime" if entry.source_event_type == "run_finished" => {
-            "任务结果已按长期记忆治理规则沉淀。".to_string()
-        }
-        "runtime" if entry.source_event_type == "verification_completed" => {
-            "验证通过后已沉淀长期记忆。".to_string()
-        }
+        "runtime" if entry.source_event_type == "memory_written" => "用户显式写入长期记忆。".to_string(),
+        "runtime" if entry.source_event_type == "run_failed" => "失败教训已纳入长期记忆治理。".to_string(),
+        "runtime" if entry.source_event_type == "run_finished" => "任务结果已按长期记忆治理规则沉淀。".to_string(),
+        "runtime" if entry.source_event_type == "verification_completed" => "验证通过后已沉淀长期记忆。".to_string(),
         _ => "记忆记录已按当前治理版本写入。".to_string(),
     }
 }
@@ -441,9 +400,7 @@ fn is_path_only_memory(entry: &MemoryEntry) -> bool {
 }
 
 fn is_low_value_runtime_memory(entry: &MemoryEntry) -> bool {
-    is_runtime_project_answer_memory(entry)
-        || is_runtime_tool_trace_memory(entry)
-        || is_runtime_fallback_memory(entry)
+    is_runtime_project_answer_memory(entry) || is_runtime_tool_trace_memory(entry) || is_runtime_fallback_memory(entry)
 }
 
 fn is_test_memory_noise(query_text: &str, entry: &MemoryEntry) -> bool {
@@ -472,10 +429,8 @@ fn should_archive_memory_entry(entry: &MemoryEntry) -> bool {
 fn is_runtime_project_answer_memory(entry: &MemoryEntry) -> bool {
     let project_answer = entry.kind == "project_knowledge" || entry.kind == "workspace_summary";
     let runtime_source = entry.source_type == "runtime";
-    let generated = entry.title.contains("项目说明")
-        || entry
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let generated =
+        entry.title.contains("项目说明") || entry.summary.contains("已基于项目文档片段完成一次项目说明回答");
     project_answer && runtime_source && generated
 }
 
@@ -488,9 +443,7 @@ fn is_runtime_tool_trace_memory(entry: &MemoryEntry) -> bool {
         || entry.summary.contains("已返回思源笔记摘要")
         || entry.summary.contains("思源正文读取成功")
         || entry.summary.contains("命中已存在思源导出");
-    entry.kind == "lesson_learned"
-        && entry.source_type == "runtime"
-        && (trace_title || trace_summary)
+    entry.kind == "lesson_learned" && entry.source_type == "runtime" && (trace_title || trace_summary)
 }
 
 fn is_runtime_fallback_memory(entry: &MemoryEntry) -> bool {
@@ -513,10 +466,7 @@ fn is_capability_fallback(content: &str) -> bool {
 
 fn looks_like_path_only(value: &str) -> bool {
     let text = value.trim();
-    (text.contains(":\\") || text.contains(":/"))
-        && !text.contains('。')
-        && !text.contains('，')
-        && !text.contains(' ')
+    (text.contains(":\\") || text.contains(":/")) && !text.contains('。') && !text.contains('，') && !text.contains(' ')
 }
 
 fn memory_key(entry: &MemoryEntry) -> String {
@@ -564,6 +514,9 @@ mod tests {
     use crate::events::timestamp_now;
     use crate::sqlite_store::write_memory_entry_sqlite;
     use std::collections::BTreeMap;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static MEMORY_TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     #[test]
     fn dedupe_keeps_first_entry_per_memory_key() {
@@ -615,10 +568,7 @@ mod tests {
         let entry = ascii_entry("memory-object-1", "alphaobjectcurrent");
         write_memory_entry_sqlite(&request, &entry).unwrap();
         let hits = search_memory_entries(&request, "alphaobjectcurrent", 3);
-        assert!(
-            hits.iter()
-                .any(|item| item.source_type == "memory_object_current")
-        );
+        assert!(hits.iter().any(|item| item.source_type == "memory_object_current"));
     }
 
     #[test]
@@ -626,11 +576,7 @@ mod tests {
         let request = sample_request();
         let entry = ascii_entry("memory-object-2", "uri summary");
         write_memory_entry_sqlite(&request, &entry).unwrap();
-        let hits = search_memory_entries(
-            &request,
-            "memory://workspace-test/project-rule/rule-object",
-            1,
-        );
+        let hits = search_memory_entries(&request, "memory://workspace-test/project-rule/rule-object", 1);
         assert_eq!(hits[0].source_type, "memory_object_current");
         assert_eq!(hits[0].title, "rule-object");
     }
@@ -651,7 +597,8 @@ mod tests {
     }
 
     fn sample_request() -> RunRequest {
-        let root = std::env::temp_dir().join(format!("memory-search-{}", timestamp_now()));
+        let seq = MEMORY_TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let root = std::env::temp_dir().join(format!("memory-search-{}-{}", timestamp_now(), seq));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             request_id: "request-test".to_string(),

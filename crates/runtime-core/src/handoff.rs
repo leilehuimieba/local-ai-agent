@@ -44,11 +44,7 @@ fn handoff_artifact(
 }
 
 fn current_plan(action: &PlannedAction, trace: &crate::capabilities::ToolExecutionTrace) -> String {
-    format!(
-        "动作={}; 摘要={}",
-        action_label(action),
-        trace.action_summary
-    )
+    format!("动作={}; 摘要={}", action_label(action), trace.action_summary)
 }
 
 fn action_label(action: &PlannedAction) -> &'static str {
@@ -56,6 +52,7 @@ fn action_label(action: &PlannedAction) -> &'static str {
         PlannedAction::RunCommand { .. } => "run_command",
         PlannedAction::ReadFile { .. } => "workspace_read",
         PlannedAction::WriteFile { .. } => "workspace_write",
+        PlannedAction::ApplyPatch { .. } => "workspace_apply_patch",
         PlannedAction::DeletePath { .. } => "workspace_delete",
         PlannedAction::ListFiles { .. } => "workspace_list",
         PlannedAction::WriteMemory { .. } => "memory_write",
@@ -63,6 +60,7 @@ fn action_label(action: &PlannedAction) -> &'static str {
         PlannedAction::SearchKnowledge { .. } => "knowledge_search",
         PlannedAction::SearchSiyuanNotes { .. } => "search_siyuan_notes",
         PlannedAction::ReadSiyuanNote { .. } => "read_siyuan_note",
+        PlannedAction::MCPCall { .. } => "mcp_call",
         PlannedAction::WriteSiyuanKnowledge => "write_siyuan_knowledge",
         PlannedAction::ProjectAnswer => "project_answer",
         PlannedAction::ContextAnswer => "context_answer",
@@ -80,10 +78,7 @@ fn completed_steps(trace: &crate::capabilities::ToolExecutionTrace) -> Vec<Strin
     ]
 }
 
-fn open_risks(
-    trace: &crate::capabilities::ToolExecutionTrace,
-    report: &VerificationReport,
-) -> Vec<String> {
+fn open_risks(trace: &crate::capabilities::ToolExecutionTrace, report: &VerificationReport) -> Vec<String> {
     if report.outcome.passed {
         return Vec::new();
     }
@@ -94,10 +89,5 @@ fn open_risks(
 }
 
 fn key_artifacts(trace: &crate::capabilities::ToolExecutionTrace) -> Vec<String> {
-    trace
-        .result
-        .artifact_path
-        .clone()
-        .into_iter()
-        .collect::<Vec<_>>()
+    trace.result.artifact_path.clone().into_iter().collect::<Vec<_>>()
 }

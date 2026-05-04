@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { TextareaAuto } from "@/components/ui/textarea-auto"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Kbd } from "@/components/ui/kbd"
 import {
@@ -26,13 +27,23 @@ import {
   AlertTriangle,
   Copy,
   Check,
+  Plus,
+  Download,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  X,
+  Paperclip,
+  Pencil,
 } from "lucide-react"
-import { useRuntimeStore, useSettingsStore } from "@/lib/local-agent/store"
+import { useRuntimeStore, useSettingsStore, useUIStore } from "@/lib/local-agent/store"
 import type { Message, RuntimeEvent, ResultBlock, Confirmation, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
-import { submitChatRun, submitChatRetry, submitConfirmationDecision, type SubmitChatRunPayload } from "@/lib/local-agent/api"
+import { submitChatRun, submitChatRetry, submitChatCancel, submitConfirmationDecision, uploadKnowledgeFile, type SubmitChatRunPayload } from "@/lib/local-agent/api"
 import { useSessionEventStream } from "@/hooks/useSessionEventStream"
 import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
+import { LightweightMarkdown } from "@/components/local-agent/markdown"
+import { toast } from "sonner"
 
 const quickPrompts = [
   { icon: Database, label: "查询数据库" },
@@ -59,6 +70,8 @@ export function TaskView() {
     applyEvent,
     completeRun,
     failRun,
+    cancelRun,
+    editAndResend,
     setRunState,
     setConnectionState,
     setCriticalError,
@@ -66,10 +79,49 @@ export function TaskView() {
   } = useRuntimeStore()
 
   const settings = useSettingsStore()
-  const [selectedKb, setSelectedKb] = useState("all")
   const [isUserScrolling, setIsUserScrolling] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  // Auto-focus input when run completes or on initial load
+  useEffect(() => {
+    if (runState !== "running" && runState !== "awaiting_confirmation") {
+      textareaRef.current?.focus()
+    }
+  }, [runState])
+
+  // Update browser title based on run state
+  useEffect(() => {
+    const base = "本地智能体"
+    if (runState === "running") {
+      document.title = `运行中... | ${base}`
+    } else if (runState === "awaiting_confirmation") {
+      document.title = `需要确认 | ${base}`
+    } else if (runState === "failed") {
+      document.title = `运行失败 | ${base}`
+    } else {
+      document.title = base
+    }
+  }, [runState])
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "k") {
+        e.preventDefault()
+        textareaRef.current?.focus()
+        return
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [])
 
   // SSE event stream
   const sessionId = useRuntimeStore((s) => s.sessionId)
@@ -82,6 +134,7 @@ export function TaskView() {
     },
     onStreamError: (message) => {
       setCriticalError(message)
+      toast.error(message)
     },
   })
 
@@ -98,12 +151,39 @@ export function TaskView() {
     setIsUserScrolling(!isAtBottom)
   }, [])
 
-  const handleSend = async () => {
-    if (!composeValue.trim()) return
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    const newFiles: { name: string; content: string }[] = []
+    for (const file of Array.from(files)) {
+      if (file.size > 5 * 1024 * 1024) continue // skip files > 5MB
+      const text = await file.text()
+      newFiles.push({ name: file.name, content: text })
+      uploadKnowledgeFile(file)
+        .then(() => toast.success(`「${file.name}」已保存到知识库`))
+        .catch(() => toast.error(`「${file.name}」保存到知识库失败`))
+    }
+    setAttachedFiles((prev) => [...prev, ...newFiles])
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
-    addMessage({ role: "user", content: composeValue })
-    const userInput = composeValue
+  const handleRemoveFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSend = async (overrideInput?: string) => {
+    const userInput = overrideInput?.trim() || composeValue.trim()
+    if (!userInput && attachedFiles.length === 0) return
+
+    let fullContent = userInput
+    if (attachedFiles.length > 0) {
+      const fileSections = attachedFiles.map((f) => `--- ${f.name} ---\n${f.content}`).join("\n\n")
+      fullContent = userInput ? `${userInput}\n\n${fileSections}` : fileSections
+    }
+
+    addMessage({ role: "user", content: fullContent })
     setComposeValue("")
+    setAttachedFiles([])
     startNewRun(userInput)
 
     try {
@@ -113,12 +193,14 @@ export function TaskView() {
         mode: settings.mode,
         model: settings.model,
         workspace: settings.workspace,
-        knowledgeBaseId: selectedKb === "all" ? "" : selectedKb,
+        knowledgeBaseId: "",
       }
       const result = await submitChatRun(payload)
       acceptRun(result.session_id, result.run_id)
     } catch (err) {
-      failRun(err instanceof Error ? err.message : "提交任务失败")
+      const msg = err instanceof Error ? err.message : "提交任务失败"
+      failRun(msg)
+      toast.error(msg)
     }
   }
 
@@ -138,6 +220,10 @@ export function TaskView() {
     }
   }
 
+  const handleNewTask = () => {
+    useRuntimeStore.getState().clearSession()
+  }
+
   const handleRetry = async () => {
     const currentRunId = useRuntimeStore.getState().currentRunId
     if (!currentRunId) {
@@ -154,8 +240,77 @@ export function TaskView() {
     }
   }
 
+  const handleCancel = async () => {
+    const currentRunId = useRuntimeStore.getState().currentRunId
+    if (!currentRunId) {
+      cancelRun()
+      return
+    }
+    try {
+      await submitChatCancel(sessionId, currentRunId)
+      cancelRun()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "取消失败"
+      setSubmitError(msg)
+      toast.error(msg)
+      cancelRun()
+    }
+  }
+
+  const handleExport = () => {
+    const state = useRuntimeStore.getState()
+    const lines: string[] = []
+    lines.push("# 本地智能体会话导出")
+    lines.push("")
+    lines.push(`**会话 ID**: ${state.sessionId}`)
+    lines.push(`**导出时间**: ${new Date().toLocaleString("zh-CN")}`)
+    lines.push(`**消息数**: ${state.messages.length}`)
+    lines.push("")
+    lines.push("---")
+    lines.push("")
+    for (const msg of state.messages) {
+      const role = msg.role === "user" ? "用户" : "助手"
+      const time = formatMessageTime(msg.timestamp)
+      lines.push(`## ${role} (${time})`)
+      lines.push("")
+      lines.push(msg.content)
+      lines.push("")
+      lines.push("---")
+      lines.push("")
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `会话-${state.sessionId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const hasMessages = messages.length > 0
   const showIdle = !hasMessages && runState === "idle"
+
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const q = searchQuery.toLowerCase()
+    return messages
+      .map((m, idx) => ({ idx, message: m }))
+      .filter(({ message }) => message.content.toLowerCase().includes(q))
+  }, [messages, searchQuery])
+
+  const totalMatches = searchMatches.length
+
+  useEffect(() => {
+    if (totalMatches > 0) {
+      const match = searchMatches[currentMatchIndex % totalMatches]
+      if (match) {
+        const el = messageRefs.current[match.message.id]
+        el?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }
+    }
+  }, [currentMatchIndex, totalMatches, searchMatches])
 
   return (
     <div className="flex h-full flex-col">
@@ -179,7 +334,7 @@ export function TaskView() {
               return (
                 <button
                   key={prompt.label}
-                  onClick={() => setComposeValue(prompt.label)}
+                  onClick={() => handleSend(prompt.label)}
                   className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200"
                 >
                   <Icon className="h-4 w-4 text-primary" />
@@ -197,15 +352,79 @@ export function TaskView() {
           className="flex-1"
           onScrollCapture={handleScroll}
         >
+          {hasMessages && (
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2">
+              <div className="mx-auto max-w-3xl flex items-center gap-2">
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setCurrentMatchIndex(0)
+                  }}
+                  placeholder="搜索消息..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+                {totalMatches > 0 && (
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {(currentMatchIndex % totalMatches) + 1} / {totalMatches}
+                  </span>
+                )}
+                {totalMatches > 0 && (
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => setCurrentMatchIndex((v) => (v - 1 + totalMatches) % totalMatches)}
+                      className="p-1 rounded hover:bg-muted text-muted-foreground"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentMatchIndex((v) => (v + 1) % totalMatches)}
+                      className="p-1 rounded hover:bg-muted text-muted-foreground"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                {searchQuery && (
+                  <button
+                    onClick={() => { setSearchQuery(""); setCurrentMatchIndex(0) }}
+                    className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="p-4">
             <div className="mx-auto max-w-3xl space-y-4">
               {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  highlightText={searchQuery}
+                  isSearchActive={searchMatches.some((m) => m.message.id === message.id)}
+                  isCurrentMatch={searchMatches[currentMatchIndex % Math.max(totalMatches, 1)]?.message.id === message.id}
+                  refCallback={(el) => { messageRefs.current[message.id] = el }}
+                />
               ))}
 
               {/* Running State */}
               {runState === "running" && (
-                <RunningCard events={events.slice(-3)} />
+                <div className="space-y-2">
+                  <RunningCard events={events} />
+                  <div className="flex justify-start pl-1">
+                    <button
+                      onClick={handleCancel}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-destructive/10"
+                    >
+                      <XCircle className="h-3 w-3" />
+                      取消
+                    </button>
+                  </div>
+                </div>
               )}
 
               {/* Error State */}
@@ -247,21 +466,50 @@ export function TaskView() {
               {submitError}
             </div>
           )}
-          <div className="flex items-center gap-3">
-            <Select value={selectedKb} onValueChange={setSelectedKb}>
-              <SelectTrigger className="w-[140px] h-10">
+          {attachedFiles.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {attachedFiles.map((file, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
+                  <FileText className="h-3 w-3" />
+                  {file.name}
+                  <button onClick={() => handleRemoveFile(idx)} className="ml-1 hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Select value="all">
+              <SelectTrigger className="w-[100px] sm:w-[140px] h-10">
                 <SelectValue placeholder="知识库" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部来源</SelectItem>
-                <SelectItem value="docs">文档</SelectItem>
-                <SelectItem value="code">代码库</SelectItem>
-                <SelectItem value="notes">笔记</SelectItem>
               </SelectContent>
             </Select>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.pdf,.docx"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              title="附加文件"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+
             <div className="relative flex-1">
-              <Input
+              <TextareaAuto
+                ref={textareaRef}
                 value={composeValue}
                 onChange={(e) => setComposeValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -269,18 +517,49 @@ export function TaskView() {
                     e.preventDefault()
                     handleSend()
                   }
+                  if (e.key === "Escape") {
+                    setComposeValue("")
+                  }
+                  if (e.key === "ArrowUp" && !composeValue.trim()) {
+                    e.preventDefault()
+                    const lastUserMsg = messages.filter((m) => m.role === "user").pop()
+                    if (lastUserMsg) {
+                      setComposeValue(lastUserMsg.content)
+                    }
+                  }
                 }}
-                placeholder="描述一个任务..."
-                className="h-10 pr-16"
+                placeholder="描述一个任务... (Shift+Enter 换行)"
+                className="min-h-[40px] max-h-[160px] pr-16 py-2.5"
                 disabled={runState === "running" || runState === "awaiting_confirmation"}
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <Kbd className="hidden sm:inline-flex text-xs">⌘K</Kbd>
+              <div className="absolute right-3 bottom-2.5 flex items-center gap-2">
+                <Kbd className="hidden sm:inline-flex text-xs">Enter</Kbd>
               </div>
             </div>
 
             <Button
-              onClick={handleSend}
+              variant="outline"
+              size="icon"
+              className="hidden sm:flex h-10 w-10 shrink-0"
+              onClick={handleExport}
+              title="导出会话"
+              disabled={messages.length === 0}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden sm:flex h-10 w-10 shrink-0"
+              onClick={handleNewTask}
+              title="新任务"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+
+            <Button
+              onClick={() => handleSend()}
               size="icon"
               className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90"
               disabled={!composeValue.trim() || runState === "running" || runState === "awaiting_confirmation"}
@@ -298,28 +577,134 @@ export function TaskView() {
   )
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function formatMessageTime(isoString: string): string {
+  const date = new Date(isoString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 1) return "刚刚"
+  if (diffMins < 60) return `${diffMins}分钟前`
+  if (diffHours < 24) return `${diffHours}小时前`
+  if (diffDays === 1) return "昨天"
+  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+}
+
+function MessageBubble({
+  message,
+  highlightText,
+  isSearchActive,
+  isCurrentMatch,
+  refCallback,
+}: {
+  message: Message
+  highlightText?: string
+  isSearchActive?: boolean
+  isCurrentMatch?: boolean
+  refCallback?: (el: HTMLDivElement | null) => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const highlightClass = isCurrentMatch
+    ? "ring-2 ring-primary/50 rounded-2xl"
+    : isSearchActive
+      ? "ring-1 ring-primary/20 rounded-2xl"
+      : ""
+
   if (message.role === "user") {
     return (
-      <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
-        <div className="max-w-[80%] rounded-2xl rounded-tr-md bg-secondary px-4 py-3">
-          <p className="text-sm text-foreground whitespace-pre-wrap">{message.content}</p>
+      <div ref={refCallback} className={highlightClass}>
+        <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="max-w-[92%] sm:max-w-[80%]">
+            <div className="rounded-2xl rounded-tr-md bg-secondary px-4 py-3">
+              <HighlightedText content={message.content} highlight={highlightText} />
+            </div>
+            <div className="flex justify-end items-center gap-2 mt-1 pr-1">
+              <p className="text-[10px] text-muted-foreground">{formatMessageTime(message.timestamp)}</p>
+              <button
+                onClick={() => useRuntimeStore.getState().editAndResend(message.id)}
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                编辑
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="max-w-[80%] rounded-2xl rounded-tl-md border border-border bg-card p-4">
-        <p className="text-sm text-foreground whitespace-pre-wrap">{message.content}</p>
-        
-        {message.blocks?.map((block, index) => (
-          <ResultBlockRenderer key={index} block={block} />
-        ))}
+    <div ref={refCallback} className={highlightClass}>
+      <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="max-w-[92%] sm:max-w-[80%]">
+          <div className="rounded-2xl rounded-tl-md border border-border bg-card p-4">
+            <LightweightMarkdown content={message.content} highlightText={highlightText} />
+            {message.isStreaming && (
+              <span className="inline-block w-1.5 h-3 ml-0.5 bg-primary animate-pulse rounded-sm" />
+            )}
+            {message.blocks?.map((block, index) => (
+              <ResultBlockRenderer key={index} block={block} />
+            ))}
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-muted"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3 text-success" />
+                    已复制
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    复制
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1 pl-1">{formatMessageTime(message.timestamp)}</p>
+        </div>
       </div>
     </div>
   )
+}
+
+function HighlightedText({ content, highlight }: { content: string; highlight?: string }) {
+  if (!highlight?.trim()) {
+    return <p className="text-sm text-foreground whitespace-pre-wrap">{content}</p>
+  }
+  const q = highlight.toLowerCase()
+  const parts: React.ReactNode[] = []
+  let remaining = content
+  let key = 0
+  while (remaining.length > 0) {
+    const idx = remaining.toLowerCase().indexOf(q)
+    if (idx < 0) {
+      parts.push(<span key={key++}>{remaining}</span>)
+      break
+    }
+    if (idx > 0) {
+      parts.push(<span key={key++}>{remaining.slice(0, idx)}</span>)
+    }
+    parts.push(
+      <mark key={key++} className="bg-primary/20 text-foreground rounded px-0.5">
+        {remaining.slice(idx, idx + highlight.length)}
+      </mark>
+    )
+    remaining = remaining.slice(idx + highlight.length)
+  }
+  return <p className="text-sm text-foreground whitespace-pre-wrap">{parts}</p>
 }
 
 function ResultBlockRenderer({ block }: { block: ResultBlock }) {
@@ -417,18 +802,20 @@ function ResultBlockRenderer({ block }: { block: ResultBlock }) {
 }
 
 function RunningCard({ events }: { events: RuntimeEvent[] }) {
+  const stage = deriveStage(events)
+  const recent = events.slice(-5)
   return (
     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="max-w-[80%] rounded-2xl rounded-tl-md border border-primary/20 bg-card p-4">
+      <div className="max-w-[92%] sm:max-w-[80%] rounded-2xl rounded-tl-md border border-primary/20 bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="relative">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <div className="absolute inset-0 h-4 w-4 animate-ping rounded-full bg-primary/20" />
           </div>
-          <span className="text-sm font-medium text-foreground">运行中...</span>
+          <span className="text-sm font-medium text-foreground">{stage}</span>
         </div>
         <div className="space-y-2">
-          {events.map((event) => (
+          {recent.map((event) => (
             <div
               key={event.event_id}
               className="flex items-center gap-2 text-xs text-muted-foreground"
@@ -446,18 +833,34 @@ function RunningCard({ events }: { events: RuntimeEvent[] }) {
   )
 }
 
+function deriveStage(events: RuntimeEvent[]): string {
+  if (events.length === 0) return "运行中..."
+  const last = events[events.length - 1]
+  const map: Record<string, string> = {
+    run_started: "已收到",
+    action_completed: "正在执行",
+    verification_completed: "正在验证",
+    memory_written: "正在写入记忆",
+    knowledge_written: "正在写入知识库",
+    checkpoint_written: "正在保存检查点",
+    run_finished: "已完成",
+    run_failed: "运行失败",
+  }
+  return map[last.event_type] || last.summary || "运行中..."
+}
+
 function ErrorCard({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
-      <div className="max-w-[80%] rounded-2xl rounded-tl-md border-l-4 border-l-destructive border border-border bg-card p-4">
+      <div className="max-w-[92%] sm:max-w-[80%] rounded-2xl rounded-tl-md border-l-4 border-l-destructive border border-border bg-card p-4">
         <div className="flex items-center gap-2 mb-2">
           <XCircle className="h-4 w-4 text-destructive" />
-          <span className="text-sm font-medium text-destructive">Error</span>
+          <span className="text-sm font-medium text-destructive">错误</span>
         </div>
         <p className="text-sm text-muted-foreground mb-3">{error}</p>
         <Button variant="outline" size="sm" onClick={onRetry} className="gap-2">
           <RefreshCw className="h-3 w-3" />
-          Retry
+          重试
         </Button>
       </div>
     </div>
@@ -480,6 +883,13 @@ function ConfirmationCard({
     critical: "text-destructive",
   }
 
+  const riskLabels: Record<string, string> = {
+    low: "低风险",
+    medium: "中风险",
+    high: "高风险",
+    critical: "极高风险",
+  }
+
   return (
     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="max-w-[90%] rounded-2xl rounded-tl-md border-l-4 border-l-warning border border-border bg-card p-4">
@@ -487,7 +897,7 @@ function ConfirmationCard({
           <AlertTriangle className="h-4 w-4 text-warning" />
           <span className="text-sm font-medium text-warning">需要确认</span>
           <span className={cn("text-xs font-medium uppercase", riskColors[confirmation.risk_level])}>
-            {confirmation.risk_level} risk
+            {riskLabels[confirmation.risk_level] || confirmation.risk_level}
           </span>
         </div>
         
@@ -500,7 +910,7 @@ function ConfirmationCard({
 
         {confirmation.target_paths.length > 0 && (
           <div className="mb-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Affected paths:</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1">影响路径：</p>
             <div className="flex flex-wrap gap-1">
               {confirmation.target_paths.map((path, i) => (
                 <code key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
@@ -513,7 +923,7 @@ function ConfirmationCard({
 
         {confirmation.hazards.length > 0 && (
           <div className="mb-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Potential hazards:</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1">潜在风险：</p>
             <ul className="space-y-0.5">
               {confirmation.hazards.map((hazard, i) => (
                 <li key={i} className="text-xs text-destructive flex items-center gap-1">

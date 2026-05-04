@@ -12,11 +12,7 @@ pub(crate) struct MemoryDigest {
     pub current_object_count: usize,
 }
 
-pub(crate) fn recall_memory_digest(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> MemoryDigest {
+pub(crate) fn recall_memory_digest(request: &RunRequest, query: &str, limit: usize) -> MemoryDigest {
     let object_entries = list_current_memory_object_entries_limited_sqlite(request, limit);
     let entries = search_memory_entries(request, query, limit);
     let system_views = select_system_view_summaries(request, query, limit);
@@ -36,10 +32,7 @@ fn digest_summary(
     if system_views.is_empty() && object_entries.is_empty() && entries.is_empty() {
         return "当前没有命中相关长期记忆。".to_string();
     }
-    let mut lines = system_views
-        .iter()
-        .map(system_view_line)
-        .collect::<Vec<_>>();
+    let mut lines = system_views.iter().map(system_view_line).collect::<Vec<_>>();
     lines.extend(object_entries.iter().map(memory_object_line));
     lines.extend(entries.iter().map(memory_line));
     summarize_text(&lines.join(" || "))
@@ -121,8 +114,7 @@ mod tests {
     }
 
     fn sample_request() -> RunRequest {
-        let root =
-            std::env::temp_dir().join(format!("memory-recall-{}", crate::events::timestamp_now()));
+        let root = std::env::temp_dir().join(format!("memory-recall-{}", crate::events::timestamp_now()));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             request_id: "request-test".to_string(),

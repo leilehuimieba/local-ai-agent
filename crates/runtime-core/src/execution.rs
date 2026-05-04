@@ -4,7 +4,9 @@ use crate::executors::command as command_executor;
 use crate::executors::context as context_executor;
 use crate::executors::explain as explain_executor;
 use crate::executors::knowledge as knowledge_executor;
+use crate::executors::mcp as mcp_executor;
 use crate::executors::memory as memory_executor;
+use crate::executors::patch as patch_executor;
 use crate::executors::project as project_executor;
 use crate::executors::siyuan as siyuan_executor;
 use crate::executors::workspace as workspace_executor;
@@ -174,71 +176,68 @@ pub(crate) fn execute_action(
     if let Some(exec) = execute_action_siyuan(request, action) {
         return exec;
     }
+    if let Some(exec) = execute_action_mcp(request, action) {
+        return exec;
+    }
     if let Some(exec) = execute_action_answers(request, action, session_context) {
         return exec;
     }
     execute_action_misc(request, action, session_context)
 }
 
-fn execute_action_workspace(
-    request: &RunRequest,
-    action: &PlannedAction,
-) -> Option<ActionExecution> {
+fn execute_action_workspace(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
     match action {
-        PlannedAction::ReadFile { path } => {
-            Some(workspace_executor::execute_file_read(request, path))
+        PlannedAction::ReadFile { path } => Some(workspace_executor::execute_file_read(request, path)),
+        PlannedAction::WriteFile { path, content } => {
+            Some(workspace_executor::execute_file_write(request, path, content))
         }
-        PlannedAction::WriteFile { path, content } => Some(workspace_executor::execute_file_write(
-            request, path, content,
-        )),
-        PlannedAction::DeletePath { path } => {
-            Some(workspace_executor::execute_delete_path(request, path))
+        PlannedAction::ApplyPatch { diff, dry_run } => {
+            Some(patch_executor::execute_apply_patch(request, diff, *dry_run))
         }
-        PlannedAction::ListFiles { path } => Some(workspace_executor::execute_list_files(
-            request,
-            path.as_deref(),
-        )),
+        PlannedAction::DeletePath { path } => Some(workspace_executor::execute_delete_path(request, path)),
+        PlannedAction::ListFiles { path } => Some(workspace_executor::execute_list_files(request, path.as_deref())),
         _ => None,
     }
 }
 
 fn execute_action_memory(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
     match action {
-        PlannedAction::WriteMemory {
-            kind,
-            summary,
-            content,
-        } => Some(memory_executor::execute_memory_write(
-            request, kind, summary, content,
-        )),
-        PlannedAction::RecallMemory { query } => {
-            Some(memory_executor::execute_memory_recall(request, query))
+        PlannedAction::WriteMemory { kind, summary, content } => {
+            Some(memory_executor::execute_memory_write(request, kind, summary, content))
         }
+        PlannedAction::RecallMemory { query } => Some(memory_executor::execute_memory_recall(request, query)),
         _ => None,
     }
 }
 
-fn execute_action_knowledge(
-    request: &RunRequest,
-    action: &PlannedAction,
-) -> Option<ActionExecution> {
+fn execute_action_knowledge(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
     match action {
-        PlannedAction::SearchKnowledge { query } => {
-            Some(knowledge_executor::execute_knowledge_search(request, query))
-        }
+        PlannedAction::SearchKnowledge { query } => Some(knowledge_executor::execute_knowledge_search(request, query)),
         _ => None,
     }
 }
 
 fn execute_action_siyuan(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
     match action {
-        PlannedAction::SearchSiyuanNotes { query } => {
-            Some(siyuan_executor::execute_siyuan_search(request, query))
-        }
-        PlannedAction::ReadSiyuanNote { path } => {
-            Some(siyuan_executor::execute_siyuan_read(request, path))
-        }
+        PlannedAction::SearchSiyuanNotes { query } => Some(siyuan_executor::execute_siyuan_search(request, query)),
+        PlannedAction::ReadSiyuanNote { path } => Some(siyuan_executor::execute_siyuan_read(request, path)),
         PlannedAction::WriteSiyuanKnowledge => Some(siyuan_executor::execute_siyuan_write(request)),
+        _ => None,
+    }
+}
+
+fn execute_action_mcp(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
+    match action {
+        PlannedAction::MCPCall {
+            server_id,
+            tool_name,
+            arguments_json,
+        } => Some(mcp_executor::execute_mcp_call(
+            request,
+            server_id,
+            tool_name,
+            arguments_json,
+        )),
         _ => None,
     }
 }
@@ -250,10 +249,7 @@ fn execute_action_answers(
 ) -> Option<ActionExecution> {
     match action {
         PlannedAction::ProjectAnswer => Some(project_executor::execute_project_answer(request)),
-        PlannedAction::ContextAnswer => Some(context_executor::execute_context_answer(
-            request,
-            session_context,
-        )),
+        PlannedAction::ContextAnswer => Some(context_executor::execute_context_answer(request, session_context)),
         _ => None,
     }
 }
@@ -264,13 +260,9 @@ fn execute_action_misc(
     session_context: &SessionMemory,
 ) -> ActionExecution {
     match action {
-        PlannedAction::RunCommand { command } => {
-            command_executor::execute_command(request, command)
-        }
+        PlannedAction::RunCommand { command } => command_executor::execute_command(request, command),
         PlannedAction::Explain => explain_executor::execute_explain(request),
-        PlannedAction::AgentResolve => {
-            agent_resolve_executor::execute_agent_resolve(request, session_context)
-        }
+        PlannedAction::AgentResolve => agent_resolve_executor::execute_agent_resolve(request, session_context),
         _ => unreachable!("unexpected planned action branch"),
     }
 }

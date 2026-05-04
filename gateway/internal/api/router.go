@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"encoding/json"
@@ -11,6 +11,7 @@ import (
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/knowledge"
+	"local-agent/gateway/internal/mcp"
 	"local-agent/gateway/internal/memory"
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
@@ -28,17 +29,23 @@ func NewRouter(
 	credentialStore *state.ProviderCredentialStore,
 	runtimeStore *state.RuntimeProviderStore,
 	tok *token.Manager,
+	mgr *mcp.Manager,
 ) http.Handler {
 	mux := http.NewServeMux()
 	chat := NewChatHandler(repoRoot, cfg, runtimeClient, eventBus, settingsStore, confirmationStore, credentialStore, runtimeStore)
+	chat.mcpManager = mgr
+	chat.gatewayToken = tok.Value()
 	memoryDeps := memoryRouteDeps{store: memory.NewStore(repoRoot), state: settingsStore}
 	registerCoreRoutes(mux, cfg)
 	registerProvidersRoutes(mux, cfg, credentialStore, runtimeStore, repoRoot)
 	registerLearningRoutes(mux, memoryDeps)
-	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore)
+	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore, mgr)
 	registerLogsRoutes(mux, repoRoot, cfg.RuntimePort, eventBus)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)
+	sessions := NewSessionHandler(repoRoot)
+	registerSessionRoutes(mux, sessions)
+	registerMCPRoutes(mux, mgr, repoRoot)
 	knowledge.NewHandler(repoRoot).RegisterRoutes(mux, settingsStore, repoRoot, cfg)
 	mux.Handle("/", spaHandler(repoRoot, tok.Value()))
 	return tok.Middleware(mux)
@@ -88,10 +95,20 @@ func spaHandler(repoRoot string, tokenValue string) http.Handler {
 		}
 
 		if tokenValue != "" {
+			setTokenCookie(w, tokenValue)
 			injectTokenAndServe(w, r, indexFile, tokenValue)
 			return
 		}
 		http.ServeFile(w, r, indexFile)
+	})
+}
+
+func setTokenCookie(w http.ResponseWriter, tokenValue string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     token.CookieName,
+		Value:    tokenValue,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -104,11 +121,14 @@ func injectTokenAndServe(w http.ResponseWriter, r *http.Request, indexFile strin
 	body := string(raw)
 	meta := fmt.Sprintf(`<meta name="local-agent-token" content="%s" />`, tokenValue)
 	if strings.Contains(body, `<meta name="local-agent-token"`) {
-		body = strings.ReplaceAll(body, meta, "")
+		body = removeTokenMeta(body)
 	}
 	idx := strings.Index(body, `<meta charset="UTF-8"`)
 	if idx == -1 {
 		idx = strings.Index(body, `<meta charSet="utf-8"`)
+	}
+	if idx == -1 {
+		idx = strings.Index(body, `<meta charSet="utf-8"/`)
 	}
 	if idx != -1 {
 		before := body[:idx]
@@ -117,6 +137,18 @@ func injectTokenAndServe(w http.ResponseWriter, r *http.Request, indexFile strin
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(body))
+}
+
+func removeTokenMeta(body string) string {
+	start := strings.Index(body, `<meta name="local-agent-token"`)
+	if start == -1 {
+		return body
+	}
+	end := strings.Index(body[start:], ">")
+	if end == -1 {
+		return body
+	}
+	return body[:start] + body[start+end+1:]
 }
 
 func fetchRuntimeStatus(runtimePort int) RuntimeStatus {

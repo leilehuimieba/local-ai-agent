@@ -36,42 +36,24 @@ pub(crate) fn failure_next_step(
         .unwrap_or_else(|| "建议先查看错误详情，再补上下文或调整任务后继续。".to_string())
 }
 
-fn append_tool_identity(
-    metadata: &mut BTreeMap<String, String>,
-    trace: &crate::capabilities::ToolExecutionTrace,
-) {
+fn append_tool_identity(metadata: &mut BTreeMap<String, String>, trace: &crate::capabilities::ToolExecutionTrace) {
     metadata.insert("tool_name".to_string(), trace.tool.tool_name.clone());
-    metadata.insert(
-        "tool_display_name".to_string(),
-        trace.tool.display_name.clone(),
-    );
+    metadata.insert("tool_display_name".to_string(), trace.tool.display_name.clone());
     metadata.insert("tool_category".to_string(), trace.tool.category.clone());
     metadata.insert("output_kind".to_string(), trace.tool.output_kind.clone());
 }
 
-fn append_tool_outcome(
-    metadata: &mut BTreeMap<String, String>,
-    trace: &crate::capabilities::ToolExecutionTrace,
-) {
+fn append_tool_outcome(metadata: &mut BTreeMap<String, String>, trace: &crate::capabilities::ToolExecutionTrace) {
     metadata.insert("result_summary".to_string(), trace.result.summary.clone());
     if trace.tool.tool_name == "run_command" {
-        metadata.insert(
-            "detail_preview".to_string(),
-            trace.result.detail_preview.clone(),
-        );
+        metadata.insert("detail_preview".to_string(), trace.result.detail_preview.clone());
         if let Some(value) = trace.result.raw_output_ref.clone() {
             metadata.insert("raw_output_ref".to_string(), value);
         }
     }
-    metadata.insert(
-        "tool_elapsed_ms".to_string(),
-        trace.result.elapsed_ms.to_string(),
-    );
+    metadata.insert("tool_elapsed_ms".to_string(), trace.result.elapsed_ms.to_string());
     metadata.insert("risk_level".to_string(), trace.tool.risk_level.clone());
-    metadata.insert(
-        "reasoning_summary".to_string(),
-        trace.result.reasoning_summary.clone(),
-    );
+    metadata.insert("reasoning_summary".to_string(), trace.result.reasoning_summary.clone());
     append_tool_result_budget(metadata, trace);
     metadata.insert(
         "failure_recovery_hint".to_string(),
@@ -79,18 +61,9 @@ fn append_tool_outcome(
     );
 }
 
-fn append_tool_cache(
-    metadata: &mut BTreeMap<String, String>,
-    trace: &crate::capabilities::ToolExecutionTrace,
-) {
-    metadata.insert(
-        "cache_status".to_string(),
-        trace.result.cache_status.clone(),
-    );
-    metadata.insert(
-        "cache_reason".to_string(),
-        trace.result.cache_reason.clone(),
-    );
+fn append_tool_cache(metadata: &mut BTreeMap<String, String>, trace: &crate::capabilities::ToolExecutionTrace) {
+    metadata.insert("cache_status".to_string(), trace.result.cache_status.clone());
+    metadata.insert("cache_reason".to_string(), trace.result.cache_reason.clone());
 }
 
 fn tool_failure_hint(tool_name: &str) -> String {
@@ -104,14 +77,8 @@ fn tool_failure_hint(tool_name: &str) -> String {
     }
 }
 
-fn append_tool_result_budget(
-    metadata: &mut BTreeMap<String, String>,
-    trace: &crate::capabilities::ToolExecutionTrace,
-) {
-    metadata.insert(
-        "result_chars".to_string(),
-        trace.result.result_chars.to_string(),
-    );
+fn append_tool_result_budget(metadata: &mut BTreeMap<String, String>, trace: &crate::capabilities::ToolExecutionTrace) {
+    metadata.insert("result_chars".to_string(), trace.result.result_chars.to_string());
     metadata.insert(
         "single_result_budget_chars".to_string(),
         trace.result.single_result_budget_chars.to_string(),
@@ -123,9 +90,5 @@ fn append_tool_result_budget(
 }
 
 fn bool_string(value: bool) -> String {
-    if value {
-        "true".to_string()
-    } else {
-        "false".to_string()
-    }
+    if value { "true".to_string() } else { "false".to_string() }
 }

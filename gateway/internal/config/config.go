@@ -49,41 +49,80 @@ type EmbeddingConfig struct {
 	ProviderID string `json:"provider_id"`
 }
 
+type MCPServerConfig struct {
+	ID           string          `json:"id"`
+	Name         string          `json:"name"`
+	Type         string          `json:"type"`
+	URL          string          `json:"url"`
+	Enabled      bool            `json:"enabled"`
+	ToolPolicies []MCPToolPolicy `json:"tool_policies,omitempty"`
+}
+
+type MCPToolPolicy struct {
+	ToolName             string `json:"tool_name"`
+	Allowed              bool   `json:"allowed"`
+	RiskLevel            string `json:"risk_level"`
+	RequiresConfirmation bool   `json:"requires_confirmation"`
+	AuditEnabled         bool   `json:"audit_enabled"`
+}
+
+type MCPConfig struct {
+	Servers []MCPServerConfig `json:"servers"`
+}
+
 type AppConfig struct {
-	AppName          string           `json:"app_name"`
-	GatewayPort      int              `json:"gateway_port"`
-	RuntimePort      int              `json:"runtime_port"`
-	DefaultMode      string           `json:"default_mode"`
-	DefaultModel     contracts.ModelRef         `json:"default_model"`
-	AvailableModels  []contracts.ModelRef       `json:"available_models"`
-	Providers        []ProviderConfig           `json:"providers"`
-	DefaultWorkspace contracts.WorkspaceRef     `json:"default_workspace"`
-	Workspaces       []contracts.WorkspaceRef   `json:"workspaces"`
-	OCR              OCRConfig        `json:"ocr"`
-	Siyuan           SiyuanConfig     `json:"siyuan"`
-	Embedding        EmbeddingConfig  `json:"embedding"`
+	AppName          string                   `json:"app_name"`
+	GatewayPort      int                      `json:"gateway_port"`
+	RuntimePort      int                      `json:"runtime_port"`
+	DefaultMode      string                   `json:"default_mode"`
+	DefaultModel     contracts.ModelRef       `json:"default_model"`
+	AvailableModels  []contracts.ModelRef     `json:"available_models"`
+	Providers        []ProviderConfig         `json:"providers"`
+	DefaultWorkspace contracts.WorkspaceRef   `json:"default_workspace"`
+	Workspaces       []contracts.WorkspaceRef `json:"workspaces"`
+	OCR              OCRConfig                `json:"ocr"`
+	Siyuan           SiyuanConfig             `json:"siyuan"`
+	Embedding        EmbeddingConfig          `json:"embedding"`
+	MCP              MCPConfig                `json:"mcp"`
 }
 
 func Load(repoRoot string) (AppConfig, error) {
-	path := filepath.Join(repoRoot, "config", "app.json")
-	raw, err := os.ReadFile(path)
+	cfg, err := LoadFile(repoRoot)
+	if err != nil {
+		return AppConfig{}, err
+	}
+	applyEnvOverrides(&cfg)
+	normalizeConfig(&cfg)
+	return cfg, validateConfig(cfg)
+}
+
+func ConfigPath(repoRoot string) string {
+	return filepath.Join(repoRoot, "config", "app.json")
+}
+
+func LoadFile(repoRoot string) (AppConfig, error) {
+	raw, err := os.ReadFile(ConfigPath(repoRoot))
 	if err != nil {
 		return AppConfig{}, fmt.Errorf("read config: %w", err)
 	}
-
 	var cfg AppConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return AppConfig{}, fmt.Errorf("parse config: %w", err)
 	}
+	return cfg, nil
+}
 
-	applyEnvOverrides(&cfg)
-
+func validateConfig(cfg AppConfig) error {
 	if cfg.AppName == "" {
-		return AppConfig{}, errors.New("app_name is required")
+		return errors.New("app_name is required")
 	}
 	if cfg.GatewayPort == 0 || cfg.RuntimePort == 0 {
-		return AppConfig{}, errors.New("gateway_port and runtime_port are required")
+		return errors.New("gateway_port and runtime_port are required")
 	}
+	return nil
+}
+
+func normalizeConfig(cfg *AppConfig) {
 	if cfg.DefaultMode == "" {
 		cfg.DefaultMode = "standard"
 	}
@@ -96,8 +135,22 @@ func Load(repoRoot string) (AppConfig, error) {
 	if len(cfg.Workspaces) == 0 {
 		cfg.Workspaces = []contracts.WorkspaceRef{cfg.DefaultWorkspace}
 	}
+}
 
-	return cfg, nil
+func SaveFile(repoRoot string, cfg AppConfig) error {
+	raw, err := json.MarshalIndent(cfg, "", "    ")
+	if err != nil {
+		return fmt.Errorf("marshal config: %w", err)
+	}
+	path := ConfigPath(repoRoot)
+	tmpPath := path + ".tmp"
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("create config dir: %w", err)
+	}
+	if err := os.WriteFile(tmpPath, append(raw, '\n'), 0o644); err != nil {
+		return fmt.Errorf("write config: %w", err)
+	}
+	return os.Rename(tmpPath, path)
 }
 
 func applyEnvOverrides(cfg *AppConfig) {

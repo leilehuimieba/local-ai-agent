@@ -226,9 +226,10 @@ func frontendBuildStale(root string, indexFile string) bool {
 	checkPaths := []string{
 		filepath.Join(root, "frontend", "index.html"),
 		filepath.Join(root, "frontend", "package.json"),
-		filepath.Join(root, "frontend", "package-lock.json"),
+		filepath.Join(root, "frontend", "pnpm-lock.yaml"),
+		filepath.Join(root, "frontend", "next.config.mjs"),
+		filepath.Join(root, "frontend", "postcss.config.mjs"),
 		filepath.Join(root, "frontend", "tsconfig.json"),
-		filepath.Join(root, "frontend", "vite.config.ts"),
 	}
 	for _, path := range checkPaths {
 		info, err := os.Stat(path)
@@ -237,19 +238,16 @@ func frontendBuildStale(root string, indexFile string) bool {
 		}
 	}
 
-	srcRoot := filepath.Join(root, "frontend", "src")
-	stale := false
-	_ = filepath.Walk(srcRoot, func(path string, info os.FileInfo, err error) error {
-		if stale || err != nil || info == nil || info.IsDir() {
-			return nil
-		}
-		if info.ModTime().After(builtAt) {
-			stale = true
-		}
-		return nil
-	})
+	return frontendSourceStale(root, builtAt)
+}
 
-	return stale
+func frontendSourceStale(root string, builtAt time.Time) bool {
+	for _, dir := range []string{"app", "components", "hooks", "lib", "styles", "public"} {
+		if hasNewerFile(filepath.Join(root, "frontend", dir), builtAt, "") {
+			return true
+		}
+	}
+	return false
 }
 
 func runCommand(workdir string, env []string, logPath string, name string, args ...string) error {

@@ -18,6 +18,8 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 	if payload.KnowledgeBaseID != "" && payload.KnowledgeBaseID != "_none_" {
 		hints["knowledge_base_id"] = payload.KnowledgeBaseID
 	}
+	hints = withMCPToolHints(hints, h.mcpManager)
+	hints = withMCPBridgeHints(hints, h.appConfig.GatewayPort, h.gatewayToken)
 	return contracts.RunRequest{
 		RequestID:              service.PickRunIdentity(payload.RequestID, "request"),
 		RunID:                  service.PickRunIdentity(payload.RunID, "run"),

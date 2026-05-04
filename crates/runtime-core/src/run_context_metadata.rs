@@ -14,10 +14,7 @@ fn append_context_core_metadata(
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
     metadata.insert("context_mode".to_string(), context.mode.clone());
-    metadata.insert(
-        "context_workspace_root".to_string(),
-        context.workspace_root.clone(),
-    );
+    metadata.insert("context_workspace_root".to_string(), context.workspace_root.clone());
 }
 
 fn append_context_dynamic_metadata(
@@ -38,10 +35,7 @@ fn append_context_digest_metadata(
         "session_summary".to_string(),
         context.dynamic_block.session_summary.clone(),
     );
-    metadata.insert(
-        "memory_digest".to_string(),
-        context.dynamic_block.memory_digest.clone(),
-    );
+    metadata.insert("memory_digest".to_string(), context.dynamic_block.memory_digest.clone());
     metadata.insert(
         "memory_has_system_views".to_string(),
         bool_string(context.dynamic_block.memory_has_system_views),
@@ -52,23 +46,14 @@ fn append_context_digest_metadata(
     );
     metadata.insert(
         "memory_current_object_count".to_string(),
-        context
-            .dynamic_block
-            .memory_current_object_count
-            .to_string(),
+        context.dynamic_block.memory_current_object_count.to_string(),
     );
     metadata.insert(
         "knowledge_digest".to_string(),
         context.dynamic_block.knowledge_digest.clone(),
     );
-    metadata.insert(
-        "tool_preview".to_string(),
-        context.dynamic_block.tool_preview.clone(),
-    );
-    metadata.insert(
-        "artifact_hint".to_string(),
-        context.dynamic_block.artifact_hint.clone(),
-    );
+    metadata.insert("tool_preview".to_string(), context.dynamic_block.tool_preview.clone());
+    metadata.insert("artifact_hint".to_string(), context.dynamic_block.artifact_hint.clone());
 }
 
 fn append_observation_metadata(
@@ -118,17 +103,11 @@ fn append_observation_token_budget_metadata(
 ) {
     metadata.insert(
         "observation_budget_total_tokens".to_string(),
-        context
-            .dynamic_block
-            .observation_budget_total_tokens
-            .to_string(),
+        context.dynamic_block.observation_budget_total_tokens.to_string(),
     );
     metadata.insert(
         "observation_budget_used_tokens".to_string(),
-        context
-            .dynamic_block
-            .observation_budget_used_tokens
-            .to_string(),
+        context.dynamic_block.observation_budget_used_tokens.to_string(),
     );
     metadata.insert(
         "observation_budget_hit_tokens".to_string(),
@@ -144,14 +123,8 @@ fn append_runtime_feedback_metadata(
         "reasoning_summary".to_string(),
         context.dynamic_block.reasoning_summary.clone(),
     );
-    metadata.insert(
-        "cache_status".to_string(),
-        context.dynamic_block.cache_status.clone(),
-    );
-    metadata.insert(
-        "cache_reason".to_string(),
-        context.dynamic_block.cache_reason.clone(),
-    );
+    metadata.insert("cache_status".to_string(), context.dynamic_block.cache_status.clone());
+    metadata.insert("cache_reason".to_string(), context.dynamic_block.cache_reason.clone());
 }
 
 fn append_context_policy_metadata(
@@ -202,20 +175,14 @@ fn append_context_includes(
         "injected_skill_ids".to_string(),
         context.dynamic_block.injected_skill_ids.clone(),
     );
-    metadata.insert(
-        "evidence_refs".to_string(),
-        context.dynamic_block.evidence_refs.clone(),
-    );
+    metadata.insert("evidence_refs".to_string(), context.dynamic_block.evidence_refs.clone());
 }
 
 fn append_context_selection(
     metadata: &mut BTreeMap<String, String>,
     context: &crate::context_builder::RuntimeContextEnvelope,
 ) {
-    metadata.insert(
-        "phase_label".to_string(),
-        context.dynamic_block.phase_label.clone(),
-    );
+    metadata.insert("phase_label".to_string(), context.dynamic_block.phase_label.clone());
     metadata.insert(
         "selection_reason".to_string(),
         context.dynamic_block.selection_reason.clone(),
@@ -227,19 +194,13 @@ fn append_context_selection(
 }
 
 fn bool_string(value: bool) -> String {
-    if value {
-        "true".to_string()
-    } else {
-        "false".to_string()
-    }
+    if value { "true".to_string() } else { "false".to_string() }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::context_builder::{
-        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
-    };
+    use crate::context_builder::{DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock};
 
     #[test]
     fn append_context_metadata_keeps_memory_layer_flags() {
@@ -266,17 +227,8 @@ mod tests {
         };
         let mut metadata = BTreeMap::new();
         append_context_metadata(&mut metadata, &context);
-        assert_eq!(
-            metadata.get("memory_has_system_views"),
-            Some(&"true".to_string())
-        );
-        assert_eq!(
-            metadata.get("memory_has_current_objects"),
-            Some(&"true".to_string())
-        );
-        assert_eq!(
-            metadata.get("memory_current_object_count"),
-            Some(&"2".to_string())
-        );
+        assert_eq!(metadata.get("memory_has_system_views"), Some(&"true".to_string()));
+        assert_eq!(metadata.get("memory_has_current_objects"), Some(&"true".to_string()));
+        assert_eq!(metadata.get("memory_current_object_count"), Some(&"2".to_string()));
     }
 }

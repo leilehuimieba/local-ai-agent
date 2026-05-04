@@ -2,8 +2,8 @@
 pub(crate) mod testkit {
     use crate::checkpoint::RunCheckpoint;
     use crate::contracts::{
-        ModelRef, ProviderRef, RepoContextSnapshot, RunEvent, RunRequest, RunResult,
-        RuntimeRunResponse, ToolCallSnapshot, WorkspaceRef,
+        ModelRef, ProviderRef, RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse,
+        ToolCallSnapshot, WorkspaceRef,
     };
     use crate::repo_context::RepoContextLoadResult;
     use crate::session::SessionMemory;
@@ -68,10 +68,7 @@ pub(crate) mod testkit {
         }
     }
 
-    pub(crate) fn sample_checkpoint_with_tool(
-        tool_name: &str,
-        arguments_json: &str,
-    ) -> RunCheckpoint {
+    pub(crate) fn sample_checkpoint_with_tool(tool_name: &str, arguments_json: &str) -> RunCheckpoint {
         let mut checkpoint = sample_checkpoint("retryable_failure");
         checkpoint
             .response

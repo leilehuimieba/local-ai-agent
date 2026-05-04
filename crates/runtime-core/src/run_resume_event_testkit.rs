@@ -11,10 +11,9 @@ pub(crate) mod testkit {
         let mut event = sample_event("");
         assign_event_marker(&mut event, "event-2", "verification_completed", "Verify");
         event.summary = "verification passed".to_string();
-        event.metadata.insert(
-            "artifact_path".to_string(),
-            "D:/repo/verify/report.txt".to_string(),
-        );
+        event
+            .metadata
+            .insert("artifact_path".to_string(), "D:/repo/verify/report.txt".to_string());
         event.verification_snapshot = Some(sample_verification_snapshot());
         event
     }
@@ -32,17 +31,10 @@ pub(crate) mod testkit {
         )
     }
 
-    fn sample_boundary_event(
-        event_id: &str,
-        event_type: &str,
-        stage: &str,
-        next_step: &str,
-    ) -> RunEvent {
+    fn sample_boundary_event(event_id: &str, event_type: &str, stage: &str, next_step: &str) -> RunEvent {
         let mut event = sample_event("");
         assign_event_marker(&mut event, event_id, event_type, stage);
-        event
-            .metadata
-            .insert("next_step".to_string(), next_step.to_string());
+        event.metadata.insert("next_step".to_string(), next_step.to_string());
         event
     }
 
@@ -56,10 +48,7 @@ pub(crate) mod testkit {
         let mut metadata = BTreeMap::new();
         insert_default_event_metadata(&mut metadata);
         if !handoff_path.is_empty() {
-            metadata.insert(
-                "handoff_artifact_path".to_string(),
-                handoff_path.to_string(),
-            );
+            metadata.insert("handoff_artifact_path".to_string(), handoff_path.to_string());
         }
         metadata
     }

@@ -11,10 +11,7 @@ use std::fs;
 const CACHE_REASON: &str = "Agent 调用依赖实时模型输出，不使用回答缓存。";
 const MAX_AGENT_TURNS: usize = 3;
 
-pub(crate) fn execute_agent_resolve(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-) -> ActionExecution {
+pub(crate) fn execute_agent_resolve(request: &RunRequest, session_context: &SessionMemory) -> ActionExecution {
     execute_agent_loop(request, session_context)
 }
 
@@ -28,24 +25,17 @@ fn execute_agent_loop(request: &RunRequest, session_context: &SessionMemory) -> 
             Err(error) => return fail_agent_resolve(&error),
         };
         if let Some(calls) = response.tool_calls.filter(|calls| !calls.is_empty()) {
-            let (round_traces, round_skipped) =
-                execute_tool_calls(request, session_context, &calls);
+            let (round_traces, round_skipped) = execute_tool_calls(request, session_context, &calls);
             traces.extend(round_traces.clone());
             skipped.extend(round_skipped.clone());
-            if let Some(result) =
-                maybe_recover_required_write(request, session_context, &traces, &skipped)
-            {
+            if let Some(result) = maybe_recover_required_write(request, session_context, &traces, &skipped) {
                 return result;
             }
             if turn + 1 == MAX_AGENT_TURNS {
                 if can_finalize_from_traces(&request.user_input, &traces) {
                     return finalize_from_traces(request, &traces, &skipped);
                 }
-                return incomplete_agent_resolve(
-                    &traces,
-                    &skipped,
-                    "达到最大执行轮次，任务仍未明确完成。",
-                );
+                return incomplete_agent_resolve(&traces, &skipped, "达到最大执行轮次，任务仍未明确完成。");
             }
             prompt = build_followup_prompt(request, session_context, &traces, &skipped);
             continue;
@@ -120,13 +110,8 @@ fn execute_single_tool_call(
     session_context: &SessionMemory,
     tc: &crate::model_adapter::ToolCall,
 ) -> Option<crate::capabilities::ToolExecutionTrace> {
-    let action =
-        crate::action_decode::tool_call_to_action(&tc.function.name, &tc.function.arguments)?;
-    Some(crate::tool_trace::execute_tool(
-        request,
-        &action,
-        session_context,
-    ))
+    let action = crate::action_decode::tool_call_to_action(&tc.function.name, &tc.function.arguments)?;
+    Some(crate::tool_trace::execute_tool(request, &action, session_context))
 }
 
 fn render_tool_call_traces(
@@ -151,11 +136,7 @@ fn render_tool_call_traces(
 }
 
 fn render_single_trace(index: usize, trace: &crate::capabilities::ToolExecutionTrace) -> String {
-    let status = if trace.result.success {
-        "成功"
-    } else {
-        "失败"
-    };
+    let status = if trace.result.success { "成功" } else { "失败" };
     let mut parts = Vec::new();
     parts.push(format!(
         "{}. [{}] {} ({})",
@@ -222,9 +203,21 @@ fn fail_agent_resolve(error: &str) -> ActionExecution {
 }
 
 fn build_agent_resolve_prompt(request: &RunRequest, session_context: &SessionMemory) -> String {
-    render_agent_resolve_prompt(
-        &request.user_input,
-        &session_prompt_summary(session_context),
+    let prompt = render_agent_resolve_prompt(&request.user_input, &session_prompt_summary(session_context));
+    append_agent_mcp_preview(prompt, request)
+}
+
+fn append_agent_mcp_preview(prompt: String, request: &RunRequest) -> String {
+    let Some(preview) = request.context_hints.get("mcp_tool_preview") else {
+        return prompt;
+    };
+    if preview.trim().is_empty() {
+        return prompt;
+    }
+    format!(
+        "{}\n\n外部 MCP 工具预览：{}\n说明：已进入 allowlist 且无需确认的 MCP 工具可通过 tool_call 自动执行；其他工具会按 Gateway 策略拒绝或等待后续确认链路。",
+        prompt,
+        preview.trim()
     )
 }
 
@@ -242,10 +235,7 @@ fn build_followup_prompt(
     )
 }
 
-fn render_round_results(
-    traces: &[crate::capabilities::ToolExecutionTrace],
-    skipped: &[String],
-) -> String {
+fn render_round_results(traces: &[crate::capabilities::ToolExecutionTrace], skipped: &[String]) -> String {
     let mut parts = traces
         .iter()
         .enumerate()
@@ -266,9 +256,7 @@ fn incomplete_reason(
         return None;
     }
     if requires_write(user_input) && !has_write_trace(traces) {
-        return Some(
-            "用户请求要求写回结果，但本次执行还没有成功调用 workspace_write。".to_string(),
-        );
+        return Some("用户请求要求写回结果，但本次执行还没有成功调用 workspace_write。".to_string());
     }
     if content.trim().is_empty() && !traces.is_empty() {
         return Some("运行时已执行工具，但模型没有给出明确完成信号。".to_string());
@@ -309,10 +297,7 @@ fn has_read_trace(traces: &[crate::capabilities::ToolExecutionTrace]) -> bool {
         .any(|trace| trace.tool.tool_name == "workspace_read" && trace.result.success)
 }
 
-fn next_step_instruction(
-    user_input: &str,
-    traces: &[crate::capabilities::ToolExecutionTrace],
-) -> String {
+fn next_step_instruction(user_input: &str, traces: &[crate::capabilities::ToolExecutionTrace]) -> String {
     if requires_write(user_input) && !has_write_trace(traces) {
         return format!(
             "原始目标仍然是“{}”。你已经拿到生成摘要所需的信息，不要再次读取同一份文件，也不要继续列目录；下一步必须调用 workspace_write，把符合原始结构的中文摘要写到 {}。写入成功后，再输出最终中文结果。",
@@ -360,12 +345,7 @@ fn maybe_recover_required_write(
         },
         session_context,
     );
-    Some(recovered_write_response(
-        traces,
-        skipped,
-        &trace,
-        &target_path,
-    ))
+    Some(recovered_write_response(traces, skipped, &trace, &target_path))
 }
 
 fn generate_required_write_content(request: &RunRequest) -> Option<String> {
@@ -393,8 +373,7 @@ fn extract_source_path(user_input: &str) -> Option<String> {
 }
 
 fn load_source_content(request: &RunRequest, source_path: &str) -> Result<String, ()> {
-    let path =
-        resolve_workspace_path(&request.workspace_ref.root_path, source_path).map_err(|_| ())?;
+    let path = resolve_workspace_path(&request.workspace_ref.root_path, source_path).map_err(|_| ())?;
     fs::read_to_string(path).map_err(|_| ())
 }
 
@@ -413,10 +392,7 @@ fn recovered_write_response(
 ) -> ActionExecution {
     let mut final_traces = traces.to_vec();
     final_traces.push(write_trace.clone());
-    let failed = final_traces
-        .iter()
-        .filter(|trace| !trace.result.success)
-        .count();
+    let failed = final_traces.iter().filter(|trace| !trace.result.success).count();
     let success = failed == 0 && skipped.is_empty();
     let header = tool_call_header(final_traces.len(), failed, skipped.len());
     let final_answer = if success {
@@ -439,10 +415,7 @@ fn recovered_write_response(
     )
 }
 
-fn can_finalize_from_traces(
-    user_input: &str,
-    traces: &[crate::capabilities::ToolExecutionTrace],
-) -> bool {
+fn can_finalize_from_traces(user_input: &str, traces: &[crate::capabilities::ToolExecutionTrace]) -> bool {
     requires_write(user_input) && has_write_trace(traces)
 }
 
@@ -482,11 +455,7 @@ mod tests {
         }
     }
 
-    fn make_trace(
-        success: bool,
-        artifact: bool,
-        error_code: Option<&str>,
-    ) -> crate::capabilities::ToolExecutionTrace {
+    fn make_trace(success: bool, artifact: bool, error_code: Option<&str>) -> crate::capabilities::ToolExecutionTrace {
         crate::capabilities::ToolExecutionTrace {
             tool: make_tool(),
             action_summary: "动作摘要".to_string(),
@@ -531,10 +500,7 @@ mod tests {
 
     #[test]
     fn renders_failure_and_skipped_as_not_success() {
-        let traces = vec![
-            make_trace(true, false, None),
-            make_trace(false, false, Some("failed")),
-        ];
+        let traces = vec![make_trace(true, false, None), make_trace(false, false, Some("failed"))];
         let skipped = vec!["unknown_tool (id=call_1)".to_string()];
         let (header, final_answer, success) = render_tool_call_traces(&traces, &skipped);
         assert!(!success);
@@ -542,5 +508,18 @@ mod tests {
         assert!(final_answer.contains("未识别的工具调用（已跳过）："));
         assert!(final_answer.contains("- unknown_tool (id=call_1)"));
         assert!(final_answer.contains("错误码：failed"));
+    }
+
+    #[test]
+    fn agent_prompt_surfaces_mcp_preview_as_policy_gated_context() {
+        let mut request = crate::run_resume_testkit::testkit::sample_request("");
+        request.context_hints.insert(
+            "mcp_tool_preview".to_string(),
+            "MCP工具可自动执行或按策略拒绝：web/search - 搜索网页".to_string(),
+        );
+        let prompt = append_agent_mcp_preview("base".to_string(), &request);
+        assert!(prompt.contains("外部 MCP 工具预览"));
+        assert!(prompt.contains("web/search - 搜索网页"));
+        assert!(prompt.contains("可通过 tool_call 自动执行"));
     }
 }

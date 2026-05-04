@@ -12,6 +12,7 @@ import (
 
 const tokenFileName = ".gateway_token"
 const headerName = "X-Local-Agent-Token"
+const CookieName = "local_agent_token"
 
 // Manager holds the gateway authentication token.
 type Manager struct {
@@ -55,7 +56,7 @@ func (m *Manager) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			if r.Header.Get(headerName) != m.value {
+			if r.Header.Get(headerName) != m.value && !m.hasValidCookie(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
 				return
@@ -63,4 +64,9 @@ func (m *Manager) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (m *Manager) hasValidCookie(r *http.Request) bool {
+	cookie, err := r.Cookie(CookieName)
+	return err == nil && cookie.Value == m.value
 }

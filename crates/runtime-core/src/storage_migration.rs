@@ -5,32 +5,24 @@ use crate::memory::{MemoryEntry, normalized_memory_entry};
 use crate::memory_schema::canonical_kind_for_record;
 use crate::paths::{knowledge_base_file_path, long_term_memory_file_path, memory_file_path};
 use crate::sqlite_store::{
-    insert_knowledge_record, insert_memory_entry, knowledge_count,
-    load_memory_entries_for_workspace_conn, memory_count,
-    upsert_memory_object_version,
+    insert_knowledge_record, insert_memory_entry, knowledge_count, load_memory_entries_for_workspace_conn,
+    memory_count, upsert_memory_object_version,
 };
 use crate::storage::{overwrite_jsonl, read_jsonl};
 use rusqlite::Connection;
 
-pub(crate) fn ensure_workspace_imported(
-    request: &RunRequest,
-    conn: &Connection,
-) -> Result<(), String> {
+pub(crate) fn ensure_workspace_imported(request: &RunRequest, conn: &Connection) -> Result<(), String> {
     import_memory_if_needed(request, conn)?;
     backfill_memory_objects_if_needed(request, conn)?;
     import_knowledge_if_needed(request, conn)?;
     compact_legacy_files(request)
 }
 
-fn backfill_memory_objects_if_needed(
-    request: &RunRequest,
-    conn: &Connection,
-) -> Result<(), String> {
+fn backfill_memory_objects_if_needed(request: &RunRequest, conn: &Connection) -> Result<(), String> {
     if memory_count(conn, &request.workspace_ref.workspace_id)? == 0 {
         return Ok(());
     }
-    for entry in load_memory_entries_for_workspace_conn(conn, &request.workspace_ref.workspace_id)?
-    {
+    for entry in load_memory_entries_for_workspace_conn(conn, &request.workspace_ref.workspace_id)? {
         upsert_memory_object_version(conn, &entry)?;
     }
     Ok(())
@@ -223,10 +215,8 @@ fn should_drop_memory(entry: &MemoryEntry) -> bool {
 fn is_runtime_project_answer_memory(entry: &MemoryEntry) -> bool {
     let project_answer = entry.kind == "project_knowledge" || entry.kind == "workspace_summary";
     let runtime_source = entry.source_type == "runtime";
-    let generated = entry.title.contains("项目说明")
-        || entry
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let generated =
+        entry.title.contains("项目说明") || entry.summary.contains("已基于项目文档片段完成一次项目说明回答");
     project_answer && runtime_source && generated
 }
 
@@ -239,9 +229,7 @@ fn is_runtime_tool_trace_memory(entry: &MemoryEntry) -> bool {
         || entry.summary.contains("已返回思源笔记摘要")
         || entry.summary.contains("思源正文读取成功")
         || entry.summary.contains("命中已存在思源导出");
-    entry.kind == "lesson_learned"
-        && entry.source_type == "runtime"
-        && (trace_title || trace_summary)
+    entry.kind == "lesson_learned" && entry.source_type == "runtime" && (trace_title || trace_summary)
 }
 
 fn is_runtime_fallback_memory(entry: &MemoryEntry) -> bool {
@@ -283,9 +271,7 @@ fn is_legacy_preference_noise(entry: &MemoryEntry) -> bool {
 
 fn should_drop_knowledge(record: &KnowledgeRecord) -> bool {
     let runtime_generated = record.source_type == "runtime" && record.source.starts_with("run:");
-    let project_answer = record.title.contains("项目说明")
-        || record
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let project_answer =
+        record.title.contains("项目说明") || record.summary.contains("已基于项目文档片段完成一次项目说明回答");
     runtime_generated && project_answer
 }

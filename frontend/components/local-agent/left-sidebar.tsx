@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { useUIStore, useRuntimeStore } from "@/lib/local-agent/store"
 import type { ViewType } from "@/lib/local-agent/types"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const navItems: { id: ViewType; icon: React.ElementType; label: string }[] = [
   { id: "task", icon: Target, label: "任务" },
@@ -24,6 +25,7 @@ const navItems: { id: ViewType; icon: React.ElementType; label: string }[] = [
 export function LeftSidebar() {
   const { activeView, setActiveView, leftSidebarExpanded, toggleLeftSidebar } = useUIStore()
   const { clearMessages } = useRuntimeStore()
+  const isMobile = useIsMobile()
 
   const handleNewTask = () => {
     setActiveView("task")
@@ -31,10 +33,11 @@ export function LeftSidebar() {
   }
 
   return (
+    <>
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex flex-col border-r border-border bg-card transition-all duration-200",
+          "hidden md:flex flex-col border-r border-border bg-card transition-all duration-200",
           leftSidebarExpanded ? "w-56" : "w-16"
         )}
       >
@@ -105,7 +108,7 @@ export function LeftSidebar() {
               className="w-full gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
-              New Task
+              新任务
             </Button>
           ) : (
             <Tooltip>
@@ -119,12 +122,43 @@ export function LeftSidebar() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>
-                New Task
+                新任务
               </TooltipContent>
             </Tooltip>
           )}
         </div>
       </aside>
     </TooltipProvider>
+
+    {/* Mobile Bottom Navigation */}
+    {isMobile && (
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card/95 backdrop-blur-sm h-14 md:hidden">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const isActive = activeView === item.id
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              className={cn(
+                "flex flex-col items-center justify-center gap-0.5 h-full w-full transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px]">{item.label}</span>
+            </button>
+          )
+        })}
+        <button
+          onClick={handleNewTask}
+          className="flex flex-col items-center justify-center gap-0.5 h-full w-full text-primary"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="text-[10px]">新任务</span>
+        </button>
+      </nav>
+    )}
+    </>
   )
 }

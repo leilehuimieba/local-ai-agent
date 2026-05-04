@@ -27,11 +27,7 @@ pub(crate) fn execute_file_read(request: &RunRequest, path: &str) -> ActionExecu
     }
 }
 
-pub(crate) fn execute_file_write(
-    request: &RunRequest,
-    path: &str,
-    content: &str,
-) -> ActionExecution {
+pub(crate) fn execute_file_write(request: &RunRequest, path: &str, content: &str) -> ActionExecution {
     let resolved = match resolve_path(request, "写入文件", path, CACHE_WRITE_REASON) {
         Ok(resolved) => resolved,
         Err(outcome) => return outcome,
@@ -70,12 +66,7 @@ pub(crate) fn execute_delete_path(request: &RunRequest, path: &str) -> ActionExe
 pub(crate) fn execute_list_files(request: &RunRequest, path: Option<&str>) -> ActionExecution {
     let base_path = path.unwrap_or(".");
     let Ok(resolved) = resolve_workspace_path(&request.workspace_ref.root_path, base_path) else {
-        return invalid_path(
-            "列出目录",
-            base_path,
-            "目标路径越界或解析失败",
-            CACHE_LIST_REASON,
-        );
+        return invalid_path("列出目录", base_path, "目标路径越界或解析失败", CACHE_LIST_REASON);
     };
     match fs::read_dir(&resolved) {
         Ok(entries) => {
@@ -150,9 +141,7 @@ fn invalid_explicit_path_reason(path: &str) -> Option<&'static str> {
         return Some("目标路径为空，请提供可读取的文件路径。");
     }
     if has_encoding_placeholder(path) {
-        return Some(
-            "目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。",
-        );
+        return Some("目标路径包含 `?`，疑似发生编码丢失；请改用 ASCII 路径或先 list 目录后复制路径重试。");
     }
     let bad = ['*', '"', '<', '>', '|', '\0'];
     path.chars()
@@ -170,11 +159,7 @@ fn ok_file_read(resolved: &Path, content: &str) -> ActionExecution {
     ok(
         format!("读取文件：{}", resolved.display()),
         format!("文件读取成功，摘要：{}", summary),
-        format!(
-            "文件读取完成：{}\n内容摘要：{}",
-            resolved.display(),
-            summary
-        ),
+        format!("文件读取完成：{}\n内容摘要：{}", resolved.display(), summary),
         "直接读取目标文件，并将原文压缩成可展示摘要。",
         CACHE_READ_REASON,
     )

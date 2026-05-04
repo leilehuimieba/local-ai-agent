@@ -55,8 +55,7 @@ pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
     )
     .unwrap_or_else(|| prepare_run_state(request, &session_context, &repo_context, &visible_tools));
     record_bootstrap_memory(request, &mut session_context, &prepared);
-    let context_envelope =
-        bootstrap_context(request, &session_context, &repo_context, &visible_tools);
+    let context_envelope = bootstrap_context(request, &session_context, &repo_context, &visible_tools);
     assemble_runtime_state(
         request,
         session_context,
@@ -90,8 +89,7 @@ pub(crate) fn execute_stage(state: &mut RuntimeRunState) {
 #[cfg(test)]
 mod tests {
     use crate::query_engine_testkit::testkit::{
-        sample_checkpoint, sample_checkpoint_with_tool, sample_repo_context, sample_request,
-        sample_session,
+        sample_checkpoint, sample_checkpoint_with_tool, sample_repo_context, sample_request, sample_session,
     };
     use crate::run_recover_action::resumed_prepared_state;
     use crate::run_resume::apply_resume_checkpoint;
@@ -120,13 +118,11 @@ mod tests {
     #[test]
     fn restores_action_from_checkpoint_tool_snapshot() {
         let request = sample_request("retry_failure");
-        let checkpoint =
-            sample_checkpoint_with_tool("run_command", r#"{"command":"echo restored"}"#);
+        let checkpoint = sample_checkpoint_with_tool("run_command", r#"{"command":"echo restored"}"#);
         let session = sample_session();
         let repo = sample_repo_context();
         let visible = runtime_tool_registry().visible_tools(&request.mode);
-        let prepared =
-            resumed_prepared_state(&request, &session, &repo, &visible, Some(&checkpoint));
+        let prepared = resumed_prepared_state(&request, &session, &repo, &visible, Some(&checkpoint));
         assert!(matches!(
             prepared.expect("prepared").action,
             crate::planner::PlannedAction::RunCommand { command }

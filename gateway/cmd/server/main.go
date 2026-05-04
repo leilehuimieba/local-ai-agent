@@ -8,6 +8,7 @@ import (
 
 	"local-agent/gateway/internal/api"
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/mcp"
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/session"
 	"local-agent/gateway/internal/state"
@@ -39,6 +40,18 @@ func main() {
 	credentialStore := state.NewProviderCredentialStore(root)
 	runtimeStore := state.NewRuntimeProviderStore(root)
 
+	mgr := mcp.NewManager(cfg.MCP.Servers)
+	if len(mgr.Status()) > 0 {
+		mgr.ConnectAll()
+		for _, st := range mgr.Status() {
+			if st.Ready {
+				fmt.Printf("[local-agent] mcp connected: %s (%d tools)\n", st.Name, st.ToolCount)
+			} else if st.Enabled {
+				fmt.Fprintf(os.Stderr, "[local-agent] mcp not ready: %s (%s)\n", st.Name, st.URL)
+			}
+		}
+	}
+
 	if err := http.ListenAndServe(addr, api.NewRouter(
 		root,
 		cfg,
@@ -49,6 +62,7 @@ func main() {
 		credentialStore,
 		runtimeStore,
 		tok,
+		mgr,
 	)); err != nil {
 		fmt.Fprintf(os.Stderr, "[local-agent] gateway stopped: %v\n", err)
 		os.Exit(1)

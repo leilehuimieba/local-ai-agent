@@ -1,4 +1,4 @@
-﻿use crate::contracts::{RunEvent, RunRequest};
+use crate::contracts::{RunEvent, RunRequest};
 use crate::paths::observation_audit_file_path;
 use crate::sensitive_data::redact_sensitive_text;
 use crate::sqlite_store::{insert_observation_record, with_connection};
@@ -12,13 +12,8 @@ pub mod utils;
 pub use types::*;
 pub(crate) use utils::*;
 
-
-
 pub fn lifecycle_target_event_types() -> Vec<String> {
-    LIFECYCLE_TARGET_EVENTS
-        .iter()
-        .map(|item| item.to_string())
-        .collect()
+    LIFECYCLE_TARGET_EVENTS.iter().map(|item| item.to_string()).collect()
 }
 
 pub fn observation_kind_for_event_type(event_type: &str) -> Option<&'static str> {
@@ -109,10 +104,7 @@ pub fn dedupe_lifecycle_observations(records: &[ObservationRecord]) -> Observati
     }
 }
 
-pub fn persist_lifecycle_observations(
-    request: &RunRequest,
-    events: &[RunEvent],
-) -> ObservationPersistenceReport {
+pub fn persist_lifecycle_observations(request: &RunRequest, events: &[RunEvent]) -> ObservationPersistenceReport {
     let snapshot = lifecycle_mapping_snapshot(events);
     let dedupe = dedupe_lifecycle_observations(&snapshot.mapped_items);
     let sqlite = write_sqlite_records(request, &dedupe.unique_items);
@@ -120,10 +112,7 @@ pub fn persist_lifecycle_observations(
     build_persistence_report(request, &snapshot, &dedupe, sqlite, audit)
 }
 
-pub fn run_observation_queue_flow(
-    request: &RunRequest,
-    events: &[RunEvent],
-) -> ObservationQueueFlowReport {
+pub fn run_observation_queue_flow(request: &RunRequest, events: &[RunEvent]) -> ObservationQueueFlowReport {
     let records = dedupe_lifecycle_observations(&lifecycle_mapping_snapshot(events).mapped_items);
     let mut errors = Vec::new();
     reset_observation_queue(request, &mut errors);
@@ -143,10 +132,7 @@ pub fn run_observation_queue_flow(
     }
 }
 
-pub fn run_observation_retry_flow(
-    request: &RunRequest,
-    events: &[RunEvent],
-) -> ObservationRetryReport {
+pub fn run_observation_retry_flow(request: &RunRequest, events: &[RunEvent]) -> ObservationRetryReport {
     let _ = run_observation_queue_flow(request, events);
     let mut errors = Vec::new();
     let initial_failed_count = queue_count_by_status(request, "failed");
@@ -177,11 +163,7 @@ pub fn observation_queue_health(request: &RunRequest) -> ObservationQueueHealthR
     }
 }
 
-pub fn search_observations(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> ObservationSearchReport {
+pub fn search_observations(request: &RunRequest, query: &str, limit: usize) -> ObservationSearchReport {
     let normalized_limit = normalize_limit(limit, 20);
     let rows = search_rows(request, query, normalized_limit);
     ObservationSearchReport {
@@ -250,13 +232,8 @@ pub fn build_layered_injection(
     let (summary_budget, timeline_budget, details_budget) = split_budgets(total);
     let ranked = rank_observations(request, query, 20);
     let details = get_observation_details(request, &ranked);
-    let (summary_section, timeline_section, details_section) = layered_sections(
-        &ranked.items,
-        &details,
-        summary_budget,
-        timeline_budget,
-        details_budget,
-    );
+    let (summary_section, timeline_section, details_section) =
+        layered_sections(&ranked.items, &details, summary_budget, timeline_budget, details_budget);
     let references = build_references(&details);
     layered_injection_report(
         query,
@@ -374,8 +351,7 @@ fn layered_injection_report(
     references: Vec<String>,
 ) -> ObservationLayeredInjectionReport {
     let budget = layer_budget_for_sections(budgets, &sections);
-    let injected_text =
-        join_layered_sections(&sections.summary, &sections.timeline, &sections.details);
+    let injected_text = join_layered_sections(&sections.summary, &sections.timeline, &sections.details);
     ObservationLayeredInjectionReport {
         query: query.to_string(),
         budget_total_chars: budgets.total,
@@ -398,10 +374,7 @@ fn layered_injection_report(
     }
 }
 
-fn layer_budget_for_sections(
-    budgets: LayerCharBudgets,
-    sections: &LayerSections,
-) -> LayerBudgetReport {
+fn layer_budget_for_sections(budgets: LayerCharBudgets, sections: &LayerSections) -> LayerBudgetReport {
     layer_budget_report(
         budgets.total,
         budgets.summary,
@@ -417,10 +390,7 @@ fn layer_used_chars(sections: &LayerSections) -> usize {
         .count()
 }
 
-pub fn observation_privacy_redact_flow(
-    request: &RunRequest,
-    events: &[RunEvent],
-) -> ObservationPrivacyRedactReport {
+pub fn observation_privacy_redact_flow(request: &RunRequest, events: &[RunEvent]) -> ObservationPrivacyRedactReport {
     let dedupe = dedupe_lifecycle_observations(&lifecycle_mapping_snapshot(events).mapped_items);
     let applied = apply_privacy_rules(&dedupe.unique_items);
     let _ = write_sqlite_records(request, &applied.records);
@@ -471,7 +441,6 @@ pub fn observation_rollback_flow(request: &RunRequest, query: &str) -> Observati
         references_count: injection.references.len(),
     }
 }
-
 
 fn memory_enhanced_enabled(request: &RunRequest) -> bool {
     request
@@ -572,11 +541,7 @@ fn reset_observation_queue(request: &RunRequest, errors: &mut Vec<String>) {
     }
 }
 
-fn enqueue_pending_records(
-    request: &RunRequest,
-    records: &[ObservationRecord],
-    errors: &mut Vec<String>,
-) -> usize {
+fn enqueue_pending_records(request: &RunRequest, records: &[ObservationRecord], errors: &mut Vec<String>) -> usize {
     let result = with_connection(request, |conn| {
         let mut written = 0usize;
         for record in records {
@@ -657,12 +622,7 @@ fn processing_to_processed(request: &RunRequest, errors: &mut Vec<String>) -> us
     )
 }
 
-fn execute_queue_update(
-    request: &RunRequest,
-    sql: &str,
-    errors: &mut Vec<String>,
-    code: &str,
-) -> usize {
+fn execute_queue_update(request: &RunRequest, sql: &str, errors: &mut Vec<String>, code: &str) -> usize {
     let result = with_connection(request, |conn| {
         conn.execute(
             sql,
@@ -762,15 +722,8 @@ fn estimate_tokens_from_chars(chars: usize) -> usize {
     chars.div_ceil(4)
 }
 
-fn get_observation_details(
-    request: &RunRequest,
-    ranked: &ObservationRankReport,
-) -> Vec<ObservationDetailItem> {
-    let ids = ranked
-        .items
-        .iter()
-        .map(|item| item.observation_id)
-        .collect::<Vec<_>>();
+fn get_observation_details(request: &RunRequest, ranked: &ObservationRankReport) -> Vec<ObservationDetailItem> {
+    let ids = ranked.items.iter().map(|item| item.observation_id).collect::<Vec<_>>();
     get_observations(request, &ids, 20).items
 }
 
@@ -817,11 +770,7 @@ fn recent_observation_rows(request: &RunRequest, limit: usize) -> Vec<StoredObse
     .unwrap_or_default()
 }
 
-fn filter_rows_by_query(
-    rows: &[StoredObservationRow],
-    query: &str,
-    limit: usize,
-) -> Vec<StoredObservationRow> {
+fn filter_rows_by_query(rows: &[StoredObservationRow], query: &str, limit: usize) -> Vec<StoredObservationRow> {
     let terms = query_terms(query);
     rows.iter()
         .filter(|row| row_matches_terms(row, &terms))
@@ -844,12 +793,7 @@ fn row_matches_terms(row: &StoredObservationRow, terms: &[String]) -> bool {
 }
 
 fn build_summary_section(items: &[ObservationRankItem], budget: usize) -> String {
-    let text = items
-        .iter()
-        .take(5)
-        .map(summary_line)
-        .collect::<Vec<_>>()
-        .join("\n");
+    let text = items.iter().take(5).map(summary_line).collect::<Vec<_>>().join("\n");
     clip_to_budget(&text, budget)
 }
 
@@ -861,12 +805,7 @@ fn summary_line(item: &ObservationRankItem) -> String {
 }
 
 fn build_timeline_section(items: &[ObservationDetailItem], budget: usize) -> String {
-    let text = items
-        .iter()
-        .take(8)
-        .map(timeline_line)
-        .collect::<Vec<_>>()
-        .join("\n");
+    let text = items.iter().take(8).map(timeline_line).collect::<Vec<_>>().join("\n");
     clip_to_budget(&text, budget)
 }
 
@@ -881,12 +820,7 @@ fn timeline_line(item: &ObservationDetailItem) -> String {
 }
 
 fn build_details_section(items: &[ObservationDetailItem], budget: usize) -> String {
-    let text = items
-        .iter()
-        .take(5)
-        .map(detail_line)
-        .collect::<Vec<_>>()
-        .join("\n");
+    let text = items.iter().take(5).map(detail_line).collect::<Vec<_>>().join("\n");
     clip_to_budget(&text, budget)
 }
 
@@ -925,22 +859,13 @@ fn clip_to_budget(text: &str, budget: usize) -> String {
 fn full_context_text(request: &RunRequest, query: &str) -> String {
     let ranked = rank_observations(request, query, 20);
     let details = get_observation_details(request, &ranked);
-    details
-        .iter()
-        .map(full_context_line)
-        .collect::<Vec<_>>()
-        .join("\n")
+    details.iter().map(full_context_line).collect::<Vec<_>>().join("\n")
 }
 
 fn full_context_line(item: &ObservationDetailItem) -> String {
     format!(
         "[{}] {} {} {} {} {}",
-        item.observation_id,
-        item.created_at,
-        item.event_type,
-        item.stage,
-        item.summary,
-        item.artifact_ref
+        item.observation_id, item.created_at, item.event_type, item.stage, item.summary, item.artifact_ref
     )
 }
 
@@ -977,9 +902,7 @@ fn repeat_placeholders(count: usize) -> String {
 
 fn query_rows_by_ids(request: &RunRequest, sql: &str, ids: &[i64]) -> Vec<StoredObservationRow> {
     with_connection(request, |conn| {
-        let mut values = vec![rusqlite::types::Value::from(
-            request.workspace_ref.workspace_id.clone(),
-        )];
+        let mut values = vec![rusqlite::types::Value::from(request.workspace_ref.workspace_id.clone())];
         values.extend(ids.iter().map(|id| rusqlite::types::Value::from(*id)));
         let mut statement = conn.prepare(sql).map_err(|error| error.to_string())?;
         let rows = statement
@@ -1016,9 +939,7 @@ fn preview_summary(summary: &str) -> String {
 
 fn scored_rows(query: &str, rows: &[StoredObservationRow]) -> Vec<ScoredObservationRow> {
     let latest = latest_created_millis(rows);
-    rows.iter()
-        .map(|row| score_row(query, row, latest))
-        .collect::<Vec<_>>()
+    rows.iter().map(|row| score_row(query, row, latest)).collect::<Vec<_>>()
 }
 
 fn latest_created_millis(rows: &[StoredObservationRow]) -> u128 {
@@ -1085,10 +1006,7 @@ fn query_terms(query: &str) -> Vec<String> {
         .collect()
 }
 
-fn compare_scored_rows(
-    left: &ScoredObservationRow,
-    right: &ScoredObservationRow,
-) -> std::cmp::Ordering {
+fn compare_scored_rows(left: &ScoredObservationRow, right: &ScoredObservationRow) -> std::cmp::Ordering {
     right
         .total_score
         .partial_cmp(&left.total_score)
@@ -1107,11 +1025,7 @@ fn rank_item_from_scored(item: ScoredObservationRow) -> ObservationRankItem {
     }
 }
 
-fn resolve_anchor(
-    request: &RunRequest,
-    anchor_id: Option<i64>,
-    query: Option<&str>,
-) -> (Option<i64>, String) {
+fn resolve_anchor(request: &RunRequest, anchor_id: Option<i64>, query: Option<&str>) -> (Option<i64>, String) {
     if let Some(id) = anchor_id {
         return (Some(id), "anchor_id".to_string());
     }
@@ -1138,22 +1052,14 @@ fn latest_observation_id(request: &RunRequest) -> Option<i64> {
     .ok()
 }
 
-fn timeline_report(
-    request: &RunRequest,
-    anchor_id: i64,
-    source: String,
-    window: usize,
-) -> ObservationTimelineReport {
+fn timeline_report(request: &RunRequest, anchor_id: i64, source: String, window: usize) -> ObservationTimelineReport {
     let rows = timeline_rows(request, anchor_id, window);
     ObservationTimelineReport {
         anchor_id,
         anchor_source: source,
         window,
         item_count: rows.len(),
-        items: rows
-            .iter()
-            .map(|row| timeline_item_from_row(row, anchor_id))
-            .collect(),
+        items: rows.iter().map(|row| timeline_item_from_row(row, anchor_id)).collect(),
     }
 }
 
@@ -1208,9 +1114,7 @@ fn decode_observation_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<StoredObs
     })
 }
 
-fn collect_observation_rows<F>(
-    rows: rusqlite::MappedRows<'_, F>,
-) -> Result<Vec<StoredObservationRow>, String>
+fn collect_observation_rows<F>(rows: rusqlite::MappedRows<'_, F>) -> Result<Vec<StoredObservationRow>, String>
 where
     F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<StoredObservationRow>,
 {
@@ -1230,11 +1134,7 @@ fn queue_status_sequence(failed_count: usize) -> Vec<String> {
             "processed".to_string(),
         ];
     }
-    vec![
-        "pending".to_string(),
-        "processing".to_string(),
-        "processed".to_string(),
-    ]
+    vec!["pending".to_string(), "processing".to_string(), "processed".to_string()]
 }
 
 fn retry_failed_once(request: &RunRequest, errors: &mut Vec<String>) -> Vec<RetryAttempt> {
@@ -1263,10 +1163,9 @@ fn failed_queue_ids(request: &RunRequest) -> Vec<i64> {
             )
             .map_err(|error| error.to_string())?;
         let rows = statement
-            .query_map(
-                rusqlite::params![request.workspace_ref.workspace_id.clone()],
-                |row| row.get::<_, i64>(0),
-            )
+            .query_map(rusqlite::params![request.workspace_ref.workspace_id.clone()], |row| {
+                row.get::<_, i64>(0)
+            })
             .map_err(|error| error.to_string())?;
         let mut ids = Vec::new();
         for item in rows {
@@ -1282,12 +1181,7 @@ fn retry_backoff_ms(attempt: u32) -> u64 {
     500u64.saturating_mul(2u64.pow(capped.saturating_sub(1)))
 }
 
-fn retry_queue_item(
-    request: &RunRequest,
-    id: i64,
-    backoff_ms: u64,
-    errors: &mut Vec<String>,
-) -> bool {
+fn retry_queue_item(request: &RunRequest, id: i64, backoff_ms: u64, errors: &mut Vec<String>) -> bool {
     let result = with_connection(request, |conn| {
         conn.execute(
             "update observation_pending_queue

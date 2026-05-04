@@ -15,11 +15,14 @@ import {
   Clock,
   FileText,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react"
-import { useLogsStore } from "@/lib/local-agent/store"
+import { useLogsStore, useRuntimeStore, useUIStore } from "@/lib/local-agent/store"
 import type { LogRun } from "@/lib/local-agent/types"
-import { fetchLogs } from "@/lib/local-agent/api"
+import type { SessionItem } from "@/lib/local-agent/api"
+import { fetchLogs, fetchSessions } from "@/lib/local-agent/api"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 type TimeFilter = "today" | "7days" | "30days"
 
@@ -80,11 +83,26 @@ export function LogsView() {
     loadLogs,
   } = useLogsStore()
 
+  const { resumeSession } = useRuntimeStore()
+  const { setActiveView } = useUIStore()
+
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<"runs" | "sessions">("runs")
+  const [sessions, setSessions] = useState<SessionItem[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(false)
 
   useEffect(() => {
     loadLogs()
   }, [loadLogs])
+
+  useEffect(() => {
+    if (activeTab !== "sessions") return
+    setSessionsLoading(true)
+    fetchSessions()
+      .then((data) => setSessions(data.items))
+      .catch(() => setSessions([]))
+      .finally(() => setSessionsLoading(false))
+  }, [activeTab])
 
   const filteredLogs = useMemo(() => {
     return runs.filter((log) => {
@@ -100,7 +118,8 @@ export function LogsView() {
     })
   }, [runs, statusFilter, timeFilter, searchQuery])
 
-  const isEmpty = filteredLogs.length === 0
+  const isLogsEmpty = filteredLogs.length === 0
+  const isSessionsEmpty = sessions.length === 0
 
   return (
     <div className="flex h-full flex-col">
@@ -108,8 +127,17 @@ export function LogsView() {
       <div className="shrink-0 border-b border-border bg-card p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-lg font-semibold text-foreground">历史记录</h1>
-          
-          <div className="flex flex-wrap items-center gap-3">
+
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "runs" | "sessions")}>
+            <TabsList className="h-8">
+              <TabsTrigger value="runs" className="text-xs px-3">运行记录</TabsTrigger>
+              <TabsTrigger value="sessions" className="text-xs px-3">会话历史</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {activeTab === "runs" && (
+          <div className="flex flex-wrap items-center gap-3 mt-4">
             {/* Status Filter Pills */}
             <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
               {statusFilters.map((filter) => (
@@ -157,39 +185,78 @@ export function LogsView() {
               />
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Timeline */}
+      {/* Content */}
       <ScrollArea className="flex-1 p-4">
-        {isEmpty ? (
-          /* Empty State */
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
-              <FileText className="h-8 w-8 text-muted-foreground" />
+        {activeTab === "runs" && (
+          isLogsEmpty ? (
+            /* Empty State */
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">暂无运行记录</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                开始运行任务后，历史记录将显示在这里。
+              </p>
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">暂无运行记录</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              开始运行任务后，历史记录将显示在这里。
-            </p>
-          </div>
-        ) : (
-          <div className="relative ml-4">
-            {/* Timeline Line */}
-            <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
+          ) : (
+            <div className="relative ml-4">
+              {/* Timeline Line */}
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
 
-            {/* Log Entries */}
-            <div className="space-y-4">
-              {filteredLogs.map((log) => (
-                <LogCard
-                  key={log.run_id}
-                  log={log}
-                  expanded={expandedId === log.run_id}
-                  onToggle={() => setExpandedId(expandedId === log.run_id ? null : log.run_id)}
-                />
+              {/* Log Entries */}
+              <div className="space-y-4">
+                {filteredLogs.map((log) => (
+                  <LogCard
+                    key={log.run_id}
+                    log={log}
+                    expanded={expandedId === log.run_id}
+                    onToggle={() => setExpandedId(expandedId === log.run_id ? null : log.run_id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        {activeTab === "sessions" && (
+          sessionsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : isSessionsEmpty ? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
+                <MessageSquare className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">暂无会话历史</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                开始对话后，会话历史将显示在这里。
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-w-2xl mx-auto">
+              {sessions.map((session) => (
+                <button
+                  key={session.id}
+                  onClick={() => {
+                    resumeSession(session.id)
+                    setActiveView("task")
+                  }}
+                  className="w-full flex items-center gap-3 rounded-lg border bg-card p-3 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{session.title || "未命名会话"}</p>
+                    <p className="text-xs text-muted-foreground">{formatTimestamp(session.updated_at)}</p>
+                  </div>
+                </button>
               ))}
             </div>
-          </div>
+          )
         )}
       </ScrollArea>
     </div>
@@ -319,6 +386,20 @@ function LogCard({
             <Clock className="h-3 w-3" />
             {formatDuration(display.duration_ms)}
           </Badge>
+          {display.status !== "running" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs shrink-0"
+              onClick={(e) => {
+                e.stopPropagation()
+                useRuntimeStore.getState().resumeSession(log.session_id)
+                useUIStore.getState().setActiveView("task")
+              }}
+            >
+              继续聊天
+            </Button>
+          )}
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
           ) : (

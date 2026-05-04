@@ -1,8 +1,8 @@
 use crate::contracts::RunRequest;
 use crate::memory::MemoryEntry;
 use crate::sqlite_store::{
-    list_memory_object_aliases_sqlite, list_memory_object_versions_sqlite,
-    rollback_memory_object_sqlite, sync_memory_object_entry_sqlite,
+    list_memory_object_aliases_sqlite, list_memory_object_versions_sqlite, rollback_memory_object_sqlite,
+    sync_memory_object_entry_sqlite,
 };
 use crate::text::summarize_text;
 
@@ -50,18 +50,12 @@ pub(crate) fn sync_memory_object_entry(
 }
 
 #[allow(dead_code)]
-pub(crate) fn list_memory_object_versions(
-    request: &RunRequest,
-    object_id: &str,
-) -> Vec<MemoryObjectVersion> {
+pub(crate) fn list_memory_object_versions(request: &RunRequest, object_id: &str) -> Vec<MemoryObjectVersion> {
     list_memory_object_versions_sqlite(request, object_id)
 }
 
 #[allow(dead_code)]
-pub(crate) fn get_memory_object_history(
-    request: &RunRequest,
-    object_id: &str,
-) -> Vec<MemoryObjectVersion> {
+pub(crate) fn get_memory_object_history(request: &RunRequest, object_id: &str) -> Vec<MemoryObjectVersion> {
     list_memory_object_versions(request, object_id)
 }
 
@@ -92,21 +86,14 @@ pub(crate) fn rollback_memory_object(
     rollback_memory_object_sqlite(request, object_id, target_version_id)
 }
 
-fn find_version<'a>(
-    versions: &'a [MemoryObjectVersion],
-    version_id: &str,
-) -> Result<&'a MemoryObjectVersion, String> {
+fn find_version<'a>(versions: &'a [MemoryObjectVersion], version_id: &str) -> Result<&'a MemoryObjectVersion, String> {
     versions
         .iter()
         .find(|item| item.version_id == version_id)
         .ok_or_else(|| format!("未找到 memory object 版本：{version_id}"))
 }
 
-fn build_version_diff(
-    object_id: &str,
-    from: &MemoryObjectVersion,
-    to: &MemoryObjectVersion,
-) -> MemoryObjectDiff {
+fn build_version_diff(object_id: &str, from: &MemoryObjectVersion, to: &MemoryObjectVersion) -> MemoryObjectDiff {
     MemoryObjectDiff {
         object_id: object_id.to_string(),
         from_version_id: from.version_id.clone(),
@@ -168,13 +155,8 @@ mod tests {
         let request = sample_request();
         let first = sync_memory_object_entry(&request, &sample_entry("v1", "第一版")).unwrap();
         let second = sync_memory_object_entry(&request, &sample_entry("v2", "第二版")).unwrap();
-        let diff = diff_memory_object_versions(
-            &request,
-            &first.object_id,
-            &first.version_id,
-            &second.version_id,
-        )
-        .unwrap();
+        let diff =
+            diff_memory_object_versions(&request, &first.object_id, &first.version_id, &second.version_id).unwrap();
         assert!(diff.summary_changed);
         assert!(diff.content_changed);
         assert!(diff.to_content_excerpt.contains("第二版"));

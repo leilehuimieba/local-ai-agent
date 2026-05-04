@@ -15,10 +15,7 @@ pub(crate) struct ContextAssemblyPolicy {
     pub prefer_artifact_context: bool,
 }
 
-pub(crate) fn planning_context_policy(
-    user_input: &str,
-    session: &SessionMemory,
-) -> ContextAssemblyPolicy {
+pub(crate) fn planning_context_policy(user_input: &str, session: &SessionMemory) -> ContextAssemblyPolicy {
     let mut policy = ContextAssemblyPolicy {
         profile: "planning".to_string(),
         include_session: true,
@@ -35,10 +32,7 @@ pub(crate) fn planning_context_policy(
     policy
 }
 
-pub(crate) fn action_context_policy(
-    action: &PlannedAction,
-    session: &SessionMemory,
-) -> ContextAssemblyPolicy {
+pub(crate) fn action_context_policy(action: &PlannedAction, session: &SessionMemory) -> ContextAssemblyPolicy {
     let mut policy = match action {
         PlannedAction::ProjectAnswer => project_answer_policy(),
         PlannedAction::ContextAnswer => context_answer_policy(),
@@ -65,8 +59,7 @@ pub(crate) fn project_answer_policy() -> ContextAssemblyPolicy {
         skill_injection_enabled: false,
         max_skill_level: "disabled".to_string(),
         phase_label: "answer".to_string(),
-        selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。"
-            .to_string(),
+        selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。".to_string(),
         prefer_artifact_context: false,
     }
 }
@@ -96,8 +89,7 @@ fn agent_resolve_policy() -> ContextAssemblyPolicy {
         skill_injection_enabled: true,
         max_skill_level: "level1:index-summary".to_string(),
         phase_label: "execute".to_string(),
-        selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。"
-            .to_string(),
+        selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。".to_string(),
         prefer_artifact_context: false,
     }
 }
@@ -190,8 +182,7 @@ fn apply_handoff_override(policy: &mut ContextAssemblyPolicy) {
     policy.max_skill_level = "level1:index-summary".to_string();
     policy.prefer_artifact_context = true;
     policy.phase_label = "handoff_resume".to_string();
-    policy.selection_reason =
-        "当前存在长任务交接包，优先结合会话状态和交接 artifact 续跑。".to_string();
+    policy.selection_reason = "当前存在长任务交接包，优先结合会话状态和交接 artifact 续跑。".to_string();
     mark_profile(policy, "handoff");
 }
 
@@ -202,8 +193,7 @@ fn apply_recovery_override(policy: &mut ContextAssemblyPolicy) {
     policy.max_skill_level = "level1:index-summary".to_string();
     policy.prefer_artifact_context = true;
     policy.phase_label = "recovery".to_string();
-    policy.selection_reason =
-        "当前存在失败或阻塞信号，优先加载短期状态、记忆和最近交接线索。".to_string();
+    policy.selection_reason = "当前存在失败或阻塞信号，优先加载短期状态、记忆和最近交接线索。".to_string();
     mark_profile(policy, "recovery");
 }
 
@@ -227,19 +217,9 @@ fn has_handoff(session: &SessionMemory) -> bool {
 
 fn needs_project_knowledge(user_input: &str) -> bool {
     let lower = user_input.to_lowercase();
-    [
-        "项目",
-        "仓库",
-        "架构",
-        "文档",
-        "知识",
-        "思源",
-        "阶段",
-        "进度",
-        "运行时",
-    ]
-    .iter()
-    .any(|token| lower.contains(token))
+    ["项目", "仓库", "架构", "文档", "知识", "思源", "阶段", "进度", "运行时"]
+        .iter()
+        .any(|token| lower.contains(token))
 }
 
 #[cfg(test)]

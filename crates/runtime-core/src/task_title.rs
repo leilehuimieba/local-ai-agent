@@ -5,6 +5,7 @@ pub(crate) fn derive_task_title(action: &PlannedAction, user_input: &str) -> Str
         PlannedAction::RunCommand { command } => label_with_text("执行命令", command),
         PlannedAction::ReadFile { path } => format!("读取文件: {path}"),
         PlannedAction::WriteFile { path, .. } => format!("写入文件: {path}"),
+        PlannedAction::ApplyPatch { dry_run, .. } => patch_title(*dry_run),
         PlannedAction::DeletePath { path } => format!("删除路径: {path}"),
         PlannedAction::ListFiles { path } => list_files_title(path.as_deref()),
         PlannedAction::WriteMemory { summary, .. } => label_with_text("写入记忆", summary),
@@ -12,6 +13,9 @@ pub(crate) fn derive_task_title(action: &PlannedAction, user_input: &str) -> Str
         PlannedAction::SearchKnowledge { query } => label_with_text("检索知识", query),
         PlannedAction::SearchSiyuanNotes { query } => label_with_text("检索思源", query),
         PlannedAction::ReadSiyuanNote { path } => label_with_text("读取思源", path),
+        PlannedAction::MCPCall {
+            server_id, tool_name, ..
+        } => format!("调用 MCP: {server_id}/{tool_name}"),
         PlannedAction::WriteSiyuanKnowledge => "导出知识到思源".to_string(),
         PlannedAction::ProjectAnswer => label_with_text("项目问答", user_input),
         PlannedAction::ContextAnswer => "延续当前会话".to_string(),
@@ -24,6 +28,14 @@ fn list_files_title(path: Option<&str>) -> String {
     match path {
         Some(value) if !value.is_empty() => format!("浏览目录: {value}"),
         _ => "浏览工作区目录".to_string(),
+    }
+}
+
+fn patch_title(dry_run: bool) -> String {
+    if dry_run {
+        "预览代码补丁".to_string()
+    } else {
+        "应用代码补丁".to_string()
     }
 }
 

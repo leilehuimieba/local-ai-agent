@@ -13,7 +13,7 @@ func diagnosticsCheckHandler(repoRoot string, cfg config.AppConfig, store *state
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		settings := buildSettingsResponse(repoRoot, cfg, store)
+		settings := buildSettingsResponse(repoRoot, cfg, store, nil)
 		diagnostics := settings.Diagnostics
 		writeJSON(w, http.StatusOK, DiagnosticsCheckResponse{
 			CheckedAt: diagnostics.CheckedAt, OverallOK: len(diagnostics.Errors) == 0,

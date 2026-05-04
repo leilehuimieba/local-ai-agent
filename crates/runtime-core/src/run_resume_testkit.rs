@@ -1,12 +1,9 @@
 #[cfg(test)]
 pub(crate) mod testkit {
     use crate::checkpoint::RunCheckpoint;
-    use crate::contracts::{
-        ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
-    };
+    use crate::contracts::{ModelRef, ProviderRef, RunEvent, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef};
     use crate::run_resume_event_testkit::testkit::{
-        sample_confirmation_boundary_event, sample_event, sample_execution_boundary_event,
-        sample_verification_event,
+        sample_confirmation_boundary_event, sample_event, sample_execution_boundary_event, sample_verification_event,
     };
     use std::collections::BTreeMap;
 
@@ -166,16 +163,10 @@ pub(crate) mod testkit {
     }
 
     fn sample_retry_checkpoint_with_event(event: RunEvent) -> RunCheckpoint {
-        sample_checkpoint_with_event(
-            sample_checkpoint("retryable_failure", "D:/repo/handoff.json"),
-            event,
-        )
+        sample_checkpoint_with_event(sample_checkpoint("retryable_failure", "D:/repo/handoff.json"), event)
     }
 
-    fn sample_checkpoint_with_event(
-        mut checkpoint: RunCheckpoint,
-        event: RunEvent,
-    ) -> RunCheckpoint {
+    fn sample_checkpoint_with_event(mut checkpoint: RunCheckpoint, event: RunEvent) -> RunCheckpoint {
         checkpoint.response.events.push(event);
         checkpoint
     }

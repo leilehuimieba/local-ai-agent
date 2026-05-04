@@ -5,9 +5,7 @@ pub(crate) struct PromptRenderResult {
     pub full_prompt: String,
 }
 
-pub(crate) fn render_context_answer_prompt(
-    envelope: &RuntimeContextEnvelope,
-) -> PromptRenderResult {
+pub(crate) fn render_context_answer_prompt(envelope: &RuntimeContextEnvelope) -> PromptRenderResult {
     render_prompt(
         envelope,
         "请基于会话上下文直接回答用户当前输入。",
@@ -22,9 +20,7 @@ pub(crate) fn render_context_answer_prompt(
     )
 }
 
-pub(crate) fn render_project_answer_prompt(
-    envelope: &RuntimeContextEnvelope,
-) -> PromptRenderResult {
+pub(crate) fn render_project_answer_prompt(envelope: &RuntimeContextEnvelope) -> PromptRenderResult {
     render_prompt(
         envelope,
         &project_task_hint(&envelope.dynamic_block.user_input),
@@ -67,7 +63,8 @@ pub(crate) fn render_agent_resolve_prompt(user_input: &str, session_summary: &st
 
 fn project_task_hint(user_input: &str) -> String {
     if is_status_question(user_input) {
-        "请直接说明当前项目已做到什么程度、为什么这样判断、下一步做什么，并尽量落到真实样本、验证路径或完成标准。".to_string()
+        "请直接说明当前项目已做到什么程度、为什么这样判断、下一步做什么，并尽量落到真实样本、验证路径或完成标准。"
+            .to_string()
     } else {
         "请直接说明当前项目是做什么的、当前主目标是什么。".to_string()
     }
@@ -87,11 +84,7 @@ fn is_status_question(user_input: &str) -> bool {
     .any(|token| user_input.contains(token))
 }
 
-fn render_prompt(
-    envelope: &RuntimeContextEnvelope,
-    task_hint: &str,
-    answer_style: &str,
-) -> PromptRenderResult {
+fn render_prompt(envelope: &RuntimeContextEnvelope, task_hint: &str, answer_style: &str) -> PromptRenderResult {
     let static_prompt = render_static_prompt(envelope);
     let project_prompt = render_project_prompt(envelope);
     let dynamic_prompt = render_dynamic_prompt(envelope, task_hint, answer_style);
@@ -109,17 +102,11 @@ fn render_static_prompt(envelope: &RuntimeContextEnvelope) -> String {
 fn render_project_prompt(envelope: &RuntimeContextEnvelope) -> String {
     format!(
         "工作区：{}\n仓库摘要：{}\n说明文件摘要：{}",
-        envelope.project_block.workspace_root,
-        envelope.project_block.repo_summary,
-        envelope.project_block.doc_summary
+        envelope.project_block.workspace_root, envelope.project_block.repo_summary, envelope.project_block.doc_summary
     )
 }
 
-fn render_dynamic_prompt(
-    envelope: &RuntimeContextEnvelope,
-    task_hint: &str,
-    answer_style: &str,
-) -> String {
+fn render_dynamic_prompt(envelope: &RuntimeContextEnvelope, task_hint: &str, answer_style: &str) -> String {
     let memory_layer = memory_layer_prompt(envelope);
     let base = format!(
         "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆分层：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
@@ -179,9 +166,7 @@ fn join_prompt_parts(static_prompt: &str, project_prompt: &str, dynamic_prompt: 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::context_builder::{
-        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
-    };
+    use crate::context_builder::{DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock};
 
     #[test]
     fn render_prompt_surfaces_memory_layer_block() {

@@ -45,11 +45,7 @@ pub(crate) struct ModelError {
 }
 
 pub(crate) trait ModelAdapter {
-    fn complete(
-        &self,
-        request: &ModelRequest<'_>,
-        body_path: &PathBuf,
-    ) -> Result<ModelResponse, ModelError>;
+    fn complete(&self, request: &ModelRequest<'_>, body_path: &PathBuf) -> Result<ModelResponse, ModelError>;
 }
 
 #[derive(Clone, Debug)]
@@ -58,11 +54,7 @@ pub(crate) struct OpenAiCompatibleAdapter {
 }
 
 impl ModelAdapter for OpenAiCompatibleAdapter {
-    fn complete(
-        &self,
-        request: &ModelRequest<'_>,
-        body_path: &PathBuf,
-    ) -> Result<ModelResponse, ModelError> {
+    fn complete(&self, request: &ModelRequest<'_>, body_path: &PathBuf) -> Result<ModelResponse, ModelError> {
         complete_with_parse_retry(&self.provider, request, body_path)
     }
 }
@@ -112,11 +104,7 @@ fn should_retry_after_parse(error: &ModelError) -> bool {
 
 pub(crate) fn provider_config(provider: &ProviderRef) -> Result<ProviderConfig, ModelError> {
     if provider.base_url.is_empty() || provider.api_key.is_empty() {
-        return Err(model_error(
-            "provider_not_configured",
-            "provider 未配置",
-            false,
-        ));
+        return Err(model_error("provider_not_configured", "provider 未配置", false));
     }
     Ok(ProviderConfig {
         base_url: provider.base_url.clone(),
@@ -133,11 +121,7 @@ fn model_uri(provider: &ProviderConfig) -> String {
     )
 }
 
-fn run_curl(
-    provider: &ProviderConfig,
-    body_path: &PathBuf,
-    uri: &str,
-) -> Result<Vec<u8>, ModelError> {
+fn run_curl(provider: &ProviderConfig, body_path: &PathBuf, uri: &str) -> Result<Vec<u8>, ModelError> {
     let mut cmd = Command::new("curl.exe");
     #[cfg(target_os = "windows")]
     {
@@ -165,11 +149,7 @@ fn run_curl(
     validate_curl_output(output)
 }
 
-fn run_curl_with_retry(
-    provider: &ProviderConfig,
-    body_path: &PathBuf,
-    uri: &str,
-) -> Result<Vec<u8>, ModelError> {
+fn run_curl_with_retry(provider: &ProviderConfig, body_path: &PathBuf, uri: &str) -> Result<Vec<u8>, ModelError> {
     let mut last_error = None;
     for attempt in 0..3 {
         match run_curl(provider, body_path, uri) {
@@ -190,9 +170,7 @@ fn validate_curl_output(output: std::process::Output) -> Result<Vec<u8>, ModelEr
     if !output.status.success() {
         let mut message = String::from_utf8_lossy(&output.stderr).trim().to_string();
         if message.to_lowercase().contains("schannel") {
-            message.push_str(
-                "（Windows TLS 握手失败：建议检查代理/网络拦截，或改用可访问的 provider/base_url）",
-            );
+            message.push_str("（Windows TLS 握手失败：建议检查代理/网络拦截，或改用可访问的 provider/base_url）");
         }
         return Err(model_error("model_transport_failed", &message, true));
     }
@@ -267,10 +245,7 @@ struct ResponseMessage {
     tool_calls: Option<Vec<ToolCall>>,
 }
 
-fn parse_model_response(
-    _request: &ModelRequest<'_>,
-    output: &[u8],
-) -> Result<ModelResponse, ModelError> {
+fn parse_model_response(_request: &ModelRequest<'_>, output: &[u8]) -> Result<ModelResponse, ModelError> {
     if let Ok(value) = parse_response_value(output) {
         if let Some(error) = response_error(&value) {
             return Err(error);
@@ -289,13 +264,12 @@ fn model_error(code: &str, message: &str, retryable: bool) -> ModelError {
 }
 
 fn parse_response_value(output: &[u8]) -> Result<Value, ModelError> {
-    serde_json::from_slice(output)
-        .map_err(|error| model_error("model_parse_failed", &error.to_string(), true))
+    serde_json::from_slice(output).map_err(|error| model_error("model_parse_failed", &error.to_string(), true))
 }
 
 fn parse_chat_response(value: Value) -> Result<ModelResponse, ModelError> {
-    let parsed: ChatResponse = serde_json::from_value(value)
-        .map_err(|error| model_error("model_parse_failed", &error.to_string(), true))?;
+    let parsed: ChatResponse =
+        serde_json::from_value(value).map_err(|error| model_error("model_parse_failed", &error.to_string(), true))?;
     let message = parsed
         .choices
         .into_iter()
@@ -333,10 +307,7 @@ fn is_retryable_error(code: &str, message: &str) -> bool {
     if transient_message(code) || transient_message(message) {
         return true;
     }
-    matches!(
-        code,
-        "rate_limit_exceeded" | "server_error" | "service_unavailable"
-    )
+    matches!(code, "rate_limit_exceeded" | "server_error" | "service_unavailable")
 }
 
 fn retry_with_stream_if_needed(
@@ -401,9 +372,7 @@ fn parse_stream_response(output: &[u8]) -> Result<ModelResponse, ModelError> {
     })
 }
 
-fn collect_stream_parts(
-    text: &str,
-) -> Result<(String, BTreeMap<usize, StreamToolCallBuilder>), ModelError> {
+fn collect_stream_parts(text: &str) -> Result<(String, BTreeMap<usize, StreamToolCallBuilder>), ModelError> {
     let mut content = String::new();
     let mut tool_calls: BTreeMap<usize, StreamToolCallBuilder> = BTreeMap::new();
     let mut seen = false;
@@ -422,11 +391,7 @@ fn collect_stream_parts(
     if seen {
         return Ok((content, tool_calls));
     }
-    Err(model_error(
-        "model_parse_failed",
-        "未识别为标准 JSON 或 SSE 响应",
-        true,
-    ))
+    Err(model_error("model_parse_failed", "未识别为标准 JSON 或 SSE 响应", true))
 }
 
 fn apply_stream_payload(
@@ -434,8 +399,8 @@ fn apply_stream_payload(
     content: &mut String,
     tool_calls: &mut BTreeMap<usize, StreamToolCallBuilder>,
 ) -> Result<(), ModelError> {
-    let value: Value = serde_json::from_str(payload)
-        .map_err(|error| model_error("model_parse_failed", &error.to_string(), true))?;
+    let value: Value =
+        serde_json::from_str(payload).map_err(|error| model_error("model_parse_failed", &error.to_string(), true))?;
     if let Some(error) = response_error(&value) {
         return Err(error);
     }
@@ -455,23 +420,14 @@ fn first_choice(value: &Value) -> Option<&Value> {
 
 fn append_stream_content(choice: &Value, content: &mut String) {
     let delta = choice.get("delta").or_else(|| choice.get("message"));
-    if let Some(text) = delta
-        .and_then(|item| item.get("content"))
-        .and_then(Value::as_str)
-    {
+    if let Some(text) = delta.and_then(|item| item.get("content")).and_then(Value::as_str) {
         content.push_str(text);
     }
 }
 
-fn append_stream_tool_calls(
-    choice: &Value,
-    tool_calls: &mut BTreeMap<usize, StreamToolCallBuilder>,
-) {
+fn append_stream_tool_calls(choice: &Value, tool_calls: &mut BTreeMap<usize, StreamToolCallBuilder>) {
     let delta = choice.get("delta").or_else(|| choice.get("message"));
-    let Some(items) = delta
-        .and_then(|item| item.get("tool_calls"))
-        .and_then(Value::as_array)
-    else {
+    let Some(items) = delta.and_then(|item| item.get("tool_calls")).and_then(Value::as_array) else {
         return;
     };
     for item in items {
@@ -497,9 +453,7 @@ fn append_stream_tool_calls(
     }
 }
 
-fn build_stream_tool_calls(
-    builders: BTreeMap<usize, StreamToolCallBuilder>,
-) -> Option<Vec<ToolCall>> {
+fn build_stream_tool_calls(builders: BTreeMap<usize, StreamToolCallBuilder>) -> Option<Vec<ToolCall>> {
     let calls: Vec<ToolCall> = builders
         .into_iter()
         .filter_map(|(index, item)| to_tool_call(index, item))
@@ -566,11 +520,6 @@ mod tests {
         let body = br#"{"choices":[{"message":{"content":"ok","tool_calls":[]}}]}"#;
         let response = parse_model_response(&request, body).expect("should parse");
         assert_eq!(response.content, "ok");
-        assert!(
-            response
-                .tool_calls
-                .as_ref()
-                .is_some_and(|calls| calls.is_empty())
-        );
+        assert!(response.tool_calls.as_ref().is_some_and(|calls| calls.is_empty()));
     }
 }

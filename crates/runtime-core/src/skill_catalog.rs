@@ -115,10 +115,10 @@ fn skill_manifest_path(request: &RunRequest) -> PathBuf {
     if let Some(path) = request.context_hints.get("skill_manifest_path") {
         return PathBuf::from(path);
     }
-    repo_root(request).join("data").join("skills").join(format!(
-        "{}.json",
-        safe_id(&request.workspace_ref.workspace_id)
-    ))
+    repo_root(request)
+        .join("data")
+        .join("skills")
+        .join(format!("{}.json", safe_id(&request.workspace_ref.workspace_id)))
 }
 
 fn safe_id(value: &str) -> String {
@@ -296,13 +296,7 @@ fn build_skill_descriptor(
     }
 }
 
-fn push_skip(
-    catalog: &mut SkillCatalog,
-    skill_id: &str,
-    trust_tier: &str,
-    guard_action: &str,
-    reason: &str,
-) {
+fn push_skip(catalog: &mut SkillCatalog, skill_id: &str, trust_tier: &str, guard_action: &str, reason: &str) {
     catalog.skipped.push(SkillSkipRecord {
         skill_id: skill_id.to_string(),
         trust_tier: trust_tier.to_string(),

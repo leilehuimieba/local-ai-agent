@@ -58,9 +58,7 @@ pub(crate) fn append_knowledge_record(
     Ok(())
 }
 
-pub(crate) fn search_knowledge_records(
-    request: &crate::contracts::RunRequest,
-) -> Vec<KnowledgeRecord> {
+pub(crate) fn search_knowledge_records(request: &crate::contracts::RunRequest) -> Vec<KnowledgeRecord> {
     let items = list_knowledge_records_sqlite(request);
     if items.is_empty() {
         return read_jsonl::<KnowledgeRecord>(&knowledge_base_file_path(request));
@@ -68,10 +66,7 @@ pub(crate) fn search_knowledge_records(
     items
 }
 
-pub(crate) fn has_knowledge_record(
-    request: &crate::contracts::RunRequest,
-    record: &KnowledgeRecord,
-) -> bool {
+pub(crate) fn has_knowledge_record(request: &crate::contracts::RunRequest, record: &KnowledgeRecord) -> bool {
     search_knowledge_records(request)
         .into_iter()
         .any(|current| same_record(&current, record))
@@ -119,10 +114,8 @@ fn record_contains_sensitive_data(record: &KnowledgeRecord) -> bool {
 
 pub(crate) fn should_skip_knowledge_record(record: &KnowledgeRecord) -> Option<KnowledgeSkip> {
     let runtime_generated = record.source_type == "runtime" && record.source.starts_with("run:");
-    let project_answer = record.title.contains("项目说明")
-        || record
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let project_answer =
+        record.title.contains("项目说明") || record.summary.contains("已基于项目文档片段完成一次项目说明回答");
     if runtime_generated && project_answer {
         return Some(KnowledgeSkip {
             reason: "命中低价值运行时知识治理规则：项目说明回显不进入知识层。".to_string(),
@@ -173,10 +166,7 @@ struct CortexAuditRecord {
     error: String,
 }
 
-fn sync_cortex_ingest(
-    request: &crate::contracts::RunRequest,
-    record: &KnowledgeRecord,
-) -> Result<(), String> {
+fn sync_cortex_ingest(request: &crate::contracts::RunRequest, record: &KnowledgeRecord) -> Result<(), String> {
     if !should_sync_to_cortex(record) {
         return Ok(());
     }
@@ -236,13 +226,7 @@ fn post_cortex_ingest(
     let started = Instant::now();
     let result = retry_cortex_ingest(&server_url, token, &body_path);
     let _ = fs::remove_file(body_path);
-    write_cortex_ingest_audit(
-        request,
-        &agent_id,
-        record,
-        started.elapsed().as_millis(),
-        &result,
-    );
+    write_cortex_ingest_audit(request, &agent_id, record, started.elapsed().as_millis(), &result);
     result.map(|_| ())
 }
 
@@ -322,9 +306,7 @@ fn run_cortex_curl(server_url: &str, token: &str, body_path: &Path) -> Result<()
         return Ok(());
     }
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    Err(format!(
-        "cortex ingest failed, status={code}, stderr={stderr}"
-    ))
+    Err(format!("cortex ingest failed, status={code}, stderr={stderr}"))
 }
 
 fn curl_bin() -> &'static str {
@@ -346,8 +328,8 @@ fn null_sink() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::{
-        KnowledgeRecord, append_knowledge_record, retry_cortex_ingest_operation,
-        search_knowledge_records, should_skip_knowledge_record, should_sync_to_cortex,
+        KnowledgeRecord, append_knowledge_record, retry_cortex_ingest_operation, search_knowledge_records,
+        should_skip_knowledge_record, should_sync_to_cortex,
     };
     use crate::paths::external_memory_audit_path;
 
@@ -464,8 +446,7 @@ mod tests {
             .insert("repo_root".to_string(), repo_root.display().to_string());
         let settings_dir = repo_root.join("data").join("settings");
         let _ = std::fs::create_dir_all(&settings_dir);
-        let flag =
-            "{\"enabled\":true,\"server_url\":\"http://127.0.0.1:65535\",\"agent_id\":\"default\"}";
+        let flag = "{\"enabled\":true,\"server_url\":\"http://127.0.0.1:65535\",\"agent_id\":\"default\"}";
         let _ = std::fs::write(settings_dir.join("external-memory-cortex.json"), flag);
         let record = runtime_record("k4", "fallback record summary for local write path");
         assert!(append_knowledge_record(&request, &record).is_ok());

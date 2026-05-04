@@ -8,27 +8,12 @@ pub(crate) fn append_verification_metadata(
     append_result_budget_metadata(metadata, report);
 }
 
-fn append_verification_core(
-    metadata: &mut BTreeMap<String, String>,
-    report: &crate::verify::VerificationReport,
-) {
+fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &crate::verify::VerificationReport) {
     metadata.insert("verification_code".to_string(), report.outcome.code.clone());
-    metadata.insert(
-        "verification_passed".to_string(),
-        bool_string(report.outcome.passed),
-    );
-    metadata.insert(
-        "verification_summary".to_string(),
-        report.outcome.summary.clone(),
-    );
-    metadata.insert(
-        "verification_next_step".to_string(),
-        report.outcome.next_step.clone(),
-    );
-    metadata.insert(
-        "verification_policy".to_string(),
-        report.outcome.policy.clone(),
-    );
+    metadata.insert("verification_passed".to_string(), bool_string(report.outcome.passed));
+    metadata.insert("verification_summary".to_string(), report.outcome.summary.clone());
+    metadata.insert("verification_next_step".to_string(), report.outcome.next_step.clone());
+    metadata.insert("verification_policy".to_string(), report.outcome.policy.clone());
     metadata.insert(
         "verification_skill_hit_effective".to_string(),
         bool_string(report.outcome.skill_hit_effective),
@@ -45,28 +30,15 @@ fn append_verification_core(
         "verification_guard_decision_ref".to_string(),
         report.outcome.guard_decision_ref.clone(),
     );
-    metadata.insert(
-        "verification_evidence".to_string(),
-        report.outcome.evidence.join("\n"),
-    );
-    metadata.insert(
-        "tool_elapsed_ms".to_string(),
-        report.tool_elapsed_ms.to_string(),
-    );
+    metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
+    metadata.insert("tool_elapsed_ms".to_string(), report.tool_elapsed_ms.to_string());
 }
 
 fn bool_string(value: bool) -> String {
-    if value {
-        "true".to_string()
-    } else {
-        "false".to_string()
-    }
+    if value { "true".to_string() } else { "false".to_string() }
 }
 
-fn append_result_budget_metadata(
-    metadata: &mut BTreeMap<String, String>,
-    report: &crate::verify::VerificationReport,
-) {
+fn append_result_budget_metadata(metadata: &mut BTreeMap<String, String>, report: &crate::verify::VerificationReport) {
     metadata.insert("result_chars".to_string(), report.result_chars.to_string());
     metadata.insert(
         "single_result_budget_chars".to_string(),
@@ -89,14 +61,8 @@ mod tests {
         let mut metadata = BTreeMap::new();
         append_verification_metadata(&mut metadata, &sample_report());
         assert_eq!(metadata.get("result_chars"), Some(&"48000".to_string()));
-        assert_eq!(
-            metadata.get("single_result_budget_chars"),
-            Some(&"30000".to_string())
-        );
-        assert_eq!(
-            metadata.get("single_result_budget_hit"),
-            Some(&"true".to_string())
-        );
+        assert_eq!(metadata.get("single_result_budget_chars"), Some(&"30000".to_string()));
+        assert_eq!(metadata.get("single_result_budget_hit"), Some(&"true".to_string()));
         assert_eq!(
             metadata.get("verification_skill_hit_effective"),
             Some(&"true".to_string())

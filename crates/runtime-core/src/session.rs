@@ -62,12 +62,7 @@ pub(crate) fn load_session_context(request: &RunRequest) -> SessionMemory {
         .unwrap_or_else(|| empty_session(request))
 }
 
-pub(crate) fn persist_session_outputs(
-    request: &RunRequest,
-    final_answer: &str,
-    summary: &str,
-    status: &str,
-) {
+pub(crate) fn persist_session_outputs(request: &RunRequest, final_answer: &str, summary: &str, status: &str) {
     let mut session = load_session_context(request);
     append_turn(&mut session, request, final_answer, summary);
     update_finish_memory(&mut session, final_answer, summary, status);
@@ -136,12 +131,7 @@ fn build_compressed_summary(turns: &[SessionTurn]) -> String {
     compact_session_turns(turns).summary
 }
 
-fn append_turn(
-    session: &mut SessionMemory,
-    request: &RunRequest,
-    final_answer: &str,
-    summary: &str,
-) {
+fn append_turn(session: &mut SessionMemory, request: &RunRequest, final_answer: &str, summary: &str) {
     session.session_id = request.session_id.clone();
     session.recent_turns.push(SessionTurn {
         user_input: request.user_input.clone(),
@@ -195,11 +185,7 @@ fn plan_label(task_title: &str, risk_outcome: &RiskOutcome) -> String {
     }
 }
 
-fn planning_phase(
-    request: &RunRequest,
-    risk_outcome: &RiskOutcome,
-    session: &SessionMemory,
-) -> String {
+fn planning_phase(request: &RunRequest, risk_outcome: &RiskOutcome, session: &SessionMemory) -> String {
     if should_preserve_resume_state(request) {
         return session.short_term.current_phase.clone();
     }
@@ -260,11 +246,7 @@ fn apply_risk_state(short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome
     }
 }
 
-fn apply_planning_risk_state(
-    request: &RunRequest,
-    short_term: &mut ShortTermMemory,
-    risk_outcome: &RiskOutcome,
-) {
+fn apply_planning_risk_state(request: &RunRequest, short_term: &mut ShortTermMemory, risk_outcome: &RiskOutcome) {
     if should_keep_recovery_issue(request, short_term, risk_outcome) {
         short_term.pending_confirmation.clear();
         return;
@@ -272,19 +254,14 @@ fn apply_planning_risk_state(
     apply_risk_state(short_term, risk_outcome);
 }
 
-fn should_keep_recovery_issue(
-    request: &RunRequest,
-    short_term: &ShortTermMemory,
-    risk_outcome: &RiskOutcome,
-) -> bool {
+fn should_keep_recovery_issue(request: &RunRequest, short_term: &ShortTermMemory, risk_outcome: &RiskOutcome) -> bool {
     should_preserve_resume_state(request)
         && short_term.current_phase == "recovery"
         && matches!(risk_outcome, RiskOutcome::Proceed)
 }
 
 fn should_preserve_resume_state(request: &RunRequest) -> bool {
-    !request.resume_from_checkpoint_id.trim().is_empty()
-        && !request.resume_strategy.trim().is_empty()
+    !request.resume_from_checkpoint_id.trim().is_empty() && !request.resume_strategy.trim().is_empty()
 }
 
 fn execution_plan_label(success: bool) -> String {
@@ -311,12 +288,7 @@ fn failure_issue(final_answer: &str, success: bool) -> String {
     }
 }
 
-fn update_finish_memory(
-    session: &mut SessionMemory,
-    final_answer: &str,
-    summary: &str,
-    status: &str,
-) {
+fn update_finish_memory(session: &mut SessionMemory, final_answer: &str, summary: &str, status: &str) {
     session.short_term.current_plan = finish_plan_label(status);
     session.short_term.recent_tool_result = summarize_text(summary);
     session.short_term.recent_observation = summarize_text(final_answer);
@@ -368,13 +340,7 @@ mod tests {
         session.short_term.current_plan =
             "从 checkpoint 恢复：confirmation_required -> PausedForConfirmation".to_string();
         session.short_term.recent_tool_result = "等待确认后继续".to_string();
-        record_planning_memory(
-            &request,
-            &mut session,
-            "执行命令",
-            "分析结果",
-            &RiskOutcome::Proceed,
-        );
+        record_planning_memory(&request, &mut session, "执行命令", "分析结果", &RiskOutcome::Proceed);
         assert_eq!(session.short_term.current_phase, "confirmation_resume");
         assert_eq!(session.short_term.last_run_status, "awaiting_confirmation");
         assert_eq!(
@@ -388,17 +354,10 @@ mod tests {
     fn preserves_recovery_issue_during_retry_planning_writeback() {
         let request = sample_request("retry_failure");
         let mut session = sample_session("recovery", "failed");
-        session.short_term.current_plan =
-            "从 checkpoint 恢复：retryable_failure -> Execute".to_string();
+        session.short_term.current_plan = "从 checkpoint 恢复：retryable_failure -> Execute".to_string();
         session.short_term.open_issue = "temporary failure".to_string();
         session.short_term.recent_tool_result = "temporary failure".to_string();
-        record_planning_memory(
-            &request,
-            &mut session,
-            "执行命令",
-            "分析结果",
-            &RiskOutcome::Proceed,
-        );
+        record_planning_memory(&request, &mut session, "执行命令", "分析结果", &RiskOutcome::Proceed);
         assert_eq!(session.short_term.current_phase, "recovery");
         assert_eq!(session.short_term.last_run_status, "failed");
         assert_eq!(session.short_term.open_issue, "temporary failure");
@@ -413,26 +372,14 @@ mod tests {
         let request = sample_request("retry_failure");
         let mut session = sample_session("recovery", "failed");
         session.short_term.handoff_artifact_path = "D:/repo/handoff.json".to_string();
-        record_planning_memory(
-            &request,
-            &mut session,
-            "执行命令",
-            "分析结果",
-            &RiskOutcome::Proceed,
-        );
-        assert_eq!(
-            session.short_term.handoff_artifact_path,
-            "D:/repo/handoff.json"
-        );
+        record_planning_memory(&request, &mut session, "执行命令", "分析结果", &RiskOutcome::Proceed);
+        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
     }
 
     #[test]
     fn keeps_compaction_boundary_hint_visible_in_session_prompt_summary() {
         let mut session = SessionMemory::default();
-        session.compressed_summary = format!(
-            "{}边界提示：已省略更早 2 轮（聚合预算 900 字符）。",
-            "前文".repeat(180)
-        );
+        session.compressed_summary = format!("{}边界提示：已省略更早 2 轮（聚合预算 900 字符）。", "前文".repeat(180));
         let summary = session_prompt_summary(&session);
         assert!(summary.contains("边界提示"));
         assert!(summary.contains("聚合预算 900 字符"));

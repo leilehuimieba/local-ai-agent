@@ -13,10 +13,7 @@ use crate::session::SessionMemory;
 use crate::text::summarize_text;
 use crate::tool_registry::runtime_tool_registry;
 
-pub(crate) fn execute_context_answer(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-) -> ActionExecution {
+pub(crate) fn execute_context_answer(request: &RunRequest, session_context: &SessionMemory) -> ActionExecution {
     if is_status_continue_request(&request.user_input) {
         return session_continue_answer(request, session_context);
     }
@@ -29,12 +26,8 @@ pub(crate) fn execute_context_answer(
     }
     let prompt = render_context_prompt(request, session_context, &cache_probe);
     match complete_text(request, &prompt) {
-        Ok(response) => {
-            context_answer_success(request, session_context, &cache_probe, &response.content)
-        }
-        Err(error) => {
-            recover_context_answer(request, session_context, &cache_probe, &error.to_string())
-        }
+        Ok(response) => context_answer_success(request, session_context, &cache_probe, &response.content),
+        Err(error) => recover_context_answer(request, session_context, &cache_probe, &error.to_string()),
     }
 }
 
@@ -51,6 +44,7 @@ fn stable_template_answer(request: &RunRequest) -> Option<ActionExecution> {
         .or_else(|| next_step_30min_plan_template(input))
         .or_else(|| one_action_reason_template(input))
         .or_else(|| next_step_four_section_template(input))
+        .or_else(|| greeting_template(input))
         .or_else(|| smalltalk_template(input))
         .or_else(|| closeout_priority_template(input))
         .or_else(|| instability_decision_template(input))
@@ -81,10 +75,8 @@ fn top_three_actions_template(user_input: &str) -> Option<String> {
     if !asks_top_three {
         return None;
     }
-    let asks_next = lower.contains("do next")
-        || lower.contains("next")
-        || lower.contains("继续推进")
-        || lower.contains("closure");
+    let asks_next =
+        lower.contains("do next") || lower.contains("next") || lower.contains("继续推进") || lower.contains("closure");
     if !asks_next {
         return None;
     }
@@ -93,9 +85,8 @@ fn top_three_actions_template(user_input: &str) -> Option<String> {
 
 fn evidence_readiness_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let mentions_evidence = lower.contains("based on current evidence")
-        || lower.contains("evidence only")
-        || lower.contains("按当前证据");
+    let mentions_evidence =
+        lower.contains("based on current evidence") || lower.contains("evidence only") || lower.contains("按当前证据");
     if !mentions_evidence {
         return None;
     }
@@ -112,9 +103,7 @@ fn evidence_readiness_template(user_input: &str) -> Option<String> {
 fn top_action_reason_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
     let asks_top_action = (lower.contains("今天") || lower.contains("today"))
-        && (lower.contains("最优先")
-            || lower.contains("top priority")
-            || lower.contains("most important action"));
+        && (lower.contains("最优先") || lower.contains("top priority") || lower.contains("most important action"));
     if !asks_top_action {
         return None;
     }
@@ -134,9 +123,8 @@ fn evidence_status_template(user_input: &str) -> Option<String> {
     if !asks_progress {
         return None;
     }
-    let mentions_evidence = lower.contains("证据目录")
-        || lower.contains("evidence")
-        || lower.contains("based on current evidence");
+    let mentions_evidence =
+        lower.contains("证据目录") || lower.contains("evidence") || lower.contains("based on current evidence");
     if !mentions_evidence {
         return None;
     }
@@ -145,14 +133,13 @@ fn evidence_status_template(user_input: &str) -> Option<String> {
 
 fn pause_risk_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_pause_risk = (lower.contains("暂停") || lower.contains("pause now"))
-        && (lower.contains("风险") || lower.contains("risk"));
+    let asks_pause_risk =
+        (lower.contains("暂停") || lower.contains("pause now")) && (lower.contains("风险") || lower.contains("risk"));
     if !asks_pause_risk {
         return None;
     }
-    let asks_one_action = lower.contains("一个动作")
-        || lower.contains("one action")
-        || lower.contains("how can i reduce");
+    let asks_one_action =
+        lower.contains("一个动作") || lower.contains("one action") || lower.contains("how can i reduce");
     if !asks_one_action {
         return None;
     }
@@ -223,12 +210,10 @@ fn cet_first_week_plan_template(user_input: &str) -> Option<String> {
     if !has_exam_goal {
         return None;
     }
-    let asks_week_plan = (lower.contains("第一周") || lower.contains("week 1"))
-        && (lower.contains("计划") || lower.contains("plan"));
-    let has_time_hint = lower.contains("40分钟")
-        || lower.contains("40 minutes")
-        || lower.contains("25天")
-        || lower.contains("25 day");
+    let asks_week_plan =
+        (lower.contains("第一周") || lower.contains("week 1")) && (lower.contains("计划") || lower.contains("plan"));
+    let has_time_hint =
+        lower.contains("40分钟") || lower.contains("40 minutes") || lower.contains("25天") || lower.contains("25 day");
     if !(asks_week_plan || has_time_hint) {
         return None;
     }
@@ -241,10 +226,8 @@ fn cet_listening_boost_template(user_input: &str) -> Option<String> {
     if !has_exam_goal || !lower.contains("听力") {
         return None;
     }
-    let asks_boost = lower.contains("怎么补")
-        || lower.contains("方案")
-        || lower.contains("今天")
-        || lower.contains("today");
+    let asks_boost =
+        lower.contains("怎么补") || lower.contains("方案") || lower.contains("今天") || lower.contains("today");
     if !asks_boost {
         return None;
     }
@@ -257,10 +240,8 @@ fn cet_daily_plan_template(user_input: &str) -> Option<String> {
     if !has_exam_goal {
         return None;
     }
-    let asks_daily_plan = lower.contains("每天")
-        || lower.contains("daily")
-        || lower.contains("计划")
-        || lower.contains("plan");
+    let asks_daily_plan =
+        lower.contains("每天") || lower.contains("daily") || lower.contains("计划") || lower.contains("plan");
     let asks_30min = lower.contains("30分钟") || lower.contains("30 minutes");
     if !(asks_daily_plan && asks_30min) {
         return None;
@@ -270,17 +251,13 @@ fn cet_daily_plan_template(user_input: &str) -> Option<String> {
 
 fn cet_vocab_review_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let mentions_vocab_issue = lower.contains("背单词")
-        || lower.contains("单词")
-        || lower.contains("vocab")
-        || lower.contains("word");
+    let mentions_vocab_issue =
+        lower.contains("背单词") || lower.contains("单词") || lower.contains("vocab") || lower.contains("word");
     if !mentions_vocab_issue {
         return None;
     }
-    let mentions_forget = lower.contains("总忘")
-        || lower.contains("记不住")
-        || lower.contains("忘")
-        || lower.contains("forget");
+    let mentions_forget =
+        lower.contains("总忘") || lower.contains("记不住") || lower.contains("忘") || lower.contains("forget");
     if !mentions_forget {
         return None;
     }
@@ -289,8 +266,7 @@ fn cet_vocab_review_template(user_input: &str) -> Option<String> {
 
 fn acceptance_readiness_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_acceptance =
-        lower.contains("验收") || lower.contains("提测") || lower.contains("ready for acceptance");
+    let asks_acceptance = lower.contains("验收") || lower.contains("提测") || lower.contains("ready for acceptance");
     if !asks_acceptance {
         return None;
     }
@@ -307,8 +283,7 @@ fn acceptance_readiness_template(user_input: &str) -> Option<String> {
 fn priority_three_tasks_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
     let asks_priority = lower.contains("优先级") || lower.contains("priority");
-    let asks_three =
-        lower.contains("三件事") || lower.contains("3件事") || lower.contains("three tasks");
+    let asks_three = lower.contains("三件事") || lower.contains("3件事") || lower.contains("three tasks");
     let asks_next = lower.contains("下一步") || lower.contains("继续推进");
     if !(asks_priority && asks_three && asks_next) {
         return None;
@@ -318,8 +293,7 @@ fn priority_three_tasks_template(user_input: &str) -> Option<String> {
 
 fn next_step_30min_plan_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let has_30min =
-        lower.contains("30 分钟") || lower.contains("30分钟") || lower.contains("30 minutes");
+    let has_30min = lower.contains("30 分钟") || lower.contains("30分钟") || lower.contains("30 minutes");
     if !has_30min {
         return None;
     }
@@ -335,8 +309,7 @@ fn next_step_30min_plan_template(user_input: &str) -> Option<String> {
 
 fn one_action_reason_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_one_action =
-        lower.contains("只给一个动作") || lower.contains("一件事") || lower.contains("one action");
+    let asks_one_action = lower.contains("只给一个动作") || lower.contains("一件事") || lower.contains("one action");
     if !asks_one_action {
         return None;
     }
@@ -349,9 +322,7 @@ fn one_action_reason_template(user_input: &str) -> Option<String> {
 
 fn next_step_four_section_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_next = lower.contains("下一步建议")
-        || lower.contains("现在最该做什么")
-        || lower.contains("next step");
+    let asks_next = lower.contains("下一步建议") || lower.contains("现在最该做什么") || lower.contains("next step");
     if !asks_next {
         return None;
     }
@@ -378,15 +349,25 @@ fn smalltalk_template(user_input: &str) -> Option<String> {
     Some("状态在线，我们就务实一点：你现在给我一个最想推进的小目标，我用三句话给你拆成“先做什么、做到什么算完成、下一步接什么”。".to_string())
 }
 
+fn greeting_template(user_input: &str) -> Option<String> {
+    let lower = user_input.trim().to_lowercase();
+    if !matches!(
+        lower.as_str(),
+        "你好" | "您好" | "早上好" | "晚上好" | "hello" | "hi" | "hey"
+    ) {
+        return None;
+    }
+    Some("在，我会跟着当前上下文走；你丢给我一个目标，我直接推进。".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        acceptance_readiness_template, cet_daily_plan_template, cet_first_step_template,
-        cet_first_week_plan_template, cet_listening_boost_template, cet_vocab_review_template,
-        evidence_readiness_template, evidence_status_template, fast_checklist_template,
-        kickoff_message_template, next_step_30min_plan_template, next_step_four_section_template,
-        one_action_reason_template, pause_risk_template, priority_three_tasks_template,
-        smalltalk_template, top_action_reason_template, top_three_actions_template,
+        acceptance_readiness_template, cet_daily_plan_template, cet_first_step_template, cet_first_week_plan_template,
+        cet_listening_boost_template, cet_vocab_review_template, evidence_readiness_template, evidence_status_template,
+        fast_checklist_template, greeting_template, kickoff_message_template, next_step_30min_plan_template,
+        next_step_four_section_template, one_action_reason_template, pause_risk_template,
+        priority_three_tasks_template, smalltalk_template, top_action_reason_template, top_three_actions_template,
     };
 
     #[test]
@@ -456,6 +437,12 @@ mod tests {
     }
 
     #[test]
+    fn matches_greeting_question() {
+        let text = "hello";
+        assert!(greeting_template(text).is_some());
+    }
+
+    #[test]
     fn matches_top_action_reason_question() {
         let text = "基于我们两周执行清单，今天最优先做哪一件事？给一个动作和原因。";
         assert!(top_action_reason_template(text).is_some());
@@ -506,13 +493,11 @@ mod tests {
 
 fn release_check_template(user_input: &str) -> Option<String> {
     let lower = user_input.trim().to_lowercase();
-    let asks_release =
-        lower.contains("提测") || lower.contains("可以测") || lower.contains("能提测");
+    let asks_release = lower.contains("提测") || lower.contains("可以测") || lower.contains("能提测");
     if !asks_release {
         return None;
     }
-    let asks_format =
-        lower.contains("一句结论") || lower.contains("两条理由") || lower.contains("理由");
+    let asks_format = lower.contains("一句结论") || lower.contains("两条理由") || lower.contains("理由");
     if !asks_format {
         return None;
     }
@@ -529,8 +514,7 @@ fn closeout_priority_template(user_input: &str) -> Option<String> {
         return None;
     }
     let asks_priority =
-        (lower.contains("三件事") || lower.contains("哪三件") || lower.contains("3件事"))
-            && lower.contains("优先级");
+        (lower.contains("三件事") || lower.contains("哪三件") || lower.contains("3件事")) && lower.contains("优先级");
     if !asks_priority {
         return None;
     }
@@ -546,10 +530,8 @@ fn instability_decision_template(user_input: &str) -> Option<String> {
     if !asks_instability {
         return None;
     }
-    let asks_decision = lower.contains("暂停")
-        || lower.contains("继续")
-        || lower.contains("判断")
-        || lower.contains("判断线");
+    let asks_decision =
+        lower.contains("暂停") || lower.contains("继续") || lower.contains("判断") || lower.contains("判断线");
     if !asks_decision {
         return None;
     }
@@ -562,10 +544,8 @@ fn beginner_first_step_template(user_input: &str) -> Option<String> {
     if !asks_beginner {
         return None;
     }
-    let asks_first = lower.contains("第一步")
-        || lower.contains("该做啥")
-        || lower.contains("做什么")
-        || lower.contains("该做什么");
+    let asks_first =
+        lower.contains("第一步") || lower.contains("该做啥") || lower.contains("做什么") || lower.contains("该做什么");
     if !asks_first {
         return None;
     }
@@ -604,10 +584,7 @@ fn ok_context_answer(
         "基于会话压缩摘要继续回答。".to_string(),
         result_summary,
         final_answer,
-        format!(
-            "先读取最近会话压缩摘要，再结合当前输入组织续答。{}",
-            cache_probe.reason
-        ),
+        format!("先读取最近会话压缩摘要，再结合当前输入组织续答。{}", cache_probe.reason),
         cache_probe.status.clone(),
         cache_probe.reason.clone(),
     )
@@ -647,10 +624,7 @@ fn recovered_context_answer(
         "基于会话压缩摘要继续回答。".to_string(),
         format!("模型主回答失败，已执行单次恢复：{}", cause),
         summary,
-        format!(
-            "模型回答不可用，已降级为会话摘要恢复路径。{}",
-            cache_probe.reason
-        ),
+        format!("模型回答不可用，已降级为会话摘要恢复路径。{}", cache_probe.reason),
         cache_probe.status.clone(),
         cache_probe.reason.clone(),
     )
@@ -683,10 +657,7 @@ fn should_recover_context_answer(content: &str, final_answer: &str) -> bool {
 fn fallback_context_summary(user_input: &str, session_context: &SessionMemory) -> String {
     let summary = session_context.compressed_summary.trim();
     if !summary.is_empty() {
-        return format!(
-            "基于当前会话摘要，可先确认这些信息：{}",
-            summarize_text(summary)
-        );
+        return format!("基于当前会话摘要，可先确认这些信息：{}", summarize_text(summary));
     }
     minimal_recovery_template(user_input).unwrap_or_else(|| {
         "当前没有可复用的会话摘要。你可以直接补这三项：1) 当前目标；2) 已完成到哪一步；3) 你希望我先给清单、顺序还是排障。".to_string()
@@ -707,8 +678,7 @@ fn minimal_recovery_template(user_input: &str) -> Option<String> {
     if lower.contains("知识沉淀") {
         return Some("今天最小方案：1) 只沉淀 1 个主题；2) 每条只写“结论+依据+下一步”三行；3) 今天结束前做一次去重，把重复和空话删掉。".to_string());
     }
-    if lower.contains("模型不稳定") && (lower.contains("停下来") || lower.contains("判断"))
-    {
+    if lower.contains("模型不稳定") && (lower.contains("停下来") || lower.contains("判断")) {
         return Some("可执行判断标准：1) 连续两次请求失败且间隔 < 2 分钟，先停 5 分钟再试；2) 若恢复后连续两次成功，继续执行；3) 若 10 分钟内仍反复失败，转恢复路径并记录 run_id。".to_string());
     }
     if lower.contains("429") || lower.contains("限流") {
@@ -719,22 +689,17 @@ fn minimal_recovery_template(user_input: &str) -> Option<String> {
     {
         return Some("你下一步直接做这三条：1) 先跑一遍 5 条真实问句快测并记下 run_id；2) 只改失败最多的 1-2 个问题；3) 复跑同样 5 条，确认通过率有没有上升。".to_string());
     }
-    if (lower.contains("啥都不懂") || lower.contains("不懂技术")) && lower.contains("第一步")
-    {
+    if (lower.contains("啥都不懂") || lower.contains("不懂技术")) && lower.contains("第一步") {
         return Some("第一步只做这一件事：先跑一遍 5 条真实问句快测，并把每条的 run_id 记下来。这样你马上就知道当前系统哪里稳、哪里不稳。".to_string());
     }
-    if (lower.contains("收口") || lower.contains("验收"))
-        && (lower.contains("顺序") || lower.contains("步骤"))
+    if (lower.contains("收口") || lower.contains("验收")) && (lower.contains("顺序") || lower.contains("步骤"))
     {
         return Some("不扩功能的收口顺序：1) 锁定范围和口径；2) 补真实样本与页面证据；3) 跑最小构建与关键用例；4) 把未闭合风险写清楚再交验。".to_string());
     }
-    if lower.contains("验收")
-        && (lower.contains("结论") || lower.contains("依据") || lower.contains("风险"))
-    {
+    if lower.contains("验收") && (lower.contains("结论") || lower.contains("依据") || lower.contains("风险")) {
         return Some("结论：当前可交验。依据：结果分层链路、真实样本与构建验证已闭合。风险：provider 外部波动仍会触发 recovery，需持续周更复测。".to_string());
     }
-    if lower.contains("做到哪") || lower.contains("进行到哪") || lower.contains("未完成")
-    {
+    if lower.contains("做到哪") || lower.contains("进行到哪") || lower.contains("未完成") {
         return Some("先按三段给你最低可用版：已完成：结果分层链路、样本留证和小回归包已可稳定复跑；未完成：外部 provider 波动下主回答稳定性仍需持续观察；下一步：继续按同一批真实问句周更复测，并只修失败占比最高的两类问题。".to_string());
     }
     None
@@ -746,10 +711,7 @@ fn is_status_continue_request(input: &str) -> bool {
         .any(|token| input.contains(token))
 }
 
-fn session_continue_answer(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-) -> ActionExecution {
+fn session_continue_answer(request: &RunRequest, session_context: &SessionMemory) -> ActionExecution {
     let summary = continue_summary(session_context);
     ActionExecution::bypass_ok(
         "基于当前会话状态生成续推回答。".to_string(),
@@ -789,10 +751,7 @@ fn blank_fallback<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     if value.is_empty() { fallback } else { value }
 }
 
-fn probe_context_cache(
-    request: &RunRequest,
-    session_context: &SessionMemory,
-) -> crate::answer_cache::AnswerCacheProbe {
+fn probe_context_cache(request: &RunRequest, session_context: &SessionMemory) -> crate::answer_cache::AnswerCacheProbe {
     probe_answer_cache_or_bypass(
         request,
         "context_answer",

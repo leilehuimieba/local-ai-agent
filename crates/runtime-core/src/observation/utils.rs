@@ -1,5 +1,5 @@
-﻿use crate::contracts::RunRequest;
-use crate::observation::types::{ObservationRecord, DEDUPE_WINDOW_MILLIS};
+use crate::contracts::RunRequest;
+use crate::observation::types::{DEDUPE_WINDOW_MILLIS, ObservationRecord};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub(crate) fn dedupe_key(record: &ObservationRecord) -> String {
@@ -35,9 +35,5 @@ pub(crate) fn parse_timestamp_millis(value: &str) -> u128 {
 }
 
 pub(crate) fn forced_failure(request: &RunRequest, key: &str) -> bool {
-    request
-        .context_hints
-        .get(key)
-        .is_some_and(|value| value == "true")
+    request.context_hints.get(key).is_some_and(|value| value == "true")
 }
-

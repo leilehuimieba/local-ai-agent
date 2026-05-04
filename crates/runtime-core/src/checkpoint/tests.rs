@@ -1,10 +1,5 @@
-use super::{
-    checkpoint_resume_event, load_runtime_checkpoint, with_checkpoint_resume_event,
-    with_runtime_checkpoint,
-};
-use crate::contracts::{
-    ErrorInfo, ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef,
-};
+use super::{checkpoint_resume_event, load_runtime_checkpoint, with_checkpoint_resume_event, with_runtime_checkpoint};
+use crate::contracts::{ErrorInfo, ModelRef, ProviderRef, RunRequest, RunResult, RuntimeRunResponse, WorkspaceRef};
 use std::collections::BTreeMap;
 use std::fs;
 
@@ -51,9 +46,7 @@ fn resumes_from_matching_confirmation_checkpoint() {
             .metadata
             .get("checkpoint_resume_boundary")
             .map(String::as_str),
-        Some(
-            "stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续"
-        )
+        Some("stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续")
     );
     let _ = fs::remove_dir_all(root);
 }
@@ -71,11 +64,7 @@ fn marks_retryable_failure_checkpoint_as_resumable() {
             .as_ref()
             .is_some_and(|item| item.resume_reason == "retryable_failure")
     );
-    assert!(
-        loaded
-            .as_ref()
-            .is_some_and(|item| item.resume_stage == "Execute")
-    );
+    assert!(loaded.as_ref().is_some_and(|item| item.resume_stage == "Execute"));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -119,9 +108,7 @@ fn emits_retry_resume_metadata_for_acceptance_filters() {
         .events
         .iter()
         .filter(|item| item.event_type == "checkpoint_resumed")
-        .filter(|item| {
-            item.metadata.get("checkpoint_resume_reason") == Some(&"retryable_failure".to_string())
-        })
+        .filter(|item| item.metadata.get("checkpoint_resume_reason") == Some(&"retryable_failure".to_string()))
         .filter(|item| item.metadata.get("checkpoint_stage") == Some(&"Execute".to_string()))
         .filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id))
         .collect();
@@ -149,17 +136,15 @@ fn emits_confirmation_resume_metadata_for_acceptance_filters() {
         .events
         .iter()
         .filter(|item| item.event_type == "checkpoint_resumed")
-        .filter(|item| {
-            item.metadata.get("checkpoint_resume_reason")
-                == Some(&"confirmation_required".to_string())
-        })
-        .filter(|item| {
-            item.metadata.get("checkpoint_stage") == Some(&"PausedForConfirmation".to_string())
-        })
+        .filter(|item| item.metadata.get("checkpoint_resume_reason") == Some(&"confirmation_required".to_string()))
+        .filter(|item| item.metadata.get("checkpoint_stage") == Some(&"PausedForConfirmation".to_string()))
         .filter(|item| item.metadata.get("checkpoint_id") == Some(&checkpoint_id))
         .collect();
     assert_eq!(candidates.len(), 1);
-    assert_eq!(candidates[0].metadata.get("checkpoint_resume_boundary"), Some(&"stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续".to_string()));
+    assert_eq!(
+        candidates[0].metadata.get("checkpoint_resume_boundary"),
+        Some(&"stage=PausedForConfirmation;event=confirmation_required;next_step=等待用户确认后再继续".to_string())
+    );
     assert_eq!(
         candidates[0].metadata.get("confirmation_id"),
         Some(&format!("confirm-risk-{}", request.run_id))
@@ -341,27 +326,19 @@ fn retryable_failure_response(request: &RunRequest) -> RuntimeRunResponse {
 
 fn retryable_failure_verified_response(request: &RunRequest) -> RuntimeRunResponse {
     let mut response = retryable_failure_response(request);
-    response.events[1].metadata.insert(
-        "verification_code".to_string(),
-        "verification_failed".to_string(),
-    );
-    response.events[1].metadata.insert(
-        "verification_summary".to_string(),
-        "验证失败：命令执行失败".to_string(),
-    );
-    response.events[1].metadata.insert(
-        "artifact_path".to_string(),
-        "D:/repo/command.txt".to_string(),
-    );
+    response.events[1]
+        .metadata
+        .insert("verification_code".to_string(), "verification_failed".to_string());
+    response.events[1]
+        .metadata
+        .insert("verification_summary".to_string(), "验证失败：命令执行失败".to_string());
+    response.events[1]
+        .metadata
+        .insert("artifact_path".to_string(), "D:/repo/command.txt".to_string());
     response
 }
 
-fn sample_event(
-    request: &RunRequest,
-    sequence: u32,
-    event_type: &str,
-    stage: &str,
-) -> crate::contracts::RunEvent {
+fn sample_event(request: &RunRequest, sequence: u32, event_type: &str, stage: &str) -> crate::contracts::RunEvent {
     crate::contracts::RunEvent {
         event_id: format!("{}-{sequence}", request.run_id),
         kind: "run_event".to_string(),

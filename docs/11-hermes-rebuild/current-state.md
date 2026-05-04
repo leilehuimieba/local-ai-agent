@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
-更新时间：2026-04-27
-状态：`自由迭代期：无当前活跃 change`
+更新时间：2026-05-04
+状态：`自由迭代期：Z-change diff apply 最小闭环进行中`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
@@ -9,7 +9,7 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：无
+3. 当前活跃 change：`Z-diff-apply-20260504`
 4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-04-27/`
 
 ## 2. 阶段 I 收口结论
@@ -26,6 +26,12 @@
 2. **P-change（2026-04-27）**：router.go 聚合逻辑拆分 — 提取 `settings_response.go`，router.go 782 行 → 547 行。已归档。
 3. **Q-change（2026-04-27）**：CSS 功能域拆分 — `app-views.css` 1564 → 440 行，`app-components.css` 1344 → 441 行，新增 12 个功能域 CSS 文件。已归档。
 4. **R-change（2026-04-27）**：产品化 MVP 治理 — 敏感信息环境变量化、LICENSE/CHANGELOG、Rust release 构建优化、前端生产配置、最小启动认证、统一构建脚本、代码质量工具。已归档。
+5. **S-change（2026-05-03）**：产品化第一阶段 — Error Boundary + 全局 Toast、前端 11 项单元测试（Vitest + RTL）、用户快速入门文档、按 session 隔离 localStorage 支持历史恢复。已归档。
+6. **T-change（2026-05-03）**：产品化第二阶段 — 后端结构化会话历史存储（SQLite sessions + chat_messages + REST API）、移动端适配（底部导航/Sheet/Composer 折叠）、Composer 文件上传 UI。已归档。
+7. **U-change（2026-05-03）**：Assistant 消息同步到后端 — applyEvent / cancelRun 中 finalize 时异步写入 assistant 消息。已归档。
+8. **V-change（2026-05-03）**：历史会话列表 UI — LogsView 增加"会话历史"标签页，展示 fetchSessions 列表，点击恢复会话。已归档。
+9. **W-change（2026-05-03）**：文件上传接入后端知识库 — handleFileSelect 中异步调用 uploadKnowledgeFile，扩展 accept 为 pdf/docx，size 限制 5MB。已归档。
+10. **X-change（2026-05-03）**：Playwright E2E 测试覆盖移动端 — 安装 @playwright/test，4 项移动端布局/交互测试全绿。已归档。
 
 ## 4. 阶段 H 收口结论
 

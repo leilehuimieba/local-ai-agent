@@ -6,6 +6,7 @@ import { Moon, Sun, PanelRightClose, PanelRight, Wifi, WifiOff, Loader2 } from "
 import { useRuntimeStore, useUIStore } from "@/lib/local-agent/store"
 import type { ViewType, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const viewTabs: { id: ViewType; label: string }[] = [
   { id: "task", label: "任务" },
@@ -24,7 +25,8 @@ const connectionConfig: Record<ConnectionState, { color: string; label: string; 
 export function TopBar() {
   const { theme, setTheme } = useTheme()
   const { connectionState } = useRuntimeStore()
-  const { activeView, setActiveView, rightDrawerOpen, toggleRightDrawer } = useUIStore()
+  const { activeView, setActiveView, rightDrawerOpen, toggleRightDrawer, mobileDrawerOpen, setMobileDrawerOpen } = useUIStore()
+  const isMobile = useIsMobile()
 
   const connection = connectionConfig[connectionState]
 
@@ -85,10 +87,12 @@ export function TopBar() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleRightDrawer}
+            onClick={() => isMobile ? setMobileDrawerOpen(!mobileDrawerOpen) : toggleRightDrawer()}
             className="h-8 w-8"
           >
-            {rightDrawerOpen ? (
+            {isMobile ? (
+              <PanelRight className="h-4 w-4" />
+            ) : rightDrawerOpen ? (
               <PanelRightClose className="h-4 w-4" />
             ) : (
               <PanelRight className="h-4 w-4" />

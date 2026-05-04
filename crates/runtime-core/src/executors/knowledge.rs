@@ -47,9 +47,5 @@ fn render_hits(hits: &[crate::knowledge::KnowledgeHit]) -> String {
 }
 
 fn blank_value(value: &str) -> &str {
-    if value.trim().is_empty() {
-        "未提供"
-    } else {
-        value
-    }
+    if value.trim().is_empty() { "未提供" } else { value }
 }

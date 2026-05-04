@@ -1,8 +1,5 @@
 pub(crate) fn contains_sensitive_text(text: &str) -> bool {
-    contains_secret_marker(text)
-        || contains_email(text)
-        || contains_cn_mobile(text)
-        || contains_cn_id_card(text)
+    contains_secret_marker(text) || contains_email(text) || contains_cn_mobile(text) || contains_cn_id_card(text)
 }
 
 pub(crate) fn redact_sensitive_text(text: &str) -> String {
@@ -179,16 +176,12 @@ mod tests {
 
     #[test]
     fn detects_secret_markers() {
-        assert!(contains_sensitive_text(
-            "authorization: bearer sk-test-token"
-        ));
+        assert!(contains_sensitive_text("authorization: bearer sk-test-token"));
     }
 
     #[test]
     fn detects_email_patterns() {
-        assert!(contains_sensitive_text(
-            "请联系 test.user+ops@example.com 获取详情"
-        ));
+        assert!(contains_sensitive_text("请联系 test.user+ops@example.com 获取详情"));
     }
 
     #[test]
@@ -204,9 +197,7 @@ mod tests {
 
     #[test]
     fn ignores_normal_text() {
-        assert!(!contains_sensitive_text(
-            "这是一条正常学习计划总结，没有隐私字段"
-        ));
+        assert!(!contains_sensitive_text("这是一条正常学习计划总结，没有隐私字段"));
     }
 
     #[test]

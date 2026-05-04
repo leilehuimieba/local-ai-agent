@@ -39,13 +39,7 @@ fn upsert_memory_object_version_with_restore(
     let canonical_uri = canonical_uri_for_entry(entry);
     insert_memory_object(conn, &object_id, &canonical_uri, entry)?;
     deactivate_current_versions(conn, &object_id)?;
-    insert_memory_object_version(
-        conn,
-        &object_id,
-        &version_id,
-        entry,
-        restored_from_version_id,
-    )?;
+    insert_memory_object_version(conn, &object_id, &version_id, entry, restored_from_version_id)?;
     insert_memory_object_alias(conn, &object_id, &canonical_uri, &entry.created_at)?;
     set_memory_object_current(conn, &object_id, &version_id, &canonical_uri, entry)?;
     Ok(build_memory_object_version(
@@ -144,13 +138,7 @@ fn set_memory_object_current(
         "update memory_objects
          set title = ?1, canonical_uri = ?2, current_version_id = ?3, updated_at = ?4
          where object_id = ?5",
-        params![
-            entry.title,
-            canonical_uri,
-            version_id,
-            entry.updated_at,
-            object_id
-        ],
+        params![entry.title, canonical_uri, version_id, entry.updated_at, object_id],
     )
     .map(|_| ())
     .map_err(|error| error.to_string())
@@ -204,9 +192,7 @@ fn map_memory_object_version_row(
 
 pub(crate) fn load_memory_object_aliases(conn: &Connection, object_id: &str) -> Result<Vec<String>, String> {
     let mut statement = conn
-        .prepare(
-            "select alias_uri from memory_object_aliases where object_id = ?1 order by alias_uri asc",
-        )
+        .prepare("select alias_uri from memory_object_aliases where object_id = ?1 order by alias_uri asc")
         .map_err(|error| error.to_string())?;
     let rows = statement
         .query_map(params![object_id], |row| row.get(0))
@@ -284,11 +270,7 @@ fn load_memory_object_version_row(
     .map_err(|error| error.to_string())
 }
 
-fn build_rollback_entry(
-    request: &RunRequest,
-    meta: &MemoryObjectMeta,
-    target: &MemoryObjectVersion,
-) -> MemoryEntry {
+fn build_rollback_entry(request: &RunRequest, meta: &MemoryObjectMeta, target: &MemoryObjectVersion) -> MemoryEntry {
     let now = timestamp_now();
     let summary = target.summary.clone();
     let rollback_id = format!("memory-rollback-{now}");
@@ -308,10 +290,7 @@ fn build_rollback_entry(
         source_event_type: "rollback_applied".to_string(),
         source_artifact_path: String::new(),
         governance_version: "memory-object-rollback-v1".to_string(),
-        governance_reason: format!(
-            "回滚到 {target_version_id}",
-            target_version_id = target.version_id
-        ),
+        governance_reason: format!("回滚到 {target_version_id}", target_version_id = target.version_id),
         governance_source: "memory_object_store.rollback".to_string(),
         governance_at: now.clone(),
         archive_reason: String::new(),

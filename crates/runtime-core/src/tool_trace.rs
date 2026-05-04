@@ -62,7 +62,10 @@ pub(crate) fn materialize_artifact(
 ) -> Option<String> {
     if matches!(action, PlannedAction::RunCommand { .. }) {
         let raw_kind = format!("{}-raw-output", action_tag(action));
-        return externalize_text_artifact_always(request, &raw_kind, &execution.raw_output)
+        return externalize_text_artifact_always(request, &raw_kind, &execution.raw_output).map(|item| item.path);
+    }
+    if matches!(action, PlannedAction::MCPCall { .. }) {
+        return externalize_text_artifact_always(request, "mcp-raw-output", &execution.raw_output)
             .map(|item| item.path);
     }
     let content = artifact_content(execution);
@@ -92,7 +95,7 @@ fn read_detail_preview(execution: &crate::execution::ActionExecution) -> String 
 }
 
 fn command_raw_output_ref(action: &PlannedAction, artifact_path: Option<&str>) -> Option<String> {
-    if matches!(action, PlannedAction::RunCommand { .. }) {
+    if matches!(action, PlannedAction::RunCommand { .. } | PlannedAction::MCPCall { .. }) {
         return artifact_path.map(str::to_string);
     }
     None
@@ -137,11 +140,7 @@ mod tests {
             None,
             None,
         );
-        assert!(
-            result
-                .summary
-                .contains("system views + current memory object")
-        );
+        assert!(result.summary.contains("system views + current memory object"));
         assert!(
             result
                 .reasoning_summary

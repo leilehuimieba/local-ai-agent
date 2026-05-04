@@ -15,11 +15,7 @@ pub(crate) struct ArtifactRecord {
     pub created_at: String,
 }
 
-pub(crate) fn externalize_text_artifact(
-    request: &RunRequest,
-    kind: &str,
-    content: &str,
-) -> Option<ArtifactRecord> {
+pub(crate) fn externalize_text_artifact(request: &RunRequest, kind: &str, content: &str) -> Option<ArtifactRecord> {
     if content.chars().count() < 240 {
         return None;
     }
@@ -41,11 +37,7 @@ pub(crate) fn externalize_text_artifact_always(
     create_artifact_record(request, kind, content, path).ok()
 }
 
-pub(crate) fn externalize_json_artifact<T>(
-    request: &RunRequest,
-    kind: &str,
-    value: &T,
-) -> Option<ArtifactRecord>
+pub(crate) fn externalize_json_artifact<T>(request: &RunRequest, kind: &str, value: &T) -> Option<ArtifactRecord>
 where
     T: Serialize,
 {

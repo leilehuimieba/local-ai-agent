@@ -18,6 +18,7 @@ mod handoff;
 mod knowledge;
 mod knowledge_store;
 mod llm;
+mod mcp_bridge;
 mod memory;
 mod memory_layer;
 mod memory_object_store;
@@ -78,9 +79,7 @@ mod tool_trace;
 mod h03_eval_tests;
 mod verify;
 
-use crate::checkpoint::{
-    checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint,
-};
+use crate::checkpoint::{checkpoint_resume_event, with_checkpoint_resume_event, with_runtime_checkpoint};
 use crate::completion::decide_completion;
 use crate::events::{make_event, with_runtime_memory_recall_event};
 use crate::handoff::persist_handoff_artifact;
@@ -89,12 +88,9 @@ use crate::query_engine::{bootstrap_run, execute_stage};
 use crate::repo_context::repo_context_metadata;
 use crate::risk::RiskOutcome;
 use crate::run_finish_events::{
-    append_recall_visibility_metadata, make_memory_event, make_run_failed_event, read_result_mode,
-    run_finished_summary,
+    append_recall_visibility_metadata, make_memory_event, make_run_failed_event, read_result_mode, run_finished_summary,
 };
-use crate::run_metadata::{
-    append_context_metadata, append_tool_spec_metadata, append_verification_metadata,
-};
+use crate::run_metadata::{append_context_metadata, append_tool_spec_metadata, append_verification_metadata};
 use crate::run_risk_flow::handle_risk_outcome;
 use crate::run_visibility::apply_visibility_metadata;
 use crate::session::{persist_handoff_path, persist_session_outputs};
@@ -103,25 +99,24 @@ use crate::verify::verify_tool_execution;
 use std::collections::BTreeMap;
 
 pub use crate::observation::{
-    LifecycleMappingSnapshot, ObservationAbTestReport, ObservationDedupeReport,
-    ObservationDetailItem, ObservationGetReport, ObservationLayeredInjectionReport,
-    ObservationPersistenceReport, ObservationPrivacyRedactReport, ObservationPrivateSkipReport,
-    ObservationQueueFlowReport, ObservationQueueHealthReport, ObservationRankItem,
-    ObservationRankReport, ObservationRecord, ObservationRetryReport, ObservationRollbackReport,
-    ObservationSearchItem, ObservationSearchReport, ObservationTimelineItem,
-    ObservationTimelineReport, build_layered_injection, compare_layered_vs_full,
-    dedupe_lifecycle_observations, get_observations, lifecycle_mapping_snapshot,
-    lifecycle_target_event_types, observation_from_event, observation_kind_for_event_type,
-    observation_privacy_redact_flow, observation_private_skip_flow, observation_queue_health,
-    observation_rollback_flow, observation_timeline, persist_lifecycle_observations,
-    rank_observations, run_observation_queue_flow, run_observation_retry_flow, search_observations,
+    LifecycleMappingSnapshot, ObservationAbTestReport, ObservationDedupeReport, ObservationDetailItem,
+    ObservationGetReport, ObservationLayeredInjectionReport, ObservationPersistenceReport,
+    ObservationPrivacyRedactReport, ObservationPrivateSkipReport, ObservationQueueFlowReport,
+    ObservationQueueHealthReport, ObservationRankItem, ObservationRankReport, ObservationRecord,
+    ObservationRetryReport, ObservationRollbackReport, ObservationSearchItem, ObservationSearchReport,
+    ObservationTimelineItem, ObservationTimelineReport, build_layered_injection, compare_layered_vs_full,
+    dedupe_lifecycle_observations, get_observations, lifecycle_mapping_snapshot, lifecycle_target_event_types,
+    observation_from_event, observation_kind_for_event_type, observation_privacy_redact_flow,
+    observation_private_skip_flow, observation_queue_health, observation_rollback_flow, observation_timeline,
+    persist_lifecycle_observations, rank_observations, run_observation_queue_flow, run_observation_retry_flow,
+    search_observations,
 };
 
 pub use crate::contracts::{
-    CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest,
-    ConnectorListResponse, ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef,
-    ProviderRef, RUNTIME_NAME, RUNTIME_VERSION, RepoContextSnapshot, RunEvent, RunRequest,
-    RunResult, RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary, WorkspaceRef,
+    CapabilityListResponse, CapabilitySpec, ConfirmationDecision, ConfirmationRequest, ConnectorListResponse,
+    ConnectorSlotSpec, ErrorInfo, GitCommitSummary, GitSnapshot, ModelRef, ProviderRef, RUNTIME_NAME, RUNTIME_VERSION,
+    RepoContextSnapshot, RunEvent, RunRequest, RunResult, RuntimeRunResponse, RuntimeSnapshot, WorkspaceDocSummary,
+    WorkspaceRef,
 };
 
 pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
@@ -183,12 +178,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     if !state.envelope.session_context.compressed_summary.is_empty() {
         analysis_metadata.insert(
             "session_turn_count".to_string(),
-            state
-                .envelope
-                .session_context
-                .recent_turns
-                .len()
-                .to_string(),
+            state.envelope.session_context.recent_turns.len().to_string(),
         );
     }
     analysis_metadata.extend(repo_context_metadata(&state.envelope.repo_context));
@@ -225,22 +215,10 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
         "next_step".to_string(),
         format!("执行 {}", action_result.tool.display_name),
     );
-    plan_metadata.insert(
-        "tool_name".to_string(),
-        action_result.tool.tool_name.clone(),
-    );
-    plan_metadata.insert(
-        "tool_display_name".to_string(),
-        action_result.tool.display_name.clone(),
-    );
-    plan_metadata.insert(
-        "tool_category".to_string(),
-        action_result.tool.category.clone(),
-    );
-    plan_metadata.insert(
-        "output_kind".to_string(),
-        action_result.tool.output_kind.clone(),
-    );
+    plan_metadata.insert("tool_name".to_string(), action_result.tool.tool_name.clone());
+    plan_metadata.insert("tool_display_name".to_string(), action_result.tool.display_name.clone());
+    plan_metadata.insert("tool_category".to_string(), action_result.tool.category.clone());
+    plan_metadata.insert("output_kind".to_string(), action_result.tool.output_kind.clone());
     append_context_metadata(&mut plan_metadata, &state.envelope.context_envelope);
     append_tool_spec_metadata(&mut plan_metadata, &state.tool_call);
     plan_metadata.extend(repo_context_metadata(&state.envelope.repo_context));
@@ -257,34 +235,13 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
 
     let mut request_metadata = BTreeMap::new();
     request_metadata.insert("task_title".to_string(), state.task_title.clone());
-    request_metadata.insert(
-        "tool_name".to_string(),
-        action_result.tool.tool_name.clone(),
-    );
-    request_metadata.insert(
-        "tool_display_name".to_string(),
-        action_result.tool.display_name.clone(),
-    );
-    request_metadata.insert(
-        "tool_category".to_string(),
-        action_result.tool.category.clone(),
-    );
-    request_metadata.insert(
-        "tool_risk_level".to_string(),
-        action_result.tool.risk_level.clone(),
-    );
-    request_metadata.insert(
-        "risk_level".to_string(),
-        action_result.tool.risk_level.clone(),
-    );
-    request_metadata.insert(
-        "output_kind".to_string(),
-        action_result.tool.output_kind.clone(),
-    );
-    request_metadata.insert(
-        "workspace_id".to_string(),
-        request.workspace_ref.workspace_id.clone(),
-    );
+    request_metadata.insert("tool_name".to_string(), action_result.tool.tool_name.clone());
+    request_metadata.insert("tool_display_name".to_string(), action_result.tool.display_name.clone());
+    request_metadata.insert("tool_category".to_string(), action_result.tool.category.clone());
+    request_metadata.insert("tool_risk_level".to_string(), action_result.tool.risk_level.clone());
+    request_metadata.insert("risk_level".to_string(), action_result.tool.risk_level.clone());
+    request_metadata.insert("output_kind".to_string(), action_result.tool.output_kind.clone());
+    request_metadata.insert("workspace_id".to_string(), request.workspace_ref.workspace_id.clone());
     request_metadata.insert("mode".to_string(), request.mode.clone());
     request_metadata.insert("next_step".to_string(), "等待工具执行结果".to_string());
     append_context_metadata(&mut request_metadata, &state.envelope.context_envelope);
@@ -303,22 +260,10 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
 
     let mut completed_metadata = BTreeMap::new();
     completed_metadata.insert("task_title".to_string(), state.task_title.clone());
-    completed_metadata.insert(
-        "tool_name".to_string(),
-        action_result.tool.tool_name.clone(),
-    );
-    completed_metadata.insert(
-        "tool_display_name".to_string(),
-        action_result.tool.display_name.clone(),
-    );
-    completed_metadata.insert(
-        "output_kind".to_string(),
-        action_result.tool.output_kind.clone(),
-    );
-    completed_metadata.insert(
-        "result_summary".to_string(),
-        action_result.result.summary.clone(),
-    );
+    completed_metadata.insert("tool_name".to_string(), action_result.tool.tool_name.clone());
+    completed_metadata.insert("tool_display_name".to_string(), action_result.tool.display_name.clone());
+    completed_metadata.insert("output_kind".to_string(), action_result.tool.output_kind.clone());
+    completed_metadata.insert("result_summary".to_string(), action_result.result.summary.clone());
     if let Some(path) = action_result.result.artifact_path.clone() {
         completed_metadata.insert("artifact_path".to_string(), path);
     }
@@ -347,10 +292,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
     if let Some(memory_summary) = action_result.result.memory_write_summary.clone() {
         let mut metadata = BTreeMap::new();
         metadata.insert("memory_kind".to_string(), "explicit_memory".to_string());
-        metadata.insert(
-            "memory_scope".to_string(),
-            request.workspace_ref.workspace_id.clone(),
-        );
+        metadata.insert("memory_scope".to_string(), request.workspace_ref.workspace_id.clone());
         metadata.insert("task_title".to_string(), state.task_title.clone());
         metadata.insert("next_step".to_string(), "准备完成本次任务".to_string());
         metadata.extend(repo_context_metadata(&state.envelope.repo_context));
@@ -368,22 +310,10 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
 
     let mut verification_metadata = BTreeMap::new();
     verification_metadata.insert("task_title".to_string(), state.task_title.clone());
-    verification_metadata.insert(
-        "tool_name".to_string(),
-        action_result.tool.tool_name.clone(),
-    );
-    verification_metadata.insert(
-        "tool_display_name".to_string(),
-        action_result.tool.display_name.clone(),
-    );
-    verification_metadata.insert(
-        "tool_category".to_string(),
-        action_result.tool.category.clone(),
-    );
-    verification_metadata.insert(
-        "output_kind".to_string(),
-        action_result.tool.output_kind.clone(),
-    );
+    verification_metadata.insert("tool_name".to_string(), action_result.tool.tool_name.clone());
+    verification_metadata.insert("tool_display_name".to_string(), action_result.tool.display_name.clone());
+    verification_metadata.insert("tool_category".to_string(), action_result.tool.category.clone());
+    verification_metadata.insert("output_kind".to_string(), action_result.tool.output_kind.clone());
     if let Some(path) = action_result.result.artifact_path.clone() {
         verification_metadata.insert("artifact_path".to_string(), path);
     }
@@ -400,10 +330,7 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
         )
         .to_string(),
     );
-    verification_metadata.insert(
-        "final_answer".to_string(),
-        action_result.result.final_answer.clone(),
-    );
+    verification_metadata.insert("final_answer".to_string(), action_result.result.final_answer.clone());
     verification_metadata.extend(repo_context_metadata(&state.envelope.repo_context));
     events.push(make_event(
         request,
@@ -478,31 +405,13 @@ pub fn simulate_run(request: &RunRequest) -> RuntimeRunResponse {
 
     let mut finish_metadata = BTreeMap::new();
     finish_metadata.insert("task_title".to_string(), state.task_title.clone());
-    finish_metadata.insert(
-        "final_answer".to_string(),
-        action_result.result.final_answer.clone(),
-    );
+    finish_metadata.insert("final_answer".to_string(), action_result.result.final_answer.clone());
     finish_metadata.insert("model_id".to_string(), request.model_ref.model_id.clone());
-    finish_metadata.insert(
-        "tool_name".to_string(),
-        action_result.tool.tool_name.clone(),
-    );
-    finish_metadata.insert(
-        "tool_display_name".to_string(),
-        action_result.tool.display_name.clone(),
-    );
-    finish_metadata.insert(
-        "tool_category".to_string(),
-        action_result.tool.category.clone(),
-    );
-    finish_metadata.insert(
-        "output_kind".to_string(),
-        action_result.tool.output_kind.clone(),
-    );
-    finish_metadata.insert(
-        "result_summary".to_string(),
-        action_result.result.summary.clone(),
-    );
+    finish_metadata.insert("tool_name".to_string(), action_result.tool.tool_name.clone());
+    finish_metadata.insert("tool_display_name".to_string(), action_result.tool.display_name.clone());
+    finish_metadata.insert("tool_category".to_string(), action_result.tool.category.clone());
+    finish_metadata.insert("output_kind".to_string(), action_result.tool.output_kind.clone());
+    finish_metadata.insert("result_summary".to_string(), action_result.result.summary.clone());
     if let Some(path) = action_result.result.artifact_path.clone() {
         finish_metadata.insert("artifact_path".to_string(), path);
     }

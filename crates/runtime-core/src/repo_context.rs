@@ -72,10 +72,7 @@ pub(crate) fn load_repo_context(workspace_root: &Path) -> RepoContextLoadResult 
 }
 
 pub(crate) fn repo_context_summary(snapshot: &RepoContextSnapshot) -> String {
-    let mut parts = vec![format!(
-        "当前工作区根路径为 `{}`。",
-        snapshot.workspace_root
-    )];
+    let mut parts = vec![format!("当前工作区根路径为 `{}`。", snapshot.workspace_root)];
 
     if let Some(repo_root) = snapshot.repo_root.as_deref() {
         parts.push(format!("Git 仓库根路径识别为 `{}`。", repo_root));
@@ -86,14 +83,8 @@ pub(crate) fn repo_context_summary(snapshot: &RepoContextSnapshot) -> String {
     }
 
     if let Some(git_snapshot) = snapshot.git_snapshot.as_ref() {
-        let branch = git_snapshot
-            .current_branch
-            .as_deref()
-            .unwrap_or("未识别当前分支");
-        let default_branch = git_snapshot
-            .default_branch
-            .as_deref()
-            .unwrap_or("未识别默认分支");
+        let branch = git_snapshot.current_branch.as_deref().unwrap_or("未识别当前分支");
+        let default_branch = git_snapshot.default_branch.as_deref().unwrap_or("未识别默认分支");
         let dirty = if git_snapshot.is_dirty {
             "存在未提交修改"
         } else {
@@ -111,10 +102,7 @@ pub(crate) fn repo_context_summary(snapshot: &RepoContextSnapshot) -> String {
                 .map(|item| item.short_message.as_str())
                 .collect::<Vec<_>>()
                 .join("；");
-            parts.push(format!(
-                "最近提交摘要包括：{}。",
-                summarize_text(&commit_titles)
-            ));
+            parts.push(format!("最近提交摘要包括：{}。", summarize_text(&commit_titles)));
         }
     }
 
@@ -145,19 +133,11 @@ pub(crate) fn repo_context_summary(snapshot: &RepoContextSnapshot) -> String {
     summarize_text(&parts.join(" "))
 }
 
-pub(crate) fn repo_context_metadata(
-    load_result: &RepoContextLoadResult,
-) -> BTreeMap<String, String> {
+pub(crate) fn repo_context_metadata(load_result: &RepoContextLoadResult) -> BTreeMap<String, String> {
     let snapshot = &load_result.snapshot;
     let mut metadata = BTreeMap::new();
-    metadata.insert(
-        "workspace_root".to_string(),
-        snapshot.workspace_root.clone(),
-    );
-    metadata.insert(
-        "git_available".to_string(),
-        bool_to_string(snapshot.git_available),
-    );
+    metadata.insert("workspace_root".to_string(), snapshot.workspace_root.clone());
+    metadata.insert("git_available".to_string(), bool_to_string(snapshot.git_available));
     metadata.insert(
         "repo_context_status".to_string(),
         if load_result.degraded {
@@ -166,22 +146,13 @@ pub(crate) fn repo_context_metadata(
             "ready".to_string()
         },
     );
-    metadata.insert(
-        "doc_hits".to_string(),
-        snapshot.doc_summaries.len().to_string(),
-    );
+    metadata.insert("doc_hits".to_string(), snapshot.doc_summaries.len().to_string());
     metadata.insert(
         "repo_context_warning_count".to_string(),
         load_result.error_count.to_string(),
     );
-    metadata.insert(
-        "repo_context_collected_at".to_string(),
-        snapshot.collected_at.clone(),
-    );
-    metadata.insert(
-        "repo_context_summary".to_string(),
-        repo_context_summary(snapshot),
-    );
+    metadata.insert("repo_context_collected_at".to_string(), snapshot.collected_at.clone());
+    metadata.insert("repo_context_summary".to_string(), repo_context_summary(snapshot));
 
     if let Some(repo_root) = snapshot.repo_root.as_ref() {
         metadata.insert("repo_root".to_string(), repo_root.clone());
@@ -198,16 +169,10 @@ pub(crate) fn repo_context_metadata(
         );
     }
     if !snapshot.warnings.is_empty() {
-        metadata.insert(
-            "repo_context_warnings".to_string(),
-            snapshot.warnings.join("\n"),
-        );
+        metadata.insert("repo_context_warnings".to_string(), snapshot.warnings.join("\n"));
     }
     if let Some(git_snapshot) = snapshot.git_snapshot.as_ref() {
-        metadata.insert(
-            "git_dirty".to_string(),
-            bool_to_string(git_snapshot.is_dirty),
-        );
+        metadata.insert("git_dirty".to_string(), bool_to_string(git_snapshot.is_dirty));
         if let Some(current_branch) = git_snapshot.current_branch.as_ref() {
             metadata.insert("current_branch".to_string(), current_branch.clone());
         }
@@ -230,10 +195,7 @@ fn load_git_snapshot(repo_root: &Path, warnings: &mut Vec<String>) -> GitSnapsho
     };
 
     let default_branch = load_default_branch(repo_root, warnings);
-    let is_dirty = match run_git(
-        Some(repo_root),
-        &["status", "--porcelain", "--untracked-files=all"],
-    ) {
+    let is_dirty = match run_git(Some(repo_root), &["status", "--porcelain", "--untracked-files=all"]) {
         Ok(output) => !output.is_empty(),
         Err(message) => {
             warnings.push(message);
@@ -370,10 +332,7 @@ fn command_succeeds(current_dir: Option<&Path>, args: &[&str]) -> bool {
         command.current_dir(dir);
     }
 
-    command
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+    command.output().map(|output| output.status.success()).unwrap_or(false)
 }
 
 fn run_git(current_dir: Option<&Path>, args: &[&str]) -> Result<String, String> {
@@ -400,20 +359,12 @@ fn run_git(current_dir: Option<&Path>, args: &[&str]) -> Result<String, String> 
         } else {
             stderr
         };
-        Err(format!(
-            "Git 命令 `{}` 执行失败：{}",
-            args.join(" "),
-            detail
-        ))
+        Err(format!("Git 命令 `{}` 执行失败：{}", args.join(" "), detail))
     }
 }
 
 fn bool_to_string(value: bool) -> String {
-    if value {
-        "true".to_string()
-    } else {
-        "false".to_string()
-    }
+    if value { "true".to_string() } else { "false".to_string() }
 }
 
 fn timestamp_now() -> String {

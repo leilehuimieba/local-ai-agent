@@ -25,10 +25,7 @@ pub(crate) struct VerificationReport {
     pub single_result_budget_hit: bool,
 }
 
-pub(crate) fn verify_tool_execution(
-    tool_call: &ToolCall,
-    trace: &ToolExecutionTrace,
-) -> VerificationReport {
+pub(crate) fn verify_tool_execution(tool_call: &ToolCall, trace: &ToolExecutionTrace) -> VerificationReport {
     let policy = verification_policy(tool_call);
     let evidence = verification_evidence(trace);
     let outcome = if !trace.result.success {
@@ -47,11 +44,7 @@ pub(crate) fn verify_tool_execution(
     }
 }
 
-fn passed_outcome(
-    trace: &ToolExecutionTrace,
-    policy: &str,
-    evidence: Vec<String>,
-) -> VerificationOutcome {
+fn passed_outcome(trace: &ToolExecutionTrace, policy: &str, evidence: Vec<String>) -> VerificationOutcome {
     VerificationOutcome {
         passed: true,
         code: "verified".to_string(),
@@ -70,11 +63,7 @@ fn passed_outcome(
     }
 }
 
-fn recovered_outcome(
-    trace: &ToolExecutionTrace,
-    policy: &str,
-    evidence: Vec<String>,
-) -> VerificationOutcome {
+fn recovered_outcome(trace: &ToolExecutionTrace, policy: &str, evidence: Vec<String>) -> VerificationOutcome {
     VerificationOutcome {
         passed: true,
         code: "verified_with_recovery".to_string(),
@@ -93,11 +82,7 @@ fn recovered_outcome(
     }
 }
 
-fn failed_outcome(
-    trace: &ToolExecutionTrace,
-    policy: &str,
-    evidence: Vec<String>,
-) -> VerificationOutcome {
+fn failed_outcome(trace: &ToolExecutionTrace, policy: &str, evidence: Vec<String>) -> VerificationOutcome {
     VerificationOutcome {
         passed: false,
         code: "verification_failed".to_string(),
@@ -126,19 +111,14 @@ fn verification_policy(tool_call: &ToolCall) -> String {
         "workspace_delete" => "confirm_delete_effect".to_string(),
         "run_command" => "inspect_command_result".to_string(),
         "memory_write" => "confirm_memory_persisted".to_string(),
-        "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" => {
-            "check_result_relevance".to_string()
-        }
+        "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" => "check_result_relevance".to_string(),
         _ => "check_result_summary".to_string(),
     }
 }
 
 fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
     let mut evidence = vec![format!("summary={}", summarize_text(&trace.result.summary))];
-    evidence.push(format!(
-        "reasoning={}",
-        summarize_text(&trace.result.reasoning_summary)
-    ));
+    evidence.push(format!("reasoning={}", summarize_text(&trace.result.reasoning_summary)));
     evidence.push(format!("result_chars={}", trace.result.result_chars));
     evidence.push(format!(
         "single_result_budget_chars={}",
@@ -158,19 +138,11 @@ fn verification_evidence(trace: &ToolExecutionTrace) -> Vec<String> {
     evidence.push(format!("cache_status={}", trace.result.cache_status));
     evidence.push(format!(
         "skill_hit_effective={}",
-        if trace.result.success {
-            "true"
-        } else {
-            "false"
-        }
+        if trace.result.success { "true" } else { "false" }
     ));
     evidence.push(format!(
         "guard_downgraded={}",
-        if guard_downgraded(trace) {
-            "true"
-        } else {
-            "false"
-        }
+        if guard_downgraded(trace) { "true" } else { "false" }
     ));
     evidence.push(format!("guard_decision_ref={}", guard_decision_ref(trace)));
     evidence
@@ -187,8 +159,7 @@ fn skill_hit_reason(trace: &ToolExecutionTrace, recovered: bool) -> String {
 }
 
 fn guard_downgraded(trace: &ToolExecutionTrace) -> bool {
-    trace.result.reasoning_summary.contains("guard downgraded")
-        || trace.result.summary.contains("guard downgraded")
+    trace.result.reasoning_summary.contains("guard downgraded") || trace.result.summary.contains("guard downgraded")
 }
 
 fn guard_decision_ref(trace: &ToolExecutionTrace) -> String {
@@ -210,10 +181,7 @@ mod tests {
         let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, false));
         assert!(report.outcome.skill_hit_effective);
         assert!(!report.outcome.guard_downgraded);
-        assert_eq!(
-            report.outcome.guard_decision_ref,
-            "tool=run_command;decision=allow"
-        );
+        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=allow");
     }
 
     #[test]
@@ -221,10 +189,7 @@ mod tests {
         let report = verify_tool_execution(&sample_tool_call(), &sample_trace(true, true));
         assert!(report.outcome.skill_hit_effective);
         assert!(report.outcome.guard_downgraded);
-        assert_eq!(
-            report.outcome.guard_decision_ref,
-            "tool=run_command;decision=review"
-        );
+        assert_eq!(report.outcome.guard_decision_ref, "tool=run_command;decision=review");
     }
 
     #[test]
@@ -233,12 +198,7 @@ mod tests {
             &memory_recall_tool_call(),
             &sample_memory_recall_trace("system views + current memory object，对象 2 条"),
         );
-        assert!(
-            report
-                .outcome
-                .summary
-                .contains("system views + current memory object")
-        );
+        assert!(report.outcome.summary.contains("system views + current memory object"));
         assert!(
             report
                 .outcome
@@ -333,9 +293,7 @@ mod tests {
                 retryable: false,
                 success: true,
                 memory_write_summary: None,
-                reasoning_summary: format!(
-                    "按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为{layer}。"
-                ),
+                reasoning_summary: format!("按查询词检索长期记忆，并返回前几条高相关结果；本次召回层为{layer}。"),
                 cache_status: "bypass".to_string(),
                 cache_reason: String::new(),
             },
@@ -348,9 +306,7 @@ fn success_next_step(trace: &ToolExecutionTrace) -> String {
         "workspace_read" | "knowledge_search" | "project_answer" => {
             "可继续追问、复盘结果，或基于当前结论进入下一步执行。".to_string()
         }
-        "workspace_write" | "run_command" => {
-            "建议先检查产物或输出，再决定是否继续下一步修改。".to_string()
-        }
+        "workspace_write" | "run_command" => "建议先检查产物或输出，再决定是否继续下一步修改。".to_string(),
         _ => "当前动作已验证通过，可继续推进主任务。".to_string(),
     }
 }

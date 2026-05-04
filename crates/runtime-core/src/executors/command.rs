@@ -26,13 +26,9 @@ pub(crate) fn execute_command(request: &RunRequest, command: &str) -> ActionExec
             );
         }
     };
-    let (summary, final_answer, detail_preview, raw_output) =
-        output_answer(request, command, &output);
+    let (summary, final_answer, detail_preview, raw_output) = output_answer(request, command, &output);
     let execution = ActionExecution::bypass(
-        format!(
-            "在工作区 `{}` 中执行命令：{}",
-            request.workspace_ref.name, command
-        ),
+        format!("在工作区 `{}` 中执行命令：{}", request.workspace_ref.name, command),
         summary,
         final_answer,
         output.status.success(),
@@ -43,10 +39,7 @@ pub(crate) fn execute_command(request: &RunRequest, command: &str) -> ActionExec
     with_command_output_contract(execution, detail_preview, raw_output)
 }
 
-fn run_command(
-    request: &RunRequest,
-    command: &str,
-) -> Result<std::process::Output, std::io::Error> {
+fn run_command(request: &RunRequest, command: &str) -> Result<std::process::Output, std::io::Error> {
     if cfg!(target_os = "windows") {
         let wrapped_command = format!(
             "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8; chcp 65001 > $null; Set-Location -LiteralPath {}; {}",

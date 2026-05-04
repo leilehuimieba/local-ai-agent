@@ -48,6 +48,7 @@ fn local_files_slot() -> ExternalConnectionSlot {
             "workspace_list",
             "workspace_read",
             "workspace_write",
+            "workspace_apply_patch",
             "workspace_delete",
             "run_command",
         ],
@@ -81,11 +82,7 @@ fn browser_capture_slot() -> ExternalConnectionSlot {
         "浏览器摘录与网页入库",
         3,
         "reserved",
-        &[
-            "knowledge_search",
-            "write_siyuan_knowledge",
-            "project_answer",
-        ],
+        &["knowledge_search", "write_siyuan_knowledge", "project_answer"],
         "本阶段只保留知识读写接入口，不提前接重型浏览器插件或云同步。",
         "后续在现有知识读写链路旁补摘录导入入口，优先落到知识层而不是新数据库。",
     )
@@ -119,10 +116,7 @@ fn make_slot(
         priority,
         status: status.to_string(),
         scope: "external_connection".to_string(),
-        current_tools: current_tools
-            .iter()
-            .map(|item| (*item).to_string())
-            .collect(),
+        current_tools: current_tools.iter().map(|item| (*item).to_string()).collect(),
         boundary: boundary.to_string(),
         next_step: next_step.to_string(),
     }

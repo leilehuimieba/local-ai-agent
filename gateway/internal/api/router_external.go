@@ -41,7 +41,7 @@ func executeExternalConnectionAction(repoRoot string, cfg config.AppConfig, stor
 	if err := validateExternalConnectionAction(payload); err != nil {
 		return ExternalConnectionActionResponse{SlotID: payload.SlotID, Action: payload.Action, OK: false, Message: err.Error()}, http.StatusBadRequest
 	}
-	settings := buildSettingsResponse(repoRoot, cfg, store)
+	settings := buildSettingsResponse(repoRoot, cfg, store, nil)
 	slot, ok := findExternalConnection(settings.ExternalConnections, payload.SlotID)
 	if !ok {
 		return ExternalConnectionActionResponse{SlotID: payload.SlotID, Action: payload.Action, OK: false, Message: "slot_id \u4e0d\u5b58\u5728"}, http.StatusNotFound

@@ -6,10 +6,7 @@ use crate::verify::{VerificationOutcome, VerificationReport};
 fn knowledge_type_accepts_agent_resolve_when_verified() {
     let trace = sample_trace("agent_resolve", "任务已完成", "可复用流程说明");
     let report = sample_report(true);
-    assert_eq!(
-        knowledge_type(&trace, &report),
-        Some("workflow_pattern".to_string())
-    );
+    assert_eq!(knowledge_type(&trace, &report), Some("workflow_pattern".to_string()));
 }
 
 #[test]

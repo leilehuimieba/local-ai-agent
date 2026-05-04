@@ -1,7 +1,5 @@
-﻿use crate::observation::types::{ObservationRecord, PrivacyApplyResult};
-use crate::sensitive_data::{
-    contains_private_marker, contains_sensitive_text, redact_sensitive_text,
-};
+use crate::observation::types::{ObservationRecord, PrivacyApplyResult};
+use crate::sensitive_data::{contains_private_marker, contains_sensitive_text, redact_sensitive_text};
 
 pub(crate) fn apply_privacy_rules(records: &[ObservationRecord]) -> PrivacyApplyResult {
     let mut result = PrivacyApplyResult::default();

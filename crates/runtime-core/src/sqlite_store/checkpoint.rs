@@ -1,4 +1,4 @@
-﻿use crate::checkpoint::RunCheckpoint;
+use crate::checkpoint::RunCheckpoint;
 use crate::contracts::RunRequest;
 use crate::observation::ObservationRecord;
 use crate::sqlite_store::bool_flag;
@@ -14,10 +14,20 @@ pub(crate) fn insert_runtime_checkpoint(conn: &Connection, checkpoint: &RunCheck
             resumable, resume_reason, resume_stage, event_count, request_payload, response_payload, created_at
         ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
-            checkpoint.checkpoint_id, checkpoint.run_id, checkpoint.session_id, checkpoint.trace_id,
-            checkpoint.workspace_id, checkpoint.status, checkpoint.final_stage,
-            bool_flag(checkpoint.resumable), checkpoint.resume_reason, checkpoint.resume_stage,
-            checkpoint.event_count, request_payload, response_payload, checkpoint.created_at
+            checkpoint.checkpoint_id,
+            checkpoint.run_id,
+            checkpoint.session_id,
+            checkpoint.trace_id,
+            checkpoint.workspace_id,
+            checkpoint.status,
+            checkpoint.final_stage,
+            bool_flag(checkpoint.resumable),
+            checkpoint.resume_reason,
+            checkpoint.resume_stage,
+            checkpoint.event_count,
+            request_payload,
+            response_payload,
+            checkpoint.created_at
         ],
     )
     .map(|_| ())

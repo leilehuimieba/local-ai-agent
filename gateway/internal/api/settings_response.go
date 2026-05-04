@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/mcp"
 	"local-agent/gateway/internal/memory"
 	"local-agent/gateway/internal/state"
 	"local-agent/gateway/internal/util"
 )
 
-func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.SettingsStore) SettingsResponse {
+func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.SettingsStore, mgr *mcp.Manager) SettingsResponse {
 	mode, model, models, workspace, workspaces, directoryPromptEnabled, showRiskLevel, approvals, embeddingProviderID := store.Snapshot()
 	runtimeStatus := fetchRuntimeStatus(cfg.RuntimePort)
 	return SettingsResponse{
@@ -32,7 +33,35 @@ func buildSettingsResponse(repoRoot string, cfg config.AppConfig, store *state.S
 		Diagnostics:            buildDiagnostics(repoRoot, cfg, runtimeStatus, len(models), len(workspaces), len(approvals)),
 		ExternalConnections:    buildExternalConnections(repoRoot, cfg, workspace),
 		Embedding:              buildEmbeddingInfo(cfg, embeddingProviderID),
+		MCP:                    buildMCPInfo(cfg, mgr),
 	}
+}
+
+func buildMCPInfo(cfg config.AppConfig, mgr *mcp.Manager) MCPInfo {
+	if mgr == nil {
+		return MCPInfo{Servers: []MCPServerStatus{}}
+	}
+	return MCPInfo{
+		Servers: serverStatusesFromConfig(mgr),
+		Tools:   mgr.AllTools(),
+	}
+}
+
+func serverStatusesFromConfig(mgr *mcp.Manager) []MCPServerStatus {
+	if mgr == nil {
+		return []MCPServerStatus{}
+	}
+	statuses := mgr.Status()
+	out := make([]MCPServerStatus, len(statuses))
+	for i, st := range statuses {
+		out[i] = MCPServerStatus{
+			ID: st.ID, Name: st.Name, Type: st.Type, URL: st.URL,
+			Enabled: st.Enabled, Ready: st.Ready, ToolCount: st.ToolCount,
+			AllowedToolCount: st.AllowedToolCount, BlockedToolCount: st.BlockedToolCount,
+			RequiresPolicy: st.RequiresPolicy,
+		}
+	}
+	return out
 }
 
 func buildMemoryPolicy(repoRoot string, workspace contracts.WorkspaceRef) MemoryPolicyStatus {
@@ -171,7 +200,6 @@ func supportedExternalConnectionActions(slotID string) []string {
 	return nil
 }
 
-
 func memoryCount(repoRoot string, workspaceID string) int {
 	items, err := memory.NewStore(repoRoot).List(workspaceID)
 	if err != nil {
@@ -208,4 +236,3 @@ func approvedDirectories(items []state.ApprovedDirectoryRecord) []DirectoryAppro
 	}
 	return approvals
 }
-

@@ -1,6 +1,6 @@
 use crate::capabilities::{
-    ExternalConnectionSlot, ToolDefinition, capability_spec, connector_slot_spec,
-    external_connection_slots, resolve_tool, visible_tools,
+    ExternalConnectionSlot, ToolDefinition, capability_spec, connector_slot_spec, external_connection_slots,
+    resolve_tool, visible_tools,
 };
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::{CapabilitySpec, ConnectorSlotSpec};
@@ -30,16 +30,11 @@ fn action_arguments_json(action: &PlannedAction) -> String {
     match action {
         PlannedAction::RunCommand { command } => json!({ "command": command }).to_string(),
         PlannedAction::ReadFile { path } => json!({ "path": path }).to_string(),
-        PlannedAction::WriteFile { path, content } => {
-            json!({ "path": path, "content": content }).to_string()
-        }
+        PlannedAction::WriteFile { path, content } => json!({ "path": path, "content": content }).to_string(),
+        PlannedAction::ApplyPatch { diff, dry_run } => json!({ "diff": diff, "dry_run": dry_run }).to_string(),
         PlannedAction::DeletePath { path } => json!({ "path": path }).to_string(),
         PlannedAction::ListFiles { path } => json!({ "path": path }).to_string(),
-        PlannedAction::WriteMemory {
-            kind,
-            summary,
-            content,
-        } => json!({
+        PlannedAction::WriteMemory { kind, summary, content } => json!({
             "kind": kind,
             "summary": summary,
             "content": content
@@ -49,6 +44,7 @@ fn action_arguments_json(action: &PlannedAction) -> String {
         PlannedAction::SearchKnowledge { query } => json!({ "query": query }).to_string(),
         PlannedAction::SearchSiyuanNotes { query } => json!({ "query": query }).to_string(),
         PlannedAction::ReadSiyuanNote { path } => json!({ "path": path }).to_string(),
+        PlannedAction::MCPCall { arguments_json, .. } => arguments_json.clone(),
         PlannedAction::WriteSiyuanKnowledge
         | PlannedAction::ProjectAnswer
         | PlannedAction::ContextAnswer

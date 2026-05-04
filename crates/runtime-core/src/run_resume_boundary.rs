@@ -22,10 +22,7 @@ fn execution_boundary_from_event(event: &RunEvent) -> Option<String> {
     if !is_execution_boundary_event(event) {
         return None;
     }
-    let mut parts = vec![
-        format!("阶段={}", event.stage),
-        format!("事件={}", event.event_type),
-    ];
+    let mut parts = vec![format!("阶段={}", event.stage), format!("事件={}", event.event_type)];
     if let Some(step) = next_step_metadata(event) {
         parts.push(format!("下一步={step}"));
     }
@@ -51,11 +48,7 @@ fn confirmation_boundary_from_events(checkpoint: &RunCheckpoint) -> Option<Strin
 
 fn format_confirmation_boundary(event: &RunEvent) -> String {
     let step = next_step_metadata(event).unwrap_or_else(default_confirmation_step);
-    format_boundary_parts(
-        event.stage.as_str(),
-        event.event_type.as_str(),
-        step.as_str(),
-    )
+    format_boundary_parts(event.stage.as_str(), event.event_type.as_str(), step.as_str())
 }
 
 fn format_boundary_parts(stage: &str, event_type: &str, step: &str) -> String {
@@ -63,11 +56,7 @@ fn format_boundary_parts(stage: &str, event_type: &str, step: &str) -> String {
 }
 
 fn next_step_metadata(event: &RunEvent) -> Option<String> {
-    event
-        .metadata
-        .get("next_step")
-        .cloned()
-        .filter(|s| !s.is_empty())
+    event.metadata.get("next_step").cloned().filter(|s| !s.is_empty())
 }
 
 fn default_confirmation_step() -> String {

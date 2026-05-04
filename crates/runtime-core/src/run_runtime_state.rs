@@ -7,10 +7,7 @@ use crate::run_state_builder::PreparedRunState;
 use crate::session::SessionMemory;
 use crate::skill_catalog::SkillCatalog;
 
-pub(crate) fn refresh_context_after_execution(
-    envelope: &mut RuntimeContextEnvelope,
-    trace: &ToolExecutionTrace,
-) {
+pub(crate) fn refresh_context_after_execution(envelope: &mut RuntimeContextEnvelope, trace: &ToolExecutionTrace) {
     apply_reasoning_summary(envelope, trace);
     apply_cache_status(envelope, trace);
     apply_cache_reason(envelope, trace);

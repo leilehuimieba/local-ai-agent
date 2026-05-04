@@ -5,6 +5,7 @@ import (
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/mcp"
 	"local-agent/gateway/internal/memory"
 	runtimeclient "local-agent/gateway/internal/runtime"
 	"local-agent/gateway/internal/service"
@@ -23,19 +24,21 @@ type ChatHandler struct {
 	runtimeStore      *state.RuntimeProviderStore
 	memoryStore       *memory.Store
 	executionRegistry *service.ExecutionRegistry
+	mcpManager        *mcp.Manager
+	gatewayToken      string
 }
 
 type ChatRunRequest struct {
-	RequestID       string              `json:"request_id,omitempty"`
-	RunID           string              `json:"run_id,omitempty"`
-	SessionID       string              `json:"session_id"`
-	TraceID         string              `json:"trace_id,omitempty"`
-	UserInput       string              `json:"user_input"`
-	Mode            string              `json:"mode"`
+	RequestID       string                 `json:"request_id,omitempty"`
+	RunID           string                 `json:"run_id,omitempty"`
+	SessionID       string                 `json:"session_id"`
+	TraceID         string                 `json:"trace_id,omitempty"`
+	UserInput       string                 `json:"user_input"`
+	Mode            string                 `json:"mode"`
 	Model           contracts.ModelRef     `json:"model"`
 	Workspace       contracts.WorkspaceRef `json:"workspace"`
-	ContextHints    map[string]string   `json:"context_hints,omitempty"`
-	KnowledgeBaseID string              `json:"knowledge_base_id,omitempty"`
+	ContextHints    map[string]string      `json:"context_hints,omitempty"`
+	KnowledgeBaseID string                 `json:"knowledge_base_id,omitempty"`
 }
 
 type ChatRetryRequest struct {

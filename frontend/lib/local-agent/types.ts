@@ -2,7 +2,7 @@
 export type RunState = "idle" | "running" | "awaiting_confirmation" | "completed" | "failed"
 export type ConnectionState = "connected" | "connecting" | "closed" | "disconnected"
 export type ViewType = "task" | "logs" | "knowledge" | "settings"
-export type AgentMode = "observer" | "standard" | "full_access"
+export type AgentMode = "observe" | "standard" | "full_access"
 
 // Result Block Types
 export interface CodeBlock {
@@ -36,6 +36,7 @@ export interface Message {
   content: string
   blocks?: ResultBlock[]
   timestamp: string
+  isStreaming?: boolean
 }
 
 // Event Types
@@ -86,21 +87,90 @@ export interface Model {
   model_id: string
   display_name: string
   provider_id: string
+  enabled?: boolean
+  available?: boolean
 }
 
 export interface Workspace {
-  id: string
+  workspace_id: string
   name: string
   root_path: string
+  is_active?: boolean
 }
 
 export interface Provider {
   provider_id: string
   display_name: string
   base_url: string
-  api_key?: string
+  chat_completions_path?: string
+  models_path?: string
+  credential_kind?: string
+  supports_test?: boolean
+  editable?: boolean
   embedding_model?: string
+  credential_status?: ProviderCredentialStatus
   status?: "active" | "inactive" | "error"
+}
+
+export interface ProviderCredentialStatus {
+  has_credential: boolean
+  api_key_masked?: string
+  updated_at?: string
+  last_test_status?: string
+  last_test_message?: string
+  last_test_at?: string
+  apply_status: string
+  applied_at?: string
+  pending_reload: boolean
+}
+
+export interface DirectoryApproval {
+  approval_id: string
+  workspace_id: string
+  name: string
+  root_path: string
+  created_at?: string
+}
+
+export interface RuntimeStatusInfo {
+  ok: boolean
+  name: string
+  version: string
+}
+
+export interface EmbeddingInfo {
+  provider_id: string
+  model_name: string
+}
+
+export interface MCPTool {
+  name: string
+  description: string
+  inputSchema?: Record<string, unknown>
+  server_id?: string
+  allowed: boolean
+  risk_level: "low" | "medium" | "high" | "critical"
+  requires_confirmation: boolean
+  audit_enabled: boolean
+  policy_source: string
+}
+
+export interface MCPServerInfo {
+  id: string
+  name: string
+  type: string
+  url: string
+  enabled: boolean
+  ready: boolean
+  tool_count: number
+  allowed_tool_count: number
+  blocked_tool_count: number
+  requires_policy: boolean
+}
+
+export interface MCPInfo {
+  servers: MCPServerInfo[]
+  tools: MCPTool[]
 }
 
 export interface Settings {
@@ -109,6 +179,16 @@ export interface Settings {
   workspace: Workspace
   embedding_provider_id: string
   providers: Provider[]
+  active_provider_id?: string
+  available_models: Model[]
+  available_workspaces: Workspace[]
+  approved_directories: DirectoryApproval[]
+  directory_prompt_enabled: boolean
+  show_risk_level: boolean
+  ports: Record<string, number>
+  runtime_status?: RuntimeStatusInfo
+  embedding?: EmbeddingInfo
+  mcp?: MCPInfo
 }
 
 // Knowledge Types
@@ -189,5 +269,3 @@ export interface Memory {
   createdAt: string
   sourceRunId?: string
 }
-
-

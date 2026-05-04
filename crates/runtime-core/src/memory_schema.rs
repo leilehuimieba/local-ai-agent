@@ -71,9 +71,7 @@ pub(crate) struct StructuredMemoryEntry {
 
 pub(crate) fn normalize_memory_kind(value: &str) -> MemoryKind {
     match value.trim().to_lowercase().as_str() {
-        "preference" | "workflow_preference" | "user_preference" | "偏好" => {
-            MemoryKind::Preference
-        }
+        "preference" | "workflow_preference" | "user_preference" | "偏好" => MemoryKind::Preference,
         "project_rule" | "项目规则" => MemoryKind::ProjectRule,
         "workspace_summary" | "工作区摘要" => MemoryKind::WorkspaceSummary,
         "workflow_pattern" | "流程模式" => MemoryKind::WorkflowPattern,

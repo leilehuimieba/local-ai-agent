@@ -43,11 +43,7 @@ pub(crate) fn probe_answer_cache(
 ) -> AnswerCacheProbe {
     let cache_key = cache_key(scene, user_input, context_digest);
     let entries = read_jsonl::<AnswerCacheEntry>(&answer_cache_file_path(request));
-    match entries
-        .into_iter()
-        .rev()
-        .find(|item| item.cache_key == cache_key)
-    {
+    match entries.into_iter().rev().find(|item| item.cache_key == cache_key) {
         Some(entry) => hit_probe(cache_key, entry),
         None => miss_probe(cache_key, scene),
     }
@@ -62,11 +58,7 @@ pub(crate) fn append_answer_cache(
     answer: &str,
     summary: &str,
 ) {
-    if probe.status == "hit"
-        || probe.status == "bypass"
-        || probe.cache_key.is_empty()
-        || answer.trim().is_empty()
-    {
+    if probe.status == "hit" || probe.status == "bypass" || probe.cache_key.is_empty() || answer.trim().is_empty() {
         return;
     }
     let entry = AnswerCacheEntry {

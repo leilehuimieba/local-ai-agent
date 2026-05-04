@@ -1,9 +1,7 @@
 package api
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	"local-agent/gateway/internal/providers/bestblogs"
 	"local-agent/gateway/internal/service"
@@ -22,11 +20,8 @@ func learningValueScoreHandler() http.HandlerFunc {
 			http.Error(w, "unsupported learning provider", http.StatusBadRequest)
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
-		defer cancel()
-		article, err := bestblogs.NewClient(nil).ReadArticle(ctx, learningProviderRequest(payload))
-		if err != nil {
-			writeBestblogsError(w, err)
+		article, ok := readLearningArticle(w, r, payload)
+		if !ok {
 			return
 		}
 		writeJSON(w, http.StatusOK, scoreLearningArticle(article))

@@ -81,10 +81,7 @@ fn hermes_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
             .join("changes")
             .join("H-gate-h-signoff-20260416")
             .join("review.md"),
-        docs_root
-            .join("11-hermes-rebuild")
-            .join("changes")
-            .join("INDEX.md"),
+        docs_root.join("11-hermes-rebuild").join("changes").join("INDEX.md"),
         docs_root.join("README.md"),
         docs_root
             .join("11-hermes-rebuild")
@@ -101,21 +98,15 @@ fn legacy_project_status_paths(docs_root: &Path) -> Vec<PathBuf> {
         docs_root
             .join("06-development")
             .join("忠实用户转化导向开发任务书_V1.md"),
-        docs_root
-            .join("07-test")
-            .join("忠实用户转化导向验收文档_V1.md"),
-        docs_root
-            .join("06-development")
-            .join("第二阶段需求文档_V1.md"),
+        docs_root.join("07-test").join("忠实用户转化导向验收文档_V1.md"),
+        docs_root.join("06-development").join("第二阶段需求文档_V1.md"),
         docs_root
             .join("06-development")
             .join("第二阶段产品定位与开发重点清单_V1.md"),
         docs_root
             .join("06-development")
             .join("第二阶段短期可用能力开发任务书_V1.md"),
-        docs_root
-            .join("07-test")
-            .join("第二阶段短期可用能力验收文档_V1.md"),
+        docs_root.join("07-test").join("第二阶段短期可用能力验收文档_V1.md"),
     ]
 }
 
@@ -126,10 +117,7 @@ fn project_status_section(path: &Path, query: &str) -> Option<String> {
 }
 
 fn project_status_summary(path: &Path, content: &str, query: &str) -> String {
-    let name = path
-        .file_name()
-        .and_then(|item| item.to_str())
-        .unwrap_or_default();
+    let name = path.file_name().and_then(|item| item.to_str()).unwrap_or_default();
     if name.contains("忠实用户转化导向开发任务书") {
         return "当前正式阶段已经切到忠实用户转化导向，顺序按 A、B、C、D、E、F 推进；其中项目状态回答要求稳定输出已完成能力、当前阶段、待收口项，并进一步展开到真实样本、验证路径和完成标准。".to_string();
     }
@@ -156,16 +144,13 @@ fn project_context_hits(request: &RunRequest) -> Vec<crate::knowledge::Knowledge
     if !direct_hits.is_empty() {
         return direct_hits;
     }
-    search_knowledge(
-        request,
-        &project_context_fallback_query(&request.user_input),
-        4,
-    )
+    search_knowledge(request, &project_context_fallback_query(&request.user_input), 4)
 }
 
 fn project_context_fallback_query(user_input: &str) -> String {
     if is_project_status_request(user_input) {
-        "阶段 H Gate-H 聚合复核 current-state 当前活跃 change warning 未签收 不可签收 H-02 H-03 暂停点 重启条件".to_string()
+        "阶段 H Gate-H 聚合复核 current-state 当前活跃 change warning 未签收 不可签收 H-02 H-03 暂停点 重启条件"
+            .to_string()
     } else {
         "项目 智能体 本地 主干 架构 运行时".to_string()
     }
@@ -206,13 +191,7 @@ fn project_answer_success(
         return recover_project_answer(request, snippets, cache_probe, "模型输出不可用");
     }
     let result_summary = project_result_summary(snippets);
-    append_project_answer_cache(
-        request,
-        cache_probe,
-        snippets,
-        &final_answer,
-        &result_summary,
-    );
+    append_project_answer_cache(request, cache_probe, snippets, &final_answer, &result_summary);
     ok_project_answer(cache_probe, result_summary, final_answer)
 }
 
@@ -225,10 +204,7 @@ fn ok_project_answer(
         "基于本地项目文档生成项目说明。".to_string(),
         result_summary,
         final_answer,
-        format!(
-            "优先依据当前执行入口与项目文档片段组织项目说明。{}",
-            cache_probe.reason
-        ),
+        format!("优先依据当前执行入口与项目文档片段组织项目说明。{}", cache_probe.reason),
         cache_probe.status.clone(),
         cache_probe.reason.clone(),
     )
@@ -253,10 +229,7 @@ fn append_project_answer_cache(
 }
 
 fn project_result_summary(snippets: &str) -> String {
-    format!(
-        "已基于项目文档片段完成一次项目说明回答：{}",
-        summarize_text(snippets)
-    )
+    format!("已基于项目文档片段完成一次项目说明回答：{}", summarize_text(snippets))
 }
 
 fn finalized_project_answer(request: &RunRequest, content: &str, snippets: &str) -> String {
@@ -282,10 +255,7 @@ fn recover_project_answer(
 }
 
 fn recover_cache_summary(summary: &str) -> String {
-    format!(
-        "已基于项目文档恢复生成项目说明：{}",
-        summarize_text(summary)
-    )
+    format!("已基于项目文档恢复生成项目说明：{}", summarize_text(summary))
 }
 
 fn recovered_project_answer(
@@ -297,10 +267,7 @@ fn recovered_project_answer(
         "基于本地项目文档生成项目说明。".to_string(),
         format!("项目说明主回答失败，已执行单次恢复：{}", cause),
         format!("主回答未成功，已切换到项目文档恢复路径。\n{}", summary),
-        format!(
-            "模型回答不可用，已降级为项目文档恢复路径。{}",
-            cache_probe.reason
-        ),
+        format!("模型回答不可用，已降级为项目文档恢复路径。{}", cache_probe.reason),
         cache_probe.status.clone(),
         cache_probe.reason.clone(),
     )
@@ -321,8 +288,7 @@ fn is_project_answer_usable(content: &str) -> bool {
 
 fn should_recover_project_answer(content: &str, final_answer: &str) -> bool {
     !is_project_answer_usable(content)
-        || final_answer.trim()
-            == "当前项目是一个本地智能体系统，围绕运行时、网关和前端工作台组织能力。"
+        || final_answer.trim() == "当前项目是一个本地智能体系统，围绕运行时、网关和前端工作台组织能力。"
 }
 
 fn fallback_project_summary(snippets: &str) -> String {
@@ -349,8 +315,7 @@ fn stable_project_status_answer(snippets: &str) -> String {
     if is_phase2_status_context(snippets) {
         return "已完成能力：在线模型对话主链路、工作区内文件读取与写入、受控命令执行、本地缓存最小闭环，以及记忆和知识沉淀继续增强，这些能力都已有真实样本留证。当前阶段：仍处在第二阶段短期可用目标下的主链路收口期，重点继续把项目说明、验证留痕和前端事件日志展示做稳。待收口项：项目状态类回答还需要进一步细化到样本和完成标准，会话续答质量也还依赖压缩摘要厚度。下一步建议：优先围绕忠实用户转化方向补连续性、记忆可见性和续推体验。".to_string();
     }
-    "当前项目已经具备基础运行能力，正在继续收口项目说明、执行验证和长期沉淀这几条主链路。"
-        .to_string()
+    "当前项目已经具备基础运行能力，正在继续收口项目说明、执行验证和长期沉淀这几条主链路。".to_string()
 }
 
 fn is_loyal_status_context(snippets: &str) -> bool {
@@ -375,9 +340,7 @@ fn is_phase2_status_context(snippets: &str) -> bool {
 }
 
 fn has_cjk_text(content: &str) -> bool {
-    content
-        .chars()
-        .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch))
+    content.chars().any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch))
 }
 
 fn looks_like_path_only(content: &str) -> bool {
@@ -388,10 +351,7 @@ fn looks_like_path_only(content: &str) -> bool {
         && !value.contains(' ')
 }
 
-fn probe_project_cache(
-    request: &RunRequest,
-    snippets: &str,
-) -> crate::answer_cache::AnswerCacheProbe {
+fn probe_project_cache(request: &RunRequest, snippets: &str) -> crate::answer_cache::AnswerCacheProbe {
     probe_answer_cache_or_bypass(
         request,
         "project_answer",
@@ -402,10 +362,7 @@ fn probe_project_cache(
     )
 }
 
-fn project_cache_hit(
-    snippets: &str,
-    cache_probe: &crate::answer_cache::AnswerCacheProbe,
-) -> Option<ActionExecution> {
+fn project_cache_hit(snippets: &str, cache_probe: &crate::answer_cache::AnswerCacheProbe) -> Option<ActionExecution> {
     let answer = sanitize_project_answer(&cache_probe.answer.clone()?, "");
     if answer.is_empty() {
         return None;
@@ -418,10 +375,7 @@ fn project_cache_hit(
     ))
 }
 
-fn render_project_prompt(
-    request: &RunRequest,
-    cache_probe: &crate::answer_cache::AnswerCacheProbe,
-) -> String {
+fn render_project_prompt(request: &RunRequest, cache_probe: &crate::answer_cache::AnswerCacheProbe) -> String {
     let session_context = SessionMemory::default();
     let repo_context = load_repo_context(std::path::Path::new(&request.workspace_ref.root_path));
     let registry = runtime_tool_registry();

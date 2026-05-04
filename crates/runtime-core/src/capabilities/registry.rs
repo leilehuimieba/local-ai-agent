@@ -7,6 +7,7 @@ pub(crate) fn resolve_tool(action: &PlannedAction) -> ToolDefinition {
         PlannedAction::RunCommand { .. } => run_command_tool(),
         PlannedAction::ReadFile { .. } => read_file_tool(),
         PlannedAction::WriteFile { .. } => write_file_tool(),
+        PlannedAction::ApplyPatch { .. } => apply_patch_tool(),
         PlannedAction::DeletePath { .. } => delete_path_tool(),
         PlannedAction::ListFiles { .. } => list_files_tool(),
         PlannedAction::WriteMemory { .. } => write_memory_tool(),
@@ -14,6 +15,9 @@ pub(crate) fn resolve_tool(action: &PlannedAction) -> ToolDefinition {
         PlannedAction::SearchKnowledge { .. } => search_knowledge_tool(),
         PlannedAction::SearchSiyuanNotes { .. } => search_siyuan_tool(),
         PlannedAction::ReadSiyuanNote { .. } => read_siyuan_tool(),
+        PlannedAction::MCPCall {
+            server_id, tool_name, ..
+        } => mcp_tool(server_id, tool_name),
         PlannedAction::WriteSiyuanKnowledge => write_siyuan_tool(),
         PlannedAction::ProjectAnswer => project_answer_tool(),
         PlannedAction::ContextAnswer => session_context_tool(),
@@ -40,10 +44,7 @@ fn allows_tool(mode: &str, tool: &ToolDefinition) -> bool {
 }
 
 fn is_advanced_write_tool(tool: &ToolDefinition) -> bool {
-    matches!(
-        tool.tool_name.as_str(),
-        "memory_write" | "write_siyuan_knowledge"
-    )
+    matches!(tool.tool_name.as_str(), "memory_write" | "write_siyuan_knowledge")
 }
 
 fn tool_catalog() -> Vec<ToolDefinition> {
@@ -51,6 +52,7 @@ fn tool_catalog() -> Vec<ToolDefinition> {
         run_command_tool(),
         read_file_tool(),
         write_file_tool(),
+        apply_patch_tool(),
         delete_path_tool(),
         list_files_tool(),
         write_memory_tool(),
@@ -117,6 +119,18 @@ fn write_file_tool() -> ToolDefinition {
         "medium",
         "path_and_content",
         "write_result",
+        false,
+    )
+}
+
+fn apply_patch_tool() -> ToolDefinition {
+    make_tool(
+        "workspace_apply_patch",
+        "应用代码补丁",
+        "workspace_write",
+        "medium",
+        "unified_diff",
+        "patch_result",
         false,
     )
 }
@@ -201,6 +215,18 @@ fn read_siyuan_tool() -> ToolDefinition {
         "low",
         "path",
         "text_preview",
+        false,
+    )
+}
+
+fn mcp_tool(server_id: &str, tool_name: &str) -> ToolDefinition {
+    make_tool(
+        &crate::mcp_bridge::mcp_function_name(server_id, tool_name),
+        &format!("MCP: {server_id}/{tool_name}"),
+        "mcp",
+        "medium",
+        "none",
+        "json_preview",
         false,
     )
 }

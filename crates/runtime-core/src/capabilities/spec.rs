@@ -90,7 +90,7 @@ fn side_effect_level(tool: &ToolDefinition) -> &'static str {
 fn supports_modes(tool: &ToolDefinition) -> Vec<String> {
     let modes = match tool.tool_name.as_str() {
         "memory_write" | "write_siyuan_knowledge" => ["full_access"].as_slice(),
-        "workspace_write" | "workspace_delete" | "run_command" => {
+        "workspace_write" | "workspace_apply_patch" | "workspace_delete" | "run_command" => {
             ["standard", "full_access"].as_slice()
         }
         _ => ["observe", "standard", "full_access"].as_slice(),
@@ -100,7 +100,7 @@ fn supports_modes(tool: &ToolDefinition) -> Vec<String> {
 
 fn verification_policy(tool: &ToolDefinition) -> &'static str {
     match tool.tool_name.as_str() {
-        "workspace_write" => "confirm_write_effect",
+        "workspace_write" | "workspace_apply_patch" => "confirm_write_effect",
         "workspace_delete" => "confirm_delete_effect",
         "run_command" => "inspect_command_result",
         "memory_write" => "confirm_memory_persisted",
@@ -111,12 +111,15 @@ fn verification_policy(tool: &ToolDefinition) -> &'static str {
 
 fn connector_slot(tool: &ToolDefinition) -> String {
     match tool.tool_name.as_str() {
-        "workspace_list" | "workspace_read" | "workspace_write" | "workspace_delete"
+        "workspace_list"
+        | "workspace_read"
+        | "workspace_write"
+        | "workspace_apply_patch"
+        | "workspace_delete"
         | "run_command" => "local_files_project".to_string(),
-        "knowledge_search"
-        | "search_siyuan_notes"
-        | "read_siyuan_note"
-        | "write_siyuan_knowledge" => "local_notes_knowledge".to_string(),
+        "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" | "write_siyuan_knowledge" => {
+            "local_notes_knowledge".to_string()
+        }
         _ => String::new(),
     }
 }
@@ -141,6 +144,10 @@ fn tool_schema_properties(input_schema: &str) -> Value {
             "path": { "type": "string", "description": "The file path" },
             "content": { "type": "string", "description": "The content to write" }
         }),
+        "unified_diff" => serde_json::json!({
+            "diff": { "type": "string", "description": "A single-file unified diff" },
+            "dry_run": { "type": "boolean", "description": "Preview without writing files" }
+        }),
         "optional_path" => serde_json::json!({
             "path": { "type": "string", "description": "The file or directory path (optional)" }
         }),
@@ -162,6 +169,7 @@ fn tool_schema_required(input_schema: &str) -> Vec<&'static str> {
         "command_text" => vec!["command"],
         "path" => vec!["path"],
         "path_and_content" => vec!["path", "content"],
+        "unified_diff" => vec!["diff"],
         "memory_entry" => vec!["kind", "summary", "content"],
         "query" => vec!["query"],
         "optional_path" | "none" => vec![],

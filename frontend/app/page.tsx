@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { TopBar } from "@/components/local-agent/top-bar"
 import { LeftSidebar } from "@/components/local-agent/left-sidebar"
 import { RightDrawer } from "@/components/local-agent/right-drawer"
@@ -7,13 +8,18 @@ import { TaskView } from "@/components/local-agent/views/task-view"
 import { LogsView } from "@/components/local-agent/views/logs-view"
 import { KnowledgeView } from "@/components/local-agent/views/knowledge-view"
 import { SettingsView } from "@/components/local-agent/views/settings-view"
-import { useUIStore } from "@/lib/local-agent/store"
+import { useUIStore, useSettingsStore } from "@/lib/local-agent/store"
 
 export default function LocalAgentPage() {
   const { activeView } = useUIStore()
+  const { loadSettings } = useSettingsStore()
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-dvh w-full overflow-hidden bg-background" suppressHydrationWarning>
       {/* Left Sidebar */}
       <LeftSidebar />
 

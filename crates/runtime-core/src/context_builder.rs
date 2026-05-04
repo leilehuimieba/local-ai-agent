@@ -109,7 +109,9 @@ fn static_prompt_block(request: &RunRequest) -> StaticPromptBlock {
 fn mode_prompt_text(mode: &str) -> String {
     match mode {
         "observe" => "当前模式为 `observe`。只允许观察、读取、检索和解释，不允许执行任何修改性动作。".to_string(),
-        "full_access" => "当前模式为 `full_access`。允许执行全部已注册能力，但高危删除和危险命令仍必须经过风险确认。".to_string(),
+        "full_access" => {
+            "当前模式为 `full_access`。允许执行全部已注册能力，但高危删除和危险命令仍必须经过风险确认。".to_string()
+        }
         _ => "当前模式为 `standard`。允许常见开发读写与任务推进，但高级写入能力和高危动作仍受边界控制。".to_string(),
     }
 }
@@ -146,7 +148,7 @@ fn dynamic_prompt_block(
     let session_summary = selected_session_summary(session_context, policy);
     let memory = selected_memory_selection(request, policy);
     let knowledge_digest = selected_knowledge_digest(request, policy);
-    let tool_preview = selected_tool_preview(visible_tools, policy);
+    let tool_preview = selected_tool_preview(request, visible_tools, policy);
     let artifact_hint = selected_artifact_hint(session_context, policy);
     let observation = observation_injection(request, policy);
     build_dynamic_block(
@@ -202,11 +204,7 @@ fn build_dynamic_block(
     block
 }
 
-fn fill_identity_fields(
-    block: &mut DynamicPromptBlock,
-    request: &RunRequest,
-    policy: &ContextAssemblyPolicy,
-) {
+fn fill_identity_fields(block: &mut DynamicPromptBlock, request: &RunRequest, policy: &ContextAssemblyPolicy) {
     block.user_input = request.user_input.clone();
     block.assembly_profile = policy.profile.clone();
     block.includes_session = policy.include_session;
@@ -234,10 +232,7 @@ fn fill_digest_fields(block: &mut DynamicPromptBlock, parts: &PromptParts) {
     block.artifact_hint = parts.artifact_hint.clone();
 }
 
-fn fill_observation_fields(
-    block: &mut DynamicPromptBlock,
-    observation: &ObservationLayeredInjectionReport,
-) {
+fn fill_observation_fields(block: &mut DynamicPromptBlock, observation: &ObservationLayeredInjectionReport) {
     block.observation_injection = observation.injected_text.clone();
     block.observation_references = observation.references.join(",");
     block.observation_budget_total = observation.budget_total_chars;
@@ -248,12 +243,7 @@ fn fill_observation_fields(
     block.observation_budget_hit_tokens = observation.budget_hit_tokens;
 }
 
-fn fill_runtime_fields(
-    block: &mut DynamicPromptBlock,
-    cache_status: &str,
-    cache_reason: &str,
-    parts: &PromptParts,
-) {
+fn fill_runtime_fields(block: &mut DynamicPromptBlock, cache_status: &str, cache_reason: &str, parts: &PromptParts) {
     block.reasoning_summary = reasoning_summary(
         &parts.session_summary,
         &parts.memory_digest,
@@ -270,10 +260,7 @@ fn session_summary(session_context: &SessionMemory) -> String {
     session_prompt_summary(session_context)
 }
 
-fn selected_session_summary(
-    session_context: &SessionMemory,
-    policy: &ContextAssemblyPolicy,
-) -> String {
+fn selected_session_summary(session_context: &SessionMemory, policy: &ContextAssemblyPolicy) -> String {
     if policy.include_session {
         session_summary(session_context)
     } else {
@@ -281,10 +268,7 @@ fn selected_session_summary(
     }
 }
 
-fn selected_memory_selection(
-    request: &RunRequest,
-    policy: &ContextAssemblyPolicy,
-) -> MemoryPromptSelection {
+fn selected_memory_selection(request: &RunRequest, policy: &ContextAssemblyPolicy) -> MemoryPromptSelection {
     if !policy.include_memory {
         return MemoryPromptSelection {
             digest: "当前阶段未注入长期记忆摘要。".to_string(),
@@ -323,11 +307,7 @@ fn memory_digest_focus(digest: &MemoryDigest) -> String {
         return String::new();
     }
     let count = digest.current_object_count;
-    format!(
-        "记忆入口已按分层装配：{}（对象 {} 条）",
-        layers.join(" + "),
-        count
-    )
+    format!("记忆入口已按分层装配：{}（对象 {} 条）", layers.join(" + "), count)
 }
 
 fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
@@ -351,10 +331,7 @@ fn knowledge_digest(request: &RunRequest) -> String {
     )
 }
 
-fn project_status_knowledge_digest(
-    request: &RunRequest,
-    policy: &ContextAssemblyPolicy,
-) -> Option<String> {
+fn project_status_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> Option<String> {
     if policy.profile != "project_answer" || !is_project_status_query(&request.user_input) {
         return None;
     }
@@ -403,11 +380,7 @@ fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
 
 fn status_digest_entry(path: &Path, query: &str) -> Option<String> {
     let content = fs::read_to_string(path).ok()?;
-    Some(format!(
-        "{}: {}",
-        path.display(),
-        extract_snippet(&content, query)
-    ))
+    Some(format!("{}: {}", path.display(), extract_snippet(&content, query)))
 }
 
 fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
@@ -419,13 +392,26 @@ fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
 }
 
 fn selected_tool_preview(
+    request: &RunRequest,
     visible_tools: &[ToolDefinition],
     policy: &ContextAssemblyPolicy,
 ) -> String {
     if policy.include_tool_preview {
-        tool_preview(visible_tools)
+        combined_tool_preview(tool_preview(visible_tools), request)
     } else {
         "当前阶段未注入工具预览。".to_string()
+    }
+}
+
+fn combined_tool_preview(native_preview: String, request: &RunRequest) -> String {
+    let mcp_preview = request
+        .context_hints
+        .get("mcp_tool_preview")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty());
+    match mcp_preview {
+        Some(preview) => summarize_text(&format!("{native_preview} || {preview}")),
+        None => native_preview,
     }
 }
 
@@ -439,17 +425,9 @@ fn tool_preview(visible_tools: &[ToolDefinition]) -> String {
     )
 }
 
-fn selected_artifact_hint(
-    session_context: &SessionMemory,
-    policy: &ContextAssemblyPolicy,
-) -> String {
-    if policy.prefer_artifact_context
-        && !session_context.short_term.handoff_artifact_path.is_empty()
-    {
-        return format!(
-            "优先参考交接包：{}",
-            session_context.short_term.handoff_artifact_path
-        );
+fn selected_artifact_hint(session_context: &SessionMemory, policy: &ContextAssemblyPolicy) -> String {
+    if policy.prefer_artifact_context && !session_context.short_term.handoff_artifact_path.is_empty() {
+        return format!("优先参考交接包：{}", session_context.short_term.handoff_artifact_path);
     }
     "当前阶段未注入交接包提示。".to_string()
 }
@@ -486,10 +464,7 @@ fn evidence_refs(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String
         .unwrap_or_else(|| "observation".to_string())
 }
 
-fn observation_injection(
-    request: &RunRequest,
-    policy: &ContextAssemblyPolicy,
-) -> ObservationLayeredInjectionReport {
+fn observation_injection(request: &RunRequest, policy: &ContextAssemblyPolicy) -> ObservationLayeredInjectionReport {
     if policy.include_memory || policy.include_knowledge {
         let budget = resolve_observation_budget_chars(request, 1200);
         return build_layered_injection(request, &request.user_input, budget);
@@ -508,12 +483,7 @@ fn reasoning_summary(
 ) -> String {
     summarize_text(&format!(
         "当前上下文调度原因：{}。先结合会话摘要判断当前意图，再参考长期记忆、本地知识与 observation 分层注入组织回答。会话：{} || 记忆：{} || 知识：{} || Observation：{} || Artifact：{}",
-        selection_reason,
-        session_summary,
-        memory_digest,
-        knowledge_digest,
-        observation_injection,
-        artifact_hint
+        selection_reason, session_summary, memory_digest, knowledge_digest, observation_injection, artifact_hint
     ))
 }
 
@@ -573,6 +543,30 @@ mod tests {
     }
 
     #[test]
+    fn tool_preview_includes_mcp_hints_when_policy_allows_tools() {
+        let mut request = sample_request();
+        request.context_hints.insert(
+            "mcp_tool_preview".to_string(),
+            "MCP工具可自动执行或按策略拒绝：web/search - 搜索网页".to_string(),
+        );
+        let policy = ContextAssemblyPolicy {
+            profile: "agent_resolve".to_string(),
+            include_session: true,
+            include_memory: true,
+            include_knowledge: true,
+            include_tool_preview: true,
+            skill_injection_enabled: true,
+            max_skill_level: "level1:index-summary".to_string(),
+            phase_label: "execute".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let preview = selected_tool_preview(&request, &[sample_tool()], &policy);
+        assert!(preview.contains("读取文件(workspace_read)"));
+        assert!(preview.contains("web/search - 搜索网页"));
+    }
+
+    #[test]
     fn project_answer_status_digest_prefers_current_hermes_docs() {
         let request = status_request();
         let policy = ContextAssemblyPolicy {
@@ -610,6 +604,18 @@ mod tests {
         request_with_input("test")
     }
 
+    fn sample_tool() -> ToolDefinition {
+        ToolDefinition {
+            tool_name: "workspace_read".to_string(),
+            display_name: "读取文件".to_string(),
+            category: "workspace_read".to_string(),
+            risk_level: "low".to_string(),
+            input_schema: "path".to_string(),
+            output_kind: "text".to_string(),
+            requires_confirmation: false,
+        }
+    }
+
     fn status_request() -> RunRequest {
         request_with_input(
             "我现在接手这个项目，请直接告诉我：当前停在什么状态、为什么不能继续默认推进、以及以后满足什么条件才值得重启。",
@@ -618,10 +624,7 @@ mod tests {
 
     fn request_with_input(user_input: &str) -> RunRequest {
         let mut context_hints = BTreeMap::new();
-        context_hints.insert(
-            "skill_ids".to_string(),
-            "skill.alpha,skill.beta".to_string(),
-        );
+        context_hints.insert("skill_ids".to_string(), "skill.alpha,skill.beta".to_string());
         context_hints.insert("evidence_refs".to_string(), "verify:sample".to_string());
         let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
@@ -656,10 +659,7 @@ mod tests {
     }
 
     fn memory_request(user_input: &str) -> RunRequest {
-        let root = std::env::temp_dir().join(format!(
-            "context-builder-memory-{}",
-            crate::events::timestamp_now()
-        ));
+        let root = std::env::temp_dir().join(format!("context-builder-memory-{}", crate::events::timestamp_now()));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             workspace_ref: WorkspaceRef {

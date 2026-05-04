@@ -62,24 +62,19 @@ pub(crate) fn memory_tombstone_file_path(request: &RunRequest) -> PathBuf {
     data_root(request)
         .join("memory")
         .join("deletions")
-        .join(format!(
-            "{}.jsonl",
-            safe_name(&request.workspace_ref.workspace_id)
-        ))
+        .join(format!("{}.jsonl", safe_name(&request.workspace_ref.workspace_id)))
 }
 
 pub(crate) fn long_term_memory_file_path(request: &RunRequest) -> PathBuf {
-    data_root(request).join("long_term_memory").join(format!(
-        "{}.jsonl",
-        safe_name(&request.workspace_ref.workspace_id)
-    ))
+    data_root(request)
+        .join("long_term_memory")
+        .join(format!("{}.jsonl", safe_name(&request.workspace_ref.workspace_id)))
 }
 
 pub(crate) fn knowledge_base_file_path(request: &RunRequest) -> PathBuf {
-    data_root(request).join("knowledge_base").join(format!(
-        "{}.jsonl",
-        safe_name(&request.workspace_ref.workspace_id)
-    ))
+    data_root(request)
+        .join("knowledge_base")
+        .join(format!("{}.jsonl", safe_name(&request.workspace_ref.workspace_id)))
 }
 
 pub(crate) fn sqlite_db_path(request: &RunRequest) -> PathBuf {
@@ -95,10 +90,9 @@ pub(crate) fn daily_rollup_path(request: &RunRequest) -> PathBuf {
 }
 
 pub(crate) fn answer_cache_file_path(request: &RunRequest) -> PathBuf {
-    data_root(request).join("cache").join(format!(
-        "{}.jsonl",
-        safe_name(&request.workspace_ref.workspace_id)
-    ))
+    data_root(request)
+        .join("cache")
+        .join(format!("{}.jsonl", safe_name(&request.workspace_ref.workspace_id)))
 }
 
 pub(crate) fn artifact_dir(request: &RunRequest) -> PathBuf {
@@ -113,9 +107,7 @@ pub(crate) fn artifact_index_path(request: &RunRequest) -> PathBuf {
 }
 
 pub(crate) fn external_memory_audit_path(request: &RunRequest) -> PathBuf {
-    data_root(request)
-        .join("logs")
-        .join("external-memory-cortex.jsonl")
+    data_root(request).join("logs").join("external-memory-cortex.jsonl")
 }
 
 pub(crate) fn observation_audit_file_path(request: &RunRequest) -> PathBuf {
@@ -130,10 +122,7 @@ pub(crate) fn siyuan_root_dir(request: &RunRequest) -> Option<PathBuf> {
 }
 
 pub(crate) fn siyuan_export_dir(request: &RunRequest) -> Option<PathBuf> {
-    request
-        .context_hints
-        .get("siyuan_export_dir")
-        .map(PathBuf::from)
+    request.context_hints.get("siyuan_export_dir").map(PathBuf::from)
 }
 
 pub(crate) fn siyuan_auto_write_enabled(request: &RunRequest) -> bool {

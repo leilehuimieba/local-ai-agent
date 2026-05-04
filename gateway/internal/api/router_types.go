@@ -2,6 +2,7 @@ package api
 
 import (
 	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/mcp"
 	"local-agent/gateway/internal/memory"
 	"local-agent/gateway/internal/state"
 )
@@ -29,6 +30,25 @@ type SettingsResponse struct {
 	Diagnostics            DiagnosticsStatus        `json:"diagnostics"`
 	ExternalConnections    []ExternalConnectionSlot `json:"external_connections"`
 	Embedding              EmbeddingInfo            `json:"embedding"`
+	MCP                    MCPInfo                  `json:"mcp"`
+}
+
+type MCPInfo struct {
+	Servers []MCPServerStatus `json:"servers"`
+	Tools   []mcp.Tool        `json:"tools,omitempty"`
+}
+
+type MCPServerStatus struct {
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Type             string `json:"type"`
+	URL              string `json:"url"`
+	Enabled          bool   `json:"enabled"`
+	Ready            bool   `json:"ready"`
+	ToolCount        int    `json:"tool_count"`
+	AllowedToolCount int    `json:"allowed_tool_count"`
+	BlockedToolCount int    `json:"blocked_tool_count"`
+	RequiresPolicy   bool   `json:"requires_policy"`
 }
 
 type EmbeddingInfo struct {

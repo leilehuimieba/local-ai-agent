@@ -15,12 +15,7 @@ pub(crate) fn resumed_prepared_state(
     visible_tools: &[ToolDefinition],
     checkpoint: Option<&RunCheckpoint>,
 ) -> Option<PreparedRunState> {
-    let prepared = crate::run_state_builder::prepare_run_state(
-        request,
-        session_context,
-        repo_context,
-        visible_tools,
-    );
+    let prepared = crate::run_state_builder::prepare_run_state(request, session_context, repo_context, visible_tools);
     let action = resumed_action_from_checkpoint(checkpoint?)?;
     Some(prepared_with_action(
         request,
@@ -40,11 +35,7 @@ fn prepared_with_action(
 ) -> PreparedRunState {
     PreparedRunState {
         task_title: crate::derive_task_title(&action, &request.user_input),
-        analysis_detail: crate::planner::analysis_summary(
-            &action,
-            session_context,
-            &repo_context.snapshot,
-        ),
+        analysis_detail: crate::planner::analysis_summary(&action, session_context, &repo_context.snapshot),
         risk_outcome: crate::risk::assess_risk(request, &action),
         tool_call: ToolCall {
             spec: crate::capabilities::resolve_tool(&action),

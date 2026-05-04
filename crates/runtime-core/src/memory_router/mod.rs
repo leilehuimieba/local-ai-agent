@@ -1,17 +1,15 @@
-﻿use crate::capabilities::ToolExecutionTrace;
+use crate::capabilities::ToolExecutionTrace;
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;
 use crate::knowledge_store::{
     KnowledgeRecord, append_knowledge_record, find_reusable_siyuan_record, has_knowledge_record,
     should_skip_knowledge_record,
 };
-use crate::memory::{
-    MemoryEntry, append_memory_entry, normalized_memory_entry, search_memory_entries,
-};
+use crate::memory::{MemoryEntry, append_memory_entry, normalized_memory_entry, search_memory_entries};
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::paths::{
-    knowledge_base_file_path, long_term_memory_file_path, siyuan_auto_write_enabled,
-    siyuan_export_dir, siyuan_sync_enabled, working_memory_dir,
+    knowledge_base_file_path, long_term_memory_file_path, siyuan_auto_write_enabled, siyuan_export_dir,
+    siyuan_sync_enabled, working_memory_dir,
 };
 use crate::text::summarize_text;
 use crate::verify::VerificationReport;
@@ -67,10 +65,7 @@ fn working_memory_outcome(request: &RunRequest) -> MemoryWriteOutcome {
         record_type: "session_state".to_string(),
         source_type: "runtime".to_string(),
         title: request.session_id.clone(),
-        summary: format!(
-            "短期工作记忆已落盘到 {}",
-            working_memory_dir(request).display()
-        ),
+        summary: format!("短期工作记忆已落盘到 {}", working_memory_dir(request).display()),
         reason: "当前任务主循环已完成短期状态更新。".to_string(),
         audit: working_memory_audit(),
     }
@@ -82,11 +77,7 @@ fn write_long_term_memory(
     report: &VerificationReport,
 ) -> MemoryWriteOutcome {
     if !report.outcome.passed {
-        return skipped_record_outcome(
-            "long_term_memory",
-            "lesson_learned",
-            "验证未通过，跳过长期记忆写入。",
-        );
+        return skipped_record_outcome("long_term_memory", "lesson_learned", "验证未通过，跳过长期记忆写入。");
     }
     let entry = auto_memory_entry(request, trace, report);
     if has_memory_duplicate(request, &entry) {
@@ -108,11 +99,7 @@ fn write_knowledge_record(
         );
     };
     if has_knowledge_record(request, &record) {
-        return skipped_record_outcome(
-            "knowledge_base",
-            &record.knowledge_type,
-            "命中重复知识条目，跳过写入。",
-        );
+        return skipped_record_outcome("knowledge_base", &record.knowledge_type, "命中重复知识条目，跳过写入。");
     }
     if looks_like_recursive_knowledge(&record) {
         return skipped_record_outcome(
@@ -142,10 +129,7 @@ fn build_knowledge_record(
         title: summarize_text(&trace.action_summary),
         summary: knowledge_summary(trace),
         content: summarize_text(&trace.result.final_answer),
-        tags: vec![
-            trace.tool.tool_name.clone(),
-            request.workspace_ref.workspace_id.clone(),
-        ],
+        tags: vec![trace.tool.tool_name.clone(), request.workspace_ref.workspace_id.clone()],
         source: format!("run:{}", request.run_id),
         source_type: "runtime".to_string(),
         verified: report.outcome.passed,
@@ -309,11 +293,7 @@ fn failure_lesson_entry(
     })
 }
 
-fn auto_memory_entry(
-    request: &RunRequest,
-    trace: &ToolExecutionTrace,
-    report: &VerificationReport,
-) -> MemoryEntry {
+fn auto_memory_entry(request: &RunRequest, trace: &ToolExecutionTrace, report: &VerificationReport) -> MemoryEntry {
     let now = timestamp_now();
     let source = memory_source(trace, "verification_completed");
     MemoryEntry {
@@ -348,12 +328,7 @@ fn auto_memory_entry(
 
 fn preference_summary(user_input: &str) -> Option<String> {
     let mut parts = Vec::new();
-    push_preference(
-        &mut parts,
-        user_input,
-        &["用中文回答", "中文回答"],
-        "用中文回答",
-    );
+    push_preference(&mut parts, user_input, &["用中文回答", "中文回答"], "用中文回答");
     push_preference(
         &mut parts,
         user_input,
@@ -405,18 +380,14 @@ fn preference_summary(user_input: &str) -> Option<String> {
     (!parts.is_empty()).then_some(format!("用户偏好：{}", parts.join("；")))
 }
 
-fn failure_lesson_summary(
-    trace: &ToolExecutionTrace,
-    report: &VerificationReport,
-) -> Option<String> {
+fn failure_lesson_summary(trace: &ToolExecutionTrace, report: &VerificationReport) -> Option<String> {
     if report.outcome.code == "verified_with_recovery" {
         return Some(format!(
             "失败教训：{} 遇到异常时应执行单次受控恢复并保留恢复留痕。",
             trace.tool.display_name
         ));
     }
-    failure_lesson_reason(trace, report)
-        .map(|reason| format!("失败教训：{} {}", trace.tool.display_name, reason))
+    failure_lesson_reason(trace, report).map(|reason| format!("失败教训：{} {}", trace.tool.display_name, reason))
 }
 
 fn failure_lesson_content(trace: &ToolExecutionTrace, report: &VerificationReport) -> String {
@@ -447,21 +418,13 @@ fn preference_kind(user_input: &str) -> Option<String> {
         .or_else(|| preference_summary(user_input).map(|_| "preference".to_string()))
 }
 
-fn push_preference(
-    parts: &mut Vec<&'static str>,
-    user_input: &str,
-    keywords: &[&str],
-    label: &'static str,
-) {
+fn push_preference(parts: &mut Vec<&'static str>, user_input: &str, keywords: &[&str], label: &'static str) {
     if keywords.iter().any(|keyword| user_input.contains(keyword)) && !parts.contains(&label) {
         parts.push(label);
     }
 }
 
-fn failure_lesson_reason(
-    trace: &ToolExecutionTrace,
-    _report: &VerificationReport,
-) -> Option<&'static str> {
+fn failure_lesson_reason(trace: &ToolExecutionTrace, _report: &VerificationReport) -> Option<&'static str> {
     if trace.result.success {
         return None;
     }
@@ -477,21 +440,14 @@ fn failure_lesson_reason(
         _ if text.contains("runtime-host") && text.contains("占用") => {
             "runtime-host 被占用时应先释放进程再重试构建或启动。"
         }
-        _ if text.contains("连接被拒绝")
-            || text.contains("connection refused")
-            || text.contains("127.0.0.1:8898") =>
-        {
+        _ if text.contains("连接被拒绝") || text.contains("connection refused") || text.contains("127.0.0.1:8898") => {
             "运行时不可达时应先恢复服务再继续主链路。"
         }
         _ => "失败时应保留错误摘要并停止错误沉淀。",
     })
 }
 
-fn memory_written_outcome(
-    request: &RunRequest,
-    entry: &MemoryEntry,
-    reason: &str,
-) -> MemoryWriteOutcome {
+fn memory_written_outcome(request: &RunRequest, entry: &MemoryEntry, reason: &str) -> MemoryWriteOutcome {
     let entry = normalized_memory_entry(entry);
     MemoryWriteOutcome {
         event_type: "memory_written",
@@ -499,10 +455,7 @@ fn memory_written_outcome(
         record_type: entry.kind.clone(),
         source_type: entry.source_type.clone(),
         title: entry.summary.clone(),
-        summary: format!(
-            "长期记忆已写入 {}",
-            long_term_memory_file_path(request).display()
-        ),
+        summary: format!("长期记忆已写入 {}", long_term_memory_file_path(request).display()),
         reason: reason.to_string(),
         audit: written_audit(&entry),
     }
@@ -522,11 +475,7 @@ fn looks_like_recursive_knowledge(record: &KnowledgeRecord) -> bool {
         || summary.contains("已基于项目文档片段完成一次项目说明回答：文件：run:")
 }
 
-fn skipped_record_outcome(
-    layer: &'static str,
-    record_type: &str,
-    reason: &str,
-) -> MemoryWriteOutcome {
+fn skipped_record_outcome(layer: &'static str, record_type: &str, reason: &str) -> MemoryWriteOutcome {
     MemoryWriteOutcome {
         event_type: skipped_event_type(layer),
         layer,
@@ -556,10 +505,7 @@ fn skipped_title(layer: &str) -> String {
 }
 
 fn knowledge_write_outcome(request: &RunRequest, record: &KnowledgeRecord) -> MemoryWriteOutcome {
-    let mut summary = format!(
-        "知识条目已写入 {}",
-        knowledge_base_file_path(request).display()
-    );
+    let mut summary = format!("知识条目已写入 {}", knowledge_base_file_path(request).display());
     let mut reason = "当前任务形成了稳定且可复用的摘要结果。".to_string();
     if let Some(path) = maybe_export_siyuan(request, record) {
         summary = format!("{summary}；思源已同步 {}", path.display());
@@ -579,10 +525,7 @@ fn knowledge_write_outcome(request: &RunRequest, record: &KnowledgeRecord) -> Me
     }
 }
 
-fn maybe_export_siyuan(
-    request: &RunRequest,
-    record: &KnowledgeRecord,
-) -> Option<std::path::PathBuf> {
+fn maybe_export_siyuan(request: &RunRequest, record: &KnowledgeRecord) -> Option<std::path::PathBuf> {
     if !siyuan_auto_write_enabled(request) {
         return None;
     }
@@ -590,14 +533,8 @@ fn maybe_export_siyuan(
         return Some(path);
     }
     let export_dir = siyuan_export_dir(request)?;
-    let path = export_dir.join(format!(
-        "{}-{}.md",
-        request.workspace_ref.workspace_id, record.id
-    ));
-    let content = format!(
-        "# {}\n\n{}\n\n{}",
-        record.title, record.summary, record.content
-    );
+    let path = export_dir.join(format!("{}-{}.md", request.workspace_ref.workspace_id, record.id));
+    let content = format!("# {}\n\n{}\n\n{}", record.title, record.summary, record.content);
     let parent = path.parent()?;
     fs::create_dir_all(parent).ok()?;
     fs::write(&path, content).ok()?;
@@ -605,11 +542,7 @@ fn maybe_export_siyuan(
     Some(path)
 }
 
-fn write_siyuan_index(
-    request: &RunRequest,
-    record: &KnowledgeRecord,
-    path: &std::path::Path,
-) -> Result<(), String> {
+fn write_siyuan_index(request: &RunRequest, record: &KnowledgeRecord, path: &std::path::Path) -> Result<(), String> {
     let siyuan_record = KnowledgeRecord {
         id: format!("siyuan-{}", record.id),
         knowledge_type: record.knowledge_type.clone(),
@@ -632,10 +565,7 @@ fn write_siyuan_index(
     append_knowledge_record(request, &siyuan_record)
 }
 
-fn reusable_siyuan_path(
-    request: &RunRequest,
-    record: &KnowledgeRecord,
-) -> Option<std::path::PathBuf> {
+fn reusable_siyuan_path(request: &RunRequest, record: &KnowledgeRecord) -> Option<std::path::PathBuf> {
     let current = find_reusable_siyuan_record(request, &record.title, &record.summary)?;
     let path = std::path::PathBuf::from(current.source);
     path.exists().then_some(path)
@@ -675,11 +605,7 @@ fn first_text(primary: &str, secondary: &str, fallback: &str) -> String {
     fallback.to_string()
 }
 
-fn memory_write_result(
-    request: &RunRequest,
-    entry: &MemoryEntry,
-    result: Result<(), String>,
-) -> MemoryWriteOutcome {
+fn memory_write_result(request: &RunRequest, entry: &MemoryEntry, result: Result<(), String>) -> MemoryWriteOutcome {
     match result {
         Ok(()) => MemoryWriteOutcome {
             event_type: "memory_written",
@@ -687,10 +613,7 @@ fn memory_write_result(
             record_type: entry.kind.clone(),
             source_type: entry.source_type.clone(),
             title: entry.summary.clone(),
-            summary: format!(
-                "长期记忆已写入 {}",
-                long_term_memory_file_path(request).display()
-            ),
+            summary: format!("长期记忆已写入 {}", long_term_memory_file_path(request).display()),
             reason: "任务完成后形成了可复用摘要。".to_string(),
             audit: written_audit(&normalized_memory_entry(entry)),
         },
@@ -698,11 +621,7 @@ fn memory_write_result(
     }
 }
 
-fn skipped_memory_outcome(
-    layer: &'static str,
-    entry: &MemoryEntry,
-    reason: &str,
-) -> MemoryWriteOutcome {
+fn skipped_memory_outcome(layer: &'static str, entry: &MemoryEntry, reason: &str) -> MemoryWriteOutcome {
     let entry = normalized_memory_entry(entry);
     MemoryWriteOutcome {
         event_type: skipped_event_type(layer),

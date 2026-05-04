@@ -2,9 +2,8 @@
 mod tests {
     use crate::run_resume::apply_resume_checkpoint;
     use crate::run_resume_testkit::testkit::{
-        sample_checkpoint, sample_checkpoint_with_confirmation_boundary,
-        sample_checkpoint_with_execution_boundary, sample_checkpoint_with_verification_snapshot,
-        sample_request,
+        sample_checkpoint, sample_checkpoint_with_confirmation_boundary, sample_checkpoint_with_execution_boundary,
+        sample_checkpoint_with_verification_snapshot, sample_request,
     };
     use crate::session::SessionMemory;
 
@@ -14,10 +13,7 @@ mod tests {
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
         assert_eq!(session.short_term.current_phase, "recovery");
-        assert_eq!(
-            session.short_term.handoff_artifact_path,
-            "D:/repo/handoff.json"
-        );
+        assert_eq!(session.short_term.handoff_artifact_path, "D:/repo/handoff.json");
     }
 
     #[test]
@@ -33,18 +29,8 @@ mod tests {
         let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(
-            session
-                .short_term
-                .current_plan
-                .contains("继续动作：执行命令")
-        );
-        assert!(
-            session
-                .short_term
-                .current_plan
-                .contains("执行命令: Write-Error")
-        );
+        assert!(session.short_term.current_plan.contains("继续动作：执行命令"));
+        assert!(session.short_term.current_plan.contains("执行命令: Write-Error"));
     }
 
     #[test]
@@ -52,12 +38,7 @@ mod tests {
         let (request, checkpoint) = sample_retry_pair();
         let mut session = sample_session();
         apply_resume_checkpoint(&mut session, Some(&checkpoint), &request);
-        assert!(
-            session
-                .short_term
-                .current_plan
-                .contains("恢复提示：建议先检查命令语法")
-        );
+        assert!(session.short_term.current_plan.contains("恢复提示：建议先检查命令语法"));
     }
 
     #[test]
@@ -112,20 +93,14 @@ mod tests {
         SessionMemory::default()
     }
 
-    fn sample_retry_pair() -> (
-        crate::contracts::RunRequest,
-        crate::checkpoint::RunCheckpoint,
-    ) {
+    fn sample_retry_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint) {
         (
             sample_request("retry_failure"),
             sample_checkpoint("retryable_failure", "D:/repo/handoff.json"),
         )
     }
 
-    fn sample_confirmation_pair() -> (
-        crate::contracts::RunRequest,
-        crate::checkpoint::RunCheckpoint,
-    ) {
+    fn sample_confirmation_pair() -> (crate::contracts::RunRequest, crate::checkpoint::RunCheckpoint) {
         (
             sample_request("after_confirmation"),
             sample_checkpoint("confirmation_required", ""),

@@ -78,7 +78,7 @@ func readLearningArticle(w http.ResponseWriter, r *http.Request, payload learnin
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 	defer cancel()
-	article, err := bestblogs.NewClient(nil).ReadArticle(ctx, learningProviderRequest(payload))
+	article, err := bestblogsArticleReader(ctx, learningProviderRequest(payload))
 	if err != nil {
 		writeBestblogsError(w, err)
 		return bestblogs.ArticleResponse{}, false

@@ -12,16 +12,8 @@ pub(crate) fn resume_action_hint(checkpoint: &RunCheckpoint) -> String {
 }
 
 fn action_hint_from_event(event: &RunEvent) -> Option<String> {
-    let tool = event
-        .metadata
-        .get("tool_display_name")
-        .cloned()
-        .unwrap_or_default();
-    let task = event
-        .metadata
-        .get("task_title")
-        .cloned()
-        .unwrap_or_default();
+    let tool = event.metadata.get("tool_display_name").cloned().unwrap_or_default();
+    let task = event.metadata.get("task_title").cloned().unwrap_or_default();
     let name = event.metadata.get("tool_name").cloned().unwrap_or_default();
     compose_action_hint(tool, task, name)
 }

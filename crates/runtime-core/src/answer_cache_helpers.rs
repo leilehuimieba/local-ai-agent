@@ -52,15 +52,7 @@ pub(crate) fn append_scene_answer_cache(
     answer: &str,
     summary: &str,
 ) {
-    append_answer_cache(
-        request,
-        probe,
-        scene,
-        user_input,
-        context_digest,
-        answer,
-        summary,
-    );
+    append_answer_cache(request, probe, scene, user_input, context_digest, answer, summary);
 }
 use crate::answer_cache::{append_answer_cache, bypass_probe, probe_answer_cache};
 use crate::contracts::RunRequest;

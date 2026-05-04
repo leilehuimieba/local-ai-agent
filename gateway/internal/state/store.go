@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/contracts"
@@ -204,6 +205,26 @@ func (s *SettingsStore) ApproveDirectory(workspace contracts.WorkspaceRef) {
 	defer s.mu.Unlock()
 	s.approvedDirectories[workspace.RootPath] = approvalRecord(workspace)
 	s.saveLocked()
+}
+
+func (s *SettingsStore) AddCustomDirectory(name, rootPath string) error {
+	if rootPath == "" {
+		return errors.New("directory path is required")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, exists := s.approvedDirectories[rootPath]; exists {
+		return errors.New("directory already approved")
+	}
+	s.approvedDirectories[rootPath] = ApprovedDirectoryRecord{
+		ApprovalID:  "custom-" + rootPath,
+		WorkspaceID: "",
+		Name:        name,
+		RootPath:    rootPath,
+		CreatedAt:   time.Now().Format(time.RFC3339),
+	}
+	s.saveLocked()
+	return nil
 }
 
 func (s *SettingsStore) RevokeDirectoryApproval(rootPath string) {

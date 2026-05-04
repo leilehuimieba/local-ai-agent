@@ -12,22 +12,14 @@ pub(crate) struct SystemViewSummary {
     pub summary: String,
 }
 
-pub(crate) fn select_system_view_summaries(
-    request: &RunRequest,
-    query: &str,
-    limit: usize,
-) -> Vec<SystemViewSummary> {
+pub(crate) fn select_system_view_summaries(request: &RunRequest, query: &str, limit: usize) -> Vec<SystemViewSummary> {
     let mut ranked = base_system_views(request)
         .into_iter()
         .enumerate()
         .map(|(index, view)| (score_view(query, &view), index, view))
         .collect::<Vec<_>>();
     ranked.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
-    ranked
-        .into_iter()
-        .map(|(_, _, view)| view)
-        .take(limit)
-        .collect()
+    ranked.into_iter().map(|(_, _, view)| view).take(limit).collect()
 }
 
 fn base_system_views(request: &RunRequest) -> Vec<SystemViewSummary> {
@@ -50,11 +42,7 @@ fn score_view(query: &str, view: &SystemViewSummary) -> i32 {
 fn boot_view(request: &RunRequest) -> SystemViewSummary {
     system_view(
         "system://boot",
-        summarize_memory_entries(
-            important_memories(request),
-            3,
-            "当前启动没有命中高优先级记忆。",
-        ),
+        summarize_memory_entries(important_memories(request), 3, "当前启动没有命中高优先级记忆。"),
     )
 }
 
@@ -128,11 +116,7 @@ fn summarize_memory_entries(entries: Vec<MemoryEntry>, limit: usize, fallback: &
 fn summarize_knowledge(request: &RunRequest) -> String {
     let mut items = search_knowledge_records(request);
     items.sort_by(|left, right| right.updated_at.cmp(&left.updated_at));
-    let lines = items
-        .into_iter()
-        .take(2)
-        .map(|item| item.summary)
-        .collect::<Vec<_>>();
+    let lines = items.into_iter().take(2).map(|item| item.summary).collect::<Vec<_>>();
     if lines.is_empty() {
         "当前没有近期知识条目。".to_string()
     } else {
@@ -143,11 +127,7 @@ fn summarize_knowledge(request: &RunRequest) -> String {
 fn summarize_observations(request: &RunRequest) -> String {
     let mut items = read_jsonl::<ObservationRecord>(&observation_audit_file_path(request));
     items.sort_by(|left, right| right.event_timestamp.cmp(&left.event_timestamp));
-    let lines = items
-        .into_iter()
-        .take(2)
-        .map(|item| item.summary)
-        .collect::<Vec<_>>();
+    let lines = items.into_iter().take(2).map(|item| item.summary).collect::<Vec<_>>();
     if lines.is_empty() {
         "当前没有近期观察锚点。".to_string()
     } else {
@@ -180,10 +160,7 @@ mod tests {
         assert!(uris.contains(&"system://recent".to_string()));
         assert!(uris.contains(&"system://index".to_string()));
         assert!(uris.contains(&"system://rules".to_string()));
-        assert!(
-            uris.iter()
-                .any(|uri| uri.starts_with("system://workspace/"))
-        );
+        assert!(uris.iter().any(|uri| uri.starts_with("system://workspace/")));
     }
 
     fn sample_request() -> RunRequest {

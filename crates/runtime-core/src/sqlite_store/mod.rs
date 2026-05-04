@@ -14,11 +14,7 @@ pub mod memory_object;
 pub(crate) use checkpoint::*;
 pub(crate) use memory_object::*;
 
-
-pub(crate) fn write_memory_entry_sqlite(
-    request: &RunRequest,
-    entry: &MemoryEntry,
-) -> Result<(), String> {
+pub(crate) fn write_memory_entry_sqlite(request: &RunRequest, entry: &MemoryEntry) -> Result<(), String> {
     with_connection(request, |conn| {
         insert_memory_entry(conn, entry)?;
         upsert_memory_object_version(conn, entry)?;
@@ -31,10 +27,7 @@ pub(crate) fn list_memory_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntr
 }
 
 pub(crate) fn list_current_memory_object_entries_sqlite(request: &RunRequest) -> Vec<MemoryEntry> {
-    with_connection(request, |conn| {
-        load_current_memory_object_entries(conn, request)
-    })
-    .unwrap_or_default()
+    with_connection(request, |conn| load_current_memory_object_entries(conn, request)).unwrap_or_default()
 }
 
 pub(crate) fn list_current_memory_object_entries_limited_sqlite(
@@ -56,19 +49,12 @@ pub(crate) fn sync_memory_object_entry_sqlite(
 }
 
 #[allow(dead_code)]
-pub(crate) fn list_memory_object_versions_sqlite(
-    request: &RunRequest,
-    object_id: &str,
-) -> Vec<MemoryObjectVersion> {
-    with_connection(request, |conn| load_memory_object_versions(conn, object_id))
-        .unwrap_or_default()
+pub(crate) fn list_memory_object_versions_sqlite(request: &RunRequest, object_id: &str) -> Vec<MemoryObjectVersion> {
+    with_connection(request, |conn| load_memory_object_versions(conn, object_id)).unwrap_or_default()
 }
 
 #[allow(dead_code)]
-pub(crate) fn list_memory_object_aliases_sqlite(
-    request: &RunRequest,
-    object_id: &str,
-) -> Vec<String> {
+pub(crate) fn list_memory_object_aliases_sqlite(request: &RunRequest, object_id: &str) -> Vec<String> {
     with_connection(request, |conn| load_memory_object_aliases(conn, object_id)).unwrap_or_default()
 }
 
@@ -83,10 +69,7 @@ pub(crate) fn rollback_memory_object_sqlite(
     })
 }
 
-pub(crate) fn write_knowledge_record_sqlite(
-    request: &RunRequest,
-    record: &KnowledgeRecord,
-) -> Result<(), String> {
+pub(crate) fn write_knowledge_record_sqlite(request: &RunRequest, record: &KnowledgeRecord) -> Result<(), String> {
     with_connection(request, |conn| insert_knowledge_record(conn, record))
 }
 
@@ -94,20 +77,12 @@ pub(crate) fn list_knowledge_records_sqlite(request: &RunRequest) -> Vec<Knowled
     with_connection(request, |conn| load_knowledge_records(conn, request)).unwrap_or_default()
 }
 
-pub(crate) fn write_runtime_checkpoint_sqlite(
-    request: &RunRequest,
-    checkpoint: &RunCheckpoint,
-) -> Result<(), String> {
+pub(crate) fn write_runtime_checkpoint_sqlite(request: &RunRequest, checkpoint: &RunCheckpoint) -> Result<(), String> {
     with_connection(request, |conn| insert_runtime_checkpoint(conn, checkpoint))
 }
 
-pub(crate) fn insert_observation_record(
-    request: &RunRequest,
-    record: &ObservationRecord,
-) -> Result<(), String> {
-    with_connection(request, |conn| {
-        insert_observation_row(conn, request, record)
-    })
+pub(crate) fn insert_observation_record(request: &RunRequest, record: &ObservationRecord) -> Result<(), String> {
+    with_connection(request, |conn| insert_observation_row(conn, request, record))
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -115,9 +90,7 @@ pub(crate) fn load_runtime_checkpoint_sqlite(
     request: &RunRequest,
     checkpoint_id: &str,
 ) -> Result<Option<RunCheckpoint>, String> {
-    with_connection(request, |conn| {
-        select_runtime_checkpoint(conn, checkpoint_id)
-    })
+    with_connection(request, |conn| select_runtime_checkpoint(conn, checkpoint_id))
 }
 
 pub(crate) fn with_connection<T, F>(request: &RunRequest, f: F) -> Result<T, String>
@@ -155,10 +128,7 @@ pub(crate) fn insert_memory_entry(conn: &Connection, entry: &MemoryEntry) -> Res
     .map_err(|error| error.to_string())
 }
 
-pub(crate) fn insert_knowledge_record(
-    conn: &Connection,
-    record: &KnowledgeRecord,
-) -> Result<(), String> {
+pub(crate) fn insert_knowledge_record(conn: &Connection, record: &KnowledgeRecord) -> Result<(), String> {
     conn.execute(
         "insert or ignore into knowledge_base (
             id, workspace_id, knowledge_type, title, summary, content, tags, source,
@@ -198,10 +168,7 @@ pub(crate) fn knowledge_count(conn: &Connection, workspace_id: &str) -> Result<i
     count_by_workspace(conn, "knowledge_base", workspace_id)
 }
 
-fn load_memory_entries(
-    conn: &Connection,
-    request: &RunRequest,
-) -> Result<Vec<MemoryEntry>, String> {
+fn load_memory_entries(conn: &Connection, request: &RunRequest) -> Result<Vec<MemoryEntry>, String> {
     let mut statement = conn
         .prepare(
             "select id, memory_type, title, summary, content, scope, workspace_id, session_id,
@@ -213,18 +180,12 @@ fn load_memory_entries(
         )
         .map_err(|error| error.to_string())?;
     let rows = statement
-        .query_map(
-            params![request.workspace_ref.workspace_id.clone()],
-            map_memory_entry,
-        )
+        .query_map(params![request.workspace_ref.workspace_id.clone()], map_memory_entry)
         .map_err(|error| error.to_string())?;
     collect_rows(rows)
 }
 
-fn load_knowledge_records(
-    conn: &Connection,
-    request: &RunRequest,
-) -> Result<Vec<KnowledgeRecord>, String> {
+fn load_knowledge_records(conn: &Connection, request: &RunRequest) -> Result<Vec<KnowledgeRecord>, String> {
     let mut statement = conn
         .prepare(
             "select id, knowledge_type, title, summary, content, tags, source, source_type,
@@ -241,10 +202,7 @@ fn load_knowledge_records(
     collect_rows(rows)
 }
 
-fn load_current_memory_object_entries(
-    conn: &Connection,
-    request: &RunRequest,
-) -> Result<Vec<MemoryEntry>, String> {
+fn load_current_memory_object_entries(conn: &Connection, request: &RunRequest) -> Result<Vec<MemoryEntry>, String> {
     load_current_memory_object_entries_limited(conn, request, usize::MAX)
 }
 
@@ -279,8 +237,7 @@ fn create_parent_dir(path: &std::path::Path) -> Result<(), String> {
 
 fn init_schema(conn: &Connection) -> Result<(), String> {
     for statement in SCHEMA_STATEMENTS {
-        conn.execute(statement, [])
-            .map_err(|error| error.to_string())?;
+        conn.execute(statement, []).map_err(|error| error.to_string())?;
     }
     run_memory_migrations(conn)?;
     backfill_memory_governance(conn)
@@ -439,18 +396,12 @@ fn pending_governance_entries(conn: &Connection) -> Result<Vec<MemoryEntry>, Str
     collect_rows(rows)
 }
 
-fn load_memory_entries_for_workspace(
-    conn: &Connection,
-    workspace_id: &str,
-) -> Result<Vec<MemoryEntry>, String> {
+fn load_memory_entries_for_workspace(conn: &Connection, workspace_id: &str) -> Result<Vec<MemoryEntry>, String> {
     let request = workspace_request(workspace_id);
     load_memory_entries(conn, &request)
 }
 
-fn load_knowledge_records_for_workspace(
-    conn: &Connection,
-    workspace_id: &str,
-) -> Result<Vec<KnowledgeRecord>, String> {
+fn load_knowledge_records_for_workspace(conn: &Connection, workspace_id: &str) -> Result<Vec<KnowledgeRecord>, String> {
     let request = workspace_request(workspace_id);
     load_knowledge_records(conn, &request)
 }
@@ -508,8 +459,8 @@ fn duplicate_knowledge_ids(items: Vec<KnowledgeRecord>) -> Vec<String> {
 
 fn stale_knowledge_id(seen: &mut BTreeSet<String>, item: KnowledgeRecord) -> Option<String> {
     let key = knowledge_key(&item);
-    let recursive = item.source.starts_with("run:")
-        && (item.summary.contains("文件：run:") || item.content.contains("文件：run:"));
+    let recursive =
+        item.source.starts_with("run:") && (item.summary.contains("文件：run:") || item.content.contains("文件：run:"));
     (recursive || is_runtime_generated_knowledge(&item) || !seen.insert(key)).then_some(item.id)
 }
 
@@ -540,17 +491,13 @@ fn stale_memory_id(seen: &mut BTreeSet<String>, item: MemoryEntry) -> Option<Str
 fn delete_records(conn: &Connection, table: &str, ids: &[String]) -> Result<(), String> {
     for id in ids {
         let sql = format!("delete from {table} where id = ?1");
-        conn.execute(&sql, params![id])
-            .map_err(|error| error.to_string())?;
+        conn.execute(&sql, params![id]).map_err(|error| error.to_string())?;
     }
     Ok(())
 }
 
 fn memory_key(item: &MemoryEntry) -> String {
-    format!(
-        "{}|{}|{}|{}",
-        item.workspace_id, item.kind, item.title, item.summary
-    )
+    format!("{}|{}|{}|{}", item.workspace_id, item.kind, item.title, item.summary)
 }
 
 fn knowledge_key(item: &KnowledgeRecord) -> String {
@@ -595,10 +542,8 @@ fn bool_flag(value: bool) -> i32 {
 
 fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
     let project_answer = item.kind == "project_knowledge" || item.kind == "workspace_summary";
-    let generated_answer = item.title.contains("项目说明")
-        || item
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let generated_answer =
+        item.title.contains("项目说明") || item.summary.contains("已基于项目文档片段完成一次项目说明回答");
     let tool_trace = item.kind == "lesson_learned"
         && (item.title.contains("导出知识到思源")
             || item.title.contains("检索思源笔记")
@@ -608,8 +553,8 @@ fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
             || item.summary.contains("已返回思源笔记摘要")
             || item.summary.contains("思源正文读取成功")
             || item.summary.contains("命中已存在思源导出"));
-    let fallback = item.kind == "lesson_learned"
-        && (is_garbled_reply(&item.content) || is_capability_fallback(&item.content));
+    let fallback =
+        item.kind == "lesson_learned" && (is_garbled_reply(&item.content) || is_capability_fallback(&item.content));
     item.source_type == "runtime"
         && (project_answer && generated_answer
             || tool_trace
@@ -619,10 +564,8 @@ fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
 }
 
 fn is_runtime_generated_knowledge(item: &KnowledgeRecord) -> bool {
-    let project_answer = item.title.contains("项目说明")
-        || item
-            .summary
-            .contains("已基于项目文档片段完成一次项目说明回答");
+    let project_answer =
+        item.title.contains("项目说明") || item.summary.contains("已基于项目文档片段完成一次项目说明回答");
     item.source_type == "runtime" && item.source.starts_with("run:") && project_answer
 }
 
@@ -798,5 +741,3 @@ const MEMORY_MIGRATIONS: [&str; 12] = [
     "alter table runtime_checkpoints add column resume_stage text not null default ''",
     "alter table memory_object_versions add column restored_from_version_id text not null default ''",
 ];
-
-

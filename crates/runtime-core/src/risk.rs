@@ -56,8 +56,7 @@ fn workspace_first_seen(request: &RunRequest) -> bool {
 fn mode_guard_outcome(request: &RunRequest, action: &PlannedAction) -> Option<RiskOutcome> {
     if matches!(normalize_mode(&request.mode).as_str(), "observe") && is_mutating_action(action) {
         return Some(RiskOutcome::Blocked(
-            "当前处于观察模式，系统不会执行修改性动作。请切换到标准模式或全权限模式后重试。"
-                .to_string(),
+            "当前处于观察模式，系统不会执行修改性动作。请切换到标准模式或全权限模式后重试。".to_string(),
         ));
     }
     None
@@ -75,15 +74,10 @@ fn confirmation_approved(request: &RunRequest, expected_id: &str) -> bool {
     request
         .confirmation_decision
         .as_ref()
-        .is_some_and(|decision| {
-            decision.decision == "approve" && decision.confirmation_id == expected_id
-        })
+        .is_some_and(|decision| decision.decision == "approve" && decision.confirmation_id == expected_id)
 }
 
-fn high_risk_confirmation(
-    request: &RunRequest,
-    action: &PlannedAction,
-) -> Option<ConfirmationRequest> {
+fn high_risk_confirmation(request: &RunRequest, action: &PlannedAction) -> Option<ConfirmationRequest> {
     match action {
         PlannedAction::DeletePath { path } => {
             let target = resolve_workspace_path(&request.workspace_ref.root_path, path)
@@ -95,9 +89,7 @@ fn high_risk_confirmation(
                 run_id: request.run_id.clone(),
                 risk_level: "irreversible".to_string(),
                 action_summary: format!("删除路径：{}", target),
-                reason:
-                    "删除动作具有高风险，且可能无法回退；建议先读取或列出目标路径确认影响范围。"
-                        .to_string(),
+                reason: "删除动作具有高风险，且可能无法回退；建议先读取或列出目标路径确认影响范围。".to_string(),
                 impact_scope: "目标文件或目录，以及其下所有内容".to_string(),
                 target_paths: vec![target],
                 reversible: false,
@@ -109,25 +101,22 @@ fn high_risk_confirmation(
                 kind: "high_risk_action".to_string(),
             })
         }
-        PlannedAction::RunCommand { command } if is_dangerous_command(command) => {
-            Some(ConfirmationRequest {
-                confirmation_id: format!("confirm-risk-{}", request.run_id),
-                run_id: request.run_id.clone(),
-                risk_level: "high".to_string(),
-                action_summary: format!("执行高风险命令：{}", command),
-                reason: "命令中包含删除或不可逆变更特征；建议先确认命令作用范围和替代方案。"
-                    .to_string(),
-                impact_scope: "当前工作区及命令影响到的路径".to_string(),
-                target_paths: vec![request.workspace_ref.root_path.clone()],
-                reversible: false,
-                hazards: vec!["可能删除文件或造成环境状态变化".to_string()],
-                alternatives: vec![
-                    "先使用 list/read 检查目标".to_string(),
-                    "改成更安全的命令版本".to_string(),
-                ],
-                kind: "high_risk_action".to_string(),
-            })
-        }
+        PlannedAction::RunCommand { command } if is_dangerous_command(command) => Some(ConfirmationRequest {
+            confirmation_id: format!("confirm-risk-{}", request.run_id),
+            run_id: request.run_id.clone(),
+            risk_level: "high".to_string(),
+            action_summary: format!("执行高风险命令：{}", command),
+            reason: "命令中包含删除或不可逆变更特征；建议先确认命令作用范围和替代方案。".to_string(),
+            impact_scope: "当前工作区及命令影响到的路径".to_string(),
+            target_paths: vec![request.workspace_ref.root_path.clone()],
+            reversible: false,
+            hazards: vec!["可能删除文件或造成环境状态变化".to_string()],
+            alternatives: vec![
+                "先使用 list/read 检查目标".to_string(),
+                "改成更安全的命令版本".to_string(),
+            ],
+            kind: "high_risk_action".to_string(),
+        }),
         _ => None,
     }
 }
@@ -136,24 +125,18 @@ fn is_mutating_action(action: &PlannedAction) -> bool {
     matches!(
         action,
         PlannedAction::WriteFile { .. }
+            | PlannedAction::ApplyPatch { .. }
             | PlannedAction::DeletePath { .. }
             | PlannedAction::RunCommand { .. }
+            | PlannedAction::MCPCall { .. }
     )
 }
 
 fn is_dangerous_command(command: &str) -> bool {
     let lower = command.to_lowercase();
-    [
-        "remove-item",
-        "del ",
-        " rd ",
-        "rm ",
-        "rm-",
-        "rmdir",
-        "erase ",
-    ]
-    .iter()
-    .any(|token| lower.contains(token))
+    ["remove-item", "del ", " rd ", "rm ", "rm-", "rmdir", "erase "]
+        .iter()
+        .any(|token| lower.contains(token))
 }
 
 #[cfg(test)]

@@ -11,8 +11,8 @@ mod tests {
         let state = bootstrap_run(&request);
         let mut events = Vec::new();
         let mut sequence = 1;
-        let response = handle_risk_outcome(&request, &state, &mut events, &mut sequence)
-            .expect("should require confirmation");
+        let response =
+            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("should require confirmation");
         assert_eq!(response.result.status, "awaiting_confirmation");
         let plan = response
             .events
@@ -24,30 +24,20 @@ mod tests {
             Some("require_confirmation")
         );
         assert_eq!(
-            plan.metadata
-                .get("permission_rule_layer")
-                .map(String::as_str),
+            plan.metadata.get("permission_rule_layer").map(String::as_str),
             Some("high_risk_guard")
         );
         assert_eq!(
-            plan.metadata
-                .get("confirmation_chain_step")
-                .map(String::as_str),
+            plan.metadata.get("confirmation_chain_step").map(String::as_str),
             Some("required")
         );
         let result_error = response.result.error.expect("error info");
         assert_eq!(
-            result_error
-                .metadata
-                .get("permission_decision")
-                .map(String::as_str),
+            result_error.metadata.get("permission_decision").map(String::as_str),
             Some("require_confirmation")
         );
         assert_eq!(
-            result_error
-                .metadata
-                .get("permission_rule_layer")
-                .map(String::as_str),
+            result_error.metadata.get("permission_rule_layer").map(String::as_str),
             Some("high_risk_guard")
         );
     }
@@ -58,8 +48,7 @@ mod tests {
         let state = bootstrap_run(&request);
         let mut events = Vec::new();
         let mut sequence = 1;
-        let response =
-            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("blocked");
+        let response = handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("blocked");
         assert_eq!(response.result.status, "failed");
         let verify = response
             .events
@@ -67,24 +56,15 @@ mod tests {
             .find(|item| item.event_type == "verification_completed")
             .expect("verification event");
         assert_eq!(
-            verify
-                .metadata
-                .get("permission_decision")
-                .map(String::as_str),
+            verify.metadata.get("permission_decision").map(String::as_str),
             Some("blocked")
         );
         assert_eq!(
-            verify
-                .metadata
-                .get("permission_rule_layer")
-                .map(String::as_str),
+            verify.metadata.get("permission_rule_layer").map(String::as_str),
             Some("mode_guard")
         );
         assert_eq!(
-            verify
-                .metadata
-                .get("confirmation_chain_step")
-                .map(String::as_str),
+            verify.metadata.get("confirmation_chain_step").map(String::as_str),
             Some("rule_blocked")
         );
     }

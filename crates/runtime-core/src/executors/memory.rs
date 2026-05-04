@@ -9,12 +9,7 @@ use crate::text::summarize_text;
 const CACHE_WRITE_REASON: &str = "记忆写入属于实时副作用动作，不使用回答缓存。";
 const CACHE_RECALL_REASON: &str = "记忆召回依赖实时存储状态，不使用回答缓存。";
 
-pub(crate) fn execute_memory_write(
-    request: &RunRequest,
-    kind: &str,
-    summary: &str,
-    content: &str,
-) -> ActionExecution {
+pub(crate) fn execute_memory_write(request: &RunRequest, kind: &str, summary: &str, content: &str) -> ActionExecution {
     let entry = build_memory_entry(request, kind, summary, content);
     match append_memory_entry(request, &entry) {
         Ok(()) => ok_write(&entry),
@@ -80,12 +75,7 @@ fn render_entries(entries: &[MemoryEntry]) -> String {
         .join("\n")
 }
 
-fn build_memory_entry(
-    request: &RunRequest,
-    kind: &str,
-    summary: &str,
-    content: &str,
-) -> MemoryEntry {
+fn build_memory_entry(request: &RunRequest, kind: &str, summary: &str, content: &str) -> MemoryEntry {
     let now = timestamp_now();
     MemoryEntry {
         id: memory_id(),
@@ -185,11 +175,7 @@ mod tests {
         let request = sample_request("对象摘要");
         write_memory_entry_sqlite(&request, &sample_entry("对象摘要")).unwrap();
         let result = execute_memory_recall(&request, "对象摘要");
-        assert!(
-            result
-                .result_summary
-                .contains("system views + current memory object")
-        );
+        assert!(result.result_summary.contains("system views + current memory object"));
         assert!(
             result
                 .final_answer
@@ -207,18 +193,11 @@ mod tests {
         let request = sample_request("未命中");
         let result = execute_memory_recall(&request, "未命中");
         assert!(result.result_summary.contains("system views"));
-        assert!(
-            result
-                .reasoning_summary
-                .contains("本次召回层为system views")
-        );
+        assert!(result.reasoning_summary.contains("本次召回层为system views"));
     }
 
     fn sample_request(user_input: &str) -> RunRequest {
-        let root = std::env::temp_dir().join(format!(
-            "memory-executor-{}",
-            crate::events::timestamp_now()
-        ));
+        let root = std::env::temp_dir().join(format!("memory-executor-{}", crate::events::timestamp_now()));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
             request_id: "request-test".to_string(),

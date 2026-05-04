@@ -2,16 +2,10 @@ use crate::contracts::{ErrorInfo, RunEvent, RunRequest};
 use crate::events::make_event;
 use crate::memory_layer::reasoning_layer_summary;
 use crate::repo_context::repo_context_metadata;
-use crate::run_failure_metadata::{
-    append_error_metadata, append_tool_failure_metadata, failure_next_step,
-};
+use crate::run_failure_metadata::{append_error_metadata, append_tool_failure_metadata, failure_next_step};
 use crate::run_memory_metadata::append_memory_governance_metadata;
 
-pub(crate) fn read_result_mode(
-    final_answer: &str,
-    completion_status: &str,
-    verification_code: &str,
-) -> &'static str {
+pub(crate) fn read_result_mode(final_answer: &str, completion_status: &str, verification_code: &str) -> &'static str {
     if completion_status == "failed" {
         return "system";
     }
@@ -41,19 +35,8 @@ pub(crate) fn make_run_failed_event(
     append_tool_failure_metadata(&mut metadata, tool_trace);
     append_recall_visibility_metadata(&mut metadata, tool_trace);
     let summary = run_failed_summary(summary, tool_trace);
-    metadata.insert(
-        "next_step".to_string(),
-        failure_next_step(tool_trace, error),
-    );
-    make_event(
-        request,
-        sequence,
-        "run_failed",
-        "Failed",
-        &summary,
-        detail,
-        metadata,
-    )
+    metadata.insert("next_step".to_string(), failure_next_step(tool_trace, error));
+    make_event(request, sequence, "run_failed", "Failed", &summary, detail, metadata)
 }
 
 pub(crate) fn make_memory_event(
@@ -105,10 +88,7 @@ pub(crate) fn append_recall_visibility_metadata(
     );
 }
 
-pub(crate) fn run_finished_summary(
-    success: bool,
-    tool_trace: &crate::capabilities::ToolExecutionTrace,
-) -> String {
+pub(crate) fn run_finished_summary(success: bool, tool_trace: &crate::capabilities::ToolExecutionTrace) -> String {
     if tool_trace.tool.tool_name != "memory_recall" {
         return if success {
             "任务已完成".to_string()
@@ -131,10 +111,7 @@ pub(crate) fn run_finished_summary(
     }
 }
 
-fn run_failed_summary(
-    summary: &str,
-    tool_trace: Option<&crate::capabilities::ToolExecutionTrace>,
-) -> String {
+fn run_failed_summary(summary: &str, tool_trace: Option<&crate::capabilities::ToolExecutionTrace>) -> String {
     let Some(trace) = tool_trace else {
         return summary.to_string();
     };

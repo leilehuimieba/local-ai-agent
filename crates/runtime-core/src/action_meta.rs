@@ -5,6 +5,7 @@ pub(crate) fn default_error_code(action: &PlannedAction) -> String {
         PlannedAction::RunCommand { .. } => "command_failed",
         PlannedAction::ReadFile { .. } => "file_read_failed",
         PlannedAction::WriteFile { .. } => "file_write_failed",
+        PlannedAction::ApplyPatch { .. } => "patch_apply_failed",
         PlannedAction::DeletePath { .. } => "path_delete_failed",
         PlannedAction::ListFiles { .. } => "list_dir_failed",
         PlannedAction::WriteMemory { .. } => "memory_write_failed",
@@ -12,6 +13,7 @@ pub(crate) fn default_error_code(action: &PlannedAction) -> String {
         PlannedAction::SearchKnowledge { .. } => "knowledge_search_failed",
         PlannedAction::SearchSiyuanNotes { .. } => "siyuan_search_failed",
         PlannedAction::ReadSiyuanNote { .. } => "siyuan_read_failed",
+        PlannedAction::MCPCall { .. } => "mcp_call_failed",
         PlannedAction::WriteSiyuanKnowledge => "siyuan_write_failed",
         PlannedAction::ProjectAnswer => "project_answer_failed",
         PlannedAction::ContextAnswer => "context_answer_failed",
@@ -37,6 +39,9 @@ pub(crate) fn action_tag(action: &PlannedAction) -> &'static str {
     if let PlannedAction::AgentResolve = action {
         return "agent-resolve";
     }
+    if let PlannedAction::MCPCall { .. } = action {
+        return "mcp";
+    }
     action_tag_common(action)
 }
 
@@ -45,6 +50,7 @@ fn action_tag_common(action: &PlannedAction) -> &'static str {
         PlannedAction::RunCommand { .. } => "command",
         PlannedAction::ReadFile { .. } => "read",
         PlannedAction::WriteFile { .. } => "write",
+        PlannedAction::ApplyPatch { .. } => "patch",
         PlannedAction::DeletePath { .. } => "delete",
         PlannedAction::ListFiles { .. } => "list",
         PlannedAction::WriteMemory { .. } => "memory-write",
@@ -52,6 +58,7 @@ fn action_tag_common(action: &PlannedAction) -> &'static str {
         PlannedAction::SearchKnowledge { .. } => "knowledge",
         PlannedAction::SearchSiyuanNotes { .. } => "siyuan-search",
         PlannedAction::ReadSiyuanNote { .. } => "siyuan-read",
+        PlannedAction::MCPCall { .. } => unreachable!("handled before match"),
         PlannedAction::WriteSiyuanKnowledge => unreachable!("handled before match"),
         PlannedAction::ProjectAnswer => unreachable!("handled before match"),
         PlannedAction::ContextAnswer => unreachable!("handled before match"),

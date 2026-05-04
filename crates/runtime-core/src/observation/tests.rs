@@ -17,10 +17,7 @@ fn sample_event(event_type: &str, stage: &str) -> RunEvent {
 
 #[test]
 fn should_map_lifecycle_event_kind() {
-    assert_eq!(
-        observation_kind_for_event_type("run_started"),
-        Some("lifecycle_start")
-    );
+    assert_eq!(observation_kind_for_event_type("run_started"), Some("lifecycle_start"));
     assert_eq!(
         observation_kind_for_event_type("analysis_ready"),
         Some("lifecycle_analysis")
@@ -111,12 +108,7 @@ fn should_search_observations_with_lightweight_fields() {
     let _ = persist_lifecycle_observations(&request, &sample_lifecycle_events());
     let report = search_observations(&request, "analysis", 5);
     assert!(report.total_hits >= 1);
-    assert!(
-        report
-            .items
-            .iter()
-            .all(|item| item.summary_preview.len() <= 121)
-    );
+    assert!(report.items.iter().all(|item| item.summary_preview.len() <= 121));
 }
 
 #[test]
@@ -171,12 +163,7 @@ fn should_redact_sensitive_observation_fields() {
     ];
     let report = observation_privacy_redact_flow(&request, &events);
     assert!(report.redacted_count >= 1);
-    assert!(
-        report
-            .sample_summaries
-            .iter()
-            .any(|item| item.contains("[REDACTED]"))
-    );
+    assert!(report.sample_summaries.iter().any(|item| item.contains("[REDACTED]")));
 }
 
 #[test]

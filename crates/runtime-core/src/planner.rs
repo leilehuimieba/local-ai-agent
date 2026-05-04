@@ -15,6 +15,10 @@ pub(crate) enum PlannedAction {
         path: String,
         content: String,
     },
+    ApplyPatch {
+        diff: String,
+        dry_run: bool,
+    },
     DeletePath {
         path: String,
     },
@@ -38,6 +42,11 @@ pub(crate) enum PlannedAction {
     ReadSiyuanNote {
         path: String,
     },
+    MCPCall {
+        server_id: String,
+        tool_name: String,
+        arguments_json: String,
+    },
     WriteSiyuanKnowledge,
     ProjectAnswer,
     ContextAnswer,
@@ -54,43 +63,29 @@ pub(crate) fn analysis_summary(
         PlannedAction::RunCommand { .. } => "运行时识别到这是一个命令执行任务。".to_string(),
         PlannedAction::ReadFile { .. } => "运行时识别到这是一个文件读取任务。".to_string(),
         PlannedAction::WriteFile { .. } => "运行时识别到这是一个文件写入任务。".to_string(),
+        PlannedAction::ApplyPatch { .. } => "运行时识别到这是一个 patch 应用任务。".to_string(),
         PlannedAction::DeletePath { .. } => "运行时识别到这是一个删除类动作。".to_string(),
         PlannedAction::ListFiles { .. } => "运行时识别到这是一个工作区目录浏览任务。".to_string(),
         PlannedAction::WriteMemory { .. } => "运行时识别到这是一个长期记忆写入任务。".to_string(),
         PlannedAction::RecallMemory { .. } => "运行时识别到这是一个按需记忆召回任务。".to_string(),
-        PlannedAction::SearchKnowledge { .. } => {
-            "运行时识别到这是一个本地知识检索任务。".to_string()
-        }
-        PlannedAction::SearchSiyuanNotes { .. } => {
-            "运行时识别到这是一个思源摘要检索任务。".to_string()
-        }
-        PlannedAction::ReadSiyuanNote { .. } => {
-            "运行时识别到这是一个思源正文读取任务。".to_string()
-        }
+        PlannedAction::SearchKnowledge { .. } => "运行时识别到这是一个本地知识检索任务。".to_string(),
+        PlannedAction::SearchSiyuanNotes { .. } => "运行时识别到这是一个思源摘要检索任务。".to_string(),
+        PlannedAction::ReadSiyuanNote { .. } => "运行时识别到这是一个思源正文读取任务。".to_string(),
+        PlannedAction::MCPCall {
+            server_id, tool_name, ..
+        } => format!("运行时识别到这是一个 MCP 工具调用任务：{server_id}/{tool_name}。"),
         PlannedAction::WriteSiyuanKnowledge => "运行时识别到这是一个思源知识导出任务。".to_string(),
-        PlannedAction::ProjectAnswer => {
-            "当前输入更像项目说明类问题，运行时将基于本地文档生成项目回答。".to_string()
-        }
-        PlannedAction::ContextAnswer => {
-            "当前输入未命中动作前缀，运行时将基于会话压缩摘要继续回答。".to_string()
-        }
-        PlannedAction::Explain => {
-            "当前输入不包含已支持的执行前缀，运行时将返回可用能力说明。".to_string()
-        }
+        PlannedAction::ProjectAnswer => "当前输入更像项目说明类问题，运行时将基于本地文档生成项目回答。".to_string(),
+        PlannedAction::ContextAnswer => "当前输入未命中动作前缀，运行时将基于会话压缩摘要继续回答。".to_string(),
+        PlannedAction::Explain => "当前输入不包含已支持的执行前缀，运行时将返回可用能力说明。".to_string(),
         PlannedAction::AgentResolve => {
             "当前输入将被交给执行大模型并提供 Tools 调用，尝试使用 Agent 能力执行。".to_string()
         }
     };
 
-    base.push_str(&format!(
-        " 当前工作区为 `{}`。",
-        repo_context.workspace_root
-    ));
+    base.push_str(&format!(" 当前工作区为 `{}`。", repo_context.workspace_root));
     if let Some(git_snapshot) = repo_context.git_snapshot.as_ref() {
-        let branch = git_snapshot
-            .current_branch
-            .as_deref()
-            .unwrap_or("未识别分支");
+        let branch = git_snapshot.current_branch.as_deref().unwrap_or("未识别分支");
         let dirty_status = if git_snapshot.is_dirty {
             "存在未提交修改"
         } else {
@@ -132,11 +127,7 @@ pub(crate) fn plan_action_with_context(envelope: &RuntimeContextEnvelope) -> Pla
     if let Some(action) = explicit_action(trimmed) {
         return action;
     }
-    natural_language_action(
-        trimmed,
-        has_session_context(envelope),
-        has_project_context(envelope),
-    )
+    natural_language_action(trimmed, has_session_context(envelope), has_project_context(envelope))
 }
 
 fn explicit_action(input: &str) -> Option<PlannedAction> {
@@ -154,11 +145,8 @@ fn explicit_action(input: &str) -> Option<PlannedAction> {
 }
 
 fn run_command_action(input: &str) -> Option<PlannedAction> {
-    extract_prefixed_value(
-        input,
-        &["cmd:", "command:", "run command:", "执行命令:", "运行命令:"],
-    )
-    .map(|command| PlannedAction::RunCommand { command })
+    extract_prefixed_value(input, &["cmd:", "command:", "run command:", "执行命令:", "运行命令:"])
+        .map(|command| PlannedAction::RunCommand { command })
 }
 
 fn read_file_action(input: &str) -> Option<PlannedAction> {
@@ -167,20 +155,15 @@ fn read_file_action(input: &str) -> Option<PlannedAction> {
 }
 
 fn delete_path_action(input: &str) -> Option<PlannedAction> {
-    extract_prefixed_value(
-        input,
-        &["delete:", "remove:", "删除:", "删除文件:", "移除:"],
-    )
-    .map(|path| PlannedAction::DeletePath { path })
+    extract_prefixed_value(input, &["delete:", "remove:", "删除:", "删除文件:", "移除:"])
+        .map(|path| PlannedAction::DeletePath { path })
 }
 
 fn list_files_action(input: &str) -> Option<PlannedAction> {
-    extract_prefixed_value(
-        input,
-        &["list:", "列出文件:", "列出目录:", "workspace list:"],
-    )
-    .map(|path| PlannedAction::ListFiles {
-        path: if path.is_empty() { None } else { Some(path) },
+    extract_prefixed_value(input, &["list:", "列出文件:", "列出目录:", "workspace list:"]).map(|path| {
+        PlannedAction::ListFiles {
+            path: if path.is_empty() { None } else { Some(path) },
+        }
     })
 }
 
@@ -190,13 +173,8 @@ fn write_file_action(input: &str) -> Option<PlannedAction> {
 }
 
 fn write_memory_action(input: &str) -> Option<PlannedAction> {
-    extract_memory_request(input, &["remember:", "memory write:", "记住:", "写入记忆:"]).map(
-        |(kind, summary, content)| PlannedAction::WriteMemory {
-            kind,
-            summary,
-            content,
-        },
-    )
+    extract_memory_request(input, &["remember:", "memory write:", "记住:", "写入记忆:"])
+        .map(|(kind, summary, content)| PlannedAction::WriteMemory { kind, summary, content })
 }
 
 fn recall_memory_action(input: &str) -> Option<PlannedAction> {
@@ -205,11 +183,8 @@ fn recall_memory_action(input: &str) -> Option<PlannedAction> {
 }
 
 fn search_knowledge_action(input: &str) -> Option<PlannedAction> {
-    extract_prefixed_value(
-        input,
-        &["knowledge:", "search knowledge:", "检索知识:", "知识检索:"],
-    )
-    .map(|query| PlannedAction::SearchKnowledge { query })
+    extract_prefixed_value(input, &["knowledge:", "search knowledge:", "检索知识:", "知识检索:"])
+        .map(|query| PlannedAction::SearchKnowledge { query })
 }
 
 fn search_siyuan_action(input: &str) -> Option<PlannedAction> {
@@ -229,11 +204,7 @@ fn write_siyuan_action(input: &str) -> Option<PlannedAction> {
         .then_some(PlannedAction::WriteSiyuanKnowledge)
 }
 
-fn natural_language_action(
-    input: &str,
-    has_session_context: bool,
-    has_project_material: bool,
-) -> PlannedAction {
+fn natural_language_action(input: &str, has_session_context: bool, has_project_material: bool) -> PlannedAction {
     if let Some(action) = fuzzy_action(input) {
         return action;
     }
@@ -249,19 +220,13 @@ fn natural_language_action(
     if has_project_material && is_project_status_question(input) {
         return PlannedAction::ProjectAnswer;
     }
-    if should_default_to_context_answer(input)
-        || should_continue_session(input, has_session_context)
-    {
+    if should_default_to_context_answer(input) || should_continue_session(input, has_session_context) {
         return PlannedAction::ContextAnswer;
     }
     fallback_natural_action(input, has_session_context, has_project_material)
 }
 
-fn fallback_natural_action(
-    input: &str,
-    has_session_context: bool,
-    has_project_material: bool,
-) -> PlannedAction {
+fn fallback_natural_action(input: &str, has_session_context: bool, has_project_material: bool) -> PlannedAction {
     if should_answer_project(input, has_project_material) {
         return PlannedAction::ProjectAnswer;
     }
@@ -332,6 +297,9 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     if should_use_context_for_priority_three_tasks(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
+    if should_use_context_for_greeting(&lower) {
+        return Some(PlannedAction::ContextAnswer);
+    }
     if should_use_context_for_smalltalk(&lower) {
         return Some(PlannedAction::ContextAnswer);
     }
@@ -346,14 +314,7 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
 fn should_use_context_for_fast_checklist(input: &str) -> bool {
     let has_time_limit = mentions_any(
         input,
-        &[
-            "30 minutes",
-            "20 minutes",
-            "15 minutes",
-            "30分钟",
-            "20分钟",
-            "15分钟",
-        ],
+        &["30 minutes", "20 minutes", "15 minutes", "30分钟", "20分钟", "15分钟"],
     );
     let has_checklist_intent = mentions_any(
         input,
@@ -381,25 +342,16 @@ fn should_use_context_for_kickoff_message(input: &str) -> bool {
             "开场提醒",
         ],
     );
-    let asks_short_output = mentions_any(
-        input,
-        &["one short", "short message", "一句", "简短", "不超过两句"],
-    );
+    let asks_short_output = mentions_any(input, &["one short", "short message", "一句", "简短", "不超过两句"]);
     has_kickoff_intent && asks_short_output
 }
 
 fn should_use_context_for_acceptance_readiness(input: &str) -> bool {
-    let asks_acceptance = mentions_any(
-        input,
-        &["验收", "提测", "ready for acceptance", "ready to validate"],
-    );
+    let asks_acceptance = mentions_any(input, &["验收", "提测", "ready for acceptance", "ready to validate"]);
     if !asks_acceptance {
         return false;
     }
-    mentions_any(
-        input,
-        &["可以开始", "能开始", "现在是否", "whether", "can we start"],
-    )
+    mentions_any(input, &["可以开始", "能开始", "现在是否", "whether", "can we start"])
 }
 
 fn should_use_context_for_priority_three_tasks(input: &str) -> bool {
@@ -415,13 +367,14 @@ fn should_use_context_for_priority_three_tasks(input: &str) -> bool {
 fn should_use_context_for_smalltalk(input: &str) -> bool {
     mentions_any(
         input,
-        &[
-            "聊两句",
-            "你今天状态",
-            "最近怎么样",
-            "随便聊聊",
-            "casual chat",
-        ],
+        &["聊两句", "你今天状态", "最近怎么样", "随便聊聊", "casual chat"],
+    )
+}
+
+fn should_use_context_for_greeting(input: &str) -> bool {
+    matches!(
+        input.trim(),
+        "你好" | "您好" | "早上好" | "晚上好" | "hello" | "hi" | "hey"
     )
 }
 
@@ -439,15 +392,11 @@ fn should_use_context_for_evidence_status(input: &str) -> bool {
     if !asks_progress {
         return false;
     }
-    mentions_any(
-        input,
-        &["证据目录", "evidence", "based on current evidence"],
-    )
+    mentions_any(input, &["证据目录", "evidence", "based on current evidence"])
 }
 
 fn should_use_context_for_pause_risk(input: &str) -> bool {
-    let asks_pause_risk =
-        mentions_any(input, &["暂停", "pause now"]) && mentions_any(input, &["风险", "risk"]);
+    let asks_pause_risk = mentions_any(input, &["暂停", "pause now"]) && mentions_any(input, &["风险", "risk"]);
     if !asks_pause_risk {
         return false;
     }
@@ -459,10 +408,7 @@ fn should_use_context_for_next_step_four_section(input: &str) -> bool {
     if !asks_next {
         return false;
     }
-    mentions_any(
-        input,
-        &["当前判断", "缺口", "一步动作", "为什么是这一步", "四段式"],
-    )
+    mentions_any(input, &["当前判断", "缺口", "一步动作", "为什么是这一步", "四段式"])
 }
 
 fn should_open_calculator(input: &str) -> bool {
@@ -477,10 +423,7 @@ fn should_open_calculator(input: &str) -> bool {
             "打开一下计算器",
         ],
     );
-    let mentions_open = mentions_any(
-        input,
-        &["打开", "启动", "运行", "帮我打开", "帮我启动", "帮我运行"],
-    );
+    let mentions_open = mentions_any(input, &["打开", "启动", "运行", "帮我打开", "帮我启动", "帮我运行"]);
     mentions_calc && (mentions_open || input.trim() == "计算器" || input.trim() == "calc")
 }
 
@@ -558,11 +501,7 @@ fn is_capability_question(input: &str) -> bool {
     if capability_words {
         return true;
     }
-    lower.contains("怎么用")
-        && mentions_any(
-            &lower,
-            &["你", "这个助手", "本地智能体", "这个系统", "这些能力"],
-        )
+    lower.contains("怎么用") && mentions_any(&lower, &["你", "这个助手", "本地智能体", "这个系统", "这些能力"])
 }
 
 fn is_project_status_question(input: &str) -> bool {
@@ -592,15 +531,7 @@ fn is_learning_continuation_question(input: &str) -> bool {
     let lower = input.trim().to_lowercase();
     let learning_words = mentions_any(
         &lower,
-        &[
-            "学习",
-            "复习",
-            "掌握",
-            "巩固",
-            "知识点",
-            "学习建议",
-            "待巩固",
-        ],
+        &["学习", "复习", "掌握", "巩固", "知识点", "学习建议", "待巩固"],
     );
     let continue_words = mentions_any(
         &lower,
@@ -635,22 +566,16 @@ fn should_use_agent_for_learning_plan(input: &str) -> bool {
     );
     let plan_intent = mentions_any(
         &lower,
-        &[
-            "制定", "安排", "计划", "按周", "每天", "自测", "错题", "复盘",
-        ],
+        &["制定", "安排", "计划", "按周", "每天", "自测", "错题", "复盘"],
     );
-    let continue_words = mentions_any(
-        &lower,
-        &["继续", "上次", "做到哪", "还差什么", "掌握到哪", "下一步"],
-    );
+    let continue_words = mentions_any(&lower, &["继续", "上次", "做到哪", "还差什么", "掌握到哪", "下一步"]);
     learning_scope && plan_intent && !continue_words
 }
 
 fn has_project_context(envelope: &RuntimeContextEnvelope) -> bool {
     let repo_summary = envelope.project_block.repo_summary.trim();
     let doc_summary = envelope.project_block.doc_summary.trim();
-    !repo_summary.is_empty()
-        || (!doc_summary.is_empty() && !doc_summary.starts_with("当前没有命中高价值说明文件"))
+    !repo_summary.is_empty() || (!doc_summary.is_empty() && !doc_summary.starts_with("当前没有命中高价值说明文件"))
 }
 
 fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
@@ -660,9 +585,7 @@ fn has_session_context(envelope: &RuntimeContextEnvelope) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{PlannedAction, plan_action_with_context};
-    use crate::context_builder::{
-        DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock,
-    };
+    use crate::context_builder::{DynamicPromptBlock, ProjectPromptBlock, RuntimeContextEnvelope, StaticPromptBlock};
 
     fn static_block() -> StaticPromptBlock {
         StaticPromptBlock {
@@ -714,10 +637,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ReadFile { .. }
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ReadFile { .. }));
     }
 
     #[test]
@@ -728,10 +648,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -742,10 +659,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ProjectAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ProjectAnswer));
     }
 
     #[test]
@@ -756,10 +670,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -770,10 +681,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -784,10 +692,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -798,10 +703,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -812,10 +714,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -840,10 +739,7 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -854,10 +750,29 @@ mod tests {
             "",
             "当前没有命中高价值说明文件。",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
+    }
+
+    #[test]
+    fn plans_context_answer_for_greeting() {
+        let env = envelope(
+            "你好",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
+    }
+
+    #[test]
+    fn plans_context_answer_for_english_greeting() {
+        let env = envelope(
+            "hello",
+            "当前会话还没有可复用的压缩摘要。",
+            "",
+            "当前没有命中高价值说明文件。",
+        );
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -868,10 +783,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -882,10 +794,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -896,10 +805,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -910,10 +816,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -924,10 +827,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::ContextAnswer
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::ContextAnswer));
     }
 
     #[test]
@@ -938,10 +838,7 @@ mod tests {
             "",
             "docs/README.md: 项目说明",
         );
-        assert!(matches!(
-            plan_action_with_context(&env),
-            PlannedAction::AgentResolve
-        ));
+        assert!(matches!(plan_action_with_context(&env), PlannedAction::AgentResolve));
     }
 }
 
@@ -986,11 +883,7 @@ fn extract_memory_request(input: &str, prefixes: &[&str]) -> Option<(String, Str
             } else {
                 ("project_knowledge".to_string(), header.to_string())
             };
-            let final_content = if content.is_empty() {
-                summary.clone()
-            } else {
-                content
-            };
+            let final_content = if content.is_empty() { summary.clone() } else { content };
             Some((kind, summary, final_content))
         } else {
             None

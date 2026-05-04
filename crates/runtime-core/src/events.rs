@@ -1,12 +1,10 @@
 use crate::contracts::{
-    ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse,
-    ToolCallSnapshot, VerificationSnapshot,
+    ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse, ToolCallSnapshot,
+    VerificationSnapshot,
 };
 use crate::memory_layer::metadata_layer_summary;
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
-use crate::prompt::{
-    render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt,
-};
+use crate::prompt::{render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -56,43 +54,20 @@ pub(crate) fn make_confirmation_event(
     confirmation: &ConfirmationRequest,
 ) -> RunEvent {
     let mut metadata = BTreeMap::new();
-    metadata.insert(
-        "confirmation_id".to_string(),
-        confirmation.confirmation_id.clone(),
-    );
+    metadata.insert("confirmation_id".to_string(), confirmation.confirmation_id.clone());
     metadata.insert("risk_level".to_string(), confirmation.risk_level.clone());
-    metadata.insert(
-        "action_summary".to_string(),
-        confirmation.action_summary.clone(),
-    );
+    metadata.insert("action_summary".to_string(), confirmation.action_summary.clone());
     metadata.insert("reason".to_string(), confirmation.reason.clone());
-    metadata.insert(
-        "impact_scope".to_string(),
-        confirmation.impact_scope.clone(),
-    );
-    metadata.insert(
-        "target_paths".to_string(),
-        confirmation.target_paths.join("\n"),
-    );
+    metadata.insert("impact_scope".to_string(), confirmation.impact_scope.clone());
+    metadata.insert("target_paths".to_string(), confirmation.target_paths.join("\n"));
     metadata.insert(
         "reversible".to_string(),
-        if confirmation.reversible {
-            "true"
-        } else {
-            "false"
-        }
-        .to_string(),
+        if confirmation.reversible { "true" } else { "false" }.to_string(),
     );
     metadata.insert("hazards".to_string(), confirmation.hazards.join("\n"));
-    metadata.insert(
-        "alternatives".to_string(),
-        confirmation.alternatives.join("\n"),
-    );
+    metadata.insert("alternatives".to_string(), confirmation.alternatives.join("\n"));
     metadata.insert("kind".to_string(), confirmation.kind.clone());
-    metadata.insert(
-        "task_title".to_string(),
-        confirmation.action_summary.clone(),
-    );
+    metadata.insert("task_title".to_string(), confirmation.action_summary.clone());
     metadata.insert("next_step".to_string(), "等待用户确认后再继续".to_string());
 
     make_event(
@@ -134,10 +109,7 @@ pub(crate) fn make_event(
         summary: summary.to_string(),
         detail: detail.to_string(),
         tool_name: metadata.get("tool_name").cloned().unwrap_or_default(),
-        tool_display_name: metadata
-            .get("tool_display_name")
-            .cloned()
-            .unwrap_or_default(),
+        tool_display_name: metadata.get("tool_display_name").cloned().unwrap_or_default(),
         tool_category: metadata.get("tool_category").cloned().unwrap_or_default(),
         output_kind: metadata.get("output_kind").cloned().unwrap_or_default(),
         result_summary: metadata.get("result_summary").cloned().unwrap_or_default(),
@@ -145,14 +117,8 @@ pub(crate) fn make_event(
         risk_level: metadata.get("risk_level").cloned().unwrap_or_default(),
         confirmation_id: metadata.get("confirmation_id").cloned().unwrap_or_default(),
         final_answer: metadata.get("final_answer").cloned().unwrap_or_default(),
-        completion_status: metadata
-            .get("completion_status")
-            .cloned()
-            .unwrap_or_default(),
-        completion_reason: metadata
-            .get("completion_reason")
-            .cloned()
-            .unwrap_or_default(),
+        completion_status: metadata.get("completion_status").cloned().unwrap_or_default(),
+        completion_reason: metadata.get("completion_reason").cloned().unwrap_or_default(),
         verification_summary: pick_verification_summary(&metadata, verification_snapshot.as_ref()),
         checkpoint_written: metadata_flag(&metadata, "checkpoint_written"),
         context_snapshot: context_snapshot(&metadata),
@@ -167,16 +133,13 @@ fn memory_digest(metadata: &BTreeMap<String, String>) -> String {
 }
 
 fn memory_recall_anchor(events: &[RunEvent]) -> Option<(usize, &BTreeMap<String, String>)> {
-    events.iter().enumerate().find_map(|(index, event)| {
-        (event.event_type == "plan_ready").then_some((index, &event.metadata))
-    })
+    events
+        .iter()
+        .enumerate()
+        .find_map(|(index, event)| (event.event_type == "plan_ready").then_some((index, &event.metadata)))
 }
 
-fn memory_recall_metadata(
-    source: &BTreeMap<String, String>,
-    digest: &str,
-    summary: &str,
-) -> BTreeMap<String, String> {
+fn memory_recall_metadata(source: &BTreeMap<String, String>, digest: &str, summary: &str) -> BTreeMap<String, String> {
     let mut metadata = source.clone();
     let reason = memory_recall_reason(source, digest);
     metadata.insert("layer".to_string(), "long_term_memory".to_string());
@@ -184,27 +147,15 @@ fn memory_recall_metadata(
     metadata.insert("memory_kind".to_string(), memory_recall_kind(source));
     metadata.insert("governance_status".to_string(), "recalled".to_string());
     metadata.insert("memory_action".to_string(), "recall".to_string());
-    metadata.insert(
-        "governance_version".to_string(),
-        MEMORY_GOVERNANCE_VERSION.to_string(),
-    );
+    metadata.insert("governance_version".to_string(), MEMORY_GOVERNANCE_VERSION.to_string());
     metadata.insert("governance_reason".to_string(), reason.clone());
-    metadata.insert(
-        "governance_source".to_string(),
-        "runtime_memory_recall".to_string(),
-    );
+    metadata.insert("governance_source".to_string(), "runtime_memory_recall".to_string());
     metadata.insert("governance_at".to_string(), timestamp_now());
     metadata.insert("source_type".to_string(), "runtime".to_string());
-    metadata.insert(
-        "source_event_type".to_string(),
-        "memory_recalled".to_string(),
-    );
+    metadata.insert("source_event_type".to_string(), "memory_recalled".to_string());
     metadata.insert("source_artifact_path".to_string(), String::new());
     metadata.insert("archive_reason".to_string(), String::new());
-    metadata.insert(
-        "memory_layer_summary".to_string(),
-        memory_layer_summary(source),
-    );
+    metadata.insert("memory_layer_summary".to_string(), memory_layer_summary(source));
     metadata.insert(
         "memory_current_object_count".to_string(),
         metadata_value(source, "memory_current_object_count"),
@@ -252,10 +203,7 @@ fn memory_layer_summary(metadata: &BTreeMap<String, String>) -> String {
     metadata_layer_summary(metadata)
 }
 
-fn pick_verification_summary(
-    metadata: &BTreeMap<String, String>,
-    snapshot: Option<&VerificationSnapshot>,
-) -> String {
+fn pick_verification_summary(metadata: &BTreeMap<String, String>, snapshot: Option<&VerificationSnapshot>) -> String {
     metadata
         .get("verification_summary")
         .cloned()
@@ -321,8 +269,7 @@ fn fill_context_observation(
     snapshot: &mut RuntimeContextSnapshot,
     observation: (String, String, usize, usize, bool, usize, usize, bool),
 ) {
-    let (injection, references, total, used, hit, total_tokens, used_tokens, hit_tokens) =
-        observation;
+    let (injection, references, total, used, hit, total_tokens, used_tokens, hit_tokens) = observation;
     snapshot.observation_injection = injection;
     snapshot.observation_references = references;
     snapshot.observation_budget_total = total;
@@ -371,10 +318,7 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
 fn tool_call_snapshot(metadata: &BTreeMap<String, String>) -> Option<ToolCallSnapshot> {
     let snapshot = ToolCallSnapshot {
         tool_name: metadata.get("tool_name").cloned().unwrap_or_default(),
-        display_name: metadata
-            .get("tool_display_name")
-            .cloned()
-            .unwrap_or_default(),
+        display_name: metadata.get("tool_display_name").cloned().unwrap_or_default(),
         category: metadata.get("tool_category").cloned().unwrap_or_default(),
         risk_level: metadata.get("risk_level").cloned().unwrap_or_default(),
         input_schema: metadata.get("input_schema").cloned().unwrap_or_default(),
@@ -383,10 +327,7 @@ fn tool_call_snapshot(metadata: &BTreeMap<String, String>) -> Option<ToolCallSna
             .get("requires_confirmation")
             .map(|value| value == "true")
             .unwrap_or(false),
-        arguments_json: metadata
-            .get("tool_arguments_json")
-            .cloned()
-            .unwrap_or_default(),
+        arguments_json: metadata.get("tool_arguments_json").cloned().unwrap_or_default(),
     };
     has_tool_call_snapshot(&snapshot).then_some(snapshot)
 }
@@ -402,22 +343,13 @@ fn has_tool_call_snapshot(snapshot: &ToolCallSnapshot) -> bool {
 
 fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<VerificationSnapshot> {
     let snapshot = VerificationSnapshot {
-        code: metadata
-            .get("verification_code")
-            .cloned()
-            .unwrap_or_default(),
-        summary: metadata
-            .get("verification_summary")
-            .cloned()
-            .unwrap_or_default(),
+        code: metadata.get("verification_code").cloned().unwrap_or_default(),
+        summary: metadata.get("verification_summary").cloned().unwrap_or_default(),
         passed: metadata
             .get("verification_passed")
             .map(|value| value == "true")
             .unwrap_or(false),
-        policy: metadata
-            .get("verification_policy")
-            .cloned()
-            .unwrap_or_default(),
+        policy: metadata.get("verification_policy").cloned().unwrap_or_default(),
         evidence: metadata
             .get("verification_evidence")
             .map(|value| split_lines(value))
@@ -464,10 +396,7 @@ fn split_lines(value: &str) -> Vec<String> {
 }
 
 fn prompt_snapshot_parts(metadata: &BTreeMap<String, String>) -> (String, String, String) {
-    let profile = metadata
-        .get("assembly_profile")
-        .map(String::as_str)
-        .unwrap_or_default();
+    let profile = metadata.get("assembly_profile").map(String::as_str).unwrap_or_default();
     if profile.starts_with("agent_resolve") {
         return split_prompt_sections(&render_agent_resolve_prompt(
             &prompt_user_input(metadata),
@@ -555,9 +484,7 @@ fn prompt_static_block() -> crate::context_builder::StaticPromptBlock {
     }
 }
 
-fn prompt_project_block(
-    metadata: &BTreeMap<String, String>,
-) -> crate::context_builder::ProjectPromptBlock {
+fn prompt_project_block(metadata: &BTreeMap<String, String>) -> crate::context_builder::ProjectPromptBlock {
     crate::context_builder::ProjectPromptBlock {
         workspace_root: metadata_value(metadata, "context_workspace_root"),
         repo_summary: String::new(),
@@ -565,9 +492,7 @@ fn prompt_project_block(
     }
 }
 
-fn prompt_dynamic_block(
-    metadata: &BTreeMap<String, String>,
-) -> crate::context_builder::DynamicPromptBlock {
+fn prompt_dynamic_block(metadata: &BTreeMap<String, String>) -> crate::context_builder::DynamicPromptBlock {
     let observation = observation_snapshot(metadata);
     let mut block = crate::context_builder::DynamicPromptBlock {
         user_input: prompt_user_input(metadata),
@@ -706,16 +631,10 @@ mod tests {
     fn memory_recall_event_keeps_empty_recall_semantics() {
         let request = sample_request();
         let mut metadata = BTreeMap::new();
-        metadata.insert(
-            "memory_digest".to_string(),
-            "当前没有命中相关长期记忆。".to_string(),
-        );
+        metadata.insert("memory_digest".to_string(), "当前没有命中相关长期记忆。".to_string());
         let event = make_memory_recall_event(&request, 1, &metadata).unwrap();
         assert_eq!(event.summary, "未命中长期记忆");
-        assert_eq!(
-            event.metadata.get("memory_kind"),
-            Some(&"recall_digest".to_string())
-        );
+        assert_eq!(event.metadata.get("memory_kind"), Some(&"recall_digest".to_string()));
         assert_eq!(
             event.metadata.get("reason"),
             Some(&"当前查询未命中可复用长期记忆，已输出空召回结果。".to_string())
