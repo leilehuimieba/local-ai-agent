@@ -157,6 +157,16 @@ type DiagnosticsCheckResponse struct {
 	CheckedAt   string            `json:"checked_at"`
 	OverallOK   bool              `json:"overall_ok"`
 	Diagnostics DiagnosticsStatus `json:"diagnostics"`
+	Services    []ServiceStatus   `json:"services"`
 	Warnings    []string          `json:"warnings"`
 	Errors      []string          `json:"errors"`
+}
+
+type ServiceStatus struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Status   string `json:"status"`
+	Severity string `json:"severity"`
+	Detail   string `json:"detail"`
+	Hint     string `json:"hint"`
 }

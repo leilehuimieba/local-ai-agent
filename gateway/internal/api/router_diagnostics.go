@@ -4,22 +4,37 @@ import (
 	"net/http"
 
 	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/mcp"
 	"local-agent/gateway/internal/state"
 )
 
-func diagnosticsCheckHandler(repoRoot string, cfg config.AppConfig, store *state.SettingsStore) http.HandlerFunc {
+func diagnosticsCheckHandler(repoRoot string, cfg config.AppConfig, store *state.SettingsStore, mgr *mcp.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		settings := buildSettingsResponse(repoRoot, cfg, store, nil)
+		settings := buildSettingsResponse(repoRoot, cfg, store, mgr)
 		diagnostics := settings.Diagnostics
+		services := buildServiceStatuses(repoRoot, settings)
 		writeJSON(w, http.StatusOK, DiagnosticsCheckResponse{
-			CheckedAt: diagnostics.CheckedAt, OverallOK: len(diagnostics.Errors) == 0,
-			Diagnostics: diagnostics, Warnings: diagnostics.Warnings, Errors: diagnostics.Errors,
+			CheckedAt: diagnostics.CheckedAt, OverallOK: diagnosticsOverallOK(diagnostics, services),
+			Diagnostics: diagnostics, Services: services,
+			Warnings: diagnostics.Warnings, Errors: diagnostics.Errors,
 		})
 	}
+}
+
+func diagnosticsOverallOK(status DiagnosticsStatus, services []ServiceStatus) bool {
+	if len(status.Errors) > 0 {
+		return false
+	}
+	for _, service := range services {
+		if service.Status == "error" {
+			return false
+		}
+	}
+	return true
 }
 
 func finalizeDiagnostics(status DiagnosticsStatus) DiagnosticsStatus {

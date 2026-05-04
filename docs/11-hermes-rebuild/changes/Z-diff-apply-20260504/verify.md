@@ -15,6 +15,12 @@
 5. `cd gateway; go build -o gateway.exe ./cmd/server`
    - 结果：通过。
 
+## 验收结论
+
+1. Z-change 已满足 proposal 中定义的最小闭环验收标准。
+2. 删除文件、rename、细化冲突 report 和失败回滚已纳入本次收口范围。
+3. 后续模糊 merge、二进制 patch 和 UI 预览不作为本 change 阻塞项。
+
 ## 未通过 / 残余风险
 
 1. 暂不支持二进制 patch。

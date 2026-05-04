@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -32,26 +33,104 @@ func mustPrepareLauncher() (string, config.AppConfig, string) {
 	if err != nil {
 		fail("load config", err)
 	}
-	if err := ensureFrontendBuilt(root); err != nil {
-		fail("prepare frontend", err)
-	}
 	logDir := filepath.Join(root, "logs")
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
 		fail("create log dir", err)
 	}
+	if err := runPreflightDiagnostics(root, cfg, logDir); err != nil {
+		fail("preflight diagnostics", err)
+	}
+	if err := ensureFrontendBuilt(root); err != nil {
+		fail("prepare frontend", err)
+	}
 	return root, cfg, logDir
+}
+
+func runPreflightDiagnostics(root string, cfg config.AppConfig, logDir string) error {
+	fmt.Println("[local-agent-launcher] preflight diagnostics...")
+	checks := []func() error{
+		func() error { return requireDirWritable(logDir) },
+		func() error { return requireGatewayPortReady(cfg.GatewayPort, root) },
+		func() error { return requireRuntimePortReady(cfg.RuntimePort) },
+		func() error { return requireFrontendTool(root) },
+		func() error { return requireRuntimeTool(root) },
+		func() error { return requireTool("go", "Gateway build requires Go") },
+	}
+	for _, check := range checks {
+		if err := check(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func requireGatewayPortReady(port int, root string) error {
+	if !portTaken(port) || systemReady(port, root) {
+		return nil
+	}
+	return fmt.Errorf("gateway port %d is occupied by another process", port)
+}
+
+func requireRuntimePortReady(port int) error {
+	if !portTaken(port) || healthOK(fmt.Sprintf("http://127.0.0.1:%d/health", port)) {
+		return nil
+	}
+	return fmt.Errorf("runtime port %d is occupied by another process", port)
+}
+
+func requireFrontendTool(root string) error {
+	indexFile := filepath.Join(root, "frontend", "dist", "index.html")
+	if fileExists(indexFile) && !frontendBuildStale(root, indexFile) {
+		return nil
+	}
+	return requireTool("npm", "frontend build requires npm")
+}
+
+func requireRuntimeTool(root string) error {
+	binary := filepath.Join(root, "target", "debug", executableName("runtime-host"))
+	if fileExists(binary) {
+		return nil
+	}
+	return requireTool("cargo", "Runtime build requires Cargo")
+}
+
+func requireTool(name string, reason string) error {
+	if _, err := exec.LookPath(name); err == nil {
+		return nil
+	}
+	return fmt.Errorf("%s: %s not found in PATH", reason, name)
+}
+
+func requireDirWritable(path string) error {
+	probe := filepath.Join(path, fmt.Sprintf("launcher-write-%d.tmp", time.Now().UnixNano()))
+	if err := os.WriteFile(probe, []byte("ok"), 0o644); err != nil {
+		return fmt.Errorf("log directory is not writable: %w", err)
+	}
+	_ = os.Remove(probe)
+	return nil
+}
+
+func portTaken(port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", port), 300*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }
 
 func mustStartSystem(root string, cfg config.AppConfig, logDir string) {
 	if systemReady(cfg.GatewayPort, root) {
 		return
 	}
+	fmt.Println("[local-agent-launcher] starting services...")
 	if err := ensureRuntime(root, cfg, logDir); err != nil {
 		fail("start runtime", err)
 	}
 	if err := ensureGateway(root, cfg, logDir); err != nil {
 		fail("start gateway", err)
 	}
+	fmt.Println("[local-agent-launcher] verifying services...")
 	if err := waitForSystemReady(cfg.GatewayPort, root, 20*time.Second); err != nil {
 		fail("wait system ready", err)
 	}

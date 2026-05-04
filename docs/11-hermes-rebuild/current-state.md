@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-05-04
-状态：`自由迭代期：Z-change diff apply 最小闭环进行中`
+状态：`自由迭代期：暂无活跃 change，等待下一主推进项`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：`Z-diff-apply-20260504`
-4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-04-27/`
+3. 当前活跃 change：暂无
+4. 上一主推进目录：`docs/11-hermes-rebuild/changes/Z-diff-apply-20260504/`
 
 ## 2. 阶段 I 收口结论
 
@@ -32,6 +32,9 @@
 8. **V-change（2026-05-03）**：历史会话列表 UI — LogsView 增加"会话历史"标签页，展示 fetchSessions 列表，点击恢复会话。已归档。
 9. **W-change（2026-05-03）**：文件上传接入后端知识库 — handleFileSelect 中异步调用 uploadKnowledgeFile，扩展 accept 为 pdf/docx，size 限制 5MB。已归档。
 10. **X-change（2026-05-03）**：Playwright E2E 测试覆盖移动端 — 安装 @playwright/test，4 项移动端布局/交互测试全绿。已归档。
+11. **Y-change（2026-05-04）**：短板补齐第一阶段 — MCP 添加/删除持久化、Runtime MCP 调用闭环、allowlist/risk/audit 安全治理。已收口。
+12. **Z-change（2026-05-04）**：diff apply 最小闭环 — Runtime `workspace_apply_patch` 支持 dry-run、多文件、新增、删除、rename、冲突报告和失败回滚。已收口。
+13. **AA-change（2026-05-04）**：Windows doctor 与一键启动体验 — Gateway 服务状态 API、一键启动器 preflight/start/verify、前端服务状态面板。已收口。
 
 ## 4. 阶段 H 收口结论
 

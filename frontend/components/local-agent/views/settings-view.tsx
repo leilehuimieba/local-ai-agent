@@ -627,9 +627,9 @@ function MemoryItem({ memory }: { memory: { id: string; kind: string; title: str
 
 const DiagnosticsSection = forwardRef<HTMLDivElement>((_, ref) => {
   const [isRunning, setIsRunning] = useState(false)
-  const [results, setResults] = useState<{ category: string; status: "ok" | "error"; message: string }[]>([])
+  const [results, setResults] = useState<DiagnosticRow[]>([])
   return (
-    <SettingsSection ref={ref} id="diagnostics" title="诊断" description="系统诊断和数据导出" icon={Wrench}>
+    <SettingsSection ref={ref} id="diagnostics" title="诊断" description="服务状态和启动自检" icon={Wrench}>
       <Button variant="outline" className="gap-2" onClick={() => void runHealthCheck(setIsRunning, setResults)} disabled={isRunning}>{isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}健康检查</Button>
       <DiagnosticResults results={results} />
     </SettingsSection>
@@ -637,7 +637,14 @@ const DiagnosticsSection = forwardRef<HTMLDivElement>((_, ref) => {
 })
 DiagnosticsSection.displayName = "DiagnosticsSection"
 
-async function runHealthCheck(setRunning: (value: boolean) => void, setResults: (value: { category: string; status: "ok" | "error"; message: string }[]) => void) {
+type DiagnosticRow = {
+  category: string
+  status: "ok" | "warning" | "error"
+  message: string
+  hint?: string
+}
+
+async function runHealthCheck(setRunning: (value: boolean) => void, setResults: (value: DiagnosticRow[]) => void) {
   setRunning(true)
   try { const data = await runDiagnosticsCheck(); setResults(diagnosticRows(data)) }
   catch { setResults([{ category: "检查", status: "error", message: "健康检查请求失败" }]) }
@@ -645,6 +652,14 @@ async function runHealthCheck(setRunning: (value: boolean) => void, setResults: 
 }
 
 function diagnosticRows(data: Awaited<ReturnType<typeof runDiagnosticsCheck>>) {
+  if (data.services?.length) {
+    return data.services.map((item) => ({
+      category: item.label,
+      status: normalizeDiagnosticStatus(item.status),
+      message: item.detail,
+      hint: item.hint,
+    }))
+  }
   const d = data.diagnostics
   return [
     { category: "仓库", status: d.repo_root_exists ? "ok" as const : "error" as const, message: d.repo_root_exists ? "可访问" : "不可访问" },
@@ -653,9 +668,42 @@ function diagnosticRows(data: Awaited<ReturnType<typeof runDiagnosticsCheck>>) {
   ]
 }
 
-function DiagnosticResults({ results }: { results: { category: string; status: "ok" | "error"; message: string }[] }) {
+function normalizeDiagnosticStatus(status: string): DiagnosticRow["status"] {
+  if (status === "ok" || status === "warning" || status === "error") return status
+  return "warning"
+}
+
+function DiagnosticResults({ results }: { results: DiagnosticRow[] }) {
   if (!results.length) return null
-  return <div className="mt-4 rounded-lg border border-border p-4 space-y-2">{results.map((r) => <div key={r.category} className="flex items-center gap-2"><CheckCircle className={cn("h-4 w-4", r.status === "ok" ? "text-success" : "text-destructive")} /><span className="text-sm font-medium">{r.category}:</span><span className="text-sm text-muted-foreground">{r.message}</span></div>)}</div>
+  return <div className="mt-4 rounded-lg border border-border p-4 space-y-3">{results.map((r) => <DiagnosticResultRow key={r.category} row={r} />)}</div>
+}
+
+function DiagnosticResultRow({ row }: { row: DiagnosticRow }) {
+  return (
+    <div className="flex items-start gap-3">
+      <CheckCircle className={cn("mt-0.5 h-4 w-4", diagnosticColor(row.status))} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-foreground">{row.category}</span>
+          <Badge variant="secondary" className="text-xs">{diagnosticLabel(row.status)}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">{row.message}</p>
+        {row.hint && <p className="text-xs text-muted-foreground">{row.hint}</p>}
+      </div>
+    </div>
+  )
+}
+
+function diagnosticColor(status: DiagnosticRow["status"]) {
+  if (status === "ok") return "text-success"
+  if (status === "warning") return "text-warning"
+  return "text-destructive"
+}
+
+function diagnosticLabel(status: DiagnosticRow["status"]) {
+  if (status === "ok") return "正常"
+  if (status === "warning") return "提醒"
+  return "异常"
 }
 
 interface SettingsSectionProps {

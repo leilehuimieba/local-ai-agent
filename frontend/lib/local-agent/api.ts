@@ -516,8 +516,18 @@ export type DiagnosticsCheckResponse = {
     model_count: number;
     workspace_count: number;
   };
+  services: ServiceStatus[];
   warnings: string[];
   errors: string[];
+};
+
+export type ServiceStatus = {
+  id: string;
+  label: string;
+  status: "ok" | "warning" | "error" | string;
+  severity: "info" | "warning" | "error" | string;
+  detail: string;
+  hint: string;
 };
 
 export async function runDiagnosticsCheck(): Promise<DiagnosticsCheckResponse> {

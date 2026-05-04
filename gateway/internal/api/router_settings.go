@@ -18,7 +18,7 @@ func registerSettingsRoutes(
 	mgr *mcp.Manager,
 ) {
 	mux.HandleFunc("/api/v1/settings", settingsHandler(repoRoot, cfg, settingsStore, mgr))
-	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore))
+	mux.HandleFunc("/api/v1/settings/diagnostics/check", diagnosticsCheckHandler(repoRoot, cfg, settingsStore, mgr))
 	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/logs", diagnosticsLogsRemediationHandler(repoRoot))
 	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/frontend-dist", diagnosticsFrontendRemediationHandler(repoRoot))
 	mux.HandleFunc("/api/v1/settings/diagnostics/remediate/gateway", diagnosticsGatewayRemediationHandler(repoRoot, cfg.GatewayPort))
