@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-暂无。下一主推进项待新建 change 后切换。
+1. [AB-diff-preview-ui-20260504](AB-diff-preview-ui-20260504/) — P1：diff apply UI 预览与确认体验
 
 ## 已完成 change
 

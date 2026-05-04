@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-05-04
-状态：`自由迭代期：暂无活跃 change，等待下一主推进项`
+状态：`自由迭代期：AB-change diff apply UI 预览进行中`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：暂无
-4. 上一主推进目录：`docs/11-hermes-rebuild/changes/Z-diff-apply-20260504/`
+3. 当前活跃 change：`AB-diff-preview-ui-20260504`
+4. 上一主推进目录：`docs/11-hermes-rebuild/changes/AA-windows-doctor-launcher-20260504/`
 
 ## 2. 阶段 I 收口结论
 
