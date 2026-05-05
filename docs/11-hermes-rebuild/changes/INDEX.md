@@ -7,22 +7,23 @@
 
 ## 当前活跃 change
 
-1. [AE-browser-automation-runtime-20260505](AE-browser-automation-runtime-20260505/) — P1：浏览器自动化接入 Runtime 主链路
+1. 当前无活跃 change
 
 ## 已完成 change
 
-1. [AD-runtime-mcp-tool-registry-20260505](archive/2026-05-05/AD-runtime-mcp-tool-registry-20260505/) — P0：Runtime tool registry 对 MCP 的主链路接入
-2. [AC-mcp-observability-ui-20260505](archive/2026-05-05/AC-mcp-observability-ui-20260505/) — P0：MCP 可观测与运营面板
-3. [AB-diff-preview-ui-20260504](archive/2026-05-05/AB-diff-preview-ui-20260504/) — P1：diff apply UI 预览与确认体验
-4. [AA-windows-doctor-launcher-20260504](AA-windows-doctor-launcher-20260504/) — P1：Windows doctor、一键启动器与服务状态自检
-5. [Z-diff-apply-20260504](Z-diff-apply-20260504/) — P1：Aider/Codex 风格代码 diff apply 最小闭环
-6. [Y-shortcomings-mcp-first-20260504](Y-shortcomings-mcp-first-20260504/) — 短板补齐第一阶段：MCP 添加/删除持久化、Runtime MCP 调用闭环与安全治理
-7. [S-productization-phase1-20260502](S-productization-phase1-20260502/) — 产品化第一阶段：Error Boundary + Toast + 前端测试 + 用户文档 + Session 隔离
-8. [T-productization-phase2-20260503](T-productization-phase2-20260503/) — 产品化第二阶段：后端结构化会话历史存储 + 移动端适配 + Composer 文件上传 UI
-9. [U-assistant-msg-sync-20260503](U-assistant-msg-sync-20260503/) — Assistant 消息同步到后端
-10. [V-history-session-list-20260503](V-history-session-list-20260503/) — 历史会话列表 UI
-11. [W-knowledge-upload-backend-20260503](W-knowledge-upload-backend-20260503/) — 文件上传接入后端知识库
-12. [X-playwright-mobile-e2e-20260503](X-playwright-mobile-e2e-20260503/) — Playwright E2E 测试覆盖移动端
+1. [AE-browser-automation-runtime-20260505](AE-browser-automation-runtime-20260505/) — P1：浏览器自动化接入 Runtime 主链路
+2. [AD-runtime-mcp-tool-registry-20260505](archive/2026-05-05/AD-runtime-mcp-tool-registry-20260505/) — P0：Runtime tool registry 对 MCP 的主链路接入
+3. [AC-mcp-observability-ui-20260505](archive/2026-05-05/AC-mcp-observability-ui-20260505/) — P0：MCP 可观测与运营面板
+4. [AB-diff-preview-ui-20260504](archive/2026-05-05/AB-diff-preview-ui-20260504/) — P1：diff apply UI 预览与确认体验
+5. [AA-windows-doctor-launcher-20260504](AA-windows-doctor-launcher-20260504/) — P1：Windows doctor、一键启动器与服务状态自检
+6. [Z-diff-apply-20260504](Z-diff-apply-20260504/) — P1：Aider/Codex 风格代码 diff apply 最小闭环
+7. [Y-shortcomings-mcp-first-20260504](Y-shortcomings-mcp-first-20260504/) — 短板补齐第一阶段：MCP 添加/删除持久化、Runtime MCP 调用闭环与安全治理
+8. [S-productization-phase1-20260502](S-productization-phase1-20260502/) — 产品化第一阶段：Error Boundary + Toast + 前端测试 + 用户文档 + Session 隔离
+9. [T-productization-phase2-20260503](T-productization-phase2-20260503/) — 产品化第二阶段：后端结构化会话历史存储 + 移动端适配 + Composer 文件上传 UI
+10. [U-assistant-msg-sync-20260503](U-assistant-msg-sync-20260503/) — Assistant 消息同步到后端
+11. [V-history-session-list-20260503](V-history-session-list-20260503/) — 历史会话列表 UI
+12. [W-knowledge-upload-backend-20260503](W-knowledge-upload-backend-20260503/) — 文件上传接入后端知识库
+13. [X-playwright-mobile-e2e-20260503](X-playwright-mobile-e2e-20260503/) — Playwright E2E 测试覆盖移动端
 
 ## 归档入口
 

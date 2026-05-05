@@ -53,6 +53,14 @@ func copyServers(servers []config.MCPServerConfig) []config.MCPServerConfig {
 	return out
 }
 
+func copyClients(clients map[string]*Client) map[string]*Client {
+	out := make(map[string]*Client, len(clients))
+	for id, client := range clients {
+		out[id] = client
+	}
+	return out
+}
+
 // ReplaceServers replaces the configured servers and reconnects ready clients.
 func (m *Manager) ReplaceServers(servers []config.MCPServerConfig) {
 	m.mu.Lock()
@@ -111,12 +119,11 @@ func (m *Manager) Status() []ServerStatus {
 
 // AllTools returns all tools from all ready clients, tagged with server_id.
 func (m *Manager) AllTools() []Tool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
+	servers, clients := m.snapshot()
 	var out []Tool
-	for _, server := range m.servers {
-		if c, ok := m.clients[server.ID]; ok {
+	for _, server := range servers {
+		if c, ok := clients[server.ID]; ok {
+			ensureClientConnected(c)
 			out = append(out, m.toolsForClient(server, c)...)
 		}
 	}
@@ -210,6 +217,19 @@ func validateCallPolicy(name string, policy ToolPolicy) error {
 		return fmt.Errorf("mcp tool %q requires confirmation", name)
 	}
 	return nil
+}
+
+func (m *Manager) snapshot() ([]config.MCPServerConfig, map[string]*Client) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return copyServers(m.servers), copyClients(m.clients)
+}
+
+func ensureClientConnected(client *Client) {
+	if client.Ready() {
+		return
+	}
+	_ = client.Connect()
 }
 
 // GetClient returns a client by server ID.

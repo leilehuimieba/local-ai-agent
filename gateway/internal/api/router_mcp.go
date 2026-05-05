@@ -21,6 +21,7 @@ func registerMCPRoutes(mux *http.ServeMux, mgr *mcp.Manager, repoRoot string) {
 
 func mcpServersHandler(mgr *mcp.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		_ = mgr.AllTools()
 		writeJSON(w, http.StatusOK, map[string]any{
 			"servers": mgr.Status(),
 		})

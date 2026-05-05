@@ -1,10 +1,22 @@
 # 当前状态
 
 - 最近更新时间：2026-05-05
-- 状态：进行中
+- 状态：已收口
 - 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
 - 已完成：已切换主推进项，建立 AE change 工作区。
 - 已完成：已明确本轮主目标为“浏览器自动化接入 Runtime 主链”，不是继续扩 MCP registry 或 diff apply。
-- 进行中：正在盘点现有浏览器自动化资产、可复用入口与首刀 contract。
+- 已完成：已完成浏览器自动化资产盘点，确认前端 Playwright、`.playwright-cli`、`.playwright-mcp` 主要是测试与调试资产，不是 Runtime 正式执行 contract。
+- 已完成：已确认 Runtime 当前唯一成熟外部执行桥是 MCP Gateway 调用链；浏览器能力若要首刀接主链，最稳妥入口仍是浏览器类 MCP server。
+- 已完成：已确认浏览器相关 connector slot 仍是 `browser_capture_ingest` 保留位，控制面和能力视图都没有正式浏览器工具 contract。
+- 已完成：已确认主配置 `config/app.json` 目前只接入 `rust-mcp-local`，没有真实浏览器 MCP server 纳入可调度配置。
+- 已完成：已冻结首刀 browser contract，确定首批只接 `open_page` 与 `read_page`，统一挂在 `browser` MCP server 下。
+- 已完成：已冻结策略字段，`open_page` 为 `risk=medium`、`requires_confirmation=false`、`audit=true`；`read_page` 为 `risk=low`、`requires_confirmation=false`、`audit=true`。
+- 已完成：已冻结结果 payload 口径，要求返回结构化 JSON，并在可恢复业务错误时优先使用 `ok=false + error_code`，避免把常见页面态错误抬升成传输失败。
+- 已完成：已新增真实 `browser` MCP server，前端侧通过 `frontend/scripts/browser-mcp-server.mjs` 提供 `initialize`、`tools/list`、`tools/call`、`GET /health`，首批工具为 `open_page` 与 `read_page`。
+- 已完成：已在 `config/app.json` 接入 `browser` MCP server，并冻结 allowlist、risk、requires_confirmation、audit 策略字段。
+- 已完成：Gateway `mcp` manager 与 settings / servers 视图已支持对 browser server 做连通与工具刷新，避免只看启动期缓存。
+- 已完成：`/api/v1/capabilities` 已能把 `mcp__browser__open_page` 与 `mcp__browser__read_page` 作为 request-scoped tool spec 注入 Runtime 能力目录。
+- 已完成：已补真实联调链，活栈经 launcher 启动后，能够通过 Gateway `POST /api/v1/mcp/call` 成功返回 `open_page -> read_page` 结果。
+- 已完成：launcher 已补 Runtime 过期二进制重建，避免旧 `runtime-host` 污染 request-scoped 能力联调。
 - 阻塞点：暂无。
-- 下一步：先完成浏览器能力断点盘点，再冻结首刀 contract 与最小执行链。
+- 下一步：等待下一项 change 接续浏览器交互扩展或审计体验补强。

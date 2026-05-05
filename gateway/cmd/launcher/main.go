@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,6 +54,7 @@ func runPreflightDiagnostics(root string, cfg config.AppConfig, logDir string) e
 		func() error { return requireGatewayPortReady(cfg.GatewayPort, root) },
 		func() error { return requireRuntimePortReady(cfg.RuntimePort) },
 		func() error { return requireFrontendTool(root) },
+		func() error { return requireBrowserMCPTool(root, cfg) },
 		func() error { return requireRuntimeTool(root) },
 		func() error { return requireTool("go", "Gateway build requires Go") },
 	}
@@ -87,7 +89,7 @@ func requireFrontendTool(root string) error {
 }
 
 func requireRuntimeTool(root string) error {
-	binary := filepath.Join(root, "target", "debug", executableName("runtime-host"))
+	binary := runtimeBinary(root)
 	if fileExists(binary) {
 		return nil
 	}
@@ -120,6 +122,9 @@ func portTaken(port int) bool {
 }
 
 func mustStartSystem(root string, cfg config.AppConfig, logDir string) {
+	if err := ensureBrowserMCP(root, cfg, logDir); err != nil {
+		fail("start browser mcp", err)
+	}
 	if systemReady(cfg.GatewayPort, root) {
 		return
 	}
@@ -251,12 +256,91 @@ func ensureGateway(root string, cfg config.AppConfig, logDir string) error {
 	return waitForHealth(gatewayURL, 20*time.Second)
 }
 
-func spawnRuntimeProcess(root string, env []string, logPath string) error {
-	binary := filepath.Join(root, "target", "debug", executableName("runtime-host"))
-	if fileExists(binary) {
-		return spawnProcess(root, env, logPath, binary)
+func requireBrowserMCPTool(root string, cfg config.AppConfig) error {
+	if _, ok := browserMCPServer(cfg); !ok {
+		return nil
 	}
-	return spawnProcess(root, env, logPath, "cargo", "run", "-p", "runtime-host")
+	script := filepath.Join(root, "frontend", "scripts", "browser-mcp-server.mjs")
+	if !fileExists(script) {
+		return fmt.Errorf("browser mcp script missing: %s", script)
+	}
+	return requireTool("node", "browser mcp requires Node.js")
+}
+
+func ensureBrowserMCP(root string, cfg config.AppConfig, logDir string) error {
+	server, ok := browserMCPServer(cfg)
+	if !ok {
+		return nil
+	}
+	healthURL, err := browserMCPHealthURL(server.URL)
+	if err != nil || healthOK(healthURL) {
+		return err
+	}
+	port, err := browserMCPPort(server.URL)
+	if err != nil {
+		return err
+	}
+	logPath := filepath.Join(logDir, "browser-mcp.log")
+	return startBrowserMCP(root, port, healthURL, logPath)
+}
+
+func startBrowserMCP(root string, port int, healthURL string, logPath string) error {
+	env := append(os.Environ(), fmt.Sprintf("LOCAL_AGENT_BROWSER_MCP_PORT=%d", port))
+	script := filepath.Join(root, "frontend", "scripts", "browser-mcp-server.mjs")
+	if err := spawnProcess(filepath.Join(root, "frontend"), env, logPath, "node", script); err != nil {
+		return err
+	}
+	return waitForHealth(healthURL, 20*time.Second)
+}
+
+func browserMCPServer(cfg config.AppConfig) (config.MCPServerConfig, bool) {
+	for _, server := range cfg.MCP.Servers {
+		if server.Enabled && server.ID == "browser" && server.Type == "http" {
+			return server, true
+		}
+	}
+	return config.MCPServerConfig{}, false
+}
+
+func browserMCPPort(rawURL string) (int, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return 0, err
+	}
+	port := parsed.Port()
+	if port == "" {
+		return 0, fmt.Errorf("browser mcp url missing port: %s", rawURL)
+	}
+	return boundedPort(port)
+}
+
+func browserMCPHealthURL(rawURL string) (string, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsed.Path = "/health"
+	parsed.RawQuery = ""
+	return parsed.String(), nil
+}
+
+func boundedPort(value string) (int, error) {
+	port := 0
+	_, err := fmt.Sscanf(value, "%d", &port)
+	if err != nil || port < 1024 || port > 65535 {
+		return 0, fmt.Errorf("invalid port: %s", value)
+	}
+	return port, nil
+}
+
+func spawnRuntimeProcess(root string, env []string, logPath string) error {
+	binary := runtimeBinary(root)
+	if !fileExists(binary) || runtimeBuildStale(root, binary) {
+		if err := buildRuntime(root, env); err != nil {
+			return err
+		}
+	}
+	return spawnProcess(root, env, logPath, binary)
 }
 
 func spawnGatewayProcess(root string, gatewayDir string, env []string, logPath string) error {
@@ -272,6 +356,44 @@ func spawnGatewayProcess(root string, gatewayDir string, env []string, logPath s
 func buildGateway(root string, gatewayDir string, env []string) error {
 	logPath := filepath.Join(root, "logs", "gateway-build.log")
 	return runCommand(gatewayDir, env, logPath, "go", "build", "-o", executableName("server"), "./cmd/server")
+}
+
+func buildRuntime(root string, env []string) error {
+	logPath := filepath.Join(root, "logs", "runtime-build.log")
+	return runCommand(root, env, logPath, "cargo", "build", "-p", "runtime-host")
+}
+
+func runtimeBinary(root string) string {
+	return filepath.Join(root, "target", "debug", executableName("runtime-host"))
+}
+
+func runtimeBuildStale(root string, binary string) bool {
+	binaryInfo, err := os.Stat(binary)
+	if err != nil {
+		return true
+	}
+	builtAt := binaryInfo.ModTime()
+	if runtimeConfigStale(root, builtAt) {
+		return true
+	}
+	return hasNewerFile(filepath.Join(root, "crates", "runtime-host"), builtAt, ".rs") ||
+		hasNewerFile(filepath.Join(root, "crates", "runtime-core"), builtAt, ".rs")
+}
+
+func runtimeConfigStale(root string, builtAt time.Time) bool {
+	checkPaths := []string{
+		filepath.Join(root, "Cargo.toml"),
+		filepath.Join(root, "Cargo.lock"),
+		filepath.Join(root, "crates", "runtime-host", "Cargo.toml"),
+		filepath.Join(root, "crates", "runtime-core", "Cargo.toml"),
+	}
+	for _, path := range checkPaths {
+		info, err := os.Stat(path)
+		if err == nil && info.ModTime().After(builtAt) {
+			return true
+		}
+	}
+	return false
 }
 
 func gatewayBuildStale(gatewayDir string, binary string) bool {

@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-05-05
-状态：`自由迭代期：AE-browser-automation-runtime-20260505 进行中`
+状态：`自由迭代期：AE-browser-automation-runtime-20260505 已收口，等待下一项 change`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：`AE-browser-automation-runtime-20260505`
-4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-05-05/AD-runtime-mcp-tool-registry-20260505/`
+3. 当前活跃 change：`无`
+4. 上一主推进目录：`docs/11-hermes-rebuild/changes/AE-browser-automation-runtime-20260505/`
 
 ## 2. 阶段 I 收口结论
 
@@ -38,6 +38,7 @@
 14. **AB-change（2026-05-05）**：diff apply UI 预览与确认体验 — 前端验收入口正式化，confirmation 预览优先读取 `patch_preview_report_json`，并补齐 fallback 摘要与确认写入边界。已归档。
 15. **AC-change（2026-05-05）**：MCP 可观测与运营面板 — 设置页 MCP 观测面板、验收入口、只读审计 API、最近动作、按服务器联动筛选与错误码聚合。已归档。
 16. **AD-change（2026-05-05）**：Runtime tool registry 对 MCP 的接入 — request-scoped MCP ToolDefinition、统一模型 tools 出口、request-scoped capability catalog 与接口级验收。已归档。
+17. **AE-change（2026-05-05）**：浏览器自动化接入 Runtime 主链路 — 真实 browser MCP server 接入 Gateway / 配置侧，request-scoped browser tool spec 注入 Runtime，并补齐 `open_page -> read_page` 最小联调证据。已收口。
 
 ## 4. 阶段 H 收口结论
 

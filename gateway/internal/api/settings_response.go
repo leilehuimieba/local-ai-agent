@@ -41,9 +41,10 @@ func buildMCPInfo(cfg config.AppConfig, mgr *mcp.Manager) MCPInfo {
 	if mgr == nil {
 		return MCPInfo{Servers: []MCPServerStatus{}}
 	}
+	tools := mgr.AllTools()
 	return MCPInfo{
 		Servers: serverStatusesFromConfig(mgr),
-		Tools:   mgr.AllTools(),
+		Tools:   tools,
 	}
 }
 
