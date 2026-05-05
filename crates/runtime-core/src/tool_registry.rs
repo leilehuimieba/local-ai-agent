@@ -1,6 +1,6 @@
 use crate::capabilities::{
     ExternalConnectionSlot, ToolDefinition, capability_spec, connector_slot_spec, external_connection_slots,
-    resolve_tool, tool_definition_to_json_schema, visible_tools,
+    tool_definition_to_json_schema, visible_tools,
 };
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::{CapabilitySpec, ConnectorSlotSpec, RunRequest};
@@ -103,10 +103,10 @@ impl ToolRegistry {
             .collect()
     }
 
-    pub(crate) fn plan_tool_call(&self, envelope: &RuntimeContextEnvelope) -> ToolCall {
+    pub(crate) fn plan_tool_call(&self, request: &RunRequest, envelope: &RuntimeContextEnvelope) -> ToolCall {
         let action = plan_action_with_context(envelope);
         ToolCall {
-            spec: resolve_tool(&action),
+            spec: crate::capabilities::resolve_tool_for_request(request, &action),
             action,
         }
     }

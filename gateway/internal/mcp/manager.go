@@ -183,6 +183,15 @@ func (m *Manager) ToolPolicy(serverID string, name string) (ToolPolicy, error) {
 
 // Call invokes a tool on the specified server.
 func (m *Manager) Call(serverID string, name string, arguments map[string]any) (json.RawMessage, error) {
+	return m.CallWithApproval(serverID, name, arguments, false)
+}
+
+func (m *Manager) CallWithApproval(
+	serverID string,
+	name string,
+	arguments map[string]any,
+	approved bool,
+) (json.RawMessage, error) {
 	m.mu.RLock()
 	c, ok := m.clients[serverID]
 	server, serverOK := m.serverConfig(serverID)
@@ -194,7 +203,7 @@ func (m *Manager) Call(serverID string, name string, arguments map[string]any) (
 		return nil, fmt.Errorf("mcp server %q config not found", serverID)
 	}
 	policy := ResolveToolPolicy(server, name)
-	if err := validateCallPolicy(name, policy); err != nil {
+	if err := validateCallPolicy(name, policy, approved); err != nil {
 		return nil, err
 	}
 	return c.Call(name, arguments)
@@ -209,11 +218,11 @@ func (m *Manager) serverConfig(serverID string) (config.MCPServerConfig, bool) {
 	return config.MCPServerConfig{}, false
 }
 
-func validateCallPolicy(name string, policy ToolPolicy) error {
+func validateCallPolicy(name string, policy ToolPolicy, approved bool) error {
 	if !policy.Allowed {
 		return fmt.Errorf("mcp tool %q is not allowlisted", name)
 	}
-	if policy.RequiresConfirmation {
+	if policy.RequiresConfirmation && !approved {
 		return fmt.Errorf("mcp tool %q requires confirmation", name)
 	}
 	return nil

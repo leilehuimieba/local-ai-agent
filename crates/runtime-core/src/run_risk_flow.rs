@@ -323,6 +323,7 @@ fn permission_rule_layer_from_confirmation(confirmation: &ConfirmationRequest) -
     match confirmation.kind.as_str() {
         "workspace_access" => "workspace_guard",
         "high_risk_action" => "high_risk_guard",
+        "mcp_tool_action" => "mcp_policy_guard",
         _ => "risk_guard",
     }
 }

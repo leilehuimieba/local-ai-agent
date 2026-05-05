@@ -25,7 +25,7 @@ pub(crate) fn prepare_run_state(
     visible_tools: &[ToolDefinition],
 ) -> PreparedRunState {
     let context_envelope = planning_context(request, session_context, repo_context, visible_tools);
-    let tool_call = runtime_tool_registry().plan_tool_call(&context_envelope);
+    let tool_call = runtime_tool_registry().plan_tool_call(request, &context_envelope);
     let action = tool_call.action.clone();
     let execute_context = execution_context(request, session_context, repo_context, visible_tools, &action);
     PreparedRunState {

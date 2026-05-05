@@ -49,14 +49,19 @@ fn mcp_bridge_config(request: &RunRequest) -> Result<MCPBridgeConfig, String> {
 }
 
 fn mcp_payload(request: &RunRequest, server_id: &str, tool_name: &str, arguments_json: &str) -> Value {
-    serde_json::json!({
+    let mut payload = serde_json::json!({
         "server_id": server_id,
         "name": tool_name,
         "arguments": mcp_arguments(arguments_json),
         "session_id": request.session_id,
         "run_id": request.run_id,
         "trace_id": request.trace_id,
-    })
+    });
+    if let Some(decision) = request.confirmation_decision.as_ref() {
+        payload["confirmation_id"] = Value::String(decision.confirmation_id.clone());
+        payload["confirmation_decision"] = Value::String(decision.decision.clone());
+    }
+    payload
 }
 
 fn mcp_arguments(arguments_json: &str) -> Value {

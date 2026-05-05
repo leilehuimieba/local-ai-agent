@@ -1,6 +1,6 @@
 use crate::action_meta::{action_tag, default_error_code};
 use crate::artifacts::{externalize_text_artifact, externalize_text_artifact_always};
-use crate::capabilities::{ToolCallResult, ToolExecutionTrace, resolve_tool};
+use crate::capabilities::{ToolCallResult, ToolExecutionTrace, resolve_tool_for_request};
 use crate::contracts::RunRequest;
 use crate::execution::execute_action;
 use crate::planner::PlannedAction;
@@ -17,7 +17,7 @@ pub(crate) fn execute_tool(
     let artifact_path = materialize_artifact(request, action, &execution);
     let raw_output_ref = command_raw_output_ref(action, artifact_path.as_deref());
     ToolExecutionTrace {
-        tool: resolve_tool(action),
+        tool: resolve_tool_for_request(request, action),
         action_summary: execution.action_summary.clone(),
         result: build_tool_result(started_at, action, execution, artifact_path, raw_output_ref),
     }

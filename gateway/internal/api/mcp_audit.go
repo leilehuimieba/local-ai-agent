@@ -20,6 +20,8 @@ type mcpAuditRecord struct {
 	SessionID            string `json:"session_id,omitempty"`
 	RunID                string `json:"run_id,omitempty"`
 	TraceID              string `json:"trace_id,omitempty"`
+	ConfirmationID       string `json:"confirmation_id,omitempty"`
+	ConfirmationDecision string `json:"confirmation_decision,omitempty"`
 	Allowed              bool   `json:"allowed"`
 	RiskLevel            string `json:"risk_level"`
 	RequiresConfirmation bool   `json:"requires_confirmation"`
@@ -38,6 +40,7 @@ func newMCPAuditRecord(payload mcpCallPayload, policy mcp.ToolPolicy, start time
 		Timestamp: time.Now().Format(time.RFC3339Nano),
 		ServerID:  payload.ServerID, ToolName: payload.Name,
 		SessionID: payload.SessionID, RunID: payload.RunID, TraceID: payload.TraceID,
+		ConfirmationID: payload.ConfirmationID, ConfirmationDecision: payload.ConfirmationDecision,
 		Allowed: policy.Allowed, RiskLevel: policy.RiskLevel,
 		RequiresConfirmation: policy.RequiresConfirmation, AuditEnabled: policy.AuditEnabled,
 		PolicySource:  policy.PolicySource,

@@ -32,6 +32,20 @@ func TestMCPCallAllowsConfiguredLowRiskTool(t *testing.T) {
 	require.JSONEq(t, `{"ok":true}`, rec.Body.String())
 }
 
+func TestMCPCallAllowsApprovedConfirmationTool(t *testing.T) {
+	server := newFakeMCPServer(t)
+	defer server.Close()
+	policy := []config.MCPToolPolicy{{
+		ToolName: "search", Allowed: true, RiskLevel: "medium",
+		RequiresConfirmation: true, AuditEnabled: true,
+	}}
+	mgr := newConnectedMCPManager(server.URL, policy)
+	body := `{"server_id":"docs","name":"search","arguments":{"q":"x"},"confirmation_id":"confirm-1","confirmation_decision":"approve"}`
+	rec := invokeMCPCall(mgr, t.TempDir(), body)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.JSONEq(t, `{"ok":true}`, rec.Body.String())
+}
+
 func newConnectedMCPManager(rawURL string, policies []config.MCPToolPolicy) *mcp.Manager {
 	mgr := mcp.NewManager([]config.MCPServerConfig{{
 		ID: "docs", Name: "Docs", Type: "http", URL: rawURL,

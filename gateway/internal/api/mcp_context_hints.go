@@ -67,7 +67,7 @@ func mcpToolPreview(tools []mcp.Tool, limit int) string {
 	for _, tool := range items {
 		parts = append(parts, mcpToolPreviewItem(tool))
 	}
-	return "MCP工具可自动执行或按策略拒绝：" + strings.Join(parts, "；")
+	return "MCP工具可按策略直连、确认或拒绝：" + strings.Join(parts, "；")
 }
 
 func sortedMCPTools(tools []mcp.Tool) []mcp.Tool {
@@ -118,7 +118,7 @@ func mcpToolSpecsJSON(tools []mcp.Tool, limit int) string {
 }
 
 func mcpToolSpecs(tools []mcp.Tool, limit int) []mcpRuntimeToolSpec {
-	items := sortedMCPTools(mcpExecutableTools(tools))
+	items := sortedMCPTools(mcpVisibleTools(tools))
 	if limit > 0 && len(items) > limit {
 		items = items[:limit]
 	}
@@ -129,10 +129,10 @@ func mcpToolSpecs(tools []mcp.Tool, limit int) []mcpRuntimeToolSpec {
 	return specs
 }
 
-func mcpExecutableTools(tools []mcp.Tool) []mcp.Tool {
+func mcpVisibleTools(tools []mcp.Tool) []mcp.Tool {
 	out := make([]mcp.Tool, 0, len(tools))
 	for _, tool := range tools {
-		if tool.Allowed && !tool.RequiresConfirmation && mcpToolFunctionValid(tool) {
+		if tool.Allowed && mcpToolFunctionValid(tool) {
 			out = append(out, tool)
 		}
 	}

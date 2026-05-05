@@ -53,7 +53,12 @@ func mcpCallHandler(mgr *mcp.Manager, repoRoot string) http.HandlerFunc {
 		}
 		start := time.Now()
 		policy := mcpCallPolicy(mgr, payload.ServerID, payload.Name)
-		result, err := mgr.Call(payload.ServerID, payload.Name, payload.Arguments)
+		result, err := mgr.CallWithApproval(
+			payload.ServerID,
+			payload.Name,
+			payload.Arguments,
+			mcpCallApproved(payload),
+		)
 		if err != nil {
 			outcome := mcpCallErrorOutcome(err)
 			writeMCPAudit(repoRoot, newMCPAuditRecord(payload, policy, start, outcome, err))
@@ -67,12 +72,18 @@ func mcpCallHandler(mgr *mcp.Manager, repoRoot string) http.HandlerFunc {
 }
 
 type mcpCallPayload struct {
-	ServerID  string         `json:"server_id"`
-	Name      string         `json:"name"`
-	Arguments map[string]any `json:"arguments"`
-	SessionID string         `json:"session_id"`
-	RunID     string         `json:"run_id"`
-	TraceID   string         `json:"trace_id"`
+	ServerID             string         `json:"server_id"`
+	Name                 string         `json:"name"`
+	Arguments            map[string]any `json:"arguments"`
+	SessionID            string         `json:"session_id"`
+	RunID                string         `json:"run_id"`
+	TraceID              string         `json:"trace_id"`
+	ConfirmationID       string         `json:"confirmation_id"`
+	ConfirmationDecision string         `json:"confirmation_decision"`
+}
+
+func mcpCallApproved(payload mcpCallPayload) bool {
+	return payload.ConfirmationID != "" && payload.ConfirmationDecision == "approve"
 }
 
 func mcpCallPolicy(mgr *mcp.Manager, serverID string, name string) mcp.ToolPolicy {

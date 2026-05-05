@@ -56,7 +56,7 @@ function initializeResult() {
 }
 
 function listTools() {
-  return [openPageTool(), readPageTool()]
+  return [openPageTool(), readPageTool(), clickTool(), typeTool()]
 }
 
 function openPageTool() {
@@ -91,6 +91,40 @@ function readPageTool() {
   }
 }
 
+function clickTool() {
+  return {
+    name: "click",
+    description: "Click a visible element on the page.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_id: { type: "string" },
+        selector: { type: "string" },
+        timeout_ms: { type: "integer", minimum: 1000, maximum: 30000 },
+      },
+      required: ["page_id", "selector"],
+    },
+  }
+}
+
+function typeTool() {
+  return {
+    name: "type",
+    description: "Type text into a visible input or textarea.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_id: { type: "string" },
+        selector: { type: "string" },
+        text: { type: "string" },
+        submit: { type: "boolean" },
+        timeout_ms: { type: "integer", minimum: 1000, maximum: 30000 },
+      },
+      required: ["page_id", "selector", "text"],
+    },
+  }
+}
+
 async function callTool(params) {
   const name = params?.name ?? ""
   if (name === "open_page") {
@@ -98,6 +132,12 @@ async function callTool(params) {
   }
   if (name === "read_page") {
     return readPage(params?.arguments)
+  }
+  if (name === "click") {
+    return clickPage(params?.arguments)
+  }
+  if (name === "type") {
+    return typeIntoPage(params?.arguments)
   }
   return businessError("browser_tool_not_found", `tool not found: ${name}`)
 }
@@ -149,6 +189,41 @@ async function readPage(args) {
   }
 }
 
+async function clickPage(args) {
+  const resolved = resolvePageAction(args)
+  if (resolved.error) {
+    return resolved.error
+  }
+  const started = Date.now()
+  try {
+    const locator = await readyLocator(resolved.page, resolved.selector, actionTimeout(args))
+    await locator.click({ timeout: actionTimeout(args) })
+    return await actionResult(resolved, started, { clicked: true })
+  } catch (error) {
+    return actionError("click", error)
+  }
+}
+
+async function typeIntoPage(args) {
+  const resolved = resolvePageAction(args)
+  const text = stringValue(args?.text)
+  if (resolved.error) {
+    return resolved.error
+  }
+  if (!text) {
+    return businessError("browser_text_required", "text is required")
+  }
+  const started = Date.now()
+  try {
+    const locator = await readyLocator(resolved.page, resolved.selector, actionTimeout(args))
+    await locator.fill(text, { timeout: actionTimeout(args) })
+    await submitLocator(locator, args)
+    return await actionResult(resolved, started, typedMeta(text, args))
+  } catch (error) {
+    return actionError("type", error)
+  }
+}
+
 function gotoOptions(args) {
   return {
     waitUntil: readWaitUntil(args?.wait_until),
@@ -168,6 +243,70 @@ function readResult(pageID, url, title, format, clipped, started) {
     returned_char_count: clipped.value.length,
     elapsed_ms: Date.now() - started,
   }
+}
+
+function resolvePageAction(args) {
+  const pageID = stringValue(args?.page_id)
+  const selector = stringValue(args?.selector)
+  const page = pageID ? pages.get(pageID) : null
+  if (!page) {
+    return { error: businessError("browser_page_not_found", `page_id ${pageID || "unknown"} not found`) }
+  }
+  if (!selector) {
+    return { error: businessError("browser_selector_required", "selector is required") }
+  }
+  return { pageID, page, selector }
+}
+
+function actionTimeout(args) {
+  return boundedInt(args?.timeout_ms, 12000, 1000, 30000)
+}
+
+async function actionResult(resolved, started, extra) {
+  return {
+    ok: true,
+    page_id: resolved.pageID,
+    url: resolved.page.url(),
+    title: await resolved.page.title(),
+    selector: resolved.selector,
+    elapsed_ms: Date.now() - started,
+    ...extra,
+  }
+}
+
+function typedMeta(text, args) {
+  return {
+    typed_char_count: text.length,
+    submitted: Boolean(args?.submit),
+  }
+}
+
+async function readyLocator(page, selector, timeout) {
+  const locator = page.locator(selector).first()
+  try {
+    await locator.waitFor({ state: "visible", timeout })
+    return locator
+  } catch {
+    throw new Error(`selector_not_found:${selector}`)
+  }
+}
+
+async function submitLocator(locator, args) {
+  if (!args?.submit) {
+    return
+  }
+  await locator.press("Enter", { timeout: actionTimeout(args) })
+}
+
+function actionError(kind, error) {
+  const message = errorMessage(error)
+  if (message.startsWith("selector_not_found:")) {
+    return businessError("browser_selector_not_found", message.replace("selector_not_found:", "selector not found: "))
+  }
+  if (message.toLowerCase().includes("timeout")) {
+    return businessError("browser_action_timeout", message)
+  }
+  return businessError(`browser_${kind}_failed`, message)
 }
 
 function readWaitUntil(value) {

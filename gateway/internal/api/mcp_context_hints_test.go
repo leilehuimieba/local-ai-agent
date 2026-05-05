@@ -16,7 +16,7 @@ func TestMCPToolPreviewIsStableAndScoped(t *testing.T) {
 		{Name: "read", Description: "读取仓库文件", ServerID: "code", RiskLevel: "low"},
 	}
 	preview := mcpToolPreview(tools, 8)
-	require.Contains(t, preview, "MCP工具可自动执行或按策略拒绝")
+	require.Contains(t, preview, "MCP工具可按策略直连、确认或拒绝")
 	require.Contains(t, preview, "code/read[low] - 读取仓库文件")
 	require.Contains(t, preview, "web/search[medium] - 搜索网页")
 	require.Less(t, stringsIndex(t, preview, "code/read"), stringsIndex(t, preview, "web/search"))
@@ -31,16 +31,18 @@ func TestMCPToolServersAreSortedAndUnique(t *testing.T) {
 	require.Equal(t, []string{"code", "web"}, mcpToolServers(tools))
 }
 
-func TestMCPToolSpecsOnlyExposeExecutableTools(t *testing.T) {
+func TestMCPToolSpecsExposeConfirmationAwareTools(t *testing.T) {
 	tools := []mcp.Tool{
 		{Name: "search", ServerID: "docs", Allowed: true, RiskLevel: "low"},
 		{Name: "write", ServerID: "docs", Allowed: true, RequiresConfirmation: true},
 		{Name: "blocked", ServerID: "docs", Allowed: false},
 	}
 	specs := mcpToolSpecs(tools, 8)
-	require.Len(t, specs, 1)
+	require.Len(t, specs, 2)
 	require.Equal(t, "mcp__docs__search", specs[0].FunctionName)
 	require.Equal(t, "low", specs[0].RiskLevel)
+	require.Equal(t, "mcp__docs__write", specs[1].FunctionName)
+	require.True(t, specs[1].RequiresConfirmation)
 }
 
 func TestMCPToolSpecsJSONIncludesPolicyFields(t *testing.T) {

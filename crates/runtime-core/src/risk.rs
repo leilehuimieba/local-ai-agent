@@ -1,3 +1,4 @@
+use crate::capabilities::resolve_tool_for_request;
 use crate::contracts::{ConfirmationRequest, RunRequest};
 use crate::executors::patch::preview_apply_patch_report;
 use crate::paths::resolve_workspace_path;
@@ -89,6 +90,11 @@ fn high_risk_confirmation(request: &RunRequest, action: &PlannedAction) -> Optio
         PlannedAction::RunCommand { command } if is_dangerous_command(command) => {
             Some(command_confirmation(request, action, command))
         }
+        PlannedAction::MCPCall {
+            server_id,
+            tool_name,
+            arguments_json,
+        } => mcp_confirmation(request, action, server_id, tool_name, arguments_json),
         _ => None,
     }
 }
@@ -204,6 +210,78 @@ fn patch_target_paths(request: &RunRequest, report: &str) -> Vec<String> {
     patch_paths_from_report(report).unwrap_or_else(|| vec![request.workspace_ref.root_path.clone()])
 }
 
+fn mcp_confirmation(
+    request: &RunRequest,
+    action: &PlannedAction,
+    server_id: &str,
+    tool_name: &str,
+    arguments_json: &str,
+) -> Option<ConfirmationRequest> {
+    let tool = resolve_tool_for_request(request, action);
+    if !tool.requires_confirmation {
+        return None;
+    }
+    Some(ConfirmationRequest {
+        confirmation_id: format!("confirm-mcp-{}-{}-{}", request.run_id, server_id, tool_name),
+        run_id: request.run_id.clone(),
+        risk_level: tool.risk_level.clone(),
+        action_summary: mcp_action_summary(&tool.display_name, arguments_json),
+        reason: mcp_confirmation_reason(&tool.display_name),
+        impact_scope: "当前浏览器页面或目标连接上下文".to_string(),
+        target_paths: mcp_target_paths(server_id, arguments_json),
+        reversible: true,
+        hazards: mcp_confirmation_hazards(),
+        alternatives: mcp_confirmation_alternatives(),
+        kind: "mcp_tool_action".to_string(),
+        tool_name: tool.tool_name,
+        tool_arguments_json: action_arguments_json(action),
+        patch_preview_report_json: String::new(),
+    })
+}
+
+fn mcp_confirmation_reason(display_name: &str) -> String {
+    format!("MCP 动作 `{display_name}` 按策略需要人工确认后才能继续执行。")
+}
+
+fn mcp_confirmation_hazards() -> Vec<String> {
+    vec!["可能触发页面跳转、按钮提交或表单写入".to_string()]
+}
+
+fn mcp_confirmation_alternatives() -> Vec<String> {
+    vec![
+        "继续使用 open_page/read_page 先观察页面".to_string(),
+        "取消本次交互动作".to_string(),
+    ]
+}
+
+fn mcp_action_summary(display_name: &str, arguments_json: &str) -> String {
+    let selector = mcp_argument_string(arguments_json, "selector");
+    if selector.is_empty() {
+        return format!("执行需确认的 MCP 动作：{display_name}");
+    }
+    format!("执行需确认的 MCP 动作：{display_name} @ {selector}")
+}
+
+fn mcp_target_paths(server_id: &str, arguments_json: &str) -> Vec<String> {
+    let mut paths = vec![format!("server:{server_id}")];
+    append_if_present(&mut paths, "page", mcp_argument_string(arguments_json, "page_id"));
+    append_if_present(&mut paths, "selector", mcp_argument_string(arguments_json, "selector"));
+    paths
+}
+
+fn append_if_present(values: &mut Vec<String>, label: &str, value: String) {
+    if !value.is_empty() {
+        values.push(format!("{label}:{value}"));
+    }
+}
+
+fn mcp_argument_string(arguments_json: &str, key: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(arguments_json)
+        .ok()
+        .and_then(|value| value.get(key).and_then(|item| item.as_str()).map(str::to_string))
+        .unwrap_or_default()
+}
+
 fn patch_paths_from_report(report: &str) -> Option<Vec<String>> {
     let value: serde_json::Value = serde_json::from_str(report).ok()?;
     let changes = value.get("changes")?.as_array()?;
@@ -276,6 +354,21 @@ mod tests {
         assert!(matches!(outcome, RiskOutcome::Proceed));
     }
 
+    #[test]
+    fn requires_confirmation_for_mcp_tool_marked_by_request_spec() {
+        let mut request = sample_request("standard");
+        request
+            .context_hints
+            .insert("mcp_tool_specs_json".to_string(), sample_mcp_specs());
+        let action = PlannedAction::MCPCall {
+            server_id: "browser".to_string(),
+            tool_name: "click".to_string(),
+            arguments_json: r#"{"page_id":"page_01","selector":"button.save"}"#.to_string(),
+        };
+        let outcome = assess_risk(&request, &action);
+        assert!(matches!(outcome, RiskOutcome::RequireConfirmation(_)));
+    }
+
     fn sample_request(mode: &str) -> RunRequest {
         RunRequest {
             request_id: "request-1".to_string(),
@@ -301,5 +394,19 @@ mod tests {
             resume_strategy: String::new(),
             confirmation_decision: None,
         }
+    }
+
+    fn sample_mcp_specs() -> String {
+        serde_json::json!([{
+            "server_id": "browser",
+            "name": "click",
+            "function_name": "mcp__browser__click",
+            "description": "Click a button",
+            "risk_level": "medium",
+            "requires_confirmation": true,
+            "audit_enabled": true,
+            "input_schema": { "type": "object" }
+        }])
+        .to_string()
     }
 }

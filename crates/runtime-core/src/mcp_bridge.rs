@@ -29,6 +29,20 @@ pub(crate) fn mcp_tool_definitions(request: &RunRequest) -> Vec<ToolDefinition> 
     mcp_tool_specs(request).iter().map(mcp_tool_definition).collect()
 }
 
+pub(crate) fn mcp_tool_definition_for_action(
+    request: &RunRequest,
+    server_id: &str,
+    name: &str,
+) -> Option<ToolDefinition> {
+    mcp_tool_spec(request, server_id, name).map(|spec| mcp_tool_definition(&spec))
+}
+
+pub(crate) fn mcp_tool_spec(request: &RunRequest, server_id: &str, name: &str) -> Option<MCPToolSpec> {
+    mcp_tool_specs(request)
+        .into_iter()
+        .find(|spec| spec.server_id == server_id && spec.name == name)
+}
+
 pub(crate) fn mcp_tool_specs(request: &RunRequest) -> Vec<MCPToolSpec> {
     let Some(raw) = request.context_hints.get("mcp_tool_specs_json") else {
         return Vec::new();
@@ -36,7 +50,7 @@ pub(crate) fn mcp_tool_specs(request: &RunRequest) -> Vec<MCPToolSpec> {
     serde_json::from_str::<Vec<MCPToolSpec>>(raw)
         .unwrap_or_default()
         .into_iter()
-        .filter(executable_spec)
+        .filter(valid_spec)
         .collect()
 }
 
@@ -53,10 +67,7 @@ pub(crate) fn mcp_function_name(server_id: &str, name: &str) -> String {
     format!("{MCP_PREFIX}{server_id}__{name}")
 }
 
-fn executable_spec(spec: &MCPToolSpec) -> bool {
-    if spec.requires_confirmation {
-        return false;
-    }
+fn valid_spec(spec: &MCPToolSpec) -> bool {
     spec.function_name == mcp_function_name(&spec.server_id, &spec.name)
         && mcp_action_parts(&spec.function_name).is_some()
 }
@@ -125,14 +136,15 @@ mod tests {
     use crate::query_engine_testkit::testkit::sample_request;
 
     #[test]
-    fn mcp_schemas_use_executable_specs_only() {
+    fn mcp_schemas_keep_confirmation_specs_visible() {
         let mut request = sample_request("mcp");
         request
             .context_hints
             .insert("mcp_tool_specs_json".to_string(), specs_json());
         let schemas = mcp_tool_schemas(&request);
-        assert_eq!(schemas.len(), 1);
+        assert_eq!(schemas.len(), 2);
         assert_eq!(schemas[0]["function"]["name"], "mcp__docs__search");
+        assert_eq!(schemas[1]["function"]["name"], "mcp__docs__write");
     }
 
     #[test]

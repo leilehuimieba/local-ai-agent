@@ -26,6 +26,19 @@ pub(crate) fn resolve_tool(action: &PlannedAction) -> ToolDefinition {
     }
 }
 
+pub(crate) fn resolve_tool_for_request(
+    request: &crate::contracts::RunRequest,
+    action: &PlannedAction,
+) -> ToolDefinition {
+    match action {
+        PlannedAction::MCPCall {
+            server_id, tool_name, ..
+        } => crate::mcp_bridge::mcp_tool_definition_for_action(request, server_id, tool_name)
+            .unwrap_or_else(|| mcp_tool(server_id, tool_name)),
+        _ => resolve_tool(action),
+    }
+}
+
 pub(crate) fn visible_tools(mode: &str) -> Vec<ToolDefinition> {
     let current = normalize_mode(mode);
     tool_catalog()

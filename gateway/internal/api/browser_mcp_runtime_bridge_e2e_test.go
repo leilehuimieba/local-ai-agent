@@ -36,11 +36,43 @@ func TestBrowserMCPRuntimeBridgeE2EOpenAndReadPage(t *testing.T) {
 	capture := rt.wait(t)
 	require.Contains(t, capture.request.ContextHints["mcp_tool_specs_json"], "mcp__browser__open_page")
 	require.Contains(t, capture.request.ContextHints["mcp_tool_specs_json"], "mcp__browser__read_page")
+	require.Contains(t, capture.request.ContextHints["mcp_tool_specs_json"], "mcp__browser__click")
+	require.Contains(t, capture.request.ContextHints["mcp_tool_specs_json"], "mcp__browser__type")
 	require.Equal(t, http.StatusOK, capture.openStatus)
 	require.Contains(t, capture.openBody, `"page_id":"page_`)
 	require.Equal(t, http.StatusOK, capture.readStatus)
 	require.Contains(t, capture.readBody, "AE Browser Bridge")
 	require.Contains(t, capture.readBody, "Bridge Ready")
+}
+
+func TestBrowserMCPGatewayAllowsApprovedInteractionTools(t *testing.T) {
+	pageServer := newInteractiveBrowserFixtureServer()
+	defer pageServer.Close()
+	mcpURL := startBrowserMCPProcess(t)
+	mgr := newBrowserConnectedMCPManager(mcpURL)
+	rt := newCatalogRuntime(t)
+	cfg := sampleAppConfig()
+	cfg.Providers[0].APIKey = "test-key"
+	gateway, gatewayToken := startBridgeGateway(t, t.TempDir(), cfg, rt.port, mgr)
+	defer gateway.Close()
+	assertApprovedInteractionFlow(t, gateway, gatewayToken, pageServer.URL)
+}
+
+func assertApprovedInteractionFlow(t *testing.T, gateway *http.Server, gatewayToken string, pageURL string) {
+	openStatus, openBody := callBrowserToolDirect(gateway, gatewayToken, "open_page", map[string]any{"url": pageURL}, "", "")
+	require.Equal(t, http.StatusOK, openStatus)
+	pageID := readPageID(openBody)
+	clickStatus, clickBody := callBrowserToolDirect(gateway, gatewayToken, "click", map[string]any{"page_id": pageID, "selector": "#advance"}, "", "")
+	require.Equal(t, http.StatusBadRequest, clickStatus)
+	require.Contains(t, clickBody, "requires confirmation")
+	clickStatus, _ = callBrowserToolDirect(gateway, gatewayToken, "click", map[string]any{"page_id": pageID, "selector": "#advance"}, "confirm-click-1", "approve")
+	require.Equal(t, http.StatusOK, clickStatus)
+	typeStatus, _ := callBrowserToolDirect(gateway, gatewayToken, "type", map[string]any{"page_id": pageID, "selector": "#editor", "text": "approved text"}, "confirm-type-1", "approve")
+	require.Equal(t, http.StatusOK, typeStatus)
+	readStatus, readBody := callBrowserToolDirect(gateway, gatewayToken, "read_page", map[string]any{"page_id": pageID}, "", "")
+	require.Equal(t, http.StatusOK, readStatus)
+	require.Contains(t, readBody, "Clicked once")
+	require.Contains(t, readBody, "approved text")
 }
 
 func newBrowserConnectedMCPManager(rawURL string) *mcp.Manager {
@@ -56,6 +88,8 @@ func browserMCPPolicies() []config.MCPToolPolicy {
 	return []config.MCPToolPolicy{
 		{ToolName: "open_page", Allowed: true, RiskLevel: "medium", AuditEnabled: true},
 		{ToolName: "read_page", Allowed: true, RiskLevel: "low", AuditEnabled: true},
+		{ToolName: "click", Allowed: true, RiskLevel: "medium", RequiresConfirmation: true, AuditEnabled: true},
+		{ToolName: "type", Allowed: true, RiskLevel: "high", RequiresConfirmation: true, AuditEnabled: true},
 	}
 }
 
@@ -63,6 +97,13 @@ func newBrowserFixtureServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`<html><head><title>AE Browser Bridge</title></head><body><h1>Bridge Ready</h1><p>Hello browser mcp.</p></body></html>`))
+	}))
+}
+
+func newInteractiveBrowserFixtureServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(`<html><head><title>AF Browser Interaction</title></head><body><button id="advance" onclick="document.getElementById('state').textContent='Clicked once'">Advance</button><p id="state">Idle</p><input id="editor" oninput="document.getElementById('mirror').textContent=this.value" /><p id="mirror">Empty</p></body></html>`))
 	}))
 }
 
@@ -128,6 +169,31 @@ func callBrowserTool(request contracts.RunRequest, name string, arguments map[st
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("X-Local-Agent-Token", request.ContextHints["mcp_gateway_token"])
 	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return 0, err.Error()
+	}
+	defer resp.Body.Close()
+	var raw bytes.Buffer
+	_, _ = raw.ReadFrom(resp.Body)
+	return resp.StatusCode, raw.String()
+}
+
+func callBrowserToolDirect(
+	gateway *http.Server,
+	token string,
+	name string,
+	arguments map[string]any,
+	confirmationID string,
+	decision string,
+) (int, string) {
+	body, _ := json.Marshal(map[string]any{
+		"server_id": "browser", "name": name, "arguments": arguments,
+		"confirmation_id": confirmationID, "confirmation_decision": decision,
+	})
+	req, _ := http.NewRequest(http.MethodPost, "http://"+gateway.Addr+"/api/v1/mcp/call", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Local-Agent-Token", token)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, err.Error()
 	}
