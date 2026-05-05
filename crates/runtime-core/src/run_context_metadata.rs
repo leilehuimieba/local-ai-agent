@@ -48,9 +48,38 @@ fn append_context_digest_metadata(
         "memory_current_object_count".to_string(),
         context.dynamic_block.memory_current_object_count.to_string(),
     );
+    metadata.insert("memory_route".to_string(), context.dynamic_block.memory_route.clone());
+    metadata.insert(
+        "memory_selected_layers".to_string(),
+        context.dynamic_block.memory_selected_layers.clone(),
+    );
+    metadata.insert(
+        "memory_match_reason".to_string(),
+        context.dynamic_block.memory_match_reason.clone(),
+    );
+    metadata.insert(
+        "memory_reuse_confidence".to_string(),
+        context.dynamic_block.memory_reuse_confidence.clone(),
+    );
+    metadata.insert(
+        "memory_skipped_layers".to_string(),
+        context.dynamic_block.memory_skipped_layers.clone(),
+    );
     metadata.insert(
         "knowledge_digest".to_string(),
         context.dynamic_block.knowledge_digest.clone(),
+    );
+    metadata.insert(
+        "knowledge_pack_question_type".to_string(),
+        context.dynamic_block.knowledge_pack_question_type.clone(),
+    );
+    metadata.insert(
+        "knowledge_pack_citations".to_string(),
+        context.dynamic_block.knowledge_pack_citations.clone(),
+    );
+    metadata.insert(
+        "knowledge_pack_match_reason".to_string(),
+        context.dynamic_block.knowledge_pack_match_reason.clone(),
     );
     metadata.insert("tool_preview".to_string(), context.dynamic_block.tool_preview.clone());
     metadata.insert("artifact_hint".to_string(), context.dynamic_block.artifact_hint.clone());
@@ -135,6 +164,10 @@ fn append_context_policy_metadata(
         "assembly_profile".to_string(),
         context.dynamic_block.assembly_profile.clone(),
     );
+    metadata.insert(
+        "prompt_profile".to_string(),
+        context.dynamic_block.prompt_profile.clone(),
+    );
     append_context_includes(metadata, context);
     append_context_selection(metadata, context);
 }
@@ -188,6 +221,10 @@ fn append_context_selection(
         context.dynamic_block.selection_reason.clone(),
     );
     metadata.insert(
+        "injection_summary".to_string(),
+        context.dynamic_block.injection_summary.clone(),
+    );
+    metadata.insert(
         "prefers_artifact_context".to_string(),
         bool_string(context.dynamic_block.prefers_artifact_context),
     );
@@ -218,17 +255,39 @@ mod tests {
                 doc_summary: String::new(),
             },
             dynamic_block: DynamicPromptBlock {
+                assembly_profile: "repair_profile".to_string(),
+                prompt_profile: "agent_resolve".to_string(),
                 memory_digest: "digest".to_string(),
                 memory_has_system_views: true,
                 memory_has_current_objects: true,
                 memory_current_object_count: 2,
+                memory_route: "repair_route".to_string(),
+                memory_selected_layers: "current memory object,history entries".to_string(),
+                memory_match_reason: "test-route".to_string(),
+                memory_reuse_confidence: "high".to_string(),
+                memory_skipped_layers: "system views".to_string(),
+                knowledge_pack_question_type: "workflow".to_string(),
+                knowledge_pack_citations: "docs/README.md,docs/02-architecture/x.md".to_string(),
+                knowledge_pack_match_reason: "知识命中更偏工作流问答".to_string(),
+                injection_summary: "当前 profile 注入：session digest + memory digest".to_string(),
                 ..Default::default()
             },
         };
         let mut metadata = BTreeMap::new();
         append_context_metadata(&mut metadata, &context);
+        assert_eq!(metadata.get("prompt_profile"), Some(&"agent_resolve".to_string()));
+        assert_eq!(
+            metadata.get("injection_summary"),
+            Some(&"当前 profile 注入：session digest + memory digest".to_string())
+        );
         assert_eq!(metadata.get("memory_has_system_views"), Some(&"true".to_string()));
         assert_eq!(metadata.get("memory_has_current_objects"), Some(&"true".to_string()));
         assert_eq!(metadata.get("memory_current_object_count"), Some(&"2".to_string()));
+        assert_eq!(metadata.get("memory_route"), Some(&"repair_route".to_string()));
+        assert_eq!(metadata.get("memory_reuse_confidence"), Some(&"high".to_string()));
+        assert_eq!(
+            metadata.get("knowledge_pack_question_type"),
+            Some(&"workflow".to_string())
+        );
     }
 }

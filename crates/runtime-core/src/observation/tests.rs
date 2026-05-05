@@ -30,14 +30,18 @@ fn should_generate_full_coverage_snapshot() {
     let events = vec![
         sample_event("run_started", "Analyze"),
         sample_event("analysis_ready", "Analyze"),
+        sample_event("plan_iteration_started", "Plan"),
         sample_event("plan_ready", "Plan"),
         sample_event("action_completed", "Observe"),
+        sample_event("plan_iteration_completed", "Observe"),
+        sample_event("replan_requested", "Plan"),
+        sample_event("iteration_budget_exhausted", "Observe"),
         sample_event("verification_completed", "Verify"),
         sample_event("run_finished", "Finish"),
     ];
     let snapshot = lifecycle_mapping_snapshot(&events);
-    assert_eq!(snapshot.required_target_count, 6);
-    assert_eq!(snapshot.mapped_target_count, 6);
+    assert_eq!(snapshot.required_target_count, 10);
+    assert_eq!(snapshot.mapped_target_count, 10);
     assert_eq!(snapshot.coverage_percent, 100.0);
     assert!(snapshot.missing_targets.is_empty());
 }
@@ -87,8 +91,12 @@ fn sample_lifecycle_events() -> Vec<RunEvent> {
     vec![
         sample_event("run_started", "Analyze"),
         sample_event("analysis_ready", "Analyze"),
+        sample_event("plan_iteration_started", "Plan"),
         sample_event("plan_ready", "Plan"),
         sample_event("action_completed", "Observe"),
+        sample_event("plan_iteration_completed", "Observe"),
+        sample_event("replan_requested", "Plan"),
+        sample_event("iteration_budget_exhausted", "Observe"),
         sample_event("verification_completed", "Verify"),
         sample_event("run_finished", "Finish"),
     ]

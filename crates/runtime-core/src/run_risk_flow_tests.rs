@@ -2,7 +2,7 @@
 mod tests {
     use crate::capabilities::resolve_tool;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
-    use crate::planner::PlannedAction;
+    use crate::planner::{PlanEnvelope, PlannedAction};
     use crate::query_engine::{RuntimeEnvelope, RuntimeRunState, bootstrap_run};
     use crate::query_engine_testkit::testkit::{sample_repo_context, sample_session};
     use crate::risk::assess_risk;
@@ -185,6 +185,15 @@ mod tests {
                 skill_catalog: SkillCatalog::default(),
                 context_envelope: base.envelope.context_envelope,
                 visible_tools: base.envelope.visible_tools,
+            },
+            plan_envelope: PlanEnvelope {
+                goal: request.user_input.clone(),
+                current_step: "应用 patch 变更".to_string(),
+                remaining_steps: vec!["完成验证并决定是否收口".to_string()],
+                stop_condition: "当前动作已验证通过，或达到预算后转入 handoff".to_string(),
+                max_iterations: 3,
+                iteration_index: 1,
+                needs_verification: true,
             },
             action: action.clone(),
             tool_call,

@@ -31,6 +31,7 @@ pub(crate) fn assemble_runtime_state(
             context_envelope: prepared.context_envelope,
             visible_tools,
         },
+        plan_envelope: prepared.plan_envelope,
         action: prepared.action,
         tool_call: prepared.tool_call,
         task_title: prepared.task_title,

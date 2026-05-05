@@ -110,8 +110,8 @@ mod tests {
             },
             "samples": [
                 context_sample("planning", &plan_policy, &plan_context.dynamic_block),
-                context_sample("agent_resolve", &exec_policy, &exec_context.dynamic_block),
-                context_sample("project_answer", &answer_policy, &answer_context.dynamic_block),
+                context_sample("act_profile", &exec_policy, &exec_context.dynamic_block),
+                context_sample("ask_profile", &answer_policy, &answer_context.dynamic_block),
             ]
         })
     }
@@ -560,6 +560,7 @@ mod tests {
         json!({
             "sample_id": sample_id,
             "profile": policy.profile,
+            "prompt_profile": policy.prompt_profile,
             "skill_injection_enabled": block.skill_injection_enabled,
             "max_skill_level": block.max_skill_level,
             "injected_skill_level": block.injected_skill_level,

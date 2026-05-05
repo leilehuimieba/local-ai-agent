@@ -1,0 +1,21 @@
+# 当前状态
+
+- 最近更新时间：2026-05-05
+- 状态：规划中
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
+- 已完成：已完成对 Runtime 主循环、上下文装配、记忆召回、知识检索、验证闭环的现状诊断。
+- 已完成：已形成当前最值得投入的 5 个优化方向：
+  - 多步主循环
+  - 上下文 profile
+  - 记忆分层与 recall 路由
+  - 知识检索与回答 pack
+  - verify 任务矩阵
+- 已确认：当前项目的主骨架已经成立，因此本轮不建议重做架构，也不建议提前扩多智能体。
+- 已确认：当前最小收口顺序应为 `主循环 -> 上下文 -> 记忆 -> 知识 -> verify`。
+- 已完成：已拆出第一刀实现 change `AH-agent-loop-minimal-upgrade-20260505`，范围冻结为 `PlanEnvelope + 小步回路 + replan 事件 + budget handoff`。
+- 已完成：已拆出第二刀实现 change `AI-context-profile-upgrade-20260505`，范围冻结为 `ask / act / repair / learn` 四类上下文 profile。
+- 已完成：已拆出第三刀实现 change `AJ-memory-minimal-routing-20260505`，当前先收窄为“记忆最小路由”，只覆盖记忆何时读、读哪层、如何输出最小 digest。
+- 已完成：已拆出第四刀实现 change `AK-knowledge-pack-minimal-20260505`，范围冻结为 `混合检索 + knowledge pack + citation-ready 输出 + ask/learn 最小注入`。
+- 已完成：已拆出第五刀实现 change `AL-verify-matrix-minimal-20260505`，范围冻结为 `知识回答主链优先验证 + verification metadata + replan/handoff 收口`。
+- 阻塞点：暂无实现阻塞；后续可按独立 change 顺序继续推进 verify 实现。
+- 下一步：由接手的项目智能体进入 `AL-verify-matrix-minimal-20260505/`，先实现 knowledge answer verify，不并行回 AK 扩 scope。

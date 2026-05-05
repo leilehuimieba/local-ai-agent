@@ -42,11 +42,25 @@ pub(crate) struct KnowledgeHit {
     pub path: String,
     pub snippet: String,
     pub source_type: String,
+    pub source_kind: String,
     pub source_label: String,
     pub knowledge_type: String,
+    pub use_for: String,
+    pub citation_ready: bool,
+    pub match_reason: String,
     pub confidence: String,
     pub updated_at: String,
     pub reason: String,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct KnowledgePack {
+    pub question_type: String,
+    pub top_hits: Vec<KnowledgeHit>,
+    pub supporting_hits: Vec<KnowledgeHit>,
+    pub citations: Vec<String>,
+    pub answer_hints: Vec<String>,
+    pub match_reason: String,
 }
 
 pub(crate) fn search_knowledge(request: &RunRequest, query: &str, limit: usize) -> Vec<KnowledgeHit> {
@@ -58,6 +72,21 @@ pub(crate) fn search_knowledge(request: &RunRequest, query: &str, limit: usize) 
         Vec::new()
     };
     merge_knowledge_hits(local_hits, external_hits, limit)
+}
+
+pub(crate) fn build_knowledge_pack(request: &RunRequest, query: &str, limit: usize) -> KnowledgePack {
+    let question_type = classify_question_type(query);
+    let hits = search_knowledge(request, query, limit);
+    let top_hits = hits.iter().take(3).cloned().collect::<Vec<_>>();
+    let supporting_hits = hits.iter().skip(3).take(2).cloned().collect::<Vec<_>>();
+    KnowledgePack {
+        citations: pack_citations(&top_hits),
+        answer_hints: pack_answer_hints(&top_hits),
+        match_reason: pack_match_reason(&question_type, &top_hits),
+        question_type,
+        top_hits,
+        supporting_hits,
+    }
 }
 
 fn merge_knowledge_hits(
@@ -75,6 +104,50 @@ fn dedupe_hits(hits: Vec<KnowledgeHit>) -> Vec<KnowledgeHit> {
     hits.into_iter()
         .filter(|hit| seen.insert(hit_dedupe_key(hit)))
         .collect()
+}
+
+fn classify_question_type(query: &str) -> String {
+    if contains_any(query, &["是什么", "定义", "概念", "含义"]) {
+        return "definition".to_string();
+    }
+    if contains_any(query, &["为什么", "关系", "区别", "联系"]) {
+        return "relation".to_string();
+    }
+    if contains_any(query, &["怎么做", "流程", "步骤", "方案", "实践"]) {
+        return "workflow".to_string();
+    }
+    if contains_any(query, &["风险", "边界", "危险", "注意"]) {
+        return "risk".to_string();
+    }
+    "evidence".to_string()
+}
+
+fn pack_citations(hits: &[KnowledgeHit]) -> Vec<String> {
+    hits.iter()
+        .filter(|hit| hit.citation_ready)
+        .map(|hit| hit.path.clone())
+        .collect::<Vec<_>>()
+}
+
+fn pack_answer_hints(hits: &[KnowledgeHit]) -> Vec<String> {
+    hits.iter()
+        .map(|hit| format!("{}: {}", hit.use_for, hit.match_reason))
+        .take(3)
+        .collect::<Vec<_>>()
+}
+
+fn pack_match_reason(question_type: &str, hits: &[KnowledgeHit]) -> String {
+    if hits.is_empty() {
+        return "当前问题没有命中可回答的本地知识材料。".to_string();
+    }
+    format!(
+        "当前问题更像 {}，优先选择 title/tags/path 更稳定且可引证的知识材料。",
+        question_type
+    )
+}
+
+fn contains_any(input: &str, tokens: &[&str]) -> bool {
+    tokens.iter().any(|token| input.contains(token))
 }
 
 fn hit_dedupe_key(hit: &KnowledgeHit) -> String {
@@ -337,8 +410,12 @@ fn parse_cortex_recall_hits(body: &str) -> Result<Vec<KnowledgeHit>, String> {
             path: format!("cortex://{}", memory.id),
             snippet: memory.content,
             source_type: "cortex".to_string(),
+            source_kind: "external_memory".to_string(),
             source_label: "外部增强记忆".to_string(),
             knowledge_type: cortex_category_or_default(&memory.category),
+            use_for: "evidence".to_string(),
+            citation_ready: true,
+            match_reason: "本地命中不足时补充外部 recall".to_string(),
             confidence: "中（外部 recall 补充）".to_string(),
             updated_at: memory.created_at,
             reason: "本地命中不足，补充外部召回".to_string(),
@@ -397,13 +474,18 @@ fn score_knowledge_file(path: PathBuf, query: &str) -> Option<(i32, KnowledgeHit
 }
 
 fn file_knowledge_hit(query: &str, content: &str, path_text: String) -> KnowledgeHit {
+    let reason = knowledge_reason(&path_text);
     KnowledgeHit {
-        reason: knowledge_reason(&path_text),
+        reason: reason.clone(),
         path: path_text,
         snippet: extract_snippet(content, query),
         source_type: "workspace_file".to_string(),
+        source_kind: "workspace_document".to_string(),
         source_label: "文档知识".to_string(),
         knowledge_type: "document_reference".to_string(),
+        use_for: classify_question_type(query),
+        citation_ready: true,
+        match_reason: hit_match_reason("workspace_file", &reason),
         confidence: "高（工作区文档直接命中）".to_string(),
         updated_at: String::new(),
     }
@@ -412,6 +494,7 @@ fn file_knowledge_hit(query: &str, content: &str, path_text: String) -> Knowledg
 fn knowledge_file_score(query: &str, path_text: &str, content: &str) -> i32 {
     let mut score = score_text(query, &format!("{} {}", path_text, content));
     score += path_priority(path_text);
+    score += title_token_bonus(query, path_text);
     score
 }
 
@@ -422,7 +505,11 @@ fn search_stored_knowledge(request: &RunRequest, query: &str, limit: usize) -> V
         .filter(|record| !is_recursive_record(record))
         .filter_map(|record| {
             let haystack = stored_haystack(&record);
-            let score = score_text(query, &haystack) + path_priority(&record.source);
+            let score = score_text(query, &haystack)
+                + path_priority(&record.source)
+                + title_token_bonus(query, &record.title)
+                + citation_count_bonus(&record.content)
+                + updated_at_bonus(&record.updated_at);
             (score > 0).then_some((score, stored_knowledge_hit(record)))
         })
         .collect::<Vec<_>>();
@@ -448,8 +535,12 @@ fn stored_knowledge_hit(record: KnowledgeRecord) -> KnowledgeHit {
         path: record.source.clone(),
         snippet: record.summary.clone(),
         source_type: record.source_type.clone(),
+        source_kind: stored_source_kind(&record),
         source_label: source_label(&record.source_type),
         knowledge_type: record.knowledge_type.clone(),
+        use_for: record_use_for(&record),
+        citation_ready: source_is_citation_ready(&record.source_type, &record.source),
+        match_reason: hit_match_reason(&record.source_type, &knowledge_reason(&record.source)),
         confidence: confidence_label(&record.source_type, record.verified),
         updated_at: record.updated_at.clone(),
         reason: knowledge_reason(&record.source),
@@ -540,8 +631,12 @@ fn search_siyuan_index(request: &RunRequest, query: &str, limit: usize) -> Vec<K
                     path: path_text,
                     snippet: extract_snippet(&content, query),
                     source_type: "siyuan_file".to_string(),
+                    source_kind: "user_curated".to_string(),
                     source_label: "用户确认知识".to_string(),
                     knowledge_type: "user_curated".to_string(),
+                    use_for: classify_question_type(query),
+                    citation_ready: true,
+                    match_reason: "思源沉淀内容直接命中".to_string(),
                     confidence: "高（用户沉淀确认）".to_string(),
                     updated_at: String::new(),
                     reason: "思源知识命中".to_string(),
@@ -551,6 +646,53 @@ fn search_siyuan_index(request: &RunRequest, query: &str, limit: usize) -> Vec<K
         .collect::<Vec<_>>();
     scored.sort_by(|left, right| right.0.cmp(&left.0));
     scored.into_iter().map(|(_, hit)| hit).take(limit).collect()
+}
+
+fn title_token_bonus(query: &str, text: &str) -> i32 {
+    score_text(query, text) / 2
+}
+
+fn citation_count_bonus(content: &str) -> i32 {
+    if content.contains("docs/") || content.contains("README") {
+        8
+    } else {
+        0
+    }
+}
+
+fn updated_at_bonus(updated_at: &str) -> i32 {
+    (!updated_at.trim().is_empty()) as i32 * 4
+}
+
+fn stored_source_kind(record: &KnowledgeRecord) -> String {
+    if record.source_type == "runtime" {
+        "runtime_memory".to_string()
+    } else if record.source_type == "siyuan" || record.source_type == "siyuan_file" {
+        "user_curated".to_string()
+    } else {
+        "local_knowledge".to_string()
+    }
+}
+
+fn record_use_for(record: &KnowledgeRecord) -> String {
+    match record.knowledge_type.as_str() {
+        "workflow_pattern" => "workflow".to_string(),
+        "project_status" => "evidence".to_string(),
+        "user_curated" => "relation".to_string(),
+        _ => "definition".to_string(),
+    }
+}
+
+fn source_is_citation_ready(source_type: &str, source: &str) -> bool {
+    source_type == "workspace_file"
+        || source_type == "siyuan"
+        || source_type == "siyuan_file"
+        || source.starts_with("docs/")
+        || source.contains("README")
+}
+
+fn hit_match_reason(source_type: &str, base_reason: &str) -> String {
+    format!("{source_type} 命中，{base_reason}")
 }
 
 fn collect_search_files(root: &Path, files: &mut Vec<PathBuf>, seen: &mut BTreeSet<String>, depth: usize) {
@@ -598,10 +740,12 @@ fn collect_search_files(root: &Path, files: &mut Vec<PathBuf>, seen: &mut BTreeS
 #[cfg(test)]
 mod tests {
     use super::{
-        KnowledgeHit, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits, merge_knowledge_hits,
-        parse_cortex_recall_hits, recall_source,
+        KnowledgeHit, build_knowledge_pack, chinese_recall_fallback_query, cortex_result_or_empty, dedupe_hits,
+        merge_knowledge_hits, parse_cortex_recall_hits, recall_source,
     };
+    use crate::contracts::{RunRequest, WorkspaceRef};
     use crate::paths::external_memory_audit_path;
+    use std::collections::BTreeMap;
 
     #[test]
     fn maps_cortex_recall_payload_to_hits() {
@@ -623,8 +767,12 @@ mod tests {
             path: "run:1".to_string(),
             snippet: "CET4 shadowing improves listening".to_string(),
             source_type: "runtime".to_string(),
+            source_kind: "runtime_memory".to_string(),
             source_label: "运行时沉淀知识".to_string(),
             knowledge_type: "workflow_pattern".to_string(),
+            use_for: "workflow".to_string(),
+            citation_ready: false,
+            match_reason: "runtime 命中".to_string(),
             confidence: "高".to_string(),
             updated_at: "2026-04-13T10:00:00Z".to_string(),
             reason: "local".to_string(),
@@ -633,8 +781,12 @@ mod tests {
             path: "cortex://m1".to_string(),
             snippet: "CET4 shadowing improves listening".to_string(),
             source_type: "cortex".to_string(),
+            source_kind: "external_memory".to_string(),
             source_label: "外部增强记忆".to_string(),
             knowledge_type: "workflow_pattern".to_string(),
+            use_for: "workflow".to_string(),
+            citation_ready: true,
+            match_reason: "cortex 命中".to_string(),
             confidence: "中".to_string(),
             updated_at: "2026-04-13T10:00:01Z".to_string(),
             reason: "external".to_string(),
@@ -650,8 +802,12 @@ mod tests {
             path: "run:1".to_string(),
             snippet: "CET4 shadowing improves listening".to_string(),
             source_type: "runtime".to_string(),
+            source_kind: "runtime_memory".to_string(),
             source_label: "运行时沉淀知识".to_string(),
             knowledge_type: "workflow_pattern".to_string(),
+            use_for: "workflow".to_string(),
+            citation_ready: false,
+            match_reason: "runtime 命中".to_string(),
             confidence: "高".to_string(),
             updated_at: "2026-04-13T10:00:00Z".to_string(),
             reason: "local".to_string(),
@@ -660,8 +816,12 @@ mod tests {
             path: "cortex://m2".to_string(),
             snippet: "Vocabulary chunks boost reading score".to_string(),
             source_type: "cortex".to_string(),
+            source_kind: "external_memory".to_string(),
             source_label: "外部增强记忆".to_string(),
             knowledge_type: "workflow_pattern".to_string(),
+            use_for: "workflow".to_string(),
+            citation_ready: true,
+            match_reason: "cortex 命中".to_string(),
             confidence: "中".to_string(),
             updated_at: "2026-04-13T10:00:01Z".to_string(),
             reason: "external".to_string(),
@@ -759,16 +919,73 @@ mod tests {
         assert!(hits.is_empty());
     }
 
+    #[test]
+    fn build_knowledge_pack_collects_citations_and_supporting_hits() {
+        let root = temp_knowledge_root();
+        write_text(
+            root.join("docs/guide.md"),
+            "Agent workflow design and step by step plan",
+        );
+        write_text(
+            root.join("notes/reference.md"),
+            "Agent memory relation and workflow evidence",
+        );
+        write_text(
+            root.join("docs/checklist.md"),
+            "Workflow checklist for agent execution and repair",
+        );
+        write_text(root.join("notes/faq.md"), "How agent workflow uses memory and evidence");
+        let request = knowledge_request(&root, "怎么做 agent workflow");
+        let pack = build_knowledge_pack(&request, &request.user_input, 5);
+        assert_eq!(pack.question_type, "workflow");
+        assert!(!pack.top_hits.is_empty());
+        assert!(!pack.supporting_hits.is_empty());
+        assert!(!pack.citations.is_empty());
+        assert!(!pack.answer_hints.is_empty());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
     fn test_hit(path: &str, snippet: &str) -> KnowledgeHit {
         KnowledgeHit {
             path: path.to_string(),
             snippet: snippet.to_string(),
             source_type: "runtime".to_string(),
+            source_kind: "runtime_memory".to_string(),
             source_label: "测试".to_string(),
             knowledge_type: "workflow_pattern".to_string(),
+            use_for: "workflow".to_string(),
+            citation_ready: false,
+            match_reason: "test".to_string(),
             confidence: "中".to_string(),
             updated_at: "1".to_string(),
             reason: "test".to_string(),
         }
+    }
+
+    fn knowledge_request(root: &std::path::Path, user_input: &str) -> RunRequest {
+        let mut request = crate::query_engine_testkit::testkit::sample_request("retryable_failure");
+        request.user_input = user_input.to_string();
+        request.workspace_ref = WorkspaceRef {
+            workspace_id: "workspace-1".to_string(),
+            name: "Workspace".to_string(),
+            root_path: root.display().to_string(),
+            is_active: true,
+        };
+        request.context_hints = BTreeMap::from([("repo_root".to_string(), root.display().to_string())]);
+        request
+    }
+
+    fn temp_knowledge_root() -> std::path::PathBuf {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|item| item.as_millis())
+            .unwrap_or_default();
+        std::env::temp_dir().join(format!("knowledge-pack-{stamp}"))
+    }
+
+    fn write_text(path: std::path::PathBuf, content: &str) {
+        let parent = path.parent().expect("parent");
+        std::fs::create_dir_all(parent).expect("create dir");
+        std::fs::write(path, content).expect("write file");
     }
 }

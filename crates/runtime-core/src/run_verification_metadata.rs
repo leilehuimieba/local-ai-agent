@@ -14,6 +14,27 @@ fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &cr
     metadata.insert("verification_summary".to_string(), report.outcome.summary.clone());
     metadata.insert("verification_next_step".to_string(), report.outcome.next_step.clone());
     metadata.insert("verification_policy".to_string(), report.outcome.policy.clone());
+    metadata.insert("verification_task_type".to_string(), report.outcome.task_type.clone());
+    metadata.insert(
+        "verification_evidence_count".to_string(),
+        report.outcome.evidence_count.to_string(),
+    );
+    metadata.insert(
+        "verification_has_citation".to_string(),
+        bool_string(report.outcome.has_citation),
+    );
+    metadata.insert(
+        "verification_fact_inference_split".to_string(),
+        bool_string(report.outcome.fact_inference_split),
+    );
+    metadata.insert(
+        "capability_risk_checked".to_string(),
+        bool_string(report.outcome.capability_risk_checked),
+    );
+    metadata.insert(
+        "permission_boundary_respected".to_string(),
+        bool_string(report.outcome.permission_boundary_respected),
+    );
     metadata.insert(
         "verification_skill_hit_effective".to_string(),
         bool_string(report.outcome.skill_hit_effective),
@@ -71,6 +92,11 @@ mod tests {
             metadata.get("verification_guard_downgraded"),
             Some(&"false".to_string())
         );
+        assert_eq!(
+            metadata.get("verification_task_type"),
+            Some(&"knowledge_answer".to_string())
+        );
+        assert_eq!(metadata.get("verification_has_citation"), Some(&"true".to_string()));
     }
 
     fn sample_report() -> VerificationReport {
@@ -79,7 +105,13 @@ mod tests {
                 passed: true,
                 code: "verified".to_string(),
                 policy: "inspect_command_result".to_string(),
+                task_type: "knowledge_answer".to_string(),
                 evidence: vec!["summary=ok".to_string()],
+                evidence_count: 1,
+                has_citation: true,
+                fact_inference_split: true,
+                capability_risk_checked: true,
+                permission_boundary_respected: true,
                 skill_hit_effective: true,
                 skill_hit_reason: "有效".to_string(),
                 guard_downgraded: false,

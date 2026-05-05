@@ -2,6 +2,7 @@ use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::RepoContextSnapshot;
 use crate::memory_schema::canonical_kind;
 use crate::session::SessionMemory;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
 pub(crate) enum PlannedAction {
@@ -52,6 +53,103 @@ pub(crate) enum PlannedAction {
     ContextAnswer,
     Explain,
     AgentResolve,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) struct PlanEnvelope {
+    pub goal: String,
+    pub current_step: String,
+    pub remaining_steps: Vec<String>,
+    pub stop_condition: String,
+    pub max_iterations: u8,
+    pub iteration_index: u8,
+    pub needs_verification: bool,
+}
+
+pub(crate) fn initial_plan_envelope(action: &PlannedAction, user_input: &str) -> PlanEnvelope {
+    PlanEnvelope {
+        goal: summarize_goal(user_input),
+        current_step: action_step_label(action),
+        remaining_steps: default_remaining_steps(action),
+        stop_condition: default_stop_condition(action),
+        max_iterations: 3,
+        iteration_index: 1,
+        needs_verification: true,
+    }
+}
+
+pub(crate) fn action_step_label(action: &PlannedAction) -> String {
+    match action {
+        PlannedAction::RunCommand { command } => format!("执行命令：{}", truncate_step(command)),
+        PlannedAction::ReadFile { path } => format!("读取文件：{path}"),
+        PlannedAction::WriteFile { path, .. } => format!("写入文件：{path}"),
+        PlannedAction::ApplyPatch { dry_run, .. } => patch_step_label(*dry_run),
+        PlannedAction::DeletePath { path } => format!("删除路径：{path}"),
+        PlannedAction::ListFiles { path } => list_step_label(path.as_deref()),
+        PlannedAction::WriteMemory { summary, .. } => format!("写入记忆：{}", truncate_step(summary)),
+        PlannedAction::RecallMemory { query } => format!("召回记忆：{}", truncate_step(query)),
+        PlannedAction::SearchKnowledge { query } => format!("检索知识：{}", truncate_step(query)),
+        PlannedAction::SearchSiyuanNotes { query } => format!("检索思源：{}", truncate_step(query)),
+        PlannedAction::ReadSiyuanNote { path } => format!("读取思源：{path}"),
+        PlannedAction::MCPCall {
+            server_id, tool_name, ..
+        } => format!("调用 MCP：{server_id}/{tool_name}"),
+        PlannedAction::WriteSiyuanKnowledge => "写入思源知识".to_string(),
+        PlannedAction::ProjectAnswer => "基于项目上下文回答".to_string(),
+        PlannedAction::ContextAnswer => "基于会话上下文回答".to_string(),
+        PlannedAction::Explain => "解释当前能力边界".to_string(),
+        PlannedAction::AgentResolve => "发起智能体执行".to_string(),
+    }
+}
+
+fn summarize_goal(user_input: &str) -> String {
+    truncate_step(user_input)
+}
+
+fn default_remaining_steps(action: &PlannedAction) -> Vec<String> {
+    match action {
+        PlannedAction::ReadFile { .. } | PlannedAction::ListFiles { .. } => {
+            vec!["整理读取结果并决定是否继续".to_string()]
+        }
+        PlannedAction::RunCommand { .. } | PlannedAction::MCPCall { .. } => {
+            vec!["检查执行结果并决定是否需要补充观察".to_string()]
+        }
+        _ => vec!["完成验证并决定收口方式".to_string()],
+    }
+}
+
+fn default_stop_condition(action: &PlannedAction) -> String {
+    match action {
+        PlannedAction::ReadFile { .. } | PlannedAction::ListFiles { .. } => {
+            "已形成可交付结论，或需要人工继续接力".to_string()
+        }
+        _ => "当前动作已验证通过，或达到预算后转入 handoff".to_string(),
+    }
+}
+
+fn patch_step_label(dry_run: bool) -> String {
+    if dry_run {
+        "预览 patch 影响".to_string()
+    } else {
+        "应用 patch 变更".to_string()
+    }
+}
+
+fn list_step_label(path: Option<&str>) -> String {
+    match path {
+        Some(value) if !value.is_empty() => format!("浏览目录：{value}"),
+        _ => "浏览工作区目录".to_string(),
+    }
+}
+
+fn truncate_step(input: &str) -> String {
+    let mut chars = input.chars();
+    let value: String = chars.by_ref().take(42).collect();
+    if chars.next().is_some() {
+        format!("{value}...")
+    } else {
+        value
+    }
 }
 
 pub(crate) fn analysis_summary(

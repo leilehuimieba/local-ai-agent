@@ -147,8 +147,12 @@ fn score_siyuan_record(record: KnowledgeRecord, query: &str) -> Option<(i32, Kno
             path: record.source,
             snippet: record.summary,
             source_type: "siyuan_index".to_string(),
+            source_kind: "user_curated".to_string(),
             source_label: "用户确认知识".to_string(),
             knowledge_type: record.knowledge_type,
+            use_for: "relation".to_string(),
+            citation_ready: true,
+            match_reason: "思源索引与查询意图直接相关".to_string(),
             confidence: if record.verified {
                 "高（用户沉淀确认）".to_string()
             } else {
@@ -197,8 +201,12 @@ fn score_siyuan_file(path: PathBuf, query: &str) -> Option<(i32, KnowledgeHit)> 
             path: path_text,
             snippet,
             source_type: "siyuan_file".to_string(),
+            source_kind: "user_curated".to_string(),
             source_label: "用户确认知识".to_string(),
             knowledge_type: "user_curated".to_string(),
+            use_for: "evidence".to_string(),
+            citation_ready: true,
+            match_reason: "思源正文片段与查询直接命中".to_string(),
             confidence: "高（用户沉淀确认）".to_string(),
             updated_at: String::new(),
             reason: "思源正文命中".to_string(),

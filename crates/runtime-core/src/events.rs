@@ -2,7 +2,7 @@ use crate::contracts::{
     ConfirmationRequest, RunEvent, RunRequest, RuntimeContextSnapshot, RuntimeRunResponse, ToolCallSnapshot,
     VerificationSnapshot,
 };
-use crate::memory_layer::metadata_layer_summary;
+use crate::memory_layer::{metadata_layer_summary, metadata_route_summary};
 use crate::memory_schema::MEMORY_GOVERNANCE_VERSION;
 use crate::prompt::{render_agent_resolve_prompt, render_context_answer_prompt, render_project_answer_prompt};
 use std::collections::BTreeMap;
@@ -216,7 +216,8 @@ fn memory_recall_reason(metadata: &BTreeMap<String, String>, digest: &str) -> St
         "当前查询未命中可复用长期记忆，已输出空召回结果。".to_string()
     } else {
         format!(
-            "已按当前输入完成长期记忆召回，并将{}摘要注入上下文。",
+            "已按当前输入完成长期记忆召回，并按 {} 将{}摘要注入上下文。",
+            metadata_route_summary(metadata),
             metadata_layer_summary(metadata)
         )
     }
@@ -269,12 +270,25 @@ fn build_context_snapshot(
 fn fill_context_core(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<String, String>) {
     snapshot.workspace_root = metadata_value(metadata, "context_workspace_root");
     snapshot.mode = metadata_value(metadata, "context_mode");
+    snapshot.iteration_index = metadata_usize(metadata, "iteration_index") as u32;
+    snapshot.max_iterations = metadata_usize(metadata, "max_iterations") as u32;
+    snapshot.plan_goal = metadata_value(metadata, "plan_goal");
+    snapshot.plan_current_step = metadata_value(metadata, "plan_current_step");
+    snapshot.plan_stop_condition = metadata_value(metadata, "plan_stop_condition");
     snapshot.session_summary = metadata_value(metadata, "session_summary");
     snapshot.memory_digest = metadata_value(metadata, "memory_digest");
     snapshot.memory_has_system_views = metadata_flag(metadata, "memory_has_system_views");
     snapshot.memory_has_current_objects = metadata_flag(metadata, "memory_has_current_objects");
     snapshot.memory_current_object_count = metadata_usize(metadata, "memory_current_object_count");
+    snapshot.memory_route = metadata_value(metadata, "memory_route");
+    snapshot.memory_selected_layers = metadata_value(metadata, "memory_selected_layers");
+    snapshot.memory_match_reason = metadata_value(metadata, "memory_match_reason");
+    snapshot.memory_reuse_confidence = metadata_value(metadata, "memory_reuse_confidence");
+    snapshot.memory_skipped_layers = metadata_value(metadata, "memory_skipped_layers");
     snapshot.knowledge_digest = metadata_value(metadata, "knowledge_digest");
+    snapshot.knowledge_pack_question_type = metadata_value(metadata, "knowledge_pack_question_type");
+    snapshot.knowledge_pack_citations = metadata_value(metadata, "knowledge_pack_citations");
+    snapshot.knowledge_pack_match_reason = metadata_value(metadata, "knowledge_pack_match_reason");
     snapshot.tool_preview = metadata_value(metadata, "tool_preview");
     snapshot.artifact_hint = metadata_value(metadata, "artifact_hint");
     snapshot.reasoning_summary = metadata_value(metadata, "reasoning_summary");
@@ -284,6 +298,7 @@ fn fill_context_core(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<
 
 fn fill_context_policy(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMap<String, String>) {
     snapshot.assembly_profile = metadata_value(metadata, "assembly_profile");
+    snapshot.prompt_profile = metadata_value(metadata, "prompt_profile");
     snapshot.includes_session = metadata_flag(metadata, "includes_session");
     snapshot.includes_memory = metadata_flag(metadata, "includes_memory");
     snapshot.includes_knowledge = metadata_flag(metadata, "includes_knowledge");
@@ -295,6 +310,7 @@ fn fill_context_policy(snapshot: &mut RuntimeContextSnapshot, metadata: &BTreeMa
     snapshot.evidence_refs = metadata_value(metadata, "evidence_refs");
     snapshot.phase_label = metadata_value(metadata, "phase_label");
     snapshot.selection_reason = metadata_value(metadata, "selection_reason");
+    snapshot.injection_summary = metadata_value(metadata, "injection_summary");
     snapshot.prefers_artifact_context = metadata_flag(metadata, "prefers_artifact_context");
 }
 
@@ -316,17 +332,31 @@ fn fill_context_observation(
 fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
     !snapshot.workspace_root.is_empty()
         || !snapshot.mode.is_empty()
+        || snapshot.iteration_index > 0
+        || snapshot.max_iterations > 0
+        || !snapshot.plan_goal.is_empty()
+        || !snapshot.plan_current_step.is_empty()
+        || !snapshot.plan_stop_condition.is_empty()
         || !snapshot.session_summary.is_empty()
         || !snapshot.memory_digest.is_empty()
         || snapshot.memory_has_system_views
         || snapshot.memory_has_current_objects
         || snapshot.memory_current_object_count > 0
+        || !snapshot.memory_route.is_empty()
+        || !snapshot.memory_selected_layers.is_empty()
+        || !snapshot.memory_match_reason.is_empty()
+        || !snapshot.memory_reuse_confidence.is_empty()
+        || !snapshot.memory_skipped_layers.is_empty()
         || !snapshot.knowledge_digest.is_empty()
+        || !snapshot.knowledge_pack_question_type.is_empty()
+        || !snapshot.knowledge_pack_citations.is_empty()
+        || !snapshot.knowledge_pack_match_reason.is_empty()
         || !snapshot.tool_preview.is_empty()
         || !snapshot.reasoning_summary.is_empty()
         || !snapshot.cache_status.is_empty()
         || !snapshot.cache_reason.is_empty()
         || !snapshot.assembly_profile.is_empty()
+        || !snapshot.prompt_profile.is_empty()
         || snapshot.skill_injection_enabled
         || !snapshot.max_skill_level.is_empty()
         || !snapshot.injected_skill_level.is_empty()
@@ -334,6 +364,7 @@ fn has_context_snapshot(snapshot: &RuntimeContextSnapshot) -> bool {
         || !snapshot.evidence_refs.is_empty()
         || !snapshot.phase_label.is_empty()
         || !snapshot.selection_reason.is_empty()
+        || !snapshot.injection_summary.is_empty()
         || !snapshot.artifact_hint.is_empty()
         || !snapshot.observation_injection.is_empty()
         || !snapshot.observation_references.is_empty()
@@ -383,10 +414,31 @@ fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<Verifica
             .map(|value| value == "true")
             .unwrap_or(false),
         policy: metadata.get("verification_policy").cloned().unwrap_or_default(),
+        task_type: metadata.get("verification_task_type").cloned().unwrap_or_default(),
         evidence: metadata
             .get("verification_evidence")
             .map(|value| split_lines(value))
             .unwrap_or_default(),
+        evidence_count: metadata
+            .get("verification_evidence_count")
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or_default(),
+        has_citation: metadata
+            .get("verification_has_citation")
+            .map(|value| value == "true")
+            .unwrap_or(false),
+        fact_inference_split: metadata
+            .get("verification_fact_inference_split")
+            .map(|value| value == "true")
+            .unwrap_or(false),
+        capability_risk_checked: metadata
+            .get("capability_risk_checked")
+            .map(|value| value == "true")
+            .unwrap_or(false),
+        permission_boundary_respected: metadata
+            .get("permission_boundary_respected")
+            .map(|value| value == "true")
+            .unwrap_or(false),
         skill_hit_effective: metadata
             .get("verification_skill_hit_effective")
             .map(|value| value == "true")
@@ -412,7 +464,13 @@ fn has_verification_snapshot(snapshot: &VerificationSnapshot) -> bool {
         || !snapshot.summary.is_empty()
         || snapshot.passed
         || !snapshot.policy.is_empty()
+        || !snapshot.task_type.is_empty()
         || !snapshot.evidence.is_empty()
+        || snapshot.evidence_count > 0
+        || snapshot.has_citation
+        || snapshot.fact_inference_split
+        || snapshot.capability_risk_checked
+        || snapshot.permission_boundary_respected
         || snapshot.skill_hit_effective
         || !snapshot.skill_hit_reason.is_empty()
         || snapshot.guard_downgraded
@@ -429,8 +487,8 @@ fn split_lines(value: &str) -> Vec<String> {
 }
 
 fn prompt_snapshot_parts(metadata: &BTreeMap<String, String>) -> (String, String, String) {
-    let profile = metadata.get("assembly_profile").map(String::as_str).unwrap_or_default();
-    if profile.starts_with("agent_resolve") {
+    let prompt_profile = metadata.get("prompt_profile").map(String::as_str).unwrap_or_default();
+    if prompt_profile == "agent_resolve" {
         return split_prompt_sections(&render_agent_resolve_prompt(
             &prompt_user_input(metadata),
             &metadata_value(metadata, "session_summary"),
@@ -439,7 +497,7 @@ fn prompt_snapshot_parts(metadata: &BTreeMap<String, String>) -> (String, String
     let Some(envelope) = prompt_snapshot_envelope(metadata) else {
         return (String::new(), String::new(), String::new());
     };
-    let prompt = if profile.starts_with("context_answer") {
+    let prompt = if prompt_profile == "context_answer" {
         render_context_answer_prompt(&envelope).full_prompt
     } else {
         render_project_answer_prompt(&envelope).full_prompt
@@ -530,6 +588,7 @@ fn prompt_dynamic_block(metadata: &BTreeMap<String, String>) -> crate::context_b
     let mut block = crate::context_builder::DynamicPromptBlock {
         user_input: prompt_user_input(metadata),
         assembly_profile: metadata_value(metadata, "assembly_profile"),
+        prompt_profile: metadata_value(metadata, "prompt_profile"),
         includes_session: metadata_flag(metadata, "includes_session"),
         includes_memory: metadata_flag(metadata, "includes_memory"),
         includes_knowledge: metadata_flag(metadata, "includes_knowledge"),
@@ -541,13 +600,22 @@ fn prompt_dynamic_block(metadata: &BTreeMap<String, String>) -> crate::context_b
         evidence_refs: metadata_value(metadata, "evidence_refs"),
         phase_label: metadata_value(metadata, "phase_label"),
         selection_reason: metadata_value(metadata, "selection_reason"),
+        injection_summary: metadata_value(metadata, "injection_summary"),
         prefers_artifact_context: metadata_flag(metadata, "prefers_artifact_context"),
         session_summary: metadata_value(metadata, "session_summary"),
         memory_digest: metadata_value(metadata, "memory_digest"),
         memory_has_system_views: metadata_flag(metadata, "memory_has_system_views"),
         memory_has_current_objects: metadata_flag(metadata, "memory_has_current_objects"),
         memory_current_object_count: metadata_usize(metadata, "memory_current_object_count"),
+        memory_route: metadata_value(metadata, "memory_route"),
+        memory_selected_layers: metadata_value(metadata, "memory_selected_layers"),
+        memory_match_reason: metadata_value(metadata, "memory_match_reason"),
+        memory_reuse_confidence: metadata_value(metadata, "memory_reuse_confidence"),
+        memory_skipped_layers: metadata_value(metadata, "memory_skipped_layers"),
         knowledge_digest: metadata_value(metadata, "knowledge_digest"),
+        knowledge_pack_question_type: metadata_value(metadata, "knowledge_pack_question_type"),
+        knowledge_pack_citations: metadata_value(metadata, "knowledge_pack_citations"),
+        knowledge_pack_match_reason: metadata_value(metadata, "knowledge_pack_match_reason"),
         tool_preview: metadata_value(metadata, "tool_preview"),
         artifact_hint: metadata_value(metadata, "artifact_hint"),
         observation_budget_total_tokens: observation.5,
@@ -597,14 +665,49 @@ mod tests {
         let mut metadata = BTreeMap::new();
         metadata.insert("context_workspace_root".to_string(), "D:/repo".to_string());
         metadata.insert("context_mode".to_string(), "standard".to_string());
+        metadata.insert("assembly_profile".to_string(), "repair_profile".to_string());
+        metadata.insert("prompt_profile".to_string(), "agent_resolve".to_string());
+        metadata.insert(
+            "injection_summary".to_string(),
+            "当前 profile 注入：session digest".to_string(),
+        );
+        metadata.insert("iteration_index".to_string(), "2".to_string());
+        metadata.insert("max_iterations".to_string(), "3".to_string());
+        metadata.insert("plan_goal".to_string(), "读取项目入口".to_string());
         metadata.insert("memory_digest".to_string(), "digest".to_string());
         metadata.insert("memory_has_system_views".to_string(), "true".to_string());
         metadata.insert("memory_has_current_objects".to_string(), "true".to_string());
         metadata.insert("memory_current_object_count".to_string(), "2".to_string());
+        metadata.insert("memory_route".to_string(), "repair_route".to_string());
+        metadata.insert(
+            "memory_selected_layers".to_string(),
+            "current memory object,history entries".to_string(),
+        );
+        metadata.insert("memory_match_reason".to_string(), "test-route".to_string());
+        metadata.insert("memory_reuse_confidence".to_string(), "high".to_string());
+        metadata.insert("memory_skipped_layers".to_string(), "system views".to_string());
+        metadata.insert("knowledge_pack_question_type".to_string(), "workflow".to_string());
+        metadata.insert(
+            "knowledge_pack_citations".to_string(),
+            "docs/README.md,docs/11-hermes-rebuild/current-state.md".to_string(),
+        );
+        metadata.insert(
+            "knowledge_pack_match_reason".to_string(),
+            "知识命中更偏工作流问答".to_string(),
+        );
         let snapshot = context_snapshot(&metadata).unwrap();
+        assert_eq!(snapshot.iteration_index, 2);
+        assert_eq!(snapshot.max_iterations, 3);
+        assert_eq!(snapshot.plan_goal, "读取项目入口");
+        assert_eq!(snapshot.assembly_profile, "repair_profile");
+        assert_eq!(snapshot.prompt_profile, "agent_resolve");
+        assert_eq!(snapshot.injection_summary, "当前 profile 注入：session digest");
         assert!(snapshot.memory_has_system_views);
         assert!(snapshot.memory_has_current_objects);
         assert_eq!(snapshot.memory_current_object_count, 2);
+        assert_eq!(snapshot.memory_route, "repair_route");
+        assert_eq!(snapshot.memory_reuse_confidence, "high");
+        assert_eq!(snapshot.knowledge_pack_question_type, "workflow");
     }
 
     #[test]
@@ -616,9 +719,14 @@ mod tests {
             request.workspace_ref.root_path.clone(),
         );
         metadata.insert("context_mode".to_string(), "standard".to_string());
-        metadata.insert("assembly_profile".to_string(), "project_answer".to_string());
+        metadata.insert("assembly_profile".to_string(), "ask_profile".to_string());
+        metadata.insert("prompt_profile".to_string(), "project_answer".to_string());
         metadata.insert("phase_label".to_string(), "answer".to_string());
         metadata.insert("selection_reason".to_string(), "test".to_string());
+        metadata.insert(
+            "injection_summary".to_string(),
+            "当前 profile 注入：knowledge digest".to_string(),
+        );
         metadata.insert("user_input".to_string(), "对象摘要".to_string());
         metadata.insert("session_summary".to_string(), "session".to_string());
         metadata.insert("memory_digest".to_string(), "digest".to_string());

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -158,13 +159,12 @@ func (s *Store) Search(workspaceID string, query string) ([]Item, error) {
 	if q == "" {
 		return s.List(workspaceID)
 	}
-	pattern := "%" + q + "%"
 	db, err := s.openDB()
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query(searchKnowledgeSQL, workspaceID, pattern, pattern, pattern)
+	rows, err := db.Query(listKnowledgeSQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
 			return []Item{}, nil
@@ -172,7 +172,11 @@ func (s *Store) Search(workspaceID string, query string) ([]Item, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanItems(rows)
+	items, err := scanItems(rows)
+	if err != nil {
+		return nil, err
+	}
+	return rerankItems(items, q), nil
 }
 
 func (s *Store) CreateChunks(chunks []Chunk) error {
@@ -431,6 +435,67 @@ func safeName(input string) string {
 	return b.String()
 }
 
+func rerankItems(items []Item, query string) []Item {
+	scored := make([]scoredItem, 0, len(items))
+	for _, item := range items {
+		score := itemSearchScore(item, query)
+		if score <= 0 {
+			continue
+		}
+		scored = append(scored, scoredItem{item: item, score: score})
+	}
+	sort.SliceStable(scored, func(i, j int) bool {
+		if scored[i].score == scored[j].score {
+			return scored[i].item.UpdatedAt > scored[j].item.UpdatedAt
+		}
+		return scored[i].score > scored[j].score
+	})
+	result := make([]Item, 0, len(scored))
+	for _, current := range scored {
+		result = append(result, current.item)
+	}
+	return result
+}
+
+type scoredItem struct {
+	item  Item
+	score int
+}
+
+func itemSearchScore(item Item, query string) int {
+	score := 0
+	score += textMatchScore(item.Title, query) * 4
+	score += textMatchScore(item.Category, query) * 3
+	score += textMatchScore(strings.Join(item.Tags, " "), query) * 3
+	score += textMatchScore(item.Summary, query) * 2
+	score += textMatchScore(item.Content, query)
+	score += item.CitationCount * 2
+	if item.UpdatedAt != "" {
+		score += 2
+	}
+	return score
+}
+
+func textMatchScore(text string, query string) int {
+	value := strings.ToLower(text)
+	needle := strings.ToLower(strings.TrimSpace(query))
+	if needle == "" {
+		return 0
+	}
+	score := 0
+	if strings.Contains(value, needle) {
+		score += 10
+	}
+	for _, token := range strings.FieldsFunc(needle, func(r rune) bool {
+		return r == ' ' || r == '/' || r == '\\' || r == ':' || r == ',' || r == '|'
+	}) {
+		if token != "" && strings.Contains(value, token) {
+			score += 4
+		}
+	}
+	return score
+}
+
 var createKnowledgeTableSQLs = []string{
 	`create table if not exists knowledge_items (
 		id text primary key,
@@ -498,7 +563,7 @@ where workspace_id = ? and id = ?
 const searchKnowledgeSQL = `
 select id, title, summary, content, category, tags, source, metadata, citation_count, embedding, created_at, updated_at
 from knowledge_items
-where workspace_id = ? and (title like ? or summary like ? or content like ?)
+where workspace_id = ? and (title like ? or summary like ? or content like ? or category like ? or tags like ? or source like ?)
 order by updated_at desc
 `
 

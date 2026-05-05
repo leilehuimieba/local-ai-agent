@@ -109,7 +109,7 @@ fn render_project_prompt(envelope: &RuntimeContextEnvelope) -> String {
 fn render_dynamic_prompt(envelope: &RuntimeContextEnvelope, task_hint: &str, answer_style: &str) -> String {
     let memory_layer = memory_layer_prompt(envelope);
     let base = format!(
-        "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆分层：{}\n记忆摘要：{}\n知识摘要：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
+        "任务意图：{}\n当前阶段：{}\n调度原因：{}\n用户输入：{}\n会话摘要：{}\n记忆分层：{}\n记忆摘要：{}\n知识摘要：{}\n知识问题类型：{}\n知识引证：{}\n知识命中理由：{}\n可见工具：{}\n交接提示：{}\n回答要求：{}",
         task_hint,
         envelope.dynamic_block.phase_label,
         envelope.dynamic_block.selection_reason,
@@ -118,6 +118,9 @@ fn render_dynamic_prompt(envelope: &RuntimeContextEnvelope, task_hint: &str, ans
         memory_layer,
         envelope.dynamic_block.memory_digest,
         envelope.dynamic_block.knowledge_digest,
+        blank_text(&envelope.dynamic_block.knowledge_pack_question_type),
+        blank_text(&envelope.dynamic_block.knowledge_pack_citations),
+        blank_text(&envelope.dynamic_block.knowledge_pack_match_reason),
         envelope.dynamic_block.tool_preview,
         envelope.dynamic_block.artifact_hint,
         answer_style
@@ -163,6 +166,10 @@ fn join_prompt_parts(static_prompt: &str, project_prompt: &str, dynamic_prompt: 
     [static_prompt, project_prompt, dynamic_prompt].join("\n\n")
 }
 
+fn blank_text(value: &str) -> &str {
+    if value.trim().is_empty() { "未提供" } else { value }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,6 +200,9 @@ mod tests {
                 memory_has_current_objects: true,
                 memory_current_object_count: 2,
                 knowledge_digest: "knowledge".to_string(),
+                knowledge_pack_question_type: "workflow".to_string(),
+                knowledge_pack_citations: "docs/README.md".to_string(),
+                knowledge_pack_match_reason: "知识命中更偏工作流问答".to_string(),
                 tool_preview: "tools".to_string(),
                 artifact_hint: "artifact".to_string(),
                 ..Default::default()
@@ -200,5 +210,6 @@ mod tests {
         };
         let prompt = render_project_answer_prompt(&envelope).full_prompt;
         assert!(prompt.contains("记忆分层：system views + current memory object（对象 2 条）"));
+        assert!(prompt.contains("知识问题类型：workflow"));
     }
 }

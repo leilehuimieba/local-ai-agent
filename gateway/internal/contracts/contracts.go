@@ -55,18 +55,28 @@ type RuntimeContextSnapshot struct {
 	Mode                   string `json:"mode,omitempty"`
 	SessionSummary         string `json:"session_summary,omitempty"`
 	MemoryDigest           string `json:"memory_digest,omitempty"`
+	MemoryRoute            string `json:"memory_route,omitempty"`
+	MemorySelectedLayers   string `json:"memory_selected_layers,omitempty"`
+	MemoryMatchReason      string `json:"memory_match_reason,omitempty"`
+	MemoryReuseConfidence  string `json:"memory_reuse_confidence,omitempty"`
+	MemorySkippedLayers    string `json:"memory_skipped_layers,omitempty"`
 	KnowledgeDigest        string `json:"knowledge_digest,omitempty"`
+	KnowledgePackQuestionType string `json:"knowledge_pack_question_type,omitempty"`
+	KnowledgePackCitations string `json:"knowledge_pack_citations,omitempty"`
+	KnowledgePackMatchReason string `json:"knowledge_pack_match_reason,omitempty"`
 	ToolPreview            string `json:"tool_preview,omitempty"`
 	ReasoningSummary       string `json:"reasoning_summary,omitempty"`
 	CacheStatus            string `json:"cache_status,omitempty"`
 	CacheReason            string `json:"cache_reason,omitempty"`
 	AssemblyProfile        string `json:"assembly_profile,omitempty"`
+	PromptProfile          string `json:"prompt_profile,omitempty"`
 	IncludesSession        bool   `json:"includes_session,omitempty"`
 	IncludesMemory         bool   `json:"includes_memory,omitempty"`
 	IncludesKnowledge      bool   `json:"includes_knowledge,omitempty"`
 	IncludesToolPreview    bool   `json:"includes_tool_preview,omitempty"`
 	PhaseLabel             string `json:"phase_label,omitempty"`
 	SelectionReason        string `json:"selection_reason,omitempty"`
+	InjectionSummary       string `json:"injection_summary,omitempty"`
 	PrefersArtifactContext bool   `json:"prefers_artifact_context,omitempty"`
 	ArtifactHint           string `json:"artifact_hint,omitempty"`
 	PromptStatic           string `json:"prompt_static,omitempty"`

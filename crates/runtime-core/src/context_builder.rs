@@ -1,8 +1,9 @@
 use crate::capabilities::ToolDefinition;
 use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
-use crate::knowledge::search_knowledge;
-use crate::memory_recall::{MemoryDigest, recall_memory_digest};
+use crate::knowledge::{KnowledgePack, build_knowledge_pack};
+use crate::memory_layer::digest_route_summary;
+use crate::memory_recall::{MemoryDigest, recall_memory_digest_with_policy};
 use crate::observation::{
     ObservationLayeredInjectionReport, build_layered_injection, resolve_observation_budget_chars,
 };
@@ -30,6 +31,7 @@ pub(crate) struct ProjectPromptBlock {
 pub(crate) struct DynamicPromptBlock {
     pub user_input: String,
     pub assembly_profile: String,
+    pub prompt_profile: String,
     pub includes_session: bool,
     pub includes_memory: bool,
     pub includes_knowledge: bool,
@@ -41,13 +43,22 @@ pub(crate) struct DynamicPromptBlock {
     pub evidence_refs: String,
     pub phase_label: String,
     pub selection_reason: String,
+    pub injection_summary: String,
     pub prefers_artifact_context: bool,
     pub session_summary: String,
     pub memory_digest: String,
     pub memory_has_system_views: bool,
     pub memory_has_current_objects: bool,
     pub memory_current_object_count: usize,
+    pub memory_route: String,
+    pub memory_selected_layers: String,
+    pub memory_match_reason: String,
+    pub memory_reuse_confidence: String,
+    pub memory_skipped_layers: String,
     pub knowledge_digest: String,
+    pub knowledge_pack_question_type: String,
+    pub knowledge_pack_citations: String,
+    pub knowledge_pack_match_reason: String,
     pub tool_preview: String,
     pub artifact_hint: String,
     pub observation_injection: String,
@@ -147,7 +158,7 @@ fn dynamic_prompt_block(
 ) -> DynamicPromptBlock {
     let session_summary = selected_session_summary(session_context, policy);
     let memory = selected_memory_selection(request, policy);
-    let knowledge_digest = selected_knowledge_digest(request, policy);
+    let knowledge = selected_knowledge_selection(request, policy);
     let tool_preview = selected_tool_preview(request, visible_tools, policy);
     let artifact_hint = selected_artifact_hint(session_context, policy);
     let observation = observation_injection(request, policy);
@@ -162,7 +173,15 @@ fn dynamic_prompt_block(
             memory_has_system_views: memory.has_system_views,
             memory_has_current_objects: memory.has_current_objects,
             memory_current_object_count: memory.current_object_count,
-            knowledge_digest,
+            memory_route: memory.route,
+            memory_selected_layers: memory.selected_layers,
+            memory_match_reason: memory.match_reason,
+            memory_reuse_confidence: memory.reuse_confidence,
+            memory_skipped_layers: memory.skipped_layers,
+            knowledge_digest: knowledge.digest,
+            knowledge_pack_question_type: knowledge.question_type,
+            knowledge_pack_citations: knowledge.citations,
+            knowledge_pack_match_reason: knowledge.match_reason,
             tool_preview,
             artifact_hint,
             observation,
@@ -176,7 +195,15 @@ struct PromptParts {
     memory_has_system_views: bool,
     memory_has_current_objects: bool,
     memory_current_object_count: usize,
+    memory_route: String,
+    memory_selected_layers: String,
+    memory_match_reason: String,
+    memory_reuse_confidence: String,
+    memory_skipped_layers: String,
     knowledge_digest: String,
+    knowledge_pack_question_type: String,
+    knowledge_pack_citations: String,
+    knowledge_pack_match_reason: String,
     tool_preview: String,
     artifact_hint: String,
     observation: ObservationLayeredInjectionReport,
@@ -187,6 +214,18 @@ struct MemoryPromptSelection {
     has_system_views: bool,
     has_current_objects: bool,
     current_object_count: usize,
+    route: String,
+    selected_layers: String,
+    match_reason: String,
+    reuse_confidence: String,
+    skipped_layers: String,
+}
+
+struct KnowledgePromptSelection {
+    digest: String,
+    question_type: String,
+    citations: String,
+    match_reason: String,
 }
 
 fn build_dynamic_block(
@@ -207,6 +246,7 @@ fn build_dynamic_block(
 fn fill_identity_fields(block: &mut DynamicPromptBlock, request: &RunRequest, policy: &ContextAssemblyPolicy) {
     block.user_input = request.user_input.clone();
     block.assembly_profile = policy.profile.clone();
+    block.prompt_profile = policy.prompt_profile.clone();
     block.includes_session = policy.include_session;
     block.includes_memory = policy.include_memory;
     block.includes_knowledge = policy.include_knowledge;
@@ -218,6 +258,7 @@ fn fill_identity_fields(block: &mut DynamicPromptBlock, request: &RunRequest, po
     block.evidence_refs = evidence_refs(request, policy);
     block.phase_label = policy.phase_label.clone();
     block.selection_reason = policy.selection_reason.clone();
+    block.injection_summary = injection_summary(policy);
     block.prefers_artifact_context = policy.prefer_artifact_context;
 }
 
@@ -227,7 +268,15 @@ fn fill_digest_fields(block: &mut DynamicPromptBlock, parts: &PromptParts) {
     block.memory_has_system_views = parts.memory_has_system_views;
     block.memory_has_current_objects = parts.memory_has_current_objects;
     block.memory_current_object_count = parts.memory_current_object_count;
+    block.memory_route = parts.memory_route.clone();
+    block.memory_selected_layers = parts.memory_selected_layers.clone();
+    block.memory_match_reason = parts.memory_match_reason.clone();
+    block.memory_reuse_confidence = parts.memory_reuse_confidence.clone();
+    block.memory_skipped_layers = parts.memory_skipped_layers.clone();
     block.knowledge_digest = parts.knowledge_digest.clone();
+    block.knowledge_pack_question_type = parts.knowledge_pack_question_type.clone();
+    block.knowledge_pack_citations = parts.knowledge_pack_citations.clone();
+    block.knowledge_pack_match_reason = parts.knowledge_pack_match_reason.clone();
     block.tool_preview = parts.tool_preview.clone();
     block.artifact_hint = parts.artifact_hint.clone();
 }
@@ -256,6 +305,26 @@ fn fill_runtime_fields(block: &mut DynamicPromptBlock, cache_status: &str, cache
     block.cache_reason = cache_reason.to_string();
 }
 
+fn injection_summary(policy: &ContextAssemblyPolicy) -> String {
+    let mut parts = Vec::new();
+    push_injection_part(&mut parts, policy.include_session, "session digest");
+    push_injection_part(&mut parts, policy.include_memory, "memory digest");
+    push_injection_part(&mut parts, policy.include_knowledge, "knowledge digest");
+    push_injection_part(&mut parts, policy.include_tool_preview, "tool preview");
+    push_injection_part(&mut parts, policy.prefer_artifact_context, "artifact hint");
+    if parts.is_empty() {
+        "当前 profile 未注入额外上下文块。".to_string()
+    } else {
+        format!("当前 profile 注入：{}", parts.join(" + "))
+    }
+}
+
+fn push_injection_part(parts: &mut Vec<&'static str>, enabled: bool, label: &'static str) {
+    if enabled {
+        parts.push(label);
+    }
+}
+
 fn session_summary(session_context: &SessionMemory) -> String {
     session_prompt_summary(session_context)
 }
@@ -275,14 +344,24 @@ fn selected_memory_selection(request: &RunRequest, policy: &ContextAssemblyPolic
             has_system_views: false,
             has_current_objects: false,
             current_object_count: 0,
+            route: "memory_disabled".to_string(),
+            selected_layers: String::new(),
+            match_reason: "当前 profile 未启用长期记忆注入。".to_string(),
+            reuse_confidence: "low".to_string(),
+            skipped_layers: String::new(),
         };
     }
-    let digest = recall_memory_digest(request, &request.user_input, 3);
+    let digest = recall_memory_digest_with_policy(request, &request.user_input, 3, Some(policy));
     MemoryPromptSelection {
         digest: format_memory_digest(&digest),
         has_system_views: digest.has_system_views,
         has_current_objects: digest.has_current_objects,
         current_object_count: digest.current_object_count,
+        route: digest.memory_route.clone(),
+        selected_layers: digest.selected_layers.join(","),
+        match_reason: digest.match_reason.clone(),
+        reuse_confidence: digest.reuse_confidence.clone(),
+        skipped_layers: digest.skipped_layers.join(","),
     }
 }
 
@@ -296,50 +375,108 @@ fn format_memory_digest(digest: &MemoryDigest) -> String {
 }
 
 fn memory_digest_focus(digest: &MemoryDigest) -> String {
-    let mut layers = Vec::new();
-    if digest.has_system_views {
-        layers.push("system views");
-    }
-    if digest.has_current_objects {
-        layers.push("current memory object");
-    }
-    if layers.is_empty() {
+    let route = digest_route_summary(digest);
+    if route.is_empty() {
         return String::new();
     }
-    let count = digest.current_object_count;
-    format!("记忆入口已按分层装配：{}（对象 {} 条）", layers.join(" + "), count)
+    format!("记忆入口已按最小路由装配：{}", route)
 }
 
-fn selected_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> String {
+fn selected_knowledge_selection(request: &RunRequest, policy: &ContextAssemblyPolicy) -> KnowledgePromptSelection {
     if !policy.include_knowledge {
-        return "当前阶段未注入知识摘要。".to_string();
+        return KnowledgePromptSelection {
+            digest: "当前阶段未注入知识摘要。".to_string(),
+            question_type: String::new(),
+            citations: String::new(),
+            match_reason: String::new(),
+        };
     }
-    project_status_knowledge_digest(request, policy).unwrap_or_else(|| knowledge_digest(request))
+    project_status_knowledge_selection(request, policy).unwrap_or_else(|| knowledge_selection(request, policy))
 }
 
-fn knowledge_digest(request: &RunRequest) -> String {
-    let hits = knowledge_hits(request);
-    if hits.is_empty() {
+fn knowledge_selection(request: &RunRequest, policy: &ContextAssemblyPolicy) -> KnowledgePromptSelection {
+    let pack = build_knowledge_pack(request, &request.user_input, 4);
+    KnowledgePromptSelection {
+        digest: format_knowledge_digest(&pack, policy),
+        question_type: pack.question_type,
+        citations: pack.citations.join(","),
+        match_reason: pack.match_reason,
+    }
+}
+
+fn format_knowledge_digest(pack: &KnowledgePack, policy: &ContextAssemblyPolicy) -> String {
+    if pack.top_hits.is_empty() {
         return "当前没有命中相关本地知识片段。".to_string();
     }
+    if prefers_knowledge_pack(policy) {
+        return format_knowledge_pack_digest(pack);
+    }
     summarize_text(
-        &hits
-            .into_iter()
+        &pack
+            .top_hits
+            .iter()
             .map(|hit| format!("{}: {}", hit.path, hit.snippet))
             .collect::<Vec<_>>()
             .join(" || "),
     )
 }
 
-fn project_status_knowledge_digest(request: &RunRequest, policy: &ContextAssemblyPolicy) -> Option<String> {
-    if policy.profile != "project_answer" || !is_project_status_query(&request.user_input) {
+fn prefers_knowledge_pack(policy: &ContextAssemblyPolicy) -> bool {
+    policy.profile == "ask_profile" || policy.profile == "learn_profile"
+}
+
+fn format_knowledge_pack_digest(pack: &KnowledgePack) -> String {
+    let top_hits = pack
+        .top_hits
+        .iter()
+        .map(|hit| format!("{}（{}）", hit.path, hit.use_for))
+        .collect::<Vec<_>>()
+        .join(" || ");
+    let supporting = pack
+        .supporting_hits
+        .iter()
+        .map(|hit| hit.path.clone())
+        .collect::<Vec<_>>()
+        .join("、");
+    summarize_text(&format!(
+        "knowledge pack：问题类型={}；命中理由={}；主命中={}；辅助命中={}；回答提示={}；引证={}",
+        pack.question_type,
+        pack.match_reason,
+        top_hits,
+        blank_pack_text(&supporting),
+        blank_pack_text(&pack.answer_hints.join(" | ")),
+        pack.citations.join("、")
+    ))
+}
+
+fn blank_pack_text(value: &str) -> &str {
+    if value.trim().is_empty() { "未提供" } else { value }
+}
+
+fn project_status_knowledge_selection(
+    request: &RunRequest,
+    policy: &ContextAssemblyPolicy,
+) -> Option<KnowledgePromptSelection> {
+    if policy.prompt_profile != "project_answer" || !is_project_status_query(&request.user_input) {
         return None;
     }
     let entries = preferred_project_status_paths(request)
         .into_iter()
         .filter_map(|path| status_digest_entry(&path, &request.user_input))
         .collect::<Vec<_>>();
-    (!entries.is_empty()).then(|| summarize_text(&entries.join(" || ")))
+    let citations = preferred_project_status_paths(request)
+        .into_iter()
+        .filter(|path| path.exists())
+        .take(3)
+        .map(|path| path.display().to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    (!entries.is_empty()).then(|| KnowledgePromptSelection {
+        digest: summarize_text(&entries.join(" || ")),
+        question_type: "project_status".to_string(),
+        citations,
+        match_reason: "当前问题更像项目状态问答，优先使用 current-state 与阶段文档。".to_string(),
+    })
 }
 
 fn is_project_status_query(user_input: &str) -> bool {
@@ -381,14 +518,6 @@ fn preferred_project_status_paths(request: &RunRequest) -> Vec<PathBuf> {
 fn status_digest_entry(path: &Path, query: &str) -> Option<String> {
     let content = fs::read_to_string(path).ok()?;
     Some(format!("{}: {}", path.display(), extract_snippet(&content, query)))
-}
-
-fn knowledge_hits(request: &RunRequest) -> Vec<crate::knowledge::KnowledgeHit> {
-    let direct_hits = search_knowledge(request, &request.user_input, 4);
-    if !direct_hits.is_empty() {
-        return direct_hits;
-    }
-    Vec::new()
 }
 
 fn selected_tool_preview(
@@ -501,7 +630,8 @@ mod tests {
     fn fills_skill_injection_fields_from_policy_and_hints() {
         let request = sample_request();
         let policy = ContextAssemblyPolicy {
-            profile: "agent_resolve".to_string(),
+            profile: "act_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
             include_session: true,
             include_memory: true,
             include_knowledge: true,
@@ -525,7 +655,8 @@ mod tests {
     fn disables_skill_fields_when_policy_disables_injection() {
         let request = sample_request();
         let policy = ContextAssemblyPolicy {
-            profile: "project_answer".to_string(),
+            profile: "ask_profile".to_string(),
+            prompt_profile: "project_answer".to_string(),
             include_session: false,
             include_memory: false,
             include_knowledge: false,
@@ -539,6 +670,7 @@ mod tests {
         let mut block = DynamicPromptBlock::default();
         fill_identity_fields(&mut block, &request, &policy);
         assert!(!block.skill_injection_enabled);
+        assert_eq!(block.prompt_profile, "project_answer");
         assert_eq!(block.injected_skill_level, "disabled");
         assert_eq!(block.injected_skill_ids, "none");
     }
@@ -551,7 +683,8 @@ mod tests {
             "MCP工具可自动执行或按策略拒绝：web/search - 搜索网页".to_string(),
         );
         let policy = ContextAssemblyPolicy {
-            profile: "agent_resolve".to_string(),
+            profile: "act_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
             include_session: true,
             include_memory: true,
             include_knowledge: true,
@@ -568,10 +701,37 @@ mod tests {
     }
 
     #[test]
+    fn fill_identity_fields_surfaces_injection_summary() {
+        let request = sample_request();
+        let policy = ContextAssemblyPolicy {
+            profile: "repair_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
+            include_session: true,
+            include_memory: true,
+            include_knowledge: false,
+            include_tool_preview: true,
+            skill_injection_enabled: true,
+            max_skill_level: "level1:index-summary".to_string(),
+            phase_label: "repair".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: true,
+        };
+        let mut block = DynamicPromptBlock::default();
+        fill_identity_fields(&mut block, &request, &policy);
+        assert_eq!(block.assembly_profile, "repair_profile");
+        assert_eq!(block.prompt_profile, "agent_resolve");
+        assert!(block.injection_summary.contains("session digest"));
+        assert!(block.injection_summary.contains("memory digest"));
+        assert!(block.injection_summary.contains("tool preview"));
+        assert!(block.injection_summary.contains("artifact hint"));
+    }
+
+    #[test]
     fn project_answer_status_digest_prefers_current_hermes_docs() {
         let request = status_request();
         let policy = ContextAssemblyPolicy {
-            profile: "project_answer".to_string(),
+            profile: "ask_profile".to_string(),
+            prompt_profile: "project_answer".to_string(),
             include_session: false,
             include_memory: false,
             include_knowledge: true,
@@ -582,23 +742,72 @@ mod tests {
             selection_reason: "test".to_string(),
             prefer_artifact_context: false,
         };
-        let digest = selected_knowledge_digest(&request, &policy);
-        assert!(digest.contains("11-hermes-rebuild"));
-        assert!(digest.contains("current-state"));
-        assert!(!digest.contains("docs\\07-test\\evidence"));
+        let knowledge = selected_knowledge_selection(&request, &policy);
+        assert!(knowledge.digest.contains("current-state"));
+        assert!(knowledge.digest.contains("current-state.md"));
+        assert!(!knowledge.digest.contains("docs\\07-test\\evidence"));
+        assert_eq!(knowledge.question_type, "project_status");
+        assert!(knowledge.match_reason.contains("项目状态问答"));
     }
 
     #[test]
-    fn selected_memory_digest_keeps_object_aware_marker() {
+    fn ask_profile_prefers_knowledge_pack_digest() {
+        let request = request_with_input("agent 是什么，为什么需要 memory 和 context engineering");
+        let policy = ContextAssemblyPolicy {
+            profile: "ask_profile".to_string(),
+            prompt_profile: "project_answer".to_string(),
+            include_session: false,
+            include_memory: false,
+            include_knowledge: true,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "answer".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let knowledge = selected_knowledge_selection(&request, &policy);
+        assert!(knowledge.digest.contains("knowledge pack"));
+        assert!(!knowledge.question_type.is_empty());
+    }
+
+    #[test]
+    fn learn_profile_prefers_knowledge_pack_digest() {
+        let request = request_with_input("请学习并整理 agent workflow 的可复用做法");
+        let policy = ContextAssemblyPolicy {
+            profile: "learn_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
+            include_session: false,
+            include_memory: false,
+            include_knowledge: true,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "learn".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: false,
+        };
+        let knowledge = selected_knowledge_selection(&request, &policy);
+        assert!(knowledge.digest.contains("knowledge pack"));
+        assert!(!knowledge.question_type.is_empty());
+    }
+
+    #[test]
+    fn selected_memory_digest_surfaces_route_metadata() {
         let request = memory_request("对象摘要");
         write_memory_entry_sqlite(&request, &sample_memory_entry("对象摘要")).unwrap();
         let policy = memory_policy();
         let memory = selected_memory_selection(&request, &policy);
-        assert!(memory.digest.contains("current memory object"));
-        assert!(memory.digest.contains("对象 1 条"));
-        assert!(memory.digest.contains("对象摘要"));
+        assert!(memory.digest.contains("记忆入口已按最小路由装配"));
+        assert!(memory.digest.contains("learn_route"));
+        assert!(memory.digest.contains("system views + history entries"));
         assert!(memory.has_current_objects);
         assert_eq!(memory.current_object_count, 1);
+        assert_eq!(memory.route, "learn_route");
+        assert_eq!(memory.selected_layers, "system views,history entries");
+        assert!(memory.match_reason.contains("学习沉淀"));
+        assert_eq!(memory.reuse_confidence, "high");
+        assert_eq!(memory.skipped_layers, "current memory object");
     }
 
     fn sample_request() -> RunRequest {
@@ -676,7 +885,8 @@ mod tests {
 
     fn memory_policy() -> ContextAssemblyPolicy {
         ContextAssemblyPolicy {
-            profile: "agent_resolve".to_string(),
+            profile: "learn_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
             include_session: false,
             include_memory: true,
             include_knowledge: false,

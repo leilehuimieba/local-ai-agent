@@ -30,16 +30,20 @@ fn render_hits(hits: &[crate::knowledge::KnowledgeHit]) -> String {
         .enumerate()
         .map(|(index, hit)| {
             format!(
-                "{}. {}\n   {}\n   来源分类：{}\n   来源类型：{}\n   知识类型：{}\n   可信度：{}\n   更新时间：{}\n   命中理由：{}",
+                "{}. {}\n   {}\n   来源分类：{}\n   来源类型：{}\n   来源归类：{}\n   知识类型：{}\n   用途标签：{}\n   可引证：{}\n   可信度：{}\n   更新时间：{}\n   命中理由：{}\n   匹配说明：{}",
                 index + 1,
                 hit.path,
                 hit.snippet,
                 hit.source_label,
                 hit.source_type,
+                hit.source_kind,
                 hit.knowledge_type,
+                hit.use_for,
+                yes_no(hit.citation_ready),
                 hit.confidence,
                 blank_value(&hit.updated_at),
-                hit.reason
+                hit.reason,
+                hit.match_reason
             )
         })
         .collect::<Vec<_>>()
@@ -48,4 +52,8 @@ fn render_hits(hits: &[crate::knowledge::KnowledgeHit]) -> String {
 
 fn blank_value(value: &str) -> &str {
     if value.trim().is_empty() { "未提供" } else { value }
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value { "是" } else { "否" }
 }

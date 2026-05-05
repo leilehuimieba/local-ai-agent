@@ -1,3 +1,7 @@
+mod read_route;
+
+pub(crate) use read_route::{MemoryRouteSelection, select_memory_route};
+
 use crate::capabilities::ToolExecutionTrace;
 use crate::contracts::RunRequest;
 use crate::events::timestamp_now;

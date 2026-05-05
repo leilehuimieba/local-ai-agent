@@ -19,8 +19,12 @@ pub fn observation_kind_for_event_type(event_type: &str) -> Option<&'static str>
     match event_type {
         "run_started" => Some("lifecycle_start"),
         "analysis_ready" => Some("lifecycle_analysis"),
+        "plan_iteration_started" => Some("lifecycle_plan_iteration_start"),
         "plan_ready" => Some("lifecycle_plan"),
         "action_completed" => Some("lifecycle_action"),
+        "plan_iteration_completed" => Some("lifecycle_plan_iteration_complete"),
+        "replan_requested" => Some("lifecycle_replan"),
+        "iteration_budget_exhausted" => Some("lifecycle_iteration_budget"),
         "verification_completed" => Some("lifecycle_verification"),
         "run_finished" => Some("lifecycle_finish"),
         _ => None,

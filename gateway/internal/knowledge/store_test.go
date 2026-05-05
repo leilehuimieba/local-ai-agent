@@ -74,3 +74,33 @@ func TestStore_MigrateFromJSON(t *testing.T) {
 	_, err = os.Stat(filepath.Join(oldDir, "ws_legacy.json"))
 	assert.True(t, os.IsNotExist(err))
 }
+
+func TestStore_SearchReranksTitleTagsAndCitationCount(t *testing.T) {
+	tmp := t.TempDir()
+	store := NewStore(tmp)
+
+	_, err := store.Create("ws1", CreateRequest{
+		Title:    "Agent workflow design",
+		Summary:  "runtime workflow pack",
+		Content:  "how to design agent workflow",
+		Category: "workflow",
+		Tags:     []string{"agent", "workflow"},
+	})
+	require.NoError(t, err)
+
+	item2, err := store.Create("ws1", CreateRequest{
+		Title:    "General note",
+		Summary:  "mentions workflow once",
+		Content:  "workflow",
+		Category: "note",
+		Tags:     []string{"misc"},
+	})
+	require.NoError(t, err)
+	require.NoError(t, store.IncrementCitationCount("ws1", item2.ID))
+	require.NoError(t, store.IncrementCitationCount("ws1", item2.ID))
+
+	items, err := store.Search("ws1", "agent workflow")
+	require.NoError(t, err)
+	require.Len(t, items, 2)
+	assert.Equal(t, "Agent workflow design", items[0].Title)
+}

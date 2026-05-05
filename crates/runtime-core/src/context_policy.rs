@@ -4,6 +4,7 @@ use crate::session::SessionMemory;
 #[derive(Clone, Debug)]
 pub(crate) struct ContextAssemblyPolicy {
     pub profile: String,
+    pub prompt_profile: String,
     pub include_session: bool,
     pub include_memory: bool,
     pub include_knowledge: bool,
@@ -16,191 +17,189 @@ pub(crate) struct ContextAssemblyPolicy {
 }
 
 pub(crate) fn planning_context_policy(user_input: &str, session: &SessionMemory) -> ContextAssemblyPolicy {
-    let mut policy = ContextAssemblyPolicy {
-        profile: "planning".to_string(),
-        include_session: true,
-        include_memory: true,
-        include_knowledge: needs_project_knowledge(user_input),
-        include_tool_preview: true,
-        skill_injection_enabled: true,
-        max_skill_level: "level1:index-summary".to_string(),
-        phase_label: "plan".to_string(),
-        selection_reason: "当前处于规划阶段，优先加载目标、短期状态和必要知识。".to_string(),
-        prefer_artifact_context: false,
-    };
-    apply_session_overrides(&mut policy, session);
-    policy
+    apply_session_overrides(base_ask_policy(user_input), session)
 }
 
 pub(crate) fn action_context_policy(action: &PlannedAction, session: &SessionMemory) -> ContextAssemblyPolicy {
-    let mut policy = match action {
-        PlannedAction::ProjectAnswer => project_answer_policy(),
-        PlannedAction::ContextAnswer => context_answer_policy(),
-        PlannedAction::AgentResolve => agent_resolve_policy(),
-        PlannedAction::SearchKnowledge { .. }
-        | PlannedAction::SearchSiyuanNotes { .. }
-        | PlannedAction::ReadSiyuanNote { .. }
-        | PlannedAction::WriteSiyuanKnowledge => knowledge_policy(),
-        PlannedAction::WriteMemory { .. } | PlannedAction::RecallMemory { .. } => memory_policy(),
-        PlannedAction::Explain => explain_policy(),
-        _ => workspace_policy(),
-    };
-    apply_session_overrides(&mut policy, session);
-    policy
+    apply_session_overrides(base_action_policy(action), session)
 }
 
 pub(crate) fn project_answer_policy() -> ContextAssemblyPolicy {
-    ContextAssemblyPolicy {
-        profile: "project_answer".to_string(),
-        include_session: false,
-        include_memory: false,
-        include_knowledge: true,
-        include_tool_preview: false,
-        skill_injection_enabled: false,
-        max_skill_level: "disabled".to_string(),
-        phase_label: "answer".to_string(),
-        selection_reason: "当前更像项目说明或状态问答，优先使用项目知识而不是会话流水。".to_string(),
-        prefer_artifact_context: false,
-    }
+    base_project_answer_policy()
 }
 
 pub(crate) fn context_answer_policy() -> ContextAssemblyPolicy {
+    base_context_answer_policy()
+}
+
+fn base_action_policy(action: &PlannedAction) -> ContextAssemblyPolicy {
+    match action {
+        PlannedAction::ProjectAnswer => base_project_answer_policy(),
+        PlannedAction::ContextAnswer => base_context_answer_policy(),
+        PlannedAction::Explain => explain_policy(),
+        PlannedAction::SearchKnowledge { .. }
+        | PlannedAction::SearchSiyuanNotes { .. }
+        | PlannedAction::ReadSiyuanNote { .. }
+        | PlannedAction::WriteSiyuanKnowledge
+        | PlannedAction::WriteMemory { .. }
+        | PlannedAction::RecallMemory { .. } => learn_policy(),
+        _ => act_policy(),
+    }
+}
+
+fn base_ask_policy(user_input: &str) -> ContextAssemblyPolicy {
+    if needs_project_knowledge(user_input) {
+        ContextAssemblyPolicy {
+            profile: "ask_profile".to_string(),
+            prompt_profile: "project_answer".to_string(),
+            include_session: true,
+            include_memory: false,
+            include_knowledge: true,
+            include_tool_preview: false,
+            skill_injection_enabled: false,
+            max_skill_level: "disabled".to_string(),
+            phase_label: "ask".to_string(),
+            selection_reason: "当前更像解释、比较或项目问答，优先加载会话摘要和项目知识最小包。".to_string(),
+            prefer_artifact_context: false,
+        }
+    } else {
+        base_context_answer_policy()
+    }
+}
+
+fn base_project_answer_policy() -> ContextAssemblyPolicy {
     ContextAssemblyPolicy {
-        profile: "context_answer".to_string(),
+        profile: "ask_profile".to_string(),
+        prompt_profile: "project_answer".to_string(),
+        include_session: true,
+        include_memory: false,
+        include_knowledge: true,
+        include_tool_preview: false,
+        skill_injection_enabled: false,
+        max_skill_level: "disabled".to_string(),
+        phase_label: "ask".to_string(),
+        selection_reason: "当前是项目说明或状态问答，优先使用会话摘要和项目知识片段。".to_string(),
+        prefer_artifact_context: false,
+    }
+}
+
+fn base_context_answer_policy() -> ContextAssemblyPolicy {
+    ContextAssemblyPolicy {
+        profile: "ask_profile".to_string(),
+        prompt_profile: "context_answer".to_string(),
         include_session: true,
         include_memory: false,
         include_knowledge: false,
         include_tool_preview: false,
         skill_injection_enabled: false,
         max_skill_level: "disabled".to_string(),
-        phase_label: "continue".to_string(),
-        selection_reason: "当前更像续推类问题，优先使用短期会话状态继续回答。".to_string(),
+        phase_label: "ask".to_string(),
+        selection_reason: "当前是续推、解释或轻问答，优先使用短期会话摘要直接回答。".to_string(),
         prefer_artifact_context: false,
     }
 }
 
-fn agent_resolve_policy() -> ContextAssemblyPolicy {
+fn act_policy() -> ContextAssemblyPolicy {
     ContextAssemblyPolicy {
-        profile: "agent_resolve".to_string(),
+        profile: "act_profile".to_string(),
+        prompt_profile: "agent_resolve".to_string(),
         include_session: true,
-        include_memory: true,
-        include_knowledge: true,
+        include_memory: false,
+        include_knowledge: false,
         include_tool_preview: true,
         skill_injection_enabled: true,
         max_skill_level: "level1:index-summary".to_string(),
-        phase_label: "execute".to_string(),
-        selection_reason: "当前需要较完整的执行上下文，保留会话、记忆、知识和工具预览。".to_string(),
+        phase_label: "act".to_string(),
+        selection_reason: "当前需要执行或推进动作，优先加载目标文件线索、工具预览和短期状态。".to_string(),
         prefer_artifact_context: false,
     }
 }
 
-fn knowledge_policy() -> ContextAssemblyPolicy {
+fn learn_policy() -> ContextAssemblyPolicy {
     ContextAssemblyPolicy {
-        profile: "knowledge".to_string(),
+        profile: "learn_profile".to_string(),
+        prompt_profile: "agent_resolve".to_string(),
         include_session: false,
-        include_memory: false,
+        include_memory: true,
         include_knowledge: true,
         include_tool_preview: false,
         skill_injection_enabled: false,
         max_skill_level: "disabled".to_string(),
-        phase_label: "knowledge".to_string(),
-        selection_reason: "当前是知识检索类动作，优先收紧到知识命中结果。".to_string(),
-        prefer_artifact_context: false,
-    }
-}
-
-fn memory_policy() -> ContextAssemblyPolicy {
-    ContextAssemblyPolicy {
-        profile: "memory".to_string(),
-        include_session: true,
-        include_memory: true,
-        include_knowledge: false,
-        include_tool_preview: false,
-        skill_injection_enabled: true,
-        max_skill_level: "level1:index-summary".to_string(),
-        phase_label: "memory".to_string(),
-        selection_reason: "当前是记忆读写动作，优先使用会话状态和长期记忆摘要。".to_string(),
+        phase_label: "learn".to_string(),
+        selection_reason: "当前是知识或记忆相关动作，优先收紧到可复用知识与记忆摘要。".to_string(),
         prefer_artifact_context: false,
     }
 }
 
 fn explain_policy() -> ContextAssemblyPolicy {
     ContextAssemblyPolicy {
-        profile: "explain".to_string(),
+        profile: "ask_profile".to_string(),
+        prompt_profile: "context_answer".to_string(),
         include_session: false,
         include_memory: false,
         include_knowledge: false,
         include_tool_preview: true,
         skill_injection_enabled: false,
         max_skill_level: "disabled".to_string(),
-        phase_label: "explain".to_string(),
-        selection_reason: "当前是在解释可用能力，只保留工具预览即可。".to_string(),
+        phase_label: "ask".to_string(),
+        selection_reason: "当前是在解释能力边界，只保留工具预览即可。".to_string(),
         prefer_artifact_context: false,
     }
 }
 
-fn workspace_policy() -> ContextAssemblyPolicy {
-    ContextAssemblyPolicy {
-        profile: "workspace".to_string(),
-        include_session: true,
-        include_memory: false,
-        include_knowledge: false,
-        include_tool_preview: false,
-        skill_injection_enabled: true,
-        max_skill_level: "level1:index-summary".to_string(),
-        phase_label: "execute".to_string(),
-        selection_reason: "当前是工作区动作，优先保留短期状态，避免引入无关知识噪声。".to_string(),
-        prefer_artifact_context: false,
-    }
-}
-
-fn apply_session_overrides(policy: &mut ContextAssemblyPolicy, session: &SessionMemory) {
+fn apply_session_overrides(mut policy: ContextAssemblyPolicy, session: &SessionMemory) -> ContextAssemblyPolicy {
     if has_pending_confirmation(session) {
-        apply_confirmation_override(policy);
+        apply_confirmation_override(&mut policy);
     }
     if has_handoff(session) {
-        apply_handoff_override(policy);
+        apply_handoff_override(&mut policy);
     }
     if needs_recovery(session) {
-        apply_recovery_override(policy);
+        apply_recovery_override(&mut policy);
     }
+    policy
 }
 
 fn apply_confirmation_override(policy: &mut ContextAssemblyPolicy) {
+    policy.profile = "repair_profile".to_string();
+    policy.prompt_profile = "agent_resolve".to_string();
     policy.include_session = true;
+    policy.include_memory = false;
+    policy.include_knowledge = false;
+    policy.include_tool_preview = false;
     policy.skill_injection_enabled = false;
     policy.max_skill_level = "disabled".to_string();
-    policy.phase_label = "confirmation_resume".to_string();
-    policy.selection_reason = "当前存在待确认事项，优先带入短期状态以恢复原主线。".to_string();
-    mark_profile(policy, "confirm");
+    policy.phase_label = "repair".to_string();
+    policy.selection_reason = "当前存在待确认事项，优先带入短期状态恢复原主线，不注入无关知识。".to_string();
+    policy.prefer_artifact_context = false;
 }
 
 fn apply_handoff_override(policy: &mut ContextAssemblyPolicy) {
+    policy.profile = "repair_profile".to_string();
+    policy.prompt_profile = "agent_resolve".to_string();
     policy.include_session = true;
     policy.include_memory = true;
+    policy.include_knowledge = false;
+    policy.include_tool_preview = true;
     policy.skill_injection_enabled = true;
     policy.max_skill_level = "level1:index-summary".to_string();
+    policy.phase_label = "repair".to_string();
+    policy.selection_reason = "当前存在长任务交接包，优先结合会话状态、记忆摘要和交接 artifact 续跑。".to_string();
     policy.prefer_artifact_context = true;
-    policy.phase_label = "handoff_resume".to_string();
-    policy.selection_reason = "当前存在长任务交接包，优先结合会话状态和交接 artifact 续跑。".to_string();
-    mark_profile(policy, "handoff");
 }
 
 fn apply_recovery_override(policy: &mut ContextAssemblyPolicy) {
+    policy.profile = "repair_profile".to_string();
+    policy.prompt_profile = "agent_resolve".to_string();
     policy.include_session = true;
     policy.include_memory = true;
+    policy.include_knowledge = false;
+    policy.include_tool_preview = true;
     policy.skill_injection_enabled = true;
     policy.max_skill_level = "level1:index-summary".to_string();
+    policy.phase_label = "repair".to_string();
+    policy.selection_reason = "当前存在失败或阻塞信号，优先加载短期状态、失败线索和最近交接信息。".to_string();
     policy.prefer_artifact_context = true;
-    policy.phase_label = "recovery".to_string();
-    policy.selection_reason = "当前存在失败或阻塞信号，优先加载短期状态、记忆和最近交接线索。".to_string();
-    mark_profile(policy, "recovery");
-}
-
-fn mark_profile(policy: &mut ContextAssemblyPolicy, suffix: &str) {
-    if !policy.profile.ends_with(suffix) {
-        policy.profile = format!("{}_{}", policy.profile, suffix);
-    }
 }
 
 fn needs_recovery(session: &SessionMemory) -> bool {
@@ -216,10 +215,9 @@ fn has_handoff(session: &SessionMemory) -> bool {
 }
 
 fn needs_project_knowledge(user_input: &str) -> bool {
-    let lower = user_input.to_lowercase();
     ["项目", "仓库", "架构", "文档", "知识", "思源", "阶段", "进度", "运行时"]
         .iter()
-        .any(|token| lower.contains(token))
+        .any(|token| user_input.contains(token))
 }
 
 #[cfg(test)]
@@ -228,17 +226,50 @@ mod tests {
     use crate::session::{SessionMemory, ShortTermMemory};
 
     #[test]
-    fn project_answer_disables_skill_injection() {
+    fn project_answer_uses_ask_profile() {
         let policy = project_answer_policy();
+        assert_eq!(policy.profile, "ask_profile");
+        assert_eq!(policy.prompt_profile, "project_answer");
         assert!(!policy.skill_injection_enabled);
-        assert_eq!(policy.max_skill_level, "disabled");
     }
 
     #[test]
-    fn agent_resolve_enables_level1_skill_injection() {
+    fn agent_resolve_uses_act_profile() {
         let policy = action_context_policy(&PlannedAction::AgentResolve, &empty_session());
-        assert!(policy.skill_injection_enabled);
-        assert_eq!(policy.max_skill_level, "level1:index-summary");
+        assert_eq!(policy.profile, "act_profile");
+        assert_eq!(policy.prompt_profile, "agent_resolve");
+        assert!(policy.include_tool_preview);
+    }
+
+    #[test]
+    fn knowledge_action_uses_learn_profile() {
+        let policy = action_context_policy(
+            &PlannedAction::SearchKnowledge {
+                query: "runtime".to_string(),
+            },
+            &empty_session(),
+        );
+        assert_eq!(policy.profile, "learn_profile");
+        assert!(policy.include_memory);
+        assert!(policy.include_knowledge);
+    }
+
+    #[test]
+    fn recovery_override_forces_repair_profile() {
+        let session = SessionMemory {
+            session_id: "session-1".to_string(),
+            short_term: ShortTermMemory {
+                open_issue: "temporary failure".to_string(),
+                last_run_status: "failed".to_string(),
+                ..Default::default()
+            },
+            recent_turns: Vec::new(),
+            compressed_summary: String::new(),
+        };
+        let policy = action_context_policy(&PlannedAction::AgentResolve, &session);
+        assert_eq!(policy.profile, "repair_profile");
+        assert_eq!(policy.phase_label, "repair");
+        assert!(!policy.include_knowledge);
     }
 
     fn empty_session() -> SessionMemory {

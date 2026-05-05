@@ -2,7 +2,7 @@ use crate::capabilities::{ToolDefinition, ToolExecutionTrace};
 use crate::checkpoint::load_matching_resume_checkpoint;
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::RunRequest;
-use crate::planner::PlannedAction;
+use crate::planner::{PlanEnvelope, PlannedAction, action_step_label};
 use crate::repo_context::{RepoContextLoadResult, load_repo_context};
 use crate::risk::RiskOutcome;
 use crate::run_recover_action::resumed_prepared_state;
@@ -29,6 +29,7 @@ pub(crate) struct RuntimeEnvelope {
 #[derive(Clone, Debug)]
 pub(crate) struct RuntimeRunState {
     pub envelope: RuntimeEnvelope,
+    pub plan_envelope: PlanEnvelope,
     pub action: PlannedAction,
     pub tool_call: ToolCall,
     pub task_title: String,
@@ -84,6 +85,113 @@ pub(crate) fn execute_stage(state: &mut RuntimeRunState) {
             trace.result.success,
         );
     }
+}
+
+pub(crate) fn should_replan(state: &RuntimeRunState) -> bool {
+    if knowledge_answer_verify_failed(state) {
+        return true;
+    }
+    matches!(
+        state.action,
+        PlannedAction::ReadFile { .. } | PlannedAction::ListFiles { .. }
+    ) && state.tool_trace.as_ref().is_some_and(|trace| trace.result.success)
+}
+
+pub(crate) fn replan_state(state: &RuntimeRunState, iteration_index: u8) -> Option<RuntimeRunState> {
+    let next_action = next_action_from_trace(state)?;
+    let mut next_state = state.clone();
+    next_state.action = next_action.clone();
+    next_state.tool_call.action = next_action.clone();
+    next_state.tool_call.spec =
+        crate::capabilities::resolve_tool_for_request(&next_state.envelope.request, &next_action);
+    next_state.task_title = crate::derive_task_title(&next_action, &next_state.envelope.request.user_input);
+    next_state.analysis_detail = format!(
+        "主循环基于上一步结果触发补充动作：{}。",
+        action_step_label(&next_action)
+    );
+    next_state.risk_outcome = crate::risk::assess_risk(&next_state.envelope.request, &next_action);
+    next_state.tool_trace = None;
+    next_state.verification_report = None;
+    next_state.plan_envelope.iteration_index = iteration_index;
+    next_state.plan_envelope.current_step = action_step_label(&next_action);
+    next_state.plan_envelope.remaining_steps = remaining_steps_for_action(&next_action);
+    Some(next_state)
+}
+
+pub(crate) fn budget_exhausted(state: &RuntimeRunState) -> bool {
+    state.plan_envelope.iteration_index >= state.plan_envelope.max_iterations
+}
+
+fn next_action_from_trace(state: &RuntimeRunState) -> Option<PlannedAction> {
+    if knowledge_answer_verify_failed(state) {
+        return Some(PlannedAction::SearchKnowledge {
+            query: state.envelope.request.user_input.clone(),
+        });
+    }
+    let trace = state.tool_trace.as_ref()?;
+    match &state.action {
+        PlannedAction::ListFiles { path } => next_read_action(path.as_deref(), &trace.result.final_answer),
+        PlannedAction::ReadFile { path } => next_list_action(path),
+        _ => None,
+    }
+}
+
+fn next_read_action(base: Option<&str>, answer: &str) -> Option<PlannedAction> {
+    let path = extract_candidate_path(answer, &["AGENTS.md", "README.md", "Cargo.toml"])?;
+    Some(PlannedAction::ReadFile {
+        path: join_base_path(base, &path),
+    })
+}
+
+fn next_list_action(path: &str) -> Option<PlannedAction> {
+    std::path::Path::new(path)
+        .parent()
+        .map(|item| item.display().to_string())
+        .map(|path| PlannedAction::ListFiles { path: Some(path) })
+}
+
+fn extract_candidate_path(answer: &str, names: &[&str]) -> Option<String> {
+    answer.lines().map(str::trim).find_map(|line| {
+        names
+            .iter()
+            .find(|name| line.contains(**name))
+            .map(|_| clean_path(line))
+    })
+}
+
+fn clean_path(line: &str) -> String {
+    line.trim_matches(|ch| ch == '-' || ch == '*' || ch == '`' || ch == ' ')
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .trim_matches(|ch| ch == '"' || ch == '\'')
+        .to_string()
+}
+
+fn join_base_path(base: Option<&str>, candidate: &str) -> String {
+    if candidate.contains(':') || candidate.starts_with('/') || candidate.starts_with('\\') {
+        return candidate.to_string();
+    }
+    match base {
+        Some(value) if !value.is_empty() => format!("{value}/{candidate}"),
+        _ => candidate.to_string(),
+    }
+}
+
+fn remaining_steps_for_action(action: &PlannedAction) -> Vec<String> {
+    match action {
+        PlannedAction::ReadFile { .. } => vec!["整理文件内容并判断是否还需补充目录观察".to_string()],
+        PlannedAction::ListFiles { .. } => vec!["从目录结果中选择候选文件继续读取".to_string()],
+        PlannedAction::SearchKnowledge { .. } => vec!["补充知识命中并重新形成带引证回答".to_string()],
+        _ => vec!["完成验证并决定是否收口".to_string()],
+    }
+}
+
+fn knowledge_answer_verify_failed(state: &RuntimeRunState) -> bool {
+    let Some(report) = state.verification_report.as_ref() else {
+        return false;
+    };
+    report.outcome.task_type == "knowledge_answer" && !report.outcome.passed
 }
 
 #[cfg(test)]

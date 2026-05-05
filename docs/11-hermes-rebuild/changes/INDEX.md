@@ -7,7 +7,16 @@
 
 ## 当前活跃 change
 
-1. 当前无活跃 change
+1. [AL-verify-matrix-minimal-20260505](AL-verify-matrix-minimal-20260505/) — P1：第五刀 verify 矩阵实现 change
+2. [AG-agent-loop-memory-knowledge-20260505](AG-agent-loop-memory-knowledge-20260505/) — Blueprint：Agent 回路、记忆路由与知识检索优化蓝图
+
+## 当前实现入口
+
+1. [AH-agent-loop-minimal-upgrade-20260505](AH-agent-loop-minimal-upgrade-20260505/) — P1：第一刀主循环最小升级实现 change，仅覆盖 `PlanEnvelope + 小步回路 + replan 事件`
+2. [AI-context-profile-upgrade-20260505](AI-context-profile-upgrade-20260505/) — P1：第二刀上下文 profile 实现 change，仅覆盖 `ask / act / repair / learn`
+3. [AJ-memory-minimal-routing-20260505](AJ-memory-minimal-routing-20260505/) — P1：第三刀记忆最小路由实现 change，仅覆盖 `何时读 / 读哪层 / 最小 digest / route metadata`
+4. [AK-knowledge-pack-minimal-20260505](AK-knowledge-pack-minimal-20260505/) — P1：第四刀知识检索增强实现 change，仅覆盖 `混合检索 + knowledge pack + citation-ready 输出`
+5. [AL-verify-matrix-minimal-20260505](AL-verify-matrix-minimal-20260505/) — P1：第五刀 verify 矩阵实现 change，仅覆盖 `知识回答主链优先验证 + verification metadata + replan/handoff 收口`
 
 ## 已完成 change
 
@@ -30,12 +39,12 @@
 
 1. [archive/2026-04-27/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-27/INDEX.md)（P/Q/R 产品化治理与模块化收口归档入口）
 2. [archive/2026-04-26/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-26/INDEX.md)（D~N 阶段收口项与 H-02/H-03 保留观察归档入口，共 26 项）
-2. [archive/2026-04-24/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
-3. [archive/2026-04-23/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
-4. [archive/2026-04-15/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
-5. [archive/2026-04-14/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
-6. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
-7. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（更早已收口 change 归档）
+3. [archive/2026-04-24/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
+4. [archive/2026-04-23/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
+5. [archive/2026-04-15/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
+6. [archive/2026-04-14/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
+7. [archive/2026-04-13/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-13/INDEX.md)（本轮文档治理收口归档）
+8. [archive/2026-04-12/INDEX](D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/archive/2026-04-12/INDEX.md)（更早已收口 change 归档）
 
 ## 选择规则
 

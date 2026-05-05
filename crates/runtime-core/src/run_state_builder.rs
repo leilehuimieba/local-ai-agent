@@ -2,7 +2,7 @@ use crate::capabilities::ToolDefinition;
 use crate::context_builder::{RuntimeContextEnvelope, build_runtime_context};
 use crate::context_policy::{action_context_policy, planning_context_policy};
 use crate::contracts::RunRequest;
-use crate::planner::{PlannedAction, analysis_summary};
+use crate::planner::{PlanEnvelope, PlannedAction, analysis_summary, initial_plan_envelope};
 use crate::repo_context::RepoContextLoadResult;
 use crate::risk::{RiskOutcome, assess_risk};
 use crate::session::{SessionMemory, record_planning_memory};
@@ -10,6 +10,7 @@ use crate::tool_registry::{ToolCall, runtime_tool_registry};
 
 #[derive(Clone, Debug)]
 pub(crate) struct PreparedRunState {
+    pub(crate) plan_envelope: PlanEnvelope,
     pub(crate) action: PlannedAction,
     pub(crate) tool_call: ToolCall,
     pub(crate) context_envelope: RuntimeContextEnvelope,
@@ -27,8 +28,10 @@ pub(crate) fn prepare_run_state(
     let context_envelope = planning_context(request, session_context, repo_context, visible_tools);
     let tool_call = runtime_tool_registry().plan_tool_call(request, &context_envelope);
     let action = tool_call.action.clone();
+    let plan_envelope = initial_plan_envelope(&action, &request.user_input);
     let execute_context = execution_context(request, session_context, repo_context, visible_tools, &action);
     PreparedRunState {
+        plan_envelope,
         context_envelope: execute_context,
         task_title: crate::derive_task_title(&action, &request.user_input),
         analysis_detail: analysis_summary(&action, session_context, &repo_context.snapshot),

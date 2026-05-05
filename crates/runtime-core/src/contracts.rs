@@ -197,6 +197,16 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub mode: String,
     #[serde(default)]
+    pub iteration_index: u32,
+    #[serde(default)]
+    pub max_iterations: u32,
+    #[serde(default)]
+    pub plan_goal: String,
+    #[serde(default)]
+    pub plan_current_step: String,
+    #[serde(default)]
+    pub plan_stop_condition: String,
+    #[serde(default)]
     pub session_summary: String,
     #[serde(default)]
     pub memory_digest: String,
@@ -207,7 +217,23 @@ pub struct RuntimeContextSnapshot {
     #[serde(default)]
     pub memory_current_object_count: usize,
     #[serde(default)]
+    pub memory_route: String,
+    #[serde(default)]
+    pub memory_selected_layers: String,
+    #[serde(default)]
+    pub memory_match_reason: String,
+    #[serde(default)]
+    pub memory_reuse_confidence: String,
+    #[serde(default)]
+    pub memory_skipped_layers: String,
+    #[serde(default)]
     pub knowledge_digest: String,
+    #[serde(default)]
+    pub knowledge_pack_question_type: String,
+    #[serde(default)]
+    pub knowledge_pack_citations: String,
+    #[serde(default)]
+    pub knowledge_pack_match_reason: String,
     #[serde(default)]
     pub tool_preview: String,
     #[serde(default)]
@@ -218,6 +244,8 @@ pub struct RuntimeContextSnapshot {
     pub cache_reason: String,
     #[serde(default)]
     pub assembly_profile: String,
+    #[serde(default)]
+    pub prompt_profile: String,
     #[serde(default)]
     pub includes_session: bool,
     #[serde(default)]
@@ -240,6 +268,8 @@ pub struct RuntimeContextSnapshot {
     pub phase_label: String,
     #[serde(default)]
     pub selection_reason: String,
+    #[serde(default)]
+    pub injection_summary: String,
     #[serde(default)]
     pub prefers_artifact_context: bool,
     #[serde(default)]
@@ -299,7 +329,19 @@ pub struct VerificationSnapshot {
     #[serde(default)]
     pub policy: String,
     #[serde(default)]
+    pub task_type: String,
+    #[serde(default)]
     pub evidence: Vec<String>,
+    #[serde(default)]
+    pub evidence_count: usize,
+    #[serde(default)]
+    pub has_citation: bool,
+    #[serde(default)]
+    pub fact_inference_split: bool,
+    #[serde(default)]
+    pub capability_risk_checked: bool,
+    #[serde(default)]
+    pub permission_boundary_respected: bool,
     #[serde(default)]
     pub skill_hit_effective: bool,
     #[serde(default)]

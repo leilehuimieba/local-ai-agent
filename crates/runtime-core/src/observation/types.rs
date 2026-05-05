@@ -1,10 +1,14 @@
 ﻿use serde::{Deserialize, Serialize};
 
-pub(crate) const LIFECYCLE_TARGET_EVENTS: [&str; 6] = [
+pub(crate) const LIFECYCLE_TARGET_EVENTS: [&str; 10] = [
     "run_started",
     "analysis_ready",
+    "plan_iteration_started",
     "plan_ready",
     "action_completed",
+    "plan_iteration_completed",
+    "replan_requested",
+    "iteration_budget_exhausted",
     "verification_completed",
     "run_finished",
 ];

@@ -1,8 +1,14 @@
+use crate::context_policy::ContextAssemblyPolicy;
 use crate::contracts::RunRequest;
 use crate::memory::search_memory_entries;
+use crate::memory_router::{MemoryRouteSelection, select_memory_route};
 use crate::memory_views::{SystemViewSummary, select_system_view_summaries};
 use crate::sqlite_store::list_current_memory_object_entries_limited_sqlite;
 use crate::text::summarize_text;
+
+const SYSTEM_LAYER: &str = "system views";
+const OBJECT_LAYER: &str = "current memory object";
+const HISTORY_LAYER: &str = "history entries";
 
 #[derive(Clone, Debug)]
 pub(crate) struct MemoryDigest {
@@ -10,32 +16,117 @@ pub(crate) struct MemoryDigest {
     pub has_system_views: bool,
     pub has_current_objects: bool,
     pub current_object_count: usize,
+    pub memory_route: String,
+    pub selected_layers: Vec<String>,
+    pub match_reason: String,
+    pub reuse_confidence: String,
+    pub skipped_layers: Vec<String>,
 }
 
 pub(crate) fn recall_memory_digest(request: &RunRequest, query: &str, limit: usize) -> MemoryDigest {
-    let object_entries = list_current_memory_object_entries_limited_sqlite(request, limit);
-    let entries = search_memory_entries(request, query, limit);
-    let system_views = select_system_view_summaries(request, query, limit);
-    MemoryDigest {
-        summary: digest_summary(&system_views, &object_entries, &entries),
-        has_system_views: !system_views.is_empty(),
-        has_current_objects: !object_entries.is_empty(),
-        current_object_count: object_entries.len(),
-    }
+    recall_memory_digest_with_policy(request, query, limit, None)
 }
 
-fn digest_summary(
+pub(crate) fn recall_memory_digest_with_policy(
+    request: &RunRequest,
+    query: &str,
+    limit: usize,
+    policy: Option<&ContextAssemblyPolicy>,
+) -> MemoryDigest {
+    let route = select_memory_route(request, query, policy);
+    let objects = list_current_memory_object_entries_limited_sqlite(request, limit);
+    let entries = search_memory_entries(request, query, limit);
+    let views = select_system_view_summaries(request, query, limit);
+    build_memory_digest(&route, &views, &objects, &entries)
+}
+
+fn build_memory_digest(
+    route: &MemoryRouteSelection,
     system_views: &[SystemViewSummary],
     object_entries: &[crate::memory::MemoryEntry],
     entries: &[crate::memory::MemoryEntry],
-) -> String {
-    if system_views.is_empty() && object_entries.is_empty() && entries.is_empty() {
-        return "当前没有命中相关长期记忆。".to_string();
+) -> MemoryDigest {
+    let selected = selected_digest_lines(route, system_views, object_entries, entries);
+    let fallback = fallback_digest_lines(system_views, object_entries, entries);
+    MemoryDigest {
+        summary: digest_summary(route, &selected, &fallback),
+        has_system_views: !system_views.is_empty(),
+        has_current_objects: !object_entries.is_empty(),
+        current_object_count: object_entries.len(),
+        memory_route: route.route.clone(),
+        selected_layers: route.selected_layers.clone(),
+        match_reason: route.match_reason.clone(),
+        reuse_confidence: route.reuse_confidence.clone(),
+        skipped_layers: route.skipped_layers.clone(),
     }
+}
+
+fn selected_digest_lines(
+    route: &MemoryRouteSelection,
+    system_views: &[SystemViewSummary],
+    object_entries: &[crate::memory::MemoryEntry],
+    entries: &[crate::memory::MemoryEntry],
+) -> Vec<String> {
+    let mut lines = Vec::new();
+    push_layer_lines(
+        &mut lines,
+        wants_layer(route, SYSTEM_LAYER),
+        system_views.iter().map(system_view_line),
+    );
+    push_layer_lines(
+        &mut lines,
+        wants_layer(route, OBJECT_LAYER),
+        object_entries.iter().map(memory_object_line),
+    );
+    push_layer_lines(
+        &mut lines,
+        wants_layer(route, HISTORY_LAYER),
+        entries.iter().map(memory_line),
+    );
+    lines.into_iter().take(3).collect()
+}
+
+fn fallback_digest_lines(
+    system_views: &[SystemViewSummary],
+    object_entries: &[crate::memory::MemoryEntry],
+    entries: &[crate::memory::MemoryEntry],
+) -> Vec<String> {
     let mut lines = system_views.iter().map(system_view_line).collect::<Vec<_>>();
     lines.extend(object_entries.iter().map(memory_object_line));
     lines.extend(entries.iter().map(memory_line));
-    summarize_text(&lines.join(" || "))
+    lines.into_iter().take(3).collect()
+}
+
+fn push_layer_lines<I>(lines: &mut Vec<String>, enabled: bool, values: I)
+where
+    I: Iterator<Item = String>,
+{
+    if enabled {
+        lines.extend(values);
+    }
+}
+
+fn wants_layer(route: &MemoryRouteSelection, layer: &str) -> bool {
+    route.selected_layers.iter().any(|item| item == layer)
+}
+
+fn digest_summary(route: &MemoryRouteSelection, selected: &[String], fallback: &[String]) -> String {
+    if selected.is_empty() && fallback.is_empty() {
+        return "当前没有命中相关长期记忆。".to_string();
+    }
+    let lines = preferred_lines(selected, fallback);
+    summarize_text(&format!(
+        "记忆路由：{}；选中层：{}；命中原因：{}；复用置信度：{}；摘要：{}",
+        route.route,
+        route.selected_layers.join(" + "),
+        route.match_reason,
+        route.reuse_confidence,
+        lines.join(" || ")
+    ))
+}
+
+fn preferred_lines<'a>(selected: &'a [String], fallback: &'a [String]) -> &'a [String] {
+    if selected.is_empty() { fallback } else { selected }
 }
 
 fn memory_object_line(entry: &crate::memory::MemoryEntry) -> String {
@@ -89,6 +180,7 @@ fn memory_updated_at(entry: &crate::memory::MemoryEntry) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::context_policy::ContextAssemblyPolicy;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::memory::MemoryEntry;
     use crate::sqlite_store::write_memory_entry_sqlite;
@@ -96,24 +188,33 @@ mod tests {
 
     #[test]
     fn recall_digest_includes_system_view_lines() {
-        let digest = recall_memory_digest(&sample_request(), "规则", 3);
+        let digest = recall_memory_digest(&sample_request("当前项目规则"), "规则", 3);
+        assert_eq!(digest.memory_route, "ask_route");
         assert!(digest.summary.contains("system://"));
     }
 
     #[test]
     fn recall_digest_surfaces_current_memory_object_block() {
-        let request = sample_request();
+        let request = sample_request("对象摘要");
         write_memory_entry_sqlite(&request, &sample_entry("memory-object-1", "对象摘要")).unwrap();
         let digest = recall_memory_digest(&request, "对象摘要", 3);
-        let object_entries = list_current_memory_object_entries_limited_sqlite(&request, 3);
-        assert!(!object_entries.is_empty());
-        assert!(memory_object_line(&object_entries[0]).contains("[object]"));
+        assert!(digest.selected_layers.contains(&OBJECT_LAYER.to_string()));
         assert!(digest.has_current_objects);
-        assert_eq!(digest.current_object_count, object_entries.len());
+        assert_eq!(digest.current_object_count, 1);
         assert!(digest.summary.contains("对象摘要"));
     }
 
-    fn sample_request() -> RunRequest {
+    #[test]
+    fn recall_digest_prefers_repair_route_with_policy() {
+        let request = sample_request("为什么上次失败");
+        write_memory_entry_sqlite(&request, &sample_entry("memory-object-1", "temporary failure")).unwrap();
+        let digest = recall_memory_digest_with_policy(&request, "为什么上次失败", 3, Some(&repair_policy()));
+        assert_eq!(digest.memory_route, "repair_route");
+        assert_eq!(digest.reuse_confidence, "high");
+        assert!(digest.match_reason.contains("恢复或失败处理"));
+    }
+
+    fn sample_request(user_input: &str) -> RunRequest {
         let root = std::env::temp_dir().join(format!("memory-recall-{}", crate::events::timestamp_now()));
         std::fs::create_dir_all(&root).unwrap();
         RunRequest {
@@ -121,7 +222,7 @@ mod tests {
             run_id: "run-test".to_string(),
             session_id: "session-test".to_string(),
             trace_id: "trace-test".to_string(),
-            user_input: "当前项目规则".to_string(),
+            user_input: user_input.to_string(),
             mode: "standard".to_string(),
             model_ref: ModelRef {
                 provider_id: "p".to_string(),
@@ -139,6 +240,22 @@ mod tests {
             resume_from_checkpoint_id: String::new(),
             resume_strategy: String::new(),
             confirmation_decision: None,
+        }
+    }
+
+    fn repair_policy() -> ContextAssemblyPolicy {
+        ContextAssemblyPolicy {
+            profile: "repair_profile".to_string(),
+            prompt_profile: "agent_resolve".to_string(),
+            include_session: true,
+            include_memory: true,
+            include_knowledge: false,
+            include_tool_preview: true,
+            skill_injection_enabled: true,
+            max_skill_level: "level1:index-summary".to_string(),
+            phase_label: "repair".to_string(),
+            selection_reason: "test".to_string(),
+            prefer_artifact_context: true,
         }
     }
 
