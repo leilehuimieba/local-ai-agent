@@ -39,6 +39,10 @@
   - `crates/runtime-core/src/verify.rs`
   - `command_execution_requires_output_and_artifact_signal` 通过
   - `command_execution_passes_with_output_and_artifact_signal` 通过
+- memory write verify policy：
+  - `crates/runtime-core/src/verify.rs`
+  - `memory_write_requires_summary_and_type_signal` 通过
+  - `memory_write_passes_with_summary_and_type_signal` 通过
 - verification metadata 写入：
   - `crates/runtime-core/src/run_verification_metadata.rs`
   - `writes_single_result_budget_fields_into_metadata` 已同时验证新字段写入
@@ -53,5 +57,5 @@
 
 - 对应阶段 Gate：阶段 I 自由迭代期
 - 当前覆盖情况：
-  - 已完成第五刀文档拆分、知识回答 verify、文件变更 verify、命令执行 verify 与 metadata 证据
-  - 记忆写入 / 浏览器交互的 verify 扩展仍后置
+  - 已完成第五刀文档拆分、知识回答 verify、文件变更 verify、命令执行 verify、记忆写入 verify 与 metadata 证据
+  - 浏览器交互的 verify 扩展仍后置
