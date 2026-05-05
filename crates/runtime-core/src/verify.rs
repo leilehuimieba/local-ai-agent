@@ -42,6 +42,8 @@ pub(crate) fn verify_tool_execution(tool_call: &ToolCall, trace: &ToolExecutionT
         verify_file_change(trace, &policy, evidence)
     } else if task_type == "command_execution" {
         verify_command_execution(trace, &policy, evidence)
+    } else if task_type == "memory_write" {
+        verify_memory_write(trace, &policy, evidence)
     } else if !trace.result.success {
         failed_outcome(trace, &policy, &task_type, evidence)
     } else if used_recovery(trace) {
@@ -364,6 +366,51 @@ fn verify_command_execution(trace: &ToolExecutionTrace, policy: &str, evidence: 
     }
 }
 
+fn verify_memory_write(trace: &ToolExecutionTrace, policy: &str, evidence: Vec<String>) -> VerificationOutcome {
+    let permission_ok = !guard_downgraded(trace);
+    let summary_visible = memory_write_summary_visible(trace);
+    let final_visible = memory_write_final_visible(trace);
+    let evidence_count = evidence.len();
+    if !trace.result.success || !permission_ok || !summary_visible || !final_visible || evidence_count < 2 {
+        return VerificationOutcome {
+            passed: false,
+            code: "memory_write_insufficient".to_string(),
+            policy: policy.to_string(),
+            task_type: "memory_write".to_string(),
+            evidence_count,
+            evidence,
+            has_citation: false,
+            fact_inference_split: false,
+            capability_risk_checked: true,
+            permission_boundary_respected: permission_ok,
+            skill_hit_effective: trace.result.success,
+            skill_hit_reason: "当前记忆写入缺少写入摘要或类型信号，不能按可复用沉淀收口。".to_string(),
+            guard_downgraded: guard_downgraded(trace),
+            guard_decision_ref: guard_decision_ref(trace),
+            summary: "记忆写入验证未通过：缺少写入摘要、类型或最终答复信号。".to_string(),
+            next_step: "建议先确认 write 成功摘要，再决定是否继续沉淀或回读。".to_string(),
+        };
+    }
+    VerificationOutcome {
+        passed: true,
+        code: "verified".to_string(),
+        policy: policy.to_string(),
+        task_type: "memory_write".to_string(),
+        evidence_count,
+        evidence,
+        has_citation: false,
+        fact_inference_split: true,
+        capability_risk_checked: true,
+        permission_boundary_respected: true,
+        skill_hit_effective: true,
+        skill_hit_reason: "当前记忆写入已具备写入摘要、类型和结果信号。".to_string(),
+        guard_downgraded: false,
+        guard_decision_ref: guard_decision_ref(trace),
+        summary: "记忆写入验证通过：已具备最小沉淀证据。".to_string(),
+        next_step: "当前记忆写入已满足最小收口条件，可继续后续判断。".to_string(),
+    }
+}
+
 fn has_citation(trace: &ToolExecutionTrace) -> bool {
     trace.result.summary.contains("知识引证：") && !trace.result.summary.contains("知识引证：未提供")
         || trace.result.final_answer.contains("docs/")
@@ -405,6 +452,19 @@ fn command_artifact_visible(trace: &ToolExecutionTrace) -> bool {
         || trace.result.artifact_path.is_some()
         || trace.result.single_result_budget_hit
         || trace.result.final_answer.contains("工作区：")
+}
+
+fn memory_write_summary_visible(trace: &ToolExecutionTrace) -> bool {
+    trace
+        .result
+        .memory_write_summary
+        .as_ref()
+        .is_some_and(|value| !value.trim().is_empty())
+}
+
+fn memory_write_final_visible(trace: &ToolExecutionTrace) -> bool {
+    trace.result.final_answer.contains("记忆写入完成")
+        && (trace.result.final_answer.contains("类型：") || trace.result.final_answer.contains("摘要："))
 }
 
 #[cfg(test)]
@@ -496,6 +556,22 @@ mod tests {
         assert!(report.outcome.passed);
         assert_eq!(report.outcome.task_type, "command_execution");
         assert_eq!(report.outcome.policy, "inspect_command_result");
+    }
+
+    #[test]
+    fn memory_write_requires_summary_and_type_signal() {
+        let report = verify_tool_execution(&memory_write_tool_call(), &memory_write_trace(false));
+        assert!(!report.outcome.passed);
+        assert_eq!(report.outcome.task_type, "memory_write");
+        assert_eq!(report.outcome.code, "memory_write_insufficient");
+    }
+
+    #[test]
+    fn memory_write_passes_with_summary_and_type_signal() {
+        let report = verify_tool_execution(&memory_write_tool_call(), &memory_write_trace(true));
+        assert!(report.outcome.passed);
+        assert_eq!(report.outcome.task_type, "memory_write");
+        assert_eq!(report.outcome.policy, "confirm_memory_persisted");
     }
 
     fn sample_tool_call() -> ToolCall {
@@ -600,6 +676,26 @@ mod tests {
                 risk_level: "medium".to_string(),
                 input_schema: "path_and_content".to_string(),
                 output_kind: "text".to_string(),
+                requires_confirmation: false,
+                model_schema: None,
+            },
+        }
+    }
+
+    fn memory_write_tool_call() -> ToolCall {
+        ToolCall {
+            action: PlannedAction::WriteMemory {
+                kind: "project_rule".to_string(),
+                summary: "记忆摘要".to_string(),
+                content: "记忆内容".to_string(),
+            },
+            spec: ToolDefinition {
+                tool_name: "memory_write".to_string(),
+                display_name: "写入记忆".to_string(),
+                category: "memory_write".to_string(),
+                risk_level: "medium".to_string(),
+                input_schema: "memory_entry".to_string(),
+                output_kind: "memory_write_result".to_string(),
                 requires_confirmation: false,
                 model_schema: None,
             },
@@ -728,6 +824,39 @@ mod tests {
                 success: true,
                 memory_write_summary: None,
                 reasoning_summary: "直接执行用户给定命令，并基于 stdout 或 stderr 生成摘要。".to_string(),
+                cache_status: "bypass".to_string(),
+                cache_reason: String::new(),
+            },
+        }
+    }
+
+    fn memory_write_trace(complete: bool) -> ToolExecutionTrace {
+        ToolExecutionTrace {
+            tool: memory_write_tool_call().spec.clone(),
+            action_summary: "写入长期记忆：记忆摘要".to_string(),
+            result: ToolCallResult {
+                summary: if complete {
+                    "已写入 `project_rule` 记忆：记忆摘要".to_string()
+                } else {
+                    "已尝试写入记忆".to_string()
+                },
+                final_answer: if complete {
+                    "记忆写入完成。\n类型：project_rule\n摘要：记忆摘要\n内容摘要：summary".to_string()
+                } else {
+                    "记忆写入完成。".to_string()
+                },
+                artifact_path: None,
+                detail_preview: "preview".to_string(),
+                raw_output_ref: None,
+                result_chars: 60,
+                single_result_budget_chars: 30000,
+                single_result_budget_hit: false,
+                error_code: None,
+                elapsed_ms: 10,
+                retryable: false,
+                success: true,
+                memory_write_summary: complete.then(|| "已写入 `project_rule` 记忆：记忆摘要".to_string()),
+                reasoning_summary: "按用户指定内容构造长期记忆记录并写入本地主存储。".to_string(),
                 cache_status: "bypass".to_string(),
                 cache_reason: String::new(),
             },
