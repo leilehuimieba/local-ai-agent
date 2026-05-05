@@ -26,7 +26,11 @@ pub(crate) fn tool_call_arguments_json(tool_call: &ToolCall) -> String {
     action_arguments_json(&tool_call.action)
 }
 
-fn action_arguments_json(action: &PlannedAction) -> String {
+pub(crate) fn action_arguments_json(action: &PlannedAction) -> String {
+    action_arguments_json_inner(action)
+}
+
+fn action_arguments_json_inner(action: &PlannedAction) -> String {
     match action {
         PlannedAction::RunCommand { command } => json!({ "command": command }).to_string(),
         PlannedAction::ReadFile { path } => json!({ "path": path }).to_string(),

@@ -13,6 +13,13 @@ pub(crate) fn execute_apply_patch(request: &RunRequest, diff: &str, dry_run: boo
     }
 }
 
+pub(crate) fn preview_apply_patch_report(request: &RunRequest, diff: &str) -> String {
+    match apply_patch_flow(request, diff, true) {
+        Ok(report) => report.raw_output(),
+        Err(error) => error.raw_output(),
+    }
+}
+
 fn apply_patch_flow(request: &RunRequest, diff: &str, dry_run: bool) -> Result<PatchReport, PatchFailure> {
     let patches = parse_unified_diff(diff)?;
     let mut changes = Vec::new();

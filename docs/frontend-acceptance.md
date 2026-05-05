@@ -238,6 +238,18 @@
 6. 手机窄屏下是否存在溢出、挤压或滚动错乱。
 7. 新能力是否补齐空态、错态和必要说明。
 
+## 当前人工验收入口
+
+1. 前端验收首页：`http://localhost:3000/acceptance`
+2. patch confirmation 验收页：`http://localhost:3000/acceptance/confirmation-preview`
+
+### patch confirmation 验收点
+
+1. structured preview 能直接展示 `patch_preview_report_json` 的文件级摘要。
+2. fallback summary 在缺少 dry-run report 时，能从 `tool_arguments_json.diff` 推断 `create / modify / delete / rename` 摘要。
+3. patch 确认按钮文案固定为“确认应用 / 取消应用”。
+4. 页面提示必须明确“确认应用后才会写入文件，取消应用不会修改工作区”。
+
 ## 最近增量修正留证
 
 ### 本轮已修复项

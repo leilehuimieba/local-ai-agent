@@ -1,8 +1,14 @@
 #[cfg(test)]
 mod tests {
+    use crate::capabilities::resolve_tool;
+    use crate::planner::PlannedAction;
+    use crate::query_engine::{RuntimeEnvelope, RuntimeRunState, bootstrap_run};
+    use crate::query_engine_testkit::testkit::{sample_repo_context, sample_session};
+    use crate::risk::assess_risk;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
-    use crate::query_engine::bootstrap_run;
     use crate::run_risk_flow::handle_risk_outcome;
+    use crate::skill_catalog::SkillCatalog;
+    use crate::tool_registry::ToolCall;
     use std::collections::BTreeMap;
 
     #[test]
@@ -39,6 +45,49 @@ mod tests {
         assert_eq!(
             result_error.metadata.get("permission_rule_layer").map(String::as_str),
             Some("high_risk_guard")
+        );
+    }
+
+    #[test]
+    fn confirmation_event_includes_tool_arguments_json() {
+        let request = sample_request("standard", "cmd: rm test.txt");
+        let state = bootstrap_run(&request);
+        let mut events = Vec::new();
+        let mut sequence = 1;
+        let response =
+            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
+        let event = response.events.iter().find(|item| item.event_type == "confirmation_required").expect("event");
+        assert_eq!(event.metadata.get("tool_name").map(String::as_str), Some("run_command"));
+        assert_eq!(
+            event.metadata.get("tool_arguments_json").map(String::as_str),
+            Some(r#"{"command":"rm test.txt"}"#)
+        );
+    }
+
+    #[test]
+    fn patch_confirmation_carries_preview_payload() {
+        let request = patch_request();
+        let action = PlannedAction::ApplyPatch {
+            diff: patch_diff().to_string(),
+            dry_run: false,
+        };
+        let state = patch_state(&request, action);
+        let mut events = Vec::new();
+        let mut sequence = 1;
+        let response =
+            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
+        let confirmation = response.confirmation_request.expect("confirmation request");
+        assert_eq!(confirmation.tool_name, "workspace_apply_patch");
+        assert!(confirmation.tool_arguments_json.contains(r#""dry_run":false"#));
+        assert!(confirmation.patch_preview_report_json.contains(r#""dry_run": true"#));
+        let event = response
+            .events
+            .iter()
+            .find(|item| item.event_type == "confirmation_required")
+            .expect("event");
+        assert_eq!(
+            event.metadata.get("patch_preview_report_json").map(String::as_str),
+            Some(confirmation.patch_preview_report_json.as_str())
         );
     }
 
@@ -109,5 +158,50 @@ mod tests {
             root_path: "D:/repo".to_string(),
             is_active: true,
         }
+    }
+
+    fn patch_request() -> RunRequest {
+        let root = std::env::temp_dir().join(format!("risk-patch-{}", unique_id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("sample.txt"), "hello\nold\nend").unwrap();
+        let mut request = sample_request("standard", "agent: please patch sample.txt");
+        request.workspace_ref.root_path = root.display().to_string();
+        request
+    }
+
+    fn patch_state(request: &RunRequest, action: PlannedAction) -> RuntimeRunState {
+        let base = bootstrap_run(request);
+        let tool_call = ToolCall {
+            spec: resolve_tool(&action),
+            action: action.clone(),
+        };
+        RuntimeRunState {
+            envelope: RuntimeEnvelope {
+                request: request.clone(),
+                session_context: sample_session(),
+                repo_context: sample_repo_context(),
+                skill_catalog: SkillCatalog::default(),
+                context_envelope: base.envelope.context_envelope,
+                visible_tools: base.envelope.visible_tools,
+            },
+            action: action.clone(),
+            tool_call,
+            task_title: "应用代码补丁".to_string(),
+            analysis_detail: "patch risk test".to_string(),
+            risk_outcome: assess_risk(request, &action),
+            tool_trace: None,
+            verification_report: None,
+        }
+    }
+
+    fn patch_diff() -> &'static str {
+        "--- a/sample.txt\n+++ b/sample.txt\n@@ -1,3 +1,3 @@\n hello\n-old\n+new\n end"
+    }
+
+    fn unique_id() -> u128 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
     }
 }

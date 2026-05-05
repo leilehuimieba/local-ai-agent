@@ -237,6 +237,9 @@ type ConfirmationRequest struct {
 	Hazards        []string `json:"hazards"`
 	Alternatives   []string `json:"alternatives"`
 	Kind           string   `json:"kind"`
+	ToolName       string   `json:"tool_name,omitempty"`
+	ToolArguments  string   `json:"tool_arguments_json,omitempty"`
+	PatchPreview   string   `json:"patch_preview_report_json,omitempty"`
 }
 
 type ConfirmationDecision struct {

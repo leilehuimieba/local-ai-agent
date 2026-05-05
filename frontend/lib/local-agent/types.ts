@@ -59,12 +59,15 @@ export interface RuntimeEvent {
 export interface Confirmation {
   confirmation_id: string
   run_id: string
-  risk_level: "low" | "medium" | "high" | "critical"
+  risk_level: "low" | "medium" | "high" | "critical" | "irreversible"
   action_summary: string
   reason: string
   target_paths: string[]
   hazards: string[]
   alternatives: string[]
+  tool_name?: string
+  tool_arguments_json?: string
+  patch_preview_report_json?: string
 }
 
 // Runtime State
