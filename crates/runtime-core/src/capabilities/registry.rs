@@ -84,6 +84,7 @@ fn make_tool(
         input_schema: input_schema.to_string(),
         output_kind: output_kind.to_string(),
         requires_confirmation,
+        model_schema: None,
     }
 }
 

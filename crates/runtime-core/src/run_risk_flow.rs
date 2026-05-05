@@ -196,16 +196,19 @@ fn enrich_confirmation_request(state: &RuntimeRunState, confirmation: &Confirmat
     enriched
 }
 
-fn confirmation_tool_metadata(
-    state: &RuntimeRunState,
-    confirmation: &ConfirmationRequest,
-) -> BTreeMap<String, String> {
+fn confirmation_tool_metadata(state: &RuntimeRunState, confirmation: &ConfirmationRequest) -> BTreeMap<String, String> {
     let mut metadata = BTreeMap::new();
     metadata.insert("tool_name".to_string(), confirmation.tool_name.clone());
-    metadata.insert("tool_display_name".to_string(), state.tool_call.spec.display_name.clone());
+    metadata.insert(
+        "tool_display_name".to_string(),
+        state.tool_call.spec.display_name.clone(),
+    );
     metadata.insert("tool_category".to_string(), state.tool_call.spec.category.clone());
     metadata.insert("output_kind".to_string(), state.tool_call.spec.output_kind.clone());
-    metadata.insert("tool_arguments_json".to_string(), confirmation.tool_arguments_json.clone());
+    metadata.insert(
+        "tool_arguments_json".to_string(),
+        confirmation.tool_arguments_json.clone(),
+    );
     if !confirmation.patch_preview_report_json.is_empty() {
         metadata.insert(
             "patch_preview_report_json".to_string(),

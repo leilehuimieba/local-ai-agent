@@ -610,6 +610,7 @@ mod tests {
                 input_schema: "command_text".to_string(),
                 output_kind: "text_preview".to_string(),
                 requires_confirmation: true,
+                model_schema: None,
             },
         }
     }

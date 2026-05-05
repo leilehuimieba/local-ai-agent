@@ -1,6 +1,6 @@
 use runtime_core::{
-    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, get_observations,
-    persist_lifecycle_observations, search_observations,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, get_observations, persist_lifecycle_observations,
+    search_observations,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -27,12 +27,7 @@ fn sample_events() -> Vec<RunEvent> {
         sample_event("analysis_ready", "Analyze", 2, "analysis for details"),
         sample_event("plan_ready", "Plan", 3, "plan details fetch"),
         sample_event("action_completed", "Observe", 4, "details api implemented"),
-        sample_event(
-            "verification_completed",
-            "Verify",
-            5,
-            "details verification passed",
-        ),
+        sample_event("verification_completed", "Verify", 5, "details verification passed"),
         sample_event("run_finished", "Finish", 6, "run finished"),
     ]
 }
@@ -80,11 +75,7 @@ fn main() {
     let request = sample_request();
     let _ = persist_lifecycle_observations(&request, &sample_events());
     let search = search_observations(&request, "details", 3);
-    let ids = search
-        .items
-        .iter()
-        .map(|item| item.observation_id)
-        .collect::<Vec<_>>();
+    let ids = search.items.iter().map(|item| item.observation_id).collect::<Vec<_>>();
     let report = get_observations(&request, &ids, 3);
     println!(
         "{}",

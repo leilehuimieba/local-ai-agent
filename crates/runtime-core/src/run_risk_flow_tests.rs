@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::capabilities::resolve_tool;
+    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::planner::PlannedAction;
     use crate::query_engine::{RuntimeEnvelope, RuntimeRunState, bootstrap_run};
     use crate::query_engine_testkit::testkit::{sample_repo_context, sample_session};
     use crate::risk::assess_risk;
-    use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
     use crate::run_risk_flow::handle_risk_outcome;
     use crate::skill_catalog::SkillCatalog;
     use crate::tool_registry::ToolCall;
@@ -54,9 +54,12 @@ mod tests {
         let state = bootstrap_run(&request);
         let mut events = Vec::new();
         let mut sequence = 1;
-        let response =
-            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
-        let event = response.events.iter().find(|item| item.event_type == "confirmation_required").expect("event");
+        let response = handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
+        let event = response
+            .events
+            .iter()
+            .find(|item| item.event_type == "confirmation_required")
+            .expect("event");
         assert_eq!(event.metadata.get("tool_name").map(String::as_str), Some("run_command"));
         assert_eq!(
             event.metadata.get("tool_arguments_json").map(String::as_str),
@@ -74,8 +77,7 @@ mod tests {
         let state = patch_state(&request, action);
         let mut events = Vec::new();
         let mut sequence = 1;
-        let response =
-            handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
+        let response = handle_risk_outcome(&request, &state, &mut events, &mut sequence).expect("confirmation");
         let confirmation = response.confirmation_request.expect("confirmation request");
         assert_eq!(confirmation.tool_name, "workspace_apply_patch");
         assert!(confirmation.tool_arguments_json.contains(r#""dry_run":false"#));

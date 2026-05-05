@@ -1,6 +1,5 @@
 use crate::contracts::{RunEvent, RunRequest};
 use crate::paths::observation_audit_file_path;
-use crate::sensitive_data::redact_sensitive_text;
 use crate::sqlite_store::{insert_observation_record, with_connection};
 use crate::storage::{append_jsonl, read_jsonl};
 use std::collections::BTreeSet;

@@ -1,6 +1,4 @@
-use runtime_core::{
-    ModelRef, ProviderRef, RunRequest, WorkspaceRef, simulate_run_with_runtime_events,
-};
+use runtime_core::{ModelRef, ProviderRef, RunRequest, WorkspaceRef, simulate_run_with_runtime_events};
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -43,13 +41,7 @@ fn sample_request() -> RunRequest {
 fn coverage(events: &[runtime_core::RunEvent], key: &str) -> usize {
     events
         .iter()
-        .filter(|event| {
-            event
-                .metadata
-                .get(key)
-                .map(|v| !v.is_empty())
-                .unwrap_or(false)
-        })
+        .filter(|event| event.metadata.get(key).map(|v| !v.is_empty()).unwrap_or(false))
         .count()
 }
 

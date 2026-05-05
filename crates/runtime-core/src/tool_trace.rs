@@ -154,6 +154,7 @@ mod tests {
             input_schema: "query".to_string(),
             output_kind: "text_preview".to_string(),
             requires_confirmation: false,
+            model_schema: None,
         };
     }
 }

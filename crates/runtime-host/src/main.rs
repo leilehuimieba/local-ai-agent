@@ -4,7 +4,7 @@ use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 use runtime_core::{
-    RUNTIME_NAME, RUNTIME_VERSION, RunRequest, RuntimeSnapshot, capability_catalog,
+    RUNTIME_NAME, RUNTIME_VERSION, RunRequest, RuntimeSnapshot, capability_catalog, capability_catalog_for_request,
     connector_catalog, simulate_run_with_runtime_events,
 };
 
@@ -129,6 +129,7 @@ fn route_response(request: &HttpRequest) -> String {
         ("GET", "/health") => health_response(),
         ("GET", "/v1/runtime/info") => info_response(),
         ("GET", "/v1/runtime/capabilities") => capabilities_response(query),
+        ("POST", "/v1/runtime/capabilities/query") => capabilities_query_response(&request.body),
         ("GET", "/v1/runtime/connectors") => connectors_response(),
         ("POST", "/v1/runtime/run") => run_response(&request.body),
         _ => not_found(),
@@ -165,6 +166,17 @@ fn info_response() -> String {
 fn capabilities_response(query: &str) -> String {
     let mode = query_param(query, "mode").unwrap_or("standard");
     match serde_json::to_string(&capability_catalog(mode)) {
+        Ok(payload) => json_response(200, payload),
+        Err(_) => json_response(500, "{\"error\":\"serialization_failed\"}".to_string()),
+    }
+}
+
+fn capabilities_query_response(body: &[u8]) -> String {
+    let request: RunRequest = match serde_json::from_slice(body) {
+        Ok(request) => request,
+        Err(_) => return json_response(400, "{\"error\":\"invalid_json\"}".to_string()),
+    };
+    match serde_json::to_string(&capability_catalog_for_request(&request)) {
         Ok(payload) => json_response(200, payload),
         Err(_) => json_response(500, "{\"error\":\"serialization_failed\"}".to_string()),
     }

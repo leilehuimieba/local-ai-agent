@@ -77,16 +77,9 @@ fn confirmation_event_metadata(confirmation: &ConfirmationRequest) -> BTreeMap<S
     ])
 }
 
-fn append_confirmation_tool_metadata(
-    metadata: &mut BTreeMap<String, String>,
-    confirmation: &ConfirmationRequest,
-) {
+fn append_confirmation_tool_metadata(metadata: &mut BTreeMap<String, String>, confirmation: &ConfirmationRequest) {
     insert_if_present(metadata, "tool_name", &confirmation.tool_name);
-    insert_if_present(
-        metadata,
-        "tool_arguments_json",
-        &confirmation.tool_arguments_json,
-    );
+    insert_if_present(metadata, "tool_arguments_json", &confirmation.tool_arguments_json);
     insert_if_present(
         metadata,
         "patch_preview_report_json",

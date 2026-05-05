@@ -5,17 +5,37 @@ import (
 	"net/http"
 	"time"
 
+	"local-agent/gateway/internal/config"
+	"local-agent/gateway/internal/contracts"
+	"local-agent/gateway/internal/mcp"
 	runtimeclient "local-agent/gateway/internal/runtime"
+	"local-agent/gateway/internal/service"
 	"local-agent/gateway/internal/state"
 )
 
 type catalogRouteDeps struct {
 	runtimeClient *runtimeclient.Client
 	state         *state.SettingsStore
+	repoRoot      string
+	appConfig     config.AppConfig
+	mcpManager    *mcp.Manager
 }
 
-func registerCatalogRoutes(mux *http.ServeMux, runtimeClient *runtimeclient.Client, settingsStore *state.SettingsStore) {
-	deps := catalogRouteDeps{runtimeClient: runtimeClient, state: settingsStore}
+func registerCatalogRoutes(
+	mux *http.ServeMux,
+	repoRoot string,
+	cfg config.AppConfig,
+	runtimeClient *runtimeclient.Client,
+	settingsStore *state.SettingsStore,
+	mgr *mcp.Manager,
+) {
+	deps := catalogRouteDeps{
+		runtimeClient: runtimeClient,
+		state:         settingsStore,
+		repoRoot:      repoRoot,
+		appConfig:     cfg,
+		mcpManager:    mgr,
+	}
 	mux.HandleFunc("/api/v1/capabilities", deps.handleCapabilities)
 	mux.HandleFunc("/api/v1/connectors", deps.handleConnectors)
 }
@@ -27,7 +47,7 @@ func (deps catalogRouteDeps) handleCapabilities(w http.ResponseWriter, r *http.R
 	}
 	ctx, cancel := runtimeCatalogContext(r.Context())
 	defer cancel()
-	payload, err := deps.runtimeClient.Capabilities(ctx, deps.capabilityMode(r))
+	payload, err := deps.runtimeClient.CapabilitiesForRequest(ctx, deps.capabilityRequest(r))
 	if err != nil {
 		writeRuntimeProxyError(w, err)
 		return
@@ -50,13 +70,25 @@ func (deps catalogRouteDeps) handleConnectors(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, payload)
 }
 
-func (deps catalogRouteDeps) capabilityMode(r *http.Request) string {
-	mode := r.URL.Query().Get("mode")
-	if mode != "" {
-		return mode
+func (deps catalogRouteDeps) capabilityRequest(r *http.Request) contracts.RunRequest {
+	mode, model, _, workspace, _, _, _, _, _ := deps.state.Snapshot()
+	if override := r.URL.Query().Get("mode"); override != "" {
+		mode = override
 	}
-	currentMode, _, _, _, _, _, _, _, _ := deps.state.Snapshot()
-	return currentMode
+	hints := service.RunContextHints(nil, deps.repoRoot, false)
+	hints = service.WithKnowledgeHints(hints, deps.appConfig.Siyuan)
+	hints = withMCPToolHints(hints, deps.mcpManager)
+	return contracts.RunRequest{
+		RequestID:    "capability-request",
+		RunID:        "capability-run",
+		SessionID:    "capability-session",
+		TraceID:      "capability-trace",
+		UserInput:    "capability catalog",
+		Mode:         mode,
+		ModelRef:     model,
+		WorkspaceRef: workspace,
+		ContextHints: hints,
+	}
 }
 
 func runtimeCatalogContext(parent context.Context) (context.Context, context.CancelFunc) {

@@ -42,7 +42,7 @@ pub(crate) fn bootstrap_run(request: &RunRequest) -> RuntimeRunState {
     let workspace_root = PathBuf::from(&request.workspace_ref.root_path);
     let repo_context = load_repo_context(&workspace_root);
     let skill_catalog = load_skill_catalog(request);
-    let visible_tools = runtime_tool_registry().visible_tools(&request.mode);
+    let visible_tools = runtime_tool_registry().request_visible_tools(request);
     let resume_checkpoint = load_matching_resume_checkpoint(request);
     let mut session_context = load_session_context(request);
     apply_resume_checkpoint(&mut session_context, resume_checkpoint.as_ref(), request);
@@ -121,7 +121,7 @@ mod tests {
         let checkpoint = sample_checkpoint_with_tool("run_command", r#"{"command":"echo restored"}"#);
         let session = sample_session();
         let repo = sample_repo_context();
-        let visible = runtime_tool_registry().visible_tools(&request.mode);
+        let visible = runtime_tool_registry().request_visible_tools(&request);
         let prepared = resumed_prepared_state(&request, &session, &repo, &visible, Some(&checkpoint));
         assert!(matches!(
             prepared.expect("prepared").action,

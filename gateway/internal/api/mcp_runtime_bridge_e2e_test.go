@@ -39,6 +39,23 @@ func TestMCPRuntimeBridgeE2EUsesGatewayPolicyAndAudit(t *testing.T) {
 	require.FileExists(t, repoRoot+"/logs/mcp-audit.jsonl")
 }
 
+func TestCapabilitiesAPIIncludesRequestScopedMCPCapability(t *testing.T) {
+	repoRoot := t.TempDir()
+	mcpServer := newFakeMCPServer(t)
+	defer mcpServer.Close()
+	mgr := newConnectedMCPManager(mcpServer.URL, e2eMCPPolicy())
+	rt := newCatalogRuntime(t)
+	cfg := sampleAppConfig()
+	gateway, gatewayToken := startBridgeGateway(t, repoRoot, cfg, rt.port, mgr)
+	defer gateway.Close()
+
+	resp := getCapabilities(t, gateway, gatewayToken)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	capture := rt.wait(t)
+	require.Contains(t, capture.request.ContextHints["mcp_tool_specs_json"], "mcp__docs__search")
+	require.Contains(t, capture.capabilityBody, `"capability_id":"mcp__docs__search"`)
+}
+
 func e2eMCPPolicy() []config.MCPToolPolicy {
 	return []config.MCPToolPolicy{{
 		ToolName: "search", Allowed: true, RiskLevel: "low",
@@ -83,6 +100,17 @@ func postBridgeChatRun(t *testing.T, server *http.Server, tok string) *http.Resp
 	return resp
 }
 
+func getCapabilities(t *testing.T, server *http.Server, tok string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, "http://"+server.Addr+"/api/v1/capabilities?mode=standard", nil)
+	require.NoError(t, err)
+	req.Header.Set("X-Local-Agent-Token", tok)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = resp.Body.Close() })
+	return resp
+}
+
 type bridgeRuntime struct {
 	port  int
 	token string
@@ -90,9 +118,10 @@ type bridgeRuntime struct {
 }
 
 type bridgeCapture struct {
-	request      contracts.RunRequest
-	bridgeStatus int
-	bridgeBody   string
+	request        contracts.RunRequest
+	bridgeStatus   int
+	bridgeBody     string
+	capabilityBody string
 }
 
 func newBridgeRuntime(t *testing.T) *bridgeRuntime {
@@ -100,6 +129,15 @@ func newBridgeRuntime(t *testing.T) *bridgeRuntime {
 	listener := localListener(t)
 	rt := &bridgeRuntime{port: listener.Addr().(*net.TCPAddr).Port, ch: make(chan bridgeCapture, 1)}
 	server := serveOnListener(t, listener, http.HandlerFunc(rt.handleRun))
+	t.Cleanup(func() { _ = server.Close() })
+	return rt
+}
+
+func newCatalogRuntime(t *testing.T) *bridgeRuntime {
+	t.Helper()
+	listener := localListener(t)
+	rt := &bridgeRuntime{port: listener.Addr().(*net.TCPAddr).Port, ch: make(chan bridgeCapture, 1)}
+	server := serveOnListener(t, listener, http.HandlerFunc(rt.handleCapabilities))
 	t.Cleanup(func() { _ = server.Close() })
 	return rt
 }
@@ -112,6 +150,19 @@ func (rt *bridgeRuntime) handleRun(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, contracts.RuntimeRunResponse{
 		Result: contracts.RunResult{RunID: request.RunID, Status: "completed", FinalStage: "Finish"},
 	})
+}
+
+func (rt *bridgeRuntime) handleCapabilities(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/v1/runtime/capabilities/query" {
+		http.NotFound(w, r)
+		return
+	}
+	var request contracts.RunRequest
+	_ = json.NewDecoder(r.Body).Decode(&request)
+	body := `{"items":[{"capability_id":"mcp__docs__search","display_name":"MCP: docs/search","domain":"mcp","risk_level":"low","input_schema":"{}","output_kind":"json_preview","side_effect_level":"local_side_effect","supports_modes":["observe","standard","full_access"],"verification_policy":"check_result_summary","connector_slot":"mcp_gateway","source_kind":"connector_backed","requires_confirmation":false}]}`
+	rt.ch <- bridgeCapture{request: request, capabilityBody: body}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(body))
 }
 
 func callBridgeFromRuntime(request contracts.RunRequest) (int, string) {

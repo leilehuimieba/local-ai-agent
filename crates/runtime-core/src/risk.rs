@@ -131,7 +131,10 @@ fn patch_confirmation(request: &RunRequest, action: &PlannedAction, diff: &str) 
             target_paths: patch_target_paths(request, &report),
             reversible: true,
             hazards: vec!["可能改写多个文件内容".to_string()],
-            alternatives: vec!["先查看 dry-run 预览".to_string(), "取消本次写入并调整 patch 参数".to_string()],
+            alternatives: vec![
+                "先查看 dry-run 预览".to_string(),
+                "取消本次写入并调整 patch 参数".to_string(),
+            ],
             tool_name: "workspace_apply_patch".to_string(),
             tool_arguments_json: action_arguments_json(action),
             patch_preview_report_json: report,
@@ -150,7 +153,10 @@ fn command_confirmation(request: &RunRequest, action: &PlannedAction, command: &
             target_paths: vec![request.workspace_ref.root_path.clone()],
             reversible: false,
             hazards: vec!["可能删除文件或造成环境状态变化".to_string()],
-            alternatives: vec!["先使用 list/read 检查目标".to_string(), "改成更安全的命令版本".to_string()],
+            alternatives: vec![
+                "先使用 list/read 检查目标".to_string(),
+                "改成更安全的命令版本".to_string(),
+            ],
             tool_name: "run_command".to_string(),
             tool_arguments_json: action_arguments_json(action),
             patch_preview_report_json: String::new(),
@@ -158,7 +164,11 @@ fn command_confirmation(request: &RunRequest, action: &PlannedAction, command: &
     )
 }
 
-fn base_high_risk_confirmation(request: &RunRequest, risk_level: &str, args: RiskConfirmationArgs) -> ConfirmationRequest {
+fn base_high_risk_confirmation(
+    request: &RunRequest,
+    risk_level: &str,
+    args: RiskConfirmationArgs,
+) -> ConfirmationRequest {
     ConfirmationRequest {
         confirmation_id: format!("confirm-risk-{}", request.run_id),
         run_id: request.run_id.clone(),

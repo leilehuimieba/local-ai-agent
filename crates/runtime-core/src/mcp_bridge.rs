@@ -1,3 +1,4 @@
+use crate::capabilities::ToolDefinition;
 use crate::contracts::RunRequest;
 use serde::Deserialize;
 use serde_json::Value;
@@ -16,8 +17,16 @@ pub(crate) struct MCPToolSpec {
     pub input_schema: Option<Value>,
 }
 
+#[cfg(test)]
 pub(crate) fn mcp_tool_schemas(request: &RunRequest) -> Vec<Value> {
-    mcp_tool_specs(request).iter().map(mcp_tool_schema).collect()
+    mcp_tool_definitions(request)
+        .iter()
+        .map(crate::capabilities::tool_definition_to_json_schema)
+        .collect()
+}
+
+pub(crate) fn mcp_tool_definitions(request: &RunRequest) -> Vec<ToolDefinition> {
+    mcp_tool_specs(request).iter().map(mcp_tool_definition).collect()
 }
 
 pub(crate) fn mcp_tool_specs(request: &RunRequest) -> Vec<MCPToolSpec> {
@@ -52,15 +61,24 @@ fn executable_spec(spec: &MCPToolSpec) -> bool {
         && mcp_action_parts(&spec.function_name).is_some()
 }
 
-fn mcp_tool_schema(spec: &MCPToolSpec) -> Value {
-    serde_json::json!({
-        "type": "function",
-        "function": {
-            "name": spec.function_name,
-            "description": mcp_description(spec),
-            "parameters": mcp_parameters(spec),
-        }
-    })
+fn mcp_tool_definition(spec: &MCPToolSpec) -> ToolDefinition {
+    ToolDefinition {
+        tool_name: spec.function_name.clone(),
+        display_name: format!("MCP: {}/{}", spec.server_id, spec.name),
+        category: "mcp".to_string(),
+        risk_level: spec.risk_level.clone(),
+        input_schema: mcp_input_schema(spec),
+        output_kind: "json_preview".to_string(),
+        requires_confirmation: spec.requires_confirmation,
+        model_schema: Some(serde_json::json!({
+            "type": "function",
+            "function": {
+                "name": spec.function_name,
+                "description": mcp_description(spec),
+                "parameters": mcp_parameters(spec),
+            }
+        })),
+    }
 }
 
 fn mcp_description(spec: &MCPToolSpec) -> String {
@@ -80,6 +98,10 @@ fn mcp_parameters(spec: &MCPToolSpec) -> Value {
         },
         "required": ["arguments"]
     })
+}
+
+fn mcp_input_schema(spec: &MCPToolSpec) -> String {
+    spec.input_schema.clone().unwrap_or_else(default_arg_schema).to_string()
 }
 
 fn default_arg_schema() -> Value {
