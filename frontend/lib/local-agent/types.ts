@@ -176,6 +176,26 @@ export interface MCPInfo {
   tools: MCPTool[]
 }
 
+export interface MCPAuditRecord {
+  audit_id: string
+  timestamp: string
+  server_id: string
+  tool_name: string
+  session_id?: string
+  run_id?: string
+  trace_id?: string
+  allowed: boolean
+  risk_level: string
+  requires_confirmation: boolean
+  audit_enabled: boolean
+  policy_source: string
+  arguments_hash: string
+  outcome: string
+  error_code?: string
+  error_message?: string
+  elapsed_ms: number
+}
+
 export interface Settings {
   mode: AgentMode
   model: Model

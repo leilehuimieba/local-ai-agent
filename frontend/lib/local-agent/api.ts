@@ -168,6 +168,26 @@ export type MCPTool = {
   policy_source: string;
 };
 
+export type MCPAuditRecord = {
+  audit_id: string;
+  timestamp: string;
+  server_id: string;
+  tool_name: string;
+  session_id?: string;
+  run_id?: string;
+  trace_id?: string;
+  allowed: boolean;
+  risk_level: string;
+  requires_confirmation: boolean;
+  audit_enabled: boolean;
+  policy_source: string;
+  arguments_hash: string;
+  outcome: string;
+  error_code?: string;
+  error_message?: string;
+  elapsed_ms: number;
+};
+
 export type RuntimeStatusInfo = {
   ok: boolean;
   name: string;
@@ -236,6 +256,18 @@ export async function fetchMCPTools(): Promise<MCPTool[]> {
   if (!response.ok) throw new Error(`获取 MCP 工具失败: ${await readError(response)}`);
   const data = await response.json() as { tools: MCPTool[] };
   return data.tools;
+}
+
+export async function fetchMCPAudits(params?: { limit?: number; server_id?: string; tool_name?: string }): Promise<MCPAuditRecord[]> {
+  const search = new URLSearchParams();
+  if (params?.limit) search.set("limit", String(params.limit));
+  if (params?.server_id) search.set("server_id", params.server_id);
+  if (params?.tool_name) search.set("tool_name", params.tool_name);
+  const suffix = search.size ? `?${search.toString()}` : "";
+  const response = await fetch(`${API_BASE}/api/v1/mcp/audits${suffix}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`获取 MCP 审计失败: ${await readError(response)}`);
+  const data = await response.json() as { items: MCPAuditRecord[] };
+  return data.items;
 }
 
 export async function callMCPTool(serverId: string, name: string, arguments_: Record<string, unknown>): Promise<unknown> {

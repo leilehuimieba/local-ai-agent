@@ -2,6 +2,11 @@ import Link from "next/link"
 
 const entries = [
   {
+    href: "/acceptance/mcp-observability",
+    title: "MCP 观测验收",
+    detail: "验收 MCP 运营视图的概览卡、筛选、只读列表、空态和缺字段态。",
+  },
+  {
     href: "/acceptance/confirmation-preview",
     title: "Patch Confirmation Preview",
     detail: "验收 structured preview、fallback 摘要，以及“确认应用 / 取消应用”交互文案。",

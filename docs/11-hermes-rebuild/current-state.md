@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
 更新时间：2026-05-05
-状态：`自由迭代期：AC-mcp-observability-ui-20260505 进行中`
+状态：`自由迭代期：AC-mcp-observability-ui-20260505 已收口`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
