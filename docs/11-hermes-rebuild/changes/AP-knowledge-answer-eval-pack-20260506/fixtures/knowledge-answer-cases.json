@@ -1,0 +1,86 @@
+[
+  {
+    "id": "KA-01",
+    "kind": "general_knowledge",
+    "question": "agent 是什么",
+    "expected_outcome": "pass",
+    "required_signals": [
+      "has_citation",
+      "fact_boundary_visible",
+      "advice_or_inference_visible"
+    ],
+    "preferred_citation_keywords": [
+      "docs/README.md",
+      "agent",
+      "memory"
+    ],
+    "notes": "用于验证最基础定义型问答不会退化成无引证空泛回答。"
+  },
+  {
+    "id": "KA-02",
+    "kind": "general_knowledge",
+    "question": "为什么 agent 需要 memory 和 context engineering",
+    "expected_outcome": "pass",
+    "required_signals": [
+      "has_citation",
+      "fact_boundary_visible",
+      "advice_or_inference_visible",
+      "verification_metadata_visible"
+    ],
+    "preferred_citation_keywords": [
+      "memory",
+      "context",
+      "knowledge"
+    ],
+    "notes": "用于验证记忆、上下文与知识装配主链是否还能被稳定解释。"
+  },
+  {
+    "id": "KA-03",
+    "kind": "engineering_judgement",
+    "question": "如何评估一个 agent 是否可靠",
+    "expected_outcome": "pass",
+    "required_signals": [
+      "has_citation",
+      "fact_boundary_visible",
+      "advice_or_inference_visible",
+      "verification_metadata_visible"
+    ],
+    "preferred_citation_keywords": [
+      "verify",
+      "evidence",
+      "evaluation"
+    ],
+    "notes": "用于验证系统能给出工程判断而不是只输出通用口号。"
+  },
+  {
+    "id": "KA-04",
+    "kind": "project_specific_judgement",
+    "question": "这个项目的 agent loop 为什么不该直接上多智能体",
+    "expected_outcome": "pass",
+    "required_signals": [
+      "has_citation",
+      "fact_boundary_visible",
+      "advice_or_inference_visible",
+      "verification_metadata_visible"
+    ],
+    "preferred_citation_keywords": [
+      "AG-agent-loop-memory-knowledge-20260505",
+      "多智能体",
+      "主循环"
+    ],
+    "notes": "用于验证知识回答能回到本项目蓝图与已冻结边界。"
+  },
+  {
+    "id": "KA-05",
+    "kind": "low_evidence",
+    "question": "这个项目里哪个云租户的生产 SLA 是多少",
+    "expected_outcome": "replan_or_handoff",
+    "required_signals": [
+      "no_fake_confident_answer",
+      "verification_failure_or_handoff_visible",
+      "permission_or_risk_boundary_visible"
+    ],
+    "preferred_citation_keywords": [],
+    "notes": "用于验证低证据问题不会被硬编成看似可信的结论。"
+  }
+]

@@ -1,0 +1,24 @@
+# 当前状态
+
+- 最近更新时间：2026-05-06
+- 状态：已签收（待归档）
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `docs/11-hermes-rebuild/current-state.md`
+- 已完成：已新建独立 change `AO-memory-writeback-governance-20260506`。
+- 已完成：已冻结本 change 只覆盖记忆写回治理，不回 `AJ`、`AK`、`AL`、`AN` 混做。
+- 已确认：本刀优先级是长期记忆写回分层、准入/拒绝规则、治理 metadata 与最小留痕。
+- 已完成：已盘点 `memory.rs`、`memory_router/mod.rs`、`memory_schema.rs`、`session.rs` 当前写回链。
+- 已确认：当前长期写回入口集中在 `memory_router/mod.rs::evaluate_finish_memory_writes`，默认会评估 `working_memory / long_term_memory / preference / failure_lesson / knowledge_base`。
+- 已确认：当前更像“按来源和 kind 写入”，还不是 `working_only / episodic_memory / semantic_or_procedural_memory` 三层治理。
+- 已确认：当前已有 `governance_version / governance_reason / governance_source / governance_at`，但还缺 `memory_write_layer / memory_write_decision / memory_reuse_value / memory_verification_gate / memory_duplicate_strategy` 这类专门写回治理字段。
+- 已确认：现有函数归层已收紧为 `working_memory_outcome -> working_only`、`write_failure_lesson_memory -> episodic_memory`、`write_preference_memory -> semantic_or_procedural_memory`、`write_long_term_memory -> 需新增最小判层决策`、`write_knowledge_record -> 继续留在 knowledge_base`。
+- 已确认：第一批字段落点已收紧为 `MemoryEntry / StructuredMemoryEntry` 持久化 4 字段，以及 `MemoryAuditTrail / MemoryWriteOutcome` 的事件透出；`memory_reuse_value / memory_verification_gate` 暂缓为第二批可选字段。
+- 已完成：`memory_write_layer / memory_write_decision / memory_write_reason / memory_duplicate_strategy` 已接入 `MemoryEntry`、`StructuredMemoryEntry`、SQLite schema/migration、storage migration 与回填逻辑。
+- 已完成：`working_memory_outcome / write_preference_memory / write_failure_lesson_memory / write_long_term_memory` 已接入最小写回决策；`workspace_summary` 会退回 `working_only`，偏好进入 `semantic_or_procedural_memory`，失败教训进入 `episodic_memory`，重复路径显式标记为 `duplicate_skipped`。
+- 已完成：`MemoryAuditTrail / MemoryWriteOutcome / run_memory_metadata` 已透出第一批治理字段。
+- 已完成：定向测试已通过：`cargo test -p runtime-core memory_`、`cargo test -p runtime-core run_finish_events`、`cargo test -p runtime-core memory_write_`、`cargo test -p runtime-core context_snapshot_keeps_memory_layer_fields`。
+- 已完成：已补最小留痕样例与事件断言：`rejected_workspace_summary_marks_working_only` 覆盖 `working_only + rejected`，`memory_event_keeps_write_governance_metadata` 覆盖 finish 事件 metadata 透出。
+- 已完成：全量回归 `cargo test -p runtime-core` 通过，`240 passed; 0 failed`。
+- 已完成：已补 `review.md`，整理本刀范围、证据、风险与提审结论。
+- 已完成：本轮已按既定范围签收，当前进入待归档状态。
+- 阻塞点：暂无。
+- 下一步：保持只读，等待归档；如后续要继续深化记忆治理，应单开新 change，不回 AO 扩 scope。

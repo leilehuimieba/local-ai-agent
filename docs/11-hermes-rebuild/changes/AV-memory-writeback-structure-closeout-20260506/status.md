@@ -1,0 +1,66 @@
+# 当前状态
+
+- 最近更新时间：2026-05-06
+- 状态：已收口（已切换下一主推进项）
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md`
+- 已完成：已根据 `AU-worktree-ownership-and-closeout-routing-20260506` 的裁决新建 `AV-memory-writeback-structure-closeout-20260506`。
+- 已完成：已确认本 change 只覆盖 memory 写回治理簇，不回 `AN / AM / AQ / AP / AS / AT` 混做。
+- 已完成：已确认当前最关键的三个热点文件为：
+  - `D:/newwork/本地智能体/crates/runtime-core/src/memory_router/mod.rs`（拆分前 744 行）
+  - `D:/newwork/本地智能体/crates/runtime-core/src/sqlite_store/mod.rs`（712 行）
+  - `D:/newwork/本地智能体/crates/runtime-core/src/memory.rs`（658 行）
+- 已完成：已确认 `AO` 的功能治理语义已经签收，`AV` 不负责重做语义，而是承接结构收口与热点治理。
+- 已完成：已补齐本 change 的五件套文档。
+- 已完成：已完成第一刀结构收口，只从 `memory_router/mod.rs` 抽出 `knowledge_write.rs`，未同时触碰 `sqlite_store/mod.rs` 与 `memory.rs`。
+- 已完成：`knowledge_write.rs` 当前承接知识层写回相关逻辑，包括：
+  - `write_knowledge_record`
+  - `build_knowledge_record`
+  - `knowledge_summary`
+  - `knowledge_type`
+  - knowledge skip / export / audit 辅助
+- 已完成：已完成第二刀结构收口，只从 `memory_router/mod.rs` 抽出 `write_policy.rs`，未同时触碰 `audit` / `entries` / `sqlite_store/mod.rs` / `memory.rs`。
+- 已完成：`write_policy.rs` 当前承接写回治理策略相关逻辑，包括：
+  - `auto_memory_layer`
+  - `auto_memory_reason`
+  - `govern_entry`
+  - `reject_entry_outcome`
+  - `duplicate_entry_outcome`
+  - `append_error_outcome`
+- 已完成：已完成第三刀结构收口，只从 `memory_router/mod.rs` 抽出 `audit.rs`，未同时触碰 `entries` / `sqlite_store/mod.rs` / `memory.rs`。
+- 已完成：`audit.rs` 当前承接审计留痕相关逻辑，包括：
+  - `working_memory_audit`
+  - `written_audit`
+  - `skipped_audit`
+  - `skipped_entry_audit`
+- 已完成：`D:/newwork/本地智能体/crates/runtime-core/src/memory_router/mod.rs` 当前为 `504` 行，进一步低于项目 `600` 行红线。
+- 已完成：第三刀后的两组定向测试已通过，当前行为未回归。
+- 已完成：已把 `AV` 主热点切换到 `sqlite_store/mod.rs`，不再优先继续 `memory_router` 第四刀。
+- 已完成：已从 `sqlite_store/mod.rs` 抽出 `schema.rs`，当前承接：
+  - `apply_schema`
+  - `run_memory_migrations`
+  - `apply_memory_migration`
+  - `SCHEMA_STATEMENTS`
+  - `MEMORY_MIGRATIONS`
+- 已完成：已从 `sqlite_store/mod.rs` 抽出 `cleanup_rules.rs`，当前承接：
+  - `is_runtime_generated_memory`
+  - `is_runtime_generated_knowledge`
+  - 相关低价值/回退噪声判定辅助
+- 已完成：`D:/newwork/本地智能体/crates/runtime-core/src/sqlite_store/mod.rs` 已从 `774` 行降到 `551` 行，已解除项目 `600` 行热点红线。
+- 已完成：`sqlite_store` 定向测试已通过，当前行为未回归。
+- 已完成：已把 `AV` 主热点切换到 `memory.rs`，不再优先继续 `sqlite_store` 细拆。
+- 已完成：已从 `memory.rs` 抽出 `policy.rs`，当前承接：
+  - `normalized_memory_entry`
+  - `should_skip_memory_entry`
+  - `should_archive_memory_entry`
+  - 标准化治理、归档判定与过滤策略辅助
+- 已完成：`D:/newwork/本地智能体/crates/runtime-core/src/memory.rs` 已从 `721` 行降到 `556` 行，已解除项目 `600` 行热点红线。
+- 已完成：`memory.rs` 定向测试已通过，当前行为未回归。
+- 已完成：已执行一轮 `AV` 最小聚合验证，覆盖 memory write / recall / object / checkpoint 主链，结果全绿。
+- 已完成：当前三个原始热点文件均已低于项目红线：
+  - `memory_router/mod.rs`：`504` 行
+  - `sqlite_store/mod.rs`：`551` 行
+  - `memory.rs`：`556` 行
+- 已完成：已切换下一主推进项到 `AW-post-av-closeout-routing-20260506`。
+- 当前进行中：无。
+- 阻塞点：无。
+- 下一步：保持只读；如后续要深化 memory 写回治理，应单开新 change，不回 `AV` 扩 scope。

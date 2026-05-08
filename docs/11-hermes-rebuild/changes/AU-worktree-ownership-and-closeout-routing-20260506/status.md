@@ -1,0 +1,24 @@
+# 当前状态
+
+- 最近更新时间：2026-05-06
+- 状态：已收口（已切换下一主推进项）
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md`
+- 已完成：已按项目推进默认顺序重新读取 `docs/README.md`、总路线、阶段计划、`current-state.md` 与 `changes/INDEX.md`。
+- 已完成：已执行 `git status --short` 与 `git diff --stat`，确认当前工作区并非单一 change 的残余，而是多组已完成/已归档 change 的未提交混合态。
+- 已完成：已抽样核对关键 diff，确认当前未提交改动至少可分为四个主簇：
+  - `AS / AT` 结构拆分簇
+  - `AO` 记忆写回治理簇
+  - `AN / AM / AL` 浏览器恢复 / 高风险交互 / verify 元数据簇
+  - `AQ / AP` 知识回答收口 / 回归包簇
+- 已完成：已确认 `query_engine.rs` 与 `verify.rs` 本身已完成拆分收口，不应再作为当前下一步实现入口。
+- 已完成：已确认当前超过 600 行的热点文件中，最值得先备案并后续切实现的是：
+  - `D:/newwork/本地智能体/crates/runtime-core/src/memory_router/mod.rs`
+  - `D:/newwork/本地智能体/crates/runtime-core/src/sqlite_store/mod.rs`
+  - `D:/newwork/本地智能体/crates/runtime-core/src/memory.rs`
+- 已完成：已确认 `scripts/run-knowledge-answer-eval-pack.ps1`、`scripts/README.md`、`docs/07-test/evidence/20260506-ap-knowledge-answer-eval-pack/`、`tmp/knowledge-answer-evals/` 属于当前有效回归入口与证据链，不应在本轮被误清理。
+- 已完成：已建立 `AU-worktree-ownership-and-closeout-routing-20260506` 正式 change 工作区。
+- 已完成：已裁决下一把正式实现 change 为 `AV-memory-writeback-structure-closeout-20260506`。
+- 已完成：当前主推进项已切换到 `D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/AV-memory-writeback-structure-closeout-20260506/`。
+- 当前进行中：无。
+- 阻塞点：无。
+- 下一步：保持只读；如继续实现，只在 `AV-memory-writeback-structure-closeout-20260506` 内推进。
