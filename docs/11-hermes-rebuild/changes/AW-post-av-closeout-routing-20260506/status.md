@@ -1,0 +1,35 @@
+# 当前状态
+
+- 最近更新时间：2026-05-06
+- 状态：进行中（已完成二次聚类，继续保持 routing）
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md`
+- 已完成：已复核 `AV` 收口条件，确认 `memory_router/mod.rs`、`sqlite_store/mod.rs`、`memory.rs` 三个原始热点文件均已低于项目红线。
+- 已完成：已复核 `AV` 聚合验证结果，确认 `memory write / recall / object / checkpoint` 主链全绿。
+- 已完成：已执行 `git status --short` 与 `git diff --stat`，确认当前工作区剩余改动更像多 change 收口混合态，而不是新的单一实现主簇。
+- 已完成：已建立 `AW-post-av-closeout-routing-20260506` 正式 change 工作区。
+- 已完成：已将当前主推进项从 `AV-memory-writeback-structure-closeout-20260506` 切换到 `AW-post-av-closeout-routing-20260506`。
+- 已完成：已将 `AV` 状态切为“已收口（已切换下一主推进项）”。
+- 已完成：已对剩余未提交改动完成二次聚类，当前可稳定分为三组候选：
+  - 浏览器恢复 / 高风险交互 / 验证透出簇：`events.rs`、`handoff.rs`、`run_failure_metadata.rs`、`run_finish_events.rs`、`run_verification_metadata.rs`、`browser-mcp-server.mjs`、`browser_mcp_runtime_bridge_e2e_test.go`
+  - 知识回答 / 回归包簇：`executors/project.rs`、`scripts/run-knowledge-answer-eval-pack.ps1`、`scripts/README.md`、`docs/07-test/evidence/20260506-ap-knowledge-answer-eval-pack/`
+  - 结构拆分 / 状态残余簇：`verify.rs`、`query_engine.rs`、对应新子目录与 `archive/2026-05-06/`、`changes/*/status.md`
+- 已完成：已裁决当前三组候选仍存在文档、脚本、归档与代码的交叉收口关系，暂不适合直接切新的单一实现型 change。
+- 已完成：已细化“知识回答 / 回归包簇”裁决，确认该簇当前不再构成新的知识实现主簇：
+  - `AP-knowledge-answer-eval-pack-20260506` 继续作为输入 / 回归资产保留；
+  - `AQ-knowledge-answer-closure-20260506` 已完成实现、验证与签收，当前属于已签收待归档实现簇；
+  - `crates/runtime-core/src/executors/project.rs` 的相关差异与 `AQ` 收口、`AP` 资产登记绑定，不适合再单独切新的 knowledge 实现型 change。
+- 已完成：已细化“浏览器恢复 / 高风险交互簇”裁决，确认该簇当前更像 `AM + AN` 的收口残余，而不是新的浏览器实现主簇：
+  - `AM-browser-risky-interaction-20260505` 已完成 `select / submit / upload` 最小 contract、risk/confirmation、verify 与 Browser MCP 联调；
+  - `AN-browser-recovery-governance-20260505` 已完成失败分型、单次 recovery 停止条件、handoff artifact 与最小失败链留痕；
+  - `events.rs`、`handoff.rs`、`run_failure_metadata.rs`、`run_verification_metadata.rs`、`frontend/scripts/browser-mcp-server.mjs`、`gateway/internal/api/browser_mcp_runtime_bridge_e2e_test.go` 的当前差异仍与 `AM / AN` 的既有实现和验证口径一致，不适合再单独切新的 browser 实现型 change。
+- 已完成：已细化“结构拆分 / 状态残余簇”裁决，确认该簇当前更像 `AS / AT / AV` 三把结构治理 change 的未提交残余：
+  - `AS-verify-structure-split-20260506` 已完成 `verify.rs` 模块拆分与定向验证；
+  - `AT-query-engine-structure-split-20260506` 已完成 `query_engine.rs` 拆分与定向验证，主文件已降到 `98` 行；
+  - `AV-memory-writeback-structure-closeout-20260506` 已完成 `memory_router / sqlite_store / memory` 三处热点解除与聚合验证；
+  - 当前这些文件的差异主要表现为模块新增、测试迁移、状态文档与归档入口未入库，不构成新的独立结构实现主簇。
+- 已完成：已补 `D:/newwork/本地智能体/docs/11-hermes-rebuild/changes/AW-post-av-closeout-routing-20260506/ownership-matrix.md`，把当前未提交路径按 `AW / AS / AT / AV / AM / AN / AP / AQ / AG / AL` 等既有 change 重新挂账。
+- 已完成：已给出建议入库顺序，当前建议先处理“状态口径 -> 已完成 change 文档 / 证据 -> 结构治理代码 -> 浏览器残余 -> 知识资产 -> 历史状态回写”。
+- 已发现并处理：`D:/newwork/本地智能体/docs/11-hermes-rebuild/stage-plans/阶段计划总表.md` 第 11 节仍保留“无当前活跃 change”的旧口径；该口径与 `current-state.md` 冲突，已按当前事实源规则回写为引用 `current-state.md` 的最新状态。
+- 当前进行中：继续保持 `AW` 为当前主推进项，优先做后续工作区收口路由与下一实现入口的再判断。
+- 阻塞点：无。
+- 下一步：继续保持 `AW` 为唯一 routing change；后续若要继续推进，应优先裁决“哪些 change 可正式保持只读等待归档 / 入库”，必要时再单开一把只负责分批入库 / 归档顺序的 closeout change。

@@ -1,0 +1,24 @@
+# 当前状态
+
+- 最近更新时间：2026-05-07
+- 状态：进行中
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md`
+- 已完成：
+  - AY change 已创建
+  - AX 的产品定义、插件信息架构与规则文档已可作为 AY 输入
+  - 前端总壳、核心视图与状态层最小落点已完成勘察
+  - AY 最小实现落点建议已补入独立文档
+  - AY 第一轮代码级改动点清单已补入独立文档
+  - 已新增 `frontend/components/local-agent/mainline-shell.tsx`
+  - 已在 `frontend/app/page.tsx` 挂入全局 `MainlineShell`
+  - 已在 `frontend/lib/local-agent/types.ts` 与 `store.ts` 增加最小主线壳状态
+  - 已补最小组件测试 `mainline-shell.test.tsx`
+  - `frontend` 现有测试已通过（5 files / 25 tests）
+- 进行中：
+  - 是否补首轮截图证据
+  - 是否进入 AZ 晚间证据包闭环
+- 阻塞点：
+  - “开机启动”与真正桌面级托盘 / 小组件形态仍未落到系统层实现
+- 下一步：
+  - 评估 AY 是否可视为首轮实现收口
+  - 若继续主线推进，切到 AZ 证据包闭环

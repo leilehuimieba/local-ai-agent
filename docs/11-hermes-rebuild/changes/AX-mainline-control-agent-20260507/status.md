@@ -1,0 +1,26 @@
+# 当前状态
+
+- 最近更新时间：2026-05-07
+- 状态：进行中
+- 状态口径：当前阶段 / 当前 Gate / 当前活跃 change 统一引用 `D:/newwork/本地智能体/docs/11-hermes-rebuild/current-state.md`
+- 已完成：
+  - 主线总控 Agent 的核心产品定义已在对话中收敛
+  - change 名称、目录与骨架已确定
+  - 一页纸产品定义已正式落到 `product-one-pager.md`
+  - 迁移边界与兼容策略已补入 `design.md`
+  - 桌面日历插件常驻闭环信息架构已补入独立文档
+  - 证据包与概率更新规则已补入独立文档
+  - 临时切主线与自动恢复规则已补入独立文档
+  - `current-state.md` 与 `changes/INDEX.md` 已切换到本 change
+  - 后续实现 change 切分建议已补入独立文档
+  - 现有能力分类表首版已补入独立文档
+- 进行中：
+  - 能力分类表细化
+  - 后续主推进项裁决
+- 阻塞点：
+  - 需要把能力分类继续细化到更具体模块与页面
+  - 需要在 AY / AZ / BA / BB / BC / BD 中裁决下一实现项
+- 下一步：
+  - 从 AY / AZ / BA / BB / BC / BD 中选出下一主推进项
+  - 继续细化能力分类表
+  - 进入下一实现 change 的 proposal / design / tasks
