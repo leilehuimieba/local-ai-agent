@@ -35,9 +35,9 @@ export function TopBar() {
       {/* Logo */}
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <span className="text-sm font-bold text-primary-foreground">LA</span>
+          <span className="text-sm font-bold text-primary-foreground">总控</span>
         </div>
-        <span className="text-lg font-semibold text-foreground hidden sm:inline">Local Agent</span>
+        <span className="text-lg font-semibold text-foreground hidden sm:inline">主线总控 Agent</span>
       </div>
 
       {/* View Tabs */}

@@ -3,6 +3,23 @@ export type RunState = "idle" | "running" | "awaiting_confirmation" | "completed
 export type ConnectionState = "connected" | "connecting" | "closed" | "disconnected"
 export type ViewType = "task" | "logs" | "knowledge" | "settings"
 export type AgentMode = "observe" | "standard" | "full_access"
+export type MainlineRiskLevel = "green" | "yellow" | "orange" | "red"
+export type MainlineProbabilityState = "known" | "unknown"
+export type KeyEvidenceSourceType = "mock_exam" | "real_exam"
+export type MainlineSwitchReviewStatus = "idle" | "approved" | "rejected"
+export type TimeBudgetLevel = "ample" | "steady" | "tight" | "critical"
+export type EveningReviewStatus = "pending" | "submitted" | "late_allowed" | "reroute"
+export type LateEvidenceDecision = "none" | "make_up_yesterday" | "continue_today"
+export type MainlineExecutionStatus = "idle" | "executing" | "completed" | "closed"
+export type PersonalizedTaskType =
+  | "vocabulary"
+  | "mock_exam"
+  | "reading"
+  | "listening"
+  | "writing_translation"
+  | "professional_skill"
+  | "algorithm"
+  | "other"
 
 // Result Block Types
 export interface CodeBlock {
@@ -83,6 +100,223 @@ export interface RuntimeState {
   composeValue: string
   criticalError: string | null
   submitError: string | null
+}
+
+export interface EvidencePacket {
+  didWhat: string
+  resultSummary: string
+  blockers: string
+  nextAdjustment: string
+}
+
+export interface KeyEvidenceEntry {
+  sourceType: KeyEvidenceSourceType
+  completedDate: string
+  durationMinutes: string
+  underExamCondition: boolean | null
+  totalScore: string
+  listeningScore: string
+  readingScore: string
+  writingTranslationScore: string
+  notes: string
+}
+
+export interface KeyEvidenceRecord {
+  sourceType: KeyEvidenceSourceType
+  completedDate: string
+  durationMinutes: number
+  underExamCondition: boolean
+  totalScore: number
+  listeningScore: number
+  readingScore: number
+  writingTranslationScore: number
+  notes: string
+  submittedAt: string
+  probabilityAfter: number | null
+}
+
+export interface MainlineSnapshot {
+  currentGoalLabel: string
+  probabilityValue: number | null
+  probabilityState: MainlineProbabilityState
+  riskLevel: MainlineRiskLevel
+  evidenceExpired: boolean
+  lastCriticalEvidenceAt: string | null
+  latestAdjustment: string
+}
+
+export interface TemporaryMainlineForm {
+  temporaryGoalLabel: string
+  reason: string
+  dueDate: string
+  urgent: boolean
+  important: boolean
+  insistAfterReject: boolean
+}
+
+export interface TemporaryMainlineHistory {
+  temporaryGoalLabel: string
+  originalGoalLabel: string
+  reason: string
+  dueDate: string
+  approvedByReview: boolean
+  userInsisted: boolean
+  switchedAt: string
+  restoredAt: string | null
+}
+
+export interface TemporaryMainlineState {
+  isActive: boolean
+  reviewStatus: MainlineSwitchReviewStatus
+  reviewFeedback: string | null
+  currentTemporaryGoal: string | null
+  originalSnapshot: MainlineSnapshot | null
+  currentSwitchStartedAt: string | null
+  activeRecordId: string | null
+  history: TemporaryMainlineHistory[]
+}
+
+export interface PersonalizedFollowupEntry {
+  taskType: PersonalizedTaskType
+  isCoreTask: boolean
+  completed: boolean | null
+  hasShortTermGain: boolean | null
+  resultNote: string
+}
+
+export interface PersonalizedFollowupRecord {
+  taskType: PersonalizedTaskType
+  isCoreTask: boolean
+  completed: boolean
+  hasShortTermGain: boolean
+  resultNote: string
+  submittedAt: string
+}
+
+export interface PersonalizedFollowupInsight {
+  updatedAt: string | null
+  basedOnCount: number
+  preferredTaskType: PersonalizedTaskType | null
+  boostTaskType: PersonalizedTaskType | null
+  riskTaskType: PersonalizedTaskType | null
+  recommendation: string
+}
+
+export interface TimeBlockDraft {
+  startTime: string
+  endTime: string
+  label: string
+}
+
+export interface TimeBlockItem {
+  startTime: string
+  endTime: string
+  label: string
+  durationMinutes: number
+}
+
+export interface TimeBudgetEntry {
+  coreTaskLabel: string
+  budgetChangeNote: string
+  timeBlockDraft: TimeBlockDraft
+}
+
+export interface TimeBudgetInsight {
+  updatedAt: string | null
+  totalAvailableMinutes: number
+  level: TimeBudgetLevel
+  recommendation: string
+}
+
+export interface EveningReviewState {
+  scheduledLabel: string
+  status: EveningReviewStatus
+  statusText: string
+  guidance: string
+  deadlineLabel: string | null
+  branchDecision: LateEvidenceDecision
+  branchText: string
+  lastReviewedAt: string | null
+  lastSubmittedForDate: string | null
+}
+
+export interface FollowthroughState {
+  lastActionLabel: string | null
+  nextActionLabel: string
+  nextActionHelper: string
+  planUsesLatestEvidence: boolean | null
+}
+
+export interface ExecutionState {
+  status: MainlineExecutionStatus
+  currentTaskLabel: string | null
+  todayCoreTaskCompleted: boolean
+  todayClosed: boolean
+  statusText: string
+  helperText: string
+  activeDate: string | null
+  needsReopen: boolean
+  staleFromDate: string | null
+}
+
+export interface NextDayPlanState {
+  generatedAt: string | null
+  ready: boolean
+  coreTaskLabel: string
+  supportTaskLabel: string
+  rationale: string
+  restoreNote: string | null
+  targetDate: string | null
+  basedOnEvidenceDate: string | null
+  needsRefresh: boolean
+  statusText: string
+  refreshReason: string | null
+  todayTaskLabel: string | null
+  takeoverStatus: "idle" | "pending_today" | "taken_over" | "completed" | "closed"
+  takeoverHint: string | null
+}
+
+export interface PlanHistoryItem {
+  targetDate: string
+  taskLabel: string
+  status: "taken_over" | "completed" | "closed"
+  statusText: string
+  updatedAt: string
+  reconciled: boolean
+  reconcileText: string
+}
+
+export interface MainlineShellState {
+  currentGoalLabel: string
+  probabilityValue: number | null
+  probabilityState: MainlineProbabilityState
+  riskLevel: MainlineRiskLevel
+  evidenceExpired: boolean
+  evidenceSubmitted: boolean
+  lastCriticalEvidenceAt: string | null
+  latestAdjustment: string
+  keyEvidenceFeedback: string | null
+  switchFeedback: string | null
+  evidencePacket: EvidencePacket
+  keyEvidenceEntry: KeyEvidenceEntry
+  keyEvidenceHistory: KeyEvidenceRecord[]
+  switchForm: TemporaryMainlineForm
+  temporaryMainline: TemporaryMainlineState
+  personalizedFeedback: string | null
+  personalizedEntry: PersonalizedFollowupEntry
+  personalizedHistory: PersonalizedFollowupRecord[]
+  personalizedInsight: PersonalizedFollowupInsight
+  timeBudgetFeedback: string | null
+  timeBudgetEntry: TimeBudgetEntry
+  timeBlocks: TimeBlockItem[]
+  timeBudgetInsight: TimeBudgetInsight
+  eveningReview: EveningReviewState
+  followthrough: FollowthroughState
+  execution: ExecutionState
+  nextDayPlan: NextDayPlanState
+  todayPlanStatusText: string
+  todayPlanReconcileText: string | null
+  recentPlanHistory: PlanHistoryItem[]
 }
 
 // Settings Types

@@ -4,6 +4,8 @@ import { useEffect } from "react"
 import { TopBar } from "@/components/local-agent/top-bar"
 import { LeftSidebar } from "@/components/local-agent/left-sidebar"
 import { RightDrawer } from "@/components/local-agent/right-drawer"
+import { MainlineShell } from "@/components/local-agent/mainline-shell"
+import { BrandStrip } from "@/components/local-agent/brand-strip"
 import { TaskView } from "@/components/local-agent/views/task-view"
 import { LogsView } from "@/components/local-agent/views/logs-view"
 import { KnowledgeView } from "@/components/local-agent/views/knowledge-view"
@@ -25,8 +27,11 @@ export default function LocalAgentPage() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
+        <MainlineShell />
+
         {/* Top Bar */}
         <TopBar />
+        <BrandStrip />
 
         {/* Content + Right Drawer */}
         <div className="flex flex-1 overflow-hidden">

@@ -1,4 +1,5 @@
 import { createServer } from "node:http"
+import { basename } from "node:path"
 import { chromium } from "@playwright/test"
 
 const port = readPort()
@@ -56,7 +57,7 @@ function initializeResult() {
 }
 
 function listTools() {
-  return [openPageTool(), readPageTool(), clickTool(), typeTool()]
+  return [openPageTool(), readPageTool(), clickTool(), typeTool(), selectTool(), submitTool(), uploadTool()]
 }
 
 function openPageTool() {
@@ -125,6 +126,56 @@ function typeTool() {
   }
 }
 
+function selectTool() {
+  return {
+    name: "select",
+    description: "Select an option in a visible select element.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_id: { type: "string" },
+        selector: { type: "string" },
+        value: { type: "string" },
+        timeout_ms: { type: "integer", minimum: 1000, maximum: 30000 },
+      },
+      required: ["page_id", "selector", "value"],
+    },
+  }
+}
+
+function submitTool() {
+  return {
+    name: "submit",
+    description: "Submit a visible form trigger such as a button.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_id: { type: "string" },
+        selector: { type: "string" },
+        timeout_ms: { type: "integer", minimum: 1000, maximum: 30000 },
+      },
+      required: ["page_id", "selector"],
+    },
+  }
+}
+
+function uploadTool() {
+  return {
+    name: "upload",
+    description: "Upload one or more local files into a visible file input.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page_id: { type: "string" },
+        selector: { type: "string" },
+        file_paths: { type: "array", items: { type: "string" }, minItems: 1 },
+        timeout_ms: { type: "integer", minimum: 1000, maximum: 30000 },
+      },
+      required: ["page_id", "selector", "file_paths"],
+    },
+  }
+}
+
 async function callTool(params) {
   const name = params?.name ?? ""
   if (name === "open_page") {
@@ -138,6 +189,15 @@ async function callTool(params) {
   }
   if (name === "type") {
     return typeIntoPage(params?.arguments)
+  }
+  if (name === "select") {
+    return selectInPage(params?.arguments)
+  }
+  if (name === "submit") {
+    return submitPage(params?.arguments)
+  }
+  if (name === "upload") {
+    return uploadToPage(params?.arguments)
   }
   return businessError("browser_tool_not_found", `tool not found: ${name}`)
 }
@@ -224,6 +284,59 @@ async function typeIntoPage(args) {
   }
 }
 
+async function selectInPage(args) {
+  const resolved = resolvePageAction(args)
+  const value = stringValue(args?.value)
+  if (resolved.error) {
+    return resolved.error
+  }
+  if (!value) {
+    return businessError("browser_value_required", "value is required")
+  }
+  const started = Date.now()
+  try {
+    const locator = await readyLocator(resolved.page, resolved.selector, actionTimeout(args))
+    await locator.selectOption(value, { timeout: actionTimeout(args) })
+    return await actionResult(resolved, started, { selected_value: value })
+  } catch (error) {
+    return actionError("select", error)
+  }
+}
+
+async function submitPage(args) {
+  const resolved = resolvePageAction(args)
+  if (resolved.error) {
+    return resolved.error
+  }
+  const started = Date.now()
+  try {
+    const locator = await readyLocator(resolved.page, resolved.selector, actionTimeout(args))
+    await locator.click({ timeout: actionTimeout(args) })
+    return await actionResult(resolved, started, { submitted: true })
+  } catch (error) {
+    return actionError("submit", error)
+  }
+}
+
+async function uploadToPage(args) {
+  const resolved = resolvePageAction(args)
+  const filePaths = readUploadPaths(args?.file_paths)
+  if (resolved.error) {
+    return resolved.error
+  }
+  if (filePaths.length === 0) {
+    return businessError("browser_file_required", "file_paths is required")
+  }
+  const started = Date.now()
+  try {
+    const locator = await readyLocator(resolved.page, resolved.selector, actionTimeout(args))
+    await locator.setInputFiles(filePaths, { timeout: actionTimeout(args) })
+    return await actionResult(resolved, started, uploadMeta(filePaths))
+  } catch (error) {
+    return actionError("upload", error)
+  }
+}
+
 function gotoOptions(args) {
   return {
     waitUntil: readWaitUntil(args?.wait_until),
@@ -279,6 +392,24 @@ function typedMeta(text, args) {
     typed_char_count: text.length,
     submitted: Boolean(args?.submit),
   }
+}
+
+function uploadMeta(filePaths) {
+  return {
+    uploaded_file_count: filePaths.length,
+    uploaded_files: filePaths.map(fileLabel),
+  }
+}
+
+function readUploadPaths(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.map(stringValue).filter(Boolean)
+}
+
+function fileLabel(value) {
+  return basename(value)
 }
 
 async function readyLocator(page, selector, timeout) {

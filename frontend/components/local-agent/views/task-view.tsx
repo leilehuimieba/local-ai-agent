@@ -44,6 +44,7 @@ import { useSessionEventStream } from "@/hooks/useSessionEventStream"
 import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
 import { LightweightMarkdown } from "@/components/local-agent/markdown"
 import { DiffPreview, DiffPreviewReportCard, inferDiffPreviewReport } from "@/components/local-agent/diff-preview"
+import { TaskEntryCard } from "@/components/local-agent/task-entry-card"
 import { toast } from "sonner"
 
 const quickPrompts = [
@@ -324,11 +325,12 @@ export function TaskView() {
             </div>
           </div>
           <h2 className="text-xl font-semibold text-foreground mb-2 text-balance text-center">
-            需要我做什么？
+            先守住当前主目标
           </h2>
           <p className="text-sm text-muted-foreground mb-8 text-center">
-            开始对话或选择下方快捷操作
+            主入口优先服务主目标接管、证据闭环与临时切主线，其他能力继续保留但降级为辅助入口。
           </p>
+          <TaskEntryCard />
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             {quickPrompts.map((prompt) => {
               const Icon = prompt.icon

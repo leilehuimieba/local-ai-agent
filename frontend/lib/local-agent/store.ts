@@ -11,8 +11,14 @@ import type {
   LogRun,
   Memory,
   ViewType,
+  MainlineShellState,
+  MainlineRiskLevel,
+  KeyEvidenceEntry,
 } from "./types"
 import { submitChatRun, submitChatCancel, submitConfirmationDecision, type SubmitChatRunPayload, fetchKnowledgeItems, fetchSettings, fetchLogs, fetchMemories, deleteMemory, fetchProviderSettings, updateSettings, type ProviderSettingsItem, type SettingsResponse, fetchSessionMessages, addSessionMessage } from "./api"
+import { createUIMainlineState } from "./mainline-default-state"
+import { createMainlineActions } from "./mainline-actions"
+import { createUILayoutActions } from "./layout-actions"
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)
@@ -432,36 +438,67 @@ function metadataList(metadata: Record<string, unknown>, key: string) {
 }
 
 // UI Store
-interface UIStore {
+export interface UIStore {
   activeView: ViewType
   leftSidebarExpanded: boolean
   rightDrawerOpen: boolean
   mobileMenuOpen: boolean
   mobileDrawerOpen: boolean
+  mainlineShell: MainlineShellState
+  mainlineExpanded: boolean
+  evidencePanelOpen: boolean
+  keyEvidencePanelOpen: boolean
+  switchPanelOpen: boolean
+  personalizedPanelOpen: boolean
+  timeBudgetPanelOpen: boolean
   setActiveView: (view: ViewType) => void
   toggleLeftSidebar: () => void
   toggleRightDrawer: () => void
   setRightDrawerOpen: (open: boolean) => void
   setMobileMenuOpen: (open: boolean) => void
   setMobileDrawerOpen: (open: boolean) => void
+  setMainlineExpanded: (open: boolean) => void
+  setMainlineGoal: (label: string) => void
+  setMainlineProbability: (value: number, riskLevel: MainlineRiskLevel) => void
+  refreshMainlineEvidenceState: () => void
+  setEvidencePanelOpen: (open: boolean) => void
+  setKeyEvidencePanelOpen: (open: boolean) => void
+  setSwitchPanelOpen: (open: boolean) => void
+  setPersonalizedPanelOpen: (open: boolean) => void
+  setTimeBudgetPanelOpen: (open: boolean) => void
+  updateEvidencePacket: (patch: Partial<MainlineShellState["evidencePacket"]>) => void
+  submitEvidencePacket: () => void
+  updateKeyEvidenceEntry: (patch: Partial<KeyEvidenceEntry>) => void
+  submitKeyEvidenceEntry: () => void
+  updateSwitchForm: (patch: Partial<MainlineShellState["switchForm"]>) => void
+  submitTemporaryMainlineSwitch: () => void
+  restoreOriginalMainline: () => void
+  updatePersonalizedEntry: (patch: Partial<MainlineShellState["personalizedEntry"]>) => void
+  submitPersonalizedEntry: () => void
+  updateTimeBudgetEntry: (patch: Partial<MainlineShellState["timeBudgetEntry"]>) => void
+  updateTimeBlockDraft: (patch: Partial<MainlineShellState["timeBudgetEntry"]["timeBlockDraft"]>) => void
+  submitTimeBudgetEntry: () => void
+  markTodayCoreTaskCompleted: () => void
+  closeToday: () => void
+  generateNextDayPlan: () => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  activeView: "task",
-  leftSidebarExpanded: false,
-  rightDrawerOpen: true,
-  mobileMenuOpen: false,
-  mobileDrawerOpen: false,
-
-  setActiveView: (activeView) => set({ activeView }),
-  toggleLeftSidebar: () =>
-    set((state) => ({ leftSidebarExpanded: !state.leftSidebarExpanded })),
-  toggleRightDrawer: () =>
-    set((state) => ({ rightDrawerOpen: !state.rightDrawerOpen })),
-  setRightDrawerOpen: (rightDrawerOpen) => set({ rightDrawerOpen }),
-  setMobileMenuOpen: (mobileMenuOpen) => set({ mobileMenuOpen }),
-  setMobileDrawerOpen: (mobileDrawerOpen) => set({ mobileDrawerOpen }),
+  ...createUIBaseState(),
+  ...createUIMainlineState(),
+  ...createUILayoutActions(set),
+  ...createMainlineActions(set),
 }))
+
+function createUIBaseState() {
+  return {
+    activeView: "task" as const,
+    leftSidebarExpanded: false,
+    rightDrawerOpen: true,
+    mobileMenuOpen: false,
+    mobileDrawerOpen: false,
+  }
+}
 
 // Settings Store
 interface SettingsStore extends Settings {

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Local Agent - AI Workspace',
-  description: 'Local-first intelligent assistant for your tasks',
+  title: '主线总控 Agent',
+  description: '轻量常驻、证据驱动的主线总控工作台',
   generator: 'v0.app',
   icons: {
     icon: [
