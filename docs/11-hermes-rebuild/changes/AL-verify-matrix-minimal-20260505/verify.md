@@ -43,6 +43,15 @@
   - `crates/runtime-core/src/verify.rs`
   - `memory_write_requires_summary_and_type_signal` 通过
   - `memory_write_passes_with_summary_and_type_signal` 通过
+- browser interaction verify policy：
+  - `crates/runtime-core/src/verify.rs`
+  - `browser_interaction_requires_state_target_and_risk_signal` 通过
+  - `browser_interaction_passes_with_state_target_and_risk_signal` 通过
+- browser interaction replan：
+  - `crates/runtime-core/src/query_engine.rs`
+  - `browser_verify_failure_requests_replan` 通过
+  - `browser_verify_failure_replans_to_read_page` 通过
+  - `browser_read_page_failure_stops_replan_and_handoffs` 通过
 - verification metadata 写入：
   - `crates/runtime-core/src/run_verification_metadata.rs`
   - `writes_single_result_budget_fields_into_metadata` 已同时验证新字段写入
@@ -57,5 +66,5 @@
 
 - 对应阶段 Gate：阶段 I 自由迭代期
 - 当前覆盖情况：
-  - 已完成第五刀文档拆分、知识回答 verify、文件变更 verify、命令执行 verify、记忆写入 verify 与 metadata 证据
-  - 浏览器交互的 verify 扩展仍后置
+  - 已完成第五刀文档拆分、知识回答 verify、文件变更 verify、命令执行 verify、记忆写入 verify、浏览器交互 verify 与 metadata 证据
+  - 已完成浏览器交互失败 -> 单次页面回读 -> 回读后仍失败则停止自动续跑并进入可交接收口

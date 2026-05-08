@@ -17,5 +17,5 @@
 - 已完成：已拆出第三刀实现 change `AJ-memory-minimal-routing-20260505`，当前先收窄为“记忆最小路由”，只覆盖记忆何时读、读哪层、如何输出最小 digest。
 - 已完成：已拆出第四刀实现 change `AK-knowledge-pack-minimal-20260505`，范围冻结为 `混合检索 + knowledge pack + citation-ready 输出 + ask/learn 最小注入`。
 - 已完成：已拆出第五刀实现 change `AL-verify-matrix-minimal-20260505`，范围冻结为 `知识回答主链优先验证 + verification metadata + replan/handoff 收口`。
-- 阻塞点：暂无实现阻塞；后续可按独立 change 顺序继续推进 verify 实现。
-- 下一步：由接手的项目智能体进入 `AL-verify-matrix-minimal-20260505/`，先实现 knowledge answer verify，不并行回 AK 扩 scope。
+- 阻塞点：暂无实现阻塞；当前 5 刀独立 change 已全部完成最小收口。
+- 下一步：如继续从 AG 蓝图往后推进，应新建下一项独立 change，而不是回 AG 内继续混做。
