@@ -50,6 +50,14 @@ pub(crate) struct StructuredMemoryEntry {
     #[serde(default)]
     pub archive_reason: String,
     #[serde(default)]
+    pub memory_write_layer: String,
+    #[serde(default)]
+    pub memory_write_decision: String,
+    #[serde(default)]
+    pub memory_write_reason: String,
+    #[serde(default)]
+    pub memory_duplicate_strategy: String,
+    #[serde(default)]
     pub verified: bool,
     #[serde(default)]
     pub priority: i32,

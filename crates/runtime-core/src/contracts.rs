@@ -323,6 +323,16 @@ pub struct VerificationSnapshot {
     #[serde(default)]
     pub code: String,
     #[serde(default)]
+    pub browser_failure_type: String,
+    #[serde(default)]
+    pub browser_page_id: String,
+    #[serde(default)]
+    pub browser_selector: String,
+    #[serde(default)]
+    pub browser_recovery_attempted: bool,
+    #[serde(default)]
+    pub browser_recovery_exhausted: bool,
+    #[serde(default)]
     pub summary: String,
     #[serde(default)]
     pub passed: bool,

@@ -407,60 +407,44 @@ fn has_tool_call_snapshot(snapshot: &ToolCallSnapshot) -> bool {
 
 fn verification_snapshot(metadata: &BTreeMap<String, String>) -> Option<VerificationSnapshot> {
     let snapshot = VerificationSnapshot {
-        code: metadata.get("verification_code").cloned().unwrap_or_default(),
-        summary: metadata.get("verification_summary").cloned().unwrap_or_default(),
-        passed: metadata
-            .get("verification_passed")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        policy: metadata.get("verification_policy").cloned().unwrap_or_default(),
-        task_type: metadata.get("verification_task_type").cloned().unwrap_or_default(),
-        evidence: metadata
-            .get("verification_evidence")
-            .map(|value| split_lines(value))
-            .unwrap_or_default(),
-        evidence_count: metadata
-            .get("verification_evidence_count")
-            .and_then(|value| value.parse::<usize>().ok())
-            .unwrap_or_default(),
-        has_citation: metadata
-            .get("verification_has_citation")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        fact_inference_split: metadata
-            .get("verification_fact_inference_split")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        capability_risk_checked: metadata
-            .get("capability_risk_checked")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        permission_boundary_respected: metadata
-            .get("permission_boundary_respected")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        skill_hit_effective: metadata
-            .get("verification_skill_hit_effective")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        skill_hit_reason: metadata
-            .get("verification_skill_hit_reason")
-            .cloned()
-            .unwrap_or_default(),
-        guard_downgraded: metadata
-            .get("verification_guard_downgraded")
-            .map(|value| value == "true")
-            .unwrap_or(false),
-        guard_decision_ref: metadata
-            .get("verification_guard_decision_ref")
-            .cloned()
-            .unwrap_or_default(),
+        code: metadata_value(metadata, "verification_code"),
+        browser_failure_type: metadata_value(metadata, "browser_failure_type"),
+        browser_page_id: metadata_value(metadata, "browser_page_id"),
+        browser_selector: metadata_value(metadata, "browser_selector"),
+        browser_recovery_attempted: metadata_flag(metadata, "browser_recovery_attempted"),
+        browser_recovery_exhausted: metadata_flag(metadata, "browser_recovery_exhausted"),
+        summary: metadata_value(metadata, "verification_summary"),
+        passed: metadata_flag(metadata, "verification_passed"),
+        policy: metadata_value(metadata, "verification_policy"),
+        task_type: metadata_value(metadata, "verification_task_type"),
+        evidence: verification_evidence_lines(metadata),
+        evidence_count: metadata_usize(metadata, "verification_evidence_count"),
+        has_citation: metadata_flag(metadata, "verification_has_citation"),
+        fact_inference_split: metadata_flag(metadata, "verification_fact_inference_split"),
+        capability_risk_checked: metadata_flag(metadata, "capability_risk_checked"),
+        permission_boundary_respected: metadata_flag(metadata, "permission_boundary_respected"),
+        skill_hit_effective: metadata_flag(metadata, "verification_skill_hit_effective"),
+        skill_hit_reason: metadata_value(metadata, "verification_skill_hit_reason"),
+        guard_downgraded: metadata_flag(metadata, "verification_guard_downgraded"),
+        guard_decision_ref: metadata_value(metadata, "verification_guard_decision_ref"),
     };
     has_verification_snapshot(&snapshot).then_some(snapshot)
 }
 
+fn verification_evidence_lines(metadata: &BTreeMap<String, String>) -> Vec<String> {
+    metadata
+        .get("verification_evidence")
+        .map(|value| split_lines(value))
+        .unwrap_or_default()
+}
+
 fn has_verification_snapshot(snapshot: &VerificationSnapshot) -> bool {
     !snapshot.code.is_empty()
+        || !snapshot.browser_failure_type.is_empty()
+        || !snapshot.browser_page_id.is_empty()
+        || !snapshot.browser_selector.is_empty()
+        || snapshot.browser_recovery_attempted
+        || snapshot.browser_recovery_exhausted
         || !snapshot.summary.is_empty()
         || snapshot.passed
         || !snapshot.policy.is_empty()
@@ -658,6 +642,7 @@ pub(crate) fn timestamp_now() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::contracts::VerificationSnapshot;
     use crate::contracts::{ModelRef, ProviderRef, RunRequest, WorkspaceRef};
 
     #[test]
@@ -780,6 +765,30 @@ mod tests {
             event.metadata.get("reason"),
             Some(&"当前查询未命中可复用长期记忆，已输出空召回结果。".to_string())
         );
+    }
+
+    #[test]
+    fn verification_snapshot_keeps_browser_failure_fields() {
+        let mut metadata = BTreeMap::new();
+        metadata.insert(
+            "verification_code".to_string(),
+            "browser_interaction_insufficient".to_string(),
+        );
+        metadata.insert("browser_failure_type".to_string(), "recovery_exhausted".to_string());
+        metadata.insert("browser_page_id".to_string(), "page_01".to_string());
+        metadata.insert("browser_selector".to_string(), "#submit".to_string());
+        metadata.insert("browser_recovery_attempted".to_string(), "true".to_string());
+        metadata.insert("browser_recovery_exhausted".to_string(), "true".to_string());
+        let snapshot = verification_snapshot(&metadata).unwrap();
+        assert_browser_failure_snapshot(&snapshot);
+    }
+
+    fn assert_browser_failure_snapshot(snapshot: &VerificationSnapshot) {
+        assert_eq!(snapshot.browser_failure_type, "recovery_exhausted");
+        assert_eq!(snapshot.browser_page_id, "page_01");
+        assert_eq!(snapshot.browser_selector, "#submit");
+        assert!(snapshot.browser_recovery_attempted);
+        assert!(snapshot.browser_recovery_exhausted);
     }
 
     fn sample_request() -> RunRequest {

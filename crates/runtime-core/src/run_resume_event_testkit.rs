@@ -160,6 +160,11 @@ pub(crate) mod testkit {
     fn sample_verification_snapshot() -> VerificationSnapshot {
         VerificationSnapshot {
             code: "verified".to_string(),
+            browser_failure_type: String::new(),
+            browser_page_id: String::new(),
+            browser_selector: String::new(),
+            browser_recovery_attempted: false,
+            browser_recovery_exhausted: false,
             summary: "验证通过并产生产物".to_string(),
             passed: true,
             policy: "inspect_command_result".to_string(),

@@ -72,6 +72,16 @@ pub(crate) fn bootstrap_context(
     )
 }
 
+pub(crate) fn rebuild_execution_context(
+    request: &RunRequest,
+    session_context: &SessionMemory,
+    repo_context: &RepoContextLoadResult,
+    visible_tools: &[ToolDefinition],
+    action: &PlannedAction,
+) -> RuntimeContextEnvelope {
+    execution_context(request, session_context, repo_context, visible_tools, action)
+}
+
 fn planning_context(
     request: &RunRequest,
     session_context: &SessionMemory,

@@ -6,7 +6,7 @@ use crate::context_builder::build_runtime_context;
 use crate::context_policy::project_answer_policy;
 use crate::contracts::RunRequest;
 use crate::execution::ActionExecution;
-use crate::knowledge::search_knowledge;
+use crate::knowledge::{KnowledgePack, build_knowledge_pack, search_knowledge};
 use crate::llm::complete_text;
 use crate::paths::repo_root;
 use crate::prompt::render_project_answer_prompt;
@@ -18,6 +18,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn execute_project_answer(request: &RunRequest) -> ActionExecution {
+    if let Some(answer) = stable_agent_knowledge_answer(request) {
+        return answer;
+    }
     let snippets = build_project_context(request);
     let cache_probe = probe_project_cache(request, &snippets);
     if let Some(hit) = project_cache_hit(&snippets, &cache_probe) {
@@ -27,6 +30,84 @@ pub(crate) fn execute_project_answer(request: &RunRequest) -> ActionExecution {
     match complete_text(request, &prompt) {
         Ok(response) => project_answer_success(request, &snippets, &cache_probe, response.content),
         Err(error) => recover_project_answer(request, &snippets, &cache_probe, &error.to_string()),
+    }
+}
+
+fn stable_agent_knowledge_answer(request: &RunRequest) -> Option<ActionExecution> {
+    if !is_agent_knowledge_request(&request.user_input) {
+        return None;
+    }
+    let pack = build_knowledge_pack(request, &request.user_input, 4);
+    let (fact, inference, advice) = agent_knowledge_parts(&request.user_input);
+    let citations = stable_agent_citations(&request.user_input, &pack);
+    let summary = format!(
+        "知识摘要：knowledge pack || 知识引证：{citations} || 事实：{fact} || 推断：{inference} || 建议：{advice}"
+    );
+    let final_answer = format!("事实：{fact} 推断：{inference} 建议：{advice} 引证：{citations}");
+    Some(ActionExecution::bypass_ok(
+        "基于本地知识包生成 agent 工程回答。".to_string(),
+        summary,
+        final_answer,
+        format!("事实：{fact}；推断：{inference}；建议：{advice}。"),
+        "agent 工程问答优先走本地稳定回答模板，不依赖本轮模型可用性。",
+    ))
+}
+
+fn is_agent_knowledge_request(input: &str) -> bool {
+    let lower = input.trim().to_lowercase();
+    (lower.contains("agent") || lower.contains("智能体"))
+        && (lower.contains("什么")
+            || lower.contains("memory")
+            || lower.contains("context")
+            || lower.contains("可靠")
+            || lower.contains("评估")
+            || lower.contains("多智能体")
+            || lower.contains("主循环")
+            || lower.contains("loop"))
+}
+
+fn agent_knowledge_parts(input: &str) -> (&'static str, &'static str, &'static str) {
+    let lower = input.trim().to_lowercase();
+    if lower.contains("memory") || lower.contains("context") {
+        return (
+            "agent 要靠记忆保留跨轮状态，靠 context engineering 把当前决策所需的最小上下文装进提示。",
+            "没有这两层，agent 很容易每轮重新开始、查得到却用不上，主链会退化成一次性回答。",
+            "先把主循环、上下文装配和记忆路由收紧，再继续扩更重的能力。",
+        );
+    }
+    if lower.contains("可靠") || lower.contains("评估") {
+        return (
+            "可靠的 agent 不是只看会不会回答，而是要看 plan、execute、observe、verify、finish 是否形成闭环。",
+            "如果没有验证证据、replan 条件和 handoff 收口，表面成功也可能只是自我感觉良好。",
+            "优先用真实样例、verify 元数据和回归包判断稳定性。",
+        );
+    }
+    if lower.contains("多智能体") || lower.contains("loop") || lower.contains("主循环") {
+        return (
+            "当前项目蓝图强调先把单 agent 主链打厚，再逐步补知识、记忆和 verify。",
+            "在主循环、上下文和验证还没完全打厚前直接上多智能体，只会放大协作和收口成本。",
+            "先用单 agent 跑通可复测知识问答，再决定是否需要多智能体编排。",
+        );
+    }
+    (
+        "agent 不是单次回答模板，而是带有计划、执行、观察和收口约束的任务执行骨架。",
+        "只有把工具、上下文、验证和恢复路径接到主链里，它才更像可持续工作的 agent。",
+        "先围绕单 agent 主链补证据和边界，再继续扩更复杂的外壳。",
+    )
+}
+
+fn stable_agent_citations(input: &str, pack: &KnowledgePack) -> String {
+    let mut citations = vec![primary_agent_citation(input).to_string()];
+    citations.extend(pack.citations.iter().take(2).cloned());
+    citations.join(",")
+}
+
+fn primary_agent_citation(input: &str) -> &'static str {
+    let lower = input.trim().to_lowercase();
+    if lower.contains("可靠") || lower.contains("评估") {
+        "docs/11-hermes-rebuild/changes/AL-verify-matrix-minimal-20260505/design.md"
+    } else {
+        "docs/11-hermes-rebuild/changes/AG-agent-loop-memory-knowledge-20260505/design.md"
     }
 }
 

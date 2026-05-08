@@ -134,6 +134,7 @@ fn recall_layer_from_reasoning(reasoning: &str) -> String {
 mod tests {
     use super::*;
     use crate::capabilities::{ToolCallResult, ToolDefinition, ToolExecutionTrace};
+    use crate::memory_router::{MemoryAuditTrail, MemoryWriteOutcome};
     use crate::repo_context::RepoContextLoadResult;
 
     #[test]
@@ -171,6 +172,48 @@ mod tests {
         assert_eq!(
             event.metadata.get("recall_layer_summary"),
             Some(&"system views + current memory object，对象 2 条".to_string())
+        );
+    }
+
+    #[test]
+    fn memory_event_keeps_write_governance_metadata() {
+        let request = sample_request();
+        let outcome = MemoryWriteOutcome {
+            event_type: "memory_write_skipped",
+            layer: "working_only".to_string(),
+            record_type: "workspace_summary".to_string(),
+            source_type: "runtime".to_string(),
+            title: "跳过写入".to_string(),
+            summary: "当前结果更像一次性项目状态回显，不进入长期层。".to_string(),
+            reason: "当前结果更像一次性项目状态回显，不进入长期层。".to_string(),
+            audit: MemoryAuditTrail {
+                governance_status: "skipped".to_string(),
+                memory_action: "skip".to_string(),
+                governance_version: "memory_audit_v1".to_string(),
+                governance_reason: "当前结果更像一次性项目状态回显，不进入长期层。".to_string(),
+                governance_source: "runtime_skip_guard".to_string(),
+                governance_at: "1".to_string(),
+                memory_write_layer: "working_only".to_string(),
+                memory_write_decision: "rejected".to_string(),
+                memory_write_reason: "当前结果更像一次性项目状态回显，不进入长期层。".to_string(),
+                memory_duplicate_strategy: "none".to_string(),
+                source_event_type: "memory_write_skipped".to_string(),
+                source_artifact_path: String::new(),
+                archive_reason: String::new(),
+            },
+        };
+        let event = make_memory_event(&request, 1, "task", &sample_repo_context(), &outcome);
+        assert_eq!(
+            event.metadata.get("memory_write_layer"),
+            Some(&"working_only".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("memory_write_decision"),
+            Some(&"rejected".to_string())
+        );
+        assert_eq!(
+            event.metadata.get("memory_duplicate_strategy"),
+            Some(&"none".to_string())
         );
     }
 

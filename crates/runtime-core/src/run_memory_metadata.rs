@@ -12,6 +12,22 @@ fn append_governance_audit(
     metadata: &mut BTreeMap<String, String>,
     outcome: &crate::memory_router::MemoryWriteOutcome,
 ) {
+    metadata.insert(
+        "memory_write_layer".to_string(),
+        outcome.audit.memory_write_layer.clone(),
+    );
+    metadata.insert(
+        "memory_write_decision".to_string(),
+        outcome.audit.memory_write_decision.clone(),
+    );
+    metadata.insert(
+        "memory_write_reason".to_string(),
+        outcome.audit.memory_write_reason.clone(),
+    );
+    metadata.insert(
+        "memory_duplicate_strategy".to_string(),
+        outcome.audit.memory_duplicate_strategy.clone(),
+    );
     metadata.insert("governance_status".to_string(), outcome.audit.governance_status.clone());
     metadata.insert("memory_action".to_string(), outcome.audit.memory_action.clone());
     metadata.insert(

@@ -9,7 +9,39 @@ pub(crate) fn append_verification_metadata(
 }
 
 fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &crate::verify::VerificationReport) {
+    append_verification_browser_metadata(metadata, report);
+    append_verification_status_metadata(metadata, report);
+    append_verification_quality_metadata(metadata, report);
+    append_verification_governance_metadata(metadata, report);
+    metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
+    metadata.insert("tool_elapsed_ms".to_string(), report.tool_elapsed_ms.to_string());
+}
+
+fn append_verification_browser_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    report: &crate::verify::VerificationReport,
+) {
     metadata.insert("verification_code".to_string(), report.outcome.code.clone());
+    metadata.insert(
+        "browser_failure_type".to_string(),
+        report.outcome.browser_failure_type.clone(),
+    );
+    metadata.insert("browser_page_id".to_string(), report.outcome.browser_page_id.clone());
+    metadata.insert("browser_selector".to_string(), report.outcome.browser_selector.clone());
+    metadata.insert(
+        "browser_recovery_attempted".to_string(),
+        bool_string(report.outcome.browser_recovery_attempted),
+    );
+    metadata.insert(
+        "browser_recovery_exhausted".to_string(),
+        bool_string(report.outcome.browser_recovery_exhausted),
+    );
+}
+
+fn append_verification_status_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    report: &crate::verify::VerificationReport,
+) {
     metadata.insert("verification_passed".to_string(), bool_string(report.outcome.passed));
     metadata.insert("verification_summary".to_string(), report.outcome.summary.clone());
     metadata.insert("verification_next_step".to_string(), report.outcome.next_step.clone());
@@ -19,6 +51,12 @@ fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &cr
         "verification_evidence_count".to_string(),
         report.outcome.evidence_count.to_string(),
     );
+}
+
+fn append_verification_quality_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    report: &crate::verify::VerificationReport,
+) {
     metadata.insert(
         "verification_has_citation".to_string(),
         bool_string(report.outcome.has_citation),
@@ -28,20 +66,26 @@ fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &cr
         bool_string(report.outcome.fact_inference_split),
     );
     metadata.insert(
-        "capability_risk_checked".to_string(),
-        bool_string(report.outcome.capability_risk_checked),
-    );
-    metadata.insert(
-        "permission_boundary_respected".to_string(),
-        bool_string(report.outcome.permission_boundary_respected),
-    );
-    metadata.insert(
         "verification_skill_hit_effective".to_string(),
         bool_string(report.outcome.skill_hit_effective),
     );
     metadata.insert(
         "verification_skill_hit_reason".to_string(),
         report.outcome.skill_hit_reason.clone(),
+    );
+}
+
+fn append_verification_governance_metadata(
+    metadata: &mut BTreeMap<String, String>,
+    report: &crate::verify::VerificationReport,
+) {
+    metadata.insert(
+        "capability_risk_checked".to_string(),
+        bool_string(report.outcome.capability_risk_checked),
+    );
+    metadata.insert(
+        "permission_boundary_respected".to_string(),
+        bool_string(report.outcome.permission_boundary_respected),
     );
     metadata.insert(
         "verification_guard_downgraded".to_string(),
@@ -51,8 +95,6 @@ fn append_verification_core(metadata: &mut BTreeMap<String, String>, report: &cr
         "verification_guard_decision_ref".to_string(),
         report.outcome.guard_decision_ref.clone(),
     );
-    metadata.insert("verification_evidence".to_string(), report.outcome.evidence.join("\n"));
-    metadata.insert("tool_elapsed_ms".to_string(), report.tool_elapsed_ms.to_string());
 }
 
 fn bool_string(value: bool) -> String {
@@ -97,6 +139,8 @@ mod tests {
             Some(&"knowledge_answer".to_string())
         );
         assert_eq!(metadata.get("verification_has_citation"), Some(&"true".to_string()));
+        assert_eq!(metadata.get("browser_page_id"), Some(&"page_01".to_string()));
+        assert_eq!(metadata.get("browser_selector"), Some(&"#submit".to_string()));
     }
 
     fn sample_report() -> VerificationReport {
@@ -104,6 +148,11 @@ mod tests {
             outcome: VerificationOutcome {
                 passed: true,
                 code: "verified".to_string(),
+                browser_failure_type: String::new(),
+                browser_page_id: "page_01".to_string(),
+                browser_selector: "#submit".to_string(),
+                browser_recovery_attempted: false,
+                browser_recovery_exhausted: false,
                 policy: "inspect_command_result".to_string(),
                 task_type: "knowledge_answer".to_string(),
                 evidence: vec!["summary=ok".to_string()],

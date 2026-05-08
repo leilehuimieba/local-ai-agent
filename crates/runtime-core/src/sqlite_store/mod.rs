@@ -10,7 +10,11 @@ use rusqlite::{Connection, params};
 use std::collections::BTreeSet;
 use std::fs;
 pub mod checkpoint;
+mod cleanup_rules;
 pub mod memory_object;
+mod schema;
+use self::cleanup_rules::{is_runtime_generated_knowledge, is_runtime_generated_memory};
+use self::schema::{apply_schema, run_memory_migrations};
 pub(crate) use checkpoint::*;
 pub(crate) use memory_object::*;
 
@@ -111,17 +115,19 @@ pub(crate) fn insert_memory_entry(conn: &Connection, entry: &MemoryEntry) -> Res
         "insert or ignore into long_term_memory (
             id, workspace_id, memory_type, title, summary, content, source, source_run_id, source_type,
             source_title, source_event_type, source_artifact_path, governance_version, governance_reason,
-            governance_source, governance_at, archive_reason, verified, priority, archived, archived_at,
+            governance_source, governance_at, archive_reason, memory_write_layer, memory_write_decision,
+            memory_write_reason, memory_duplicate_strategy, verified, priority, archived, archived_at,
             created_at, updated_at, scope, session_id, timestamp
-        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
+        ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)",
         params![
             entry.id, entry.workspace_id, entry.kind, entry.title, entry.summary, entry.content,
             entry.source, entry.source_run_id, entry.source_type, entry.source_title,
             entry.source_event_type, entry.source_artifact_path, entry.governance_version,
             entry.governance_reason, entry.governance_source, entry.governance_at,
-            entry.archive_reason, bool_flag(entry.verified), entry.priority,
-            bool_flag(entry.archived), entry.archived_at, entry.created_at, entry.updated_at,
-            entry.scope, entry.session_id, entry.timestamp
+            entry.archive_reason, entry.memory_write_layer, entry.memory_write_decision,
+            entry.memory_write_reason, entry.memory_duplicate_strategy, bool_flag(entry.verified),
+            entry.priority, bool_flag(entry.archived), entry.archived_at, entry.created_at,
+            entry.updated_at, entry.scope, entry.session_id, entry.timestamp
         ],
     )
     .map(|_| ())
@@ -174,6 +180,7 @@ fn load_memory_entries(conn: &Connection, request: &RunRequest) -> Result<Vec<Me
             "select id, memory_type, title, summary, content, scope, workspace_id, session_id,
              source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
              governance_version, governance_reason, governance_source, governance_at, archive_reason,
+             memory_write_layer, memory_write_decision, memory_write_reason, memory_duplicate_strategy,
              verified, priority, archived, archived_at, created_at, updated_at, timestamp
              from long_term_memory where workspace_id = ?1
              order by priority desc, length(updated_at) desc, updated_at desc",
@@ -236,9 +243,7 @@ fn create_parent_dir(path: &std::path::Path) -> Result<(), String> {
 }
 
 fn init_schema(conn: &Connection) -> Result<(), String> {
-    for statement in SCHEMA_STATEMENTS {
-        conn.execute(statement, []).map_err(|error| error.to_string())?;
-    }
+    apply_schema(conn)?;
     run_memory_migrations(conn)?;
     backfill_memory_governance(conn)
 }
@@ -281,21 +286,18 @@ fn map_memory_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryEntry> {
         governance_source: row.get(16)?,
         governance_at: row.get(17)?,
         archive_reason: row.get(18)?,
-        verified: row.get::<_, i32>(19)? != 0,
-        priority: row.get(20)?,
-        archived: row.get::<_, i32>(21)? != 0,
-        archived_at: row.get(22)?,
-        created_at: row.get(23)?,
-        updated_at: row.get(24)?,
-        timestamp: row.get(25)?,
+        memory_write_layer: row.get(19)?,
+        memory_write_decision: row.get(20)?,
+        memory_write_reason: row.get(21)?,
+        memory_duplicate_strategy: row.get(22)?,
+        verified: row.get::<_, i32>(23)? != 0,
+        priority: row.get(24)?,
+        archived: row.get::<_, i32>(25)? != 0,
+        archived_at: row.get(26)?,
+        created_at: row.get(27)?,
+        updated_at: row.get(28)?,
+        timestamp: row.get(29)?,
     })
-}
-
-fn run_memory_migrations(conn: &Connection) -> Result<(), String> {
-    for statement in MEMORY_MIGRATIONS {
-        apply_memory_migration(conn, statement)?;
-    }
-    Ok(())
 }
 
 fn backfill_memory_governance(conn: &Connection) -> Result<(), String> {
@@ -306,14 +308,6 @@ fn backfill_memory_governance(conn: &Connection) -> Result<(), String> {
         }
     }
     Ok(())
-}
-
-fn apply_memory_migration(conn: &Connection, statement: &str) -> Result<(), String> {
-    match conn.execute(statement, []) {
-        Ok(_) => Ok(()),
-        Err(error) if error.to_string().contains("duplicate column name") => Ok(()),
-        Err(error) => Err(error.to_string()),
-    }
 }
 
 fn map_knowledge_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<KnowledgeRecord> {
@@ -359,6 +353,10 @@ fn map_memory_object_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryEn
         governance_source: String::new(),
         governance_at: created_at.clone(),
         archive_reason: String::new(),
+        memory_write_layer: String::new(),
+        memory_write_decision: String::new(),
+        memory_write_reason: String::new(),
+        memory_duplicate_strategy: String::new(),
         verified: row.get::<_, i32>(9)? != 0,
         priority: row.get(8)?,
         archived: false,
@@ -384,10 +382,13 @@ fn pending_governance_entries(conn: &Connection) -> Result<Vec<MemoryEntry>, Str
     let sql = "select id, memory_type, title, summary, content, scope, workspace_id, session_id,
                source_run_id, source, source_type, source_title, source_event_type, source_artifact_path,
                governance_version, governance_reason, governance_source, governance_at, archive_reason,
+               memory_write_layer, memory_write_decision, memory_write_reason, memory_duplicate_strategy,
                verified, priority, archived, archived_at, created_at, updated_at, timestamp
                from long_term_memory
                where trim(governance_version) = '' or trim(governance_reason) = ''
                or trim(governance_source) = '' or trim(governance_at) = ''
+               or trim(memory_write_layer) = '' or trim(memory_write_decision) = ''
+               or trim(memory_write_reason) = '' or trim(memory_duplicate_strategy) = ''
                or (archived != 0 and trim(archive_reason) = '')";
     let mut statement = conn.prepare(sql).map_err(|error| error.to_string())?;
     let rows = statement
@@ -446,6 +447,10 @@ fn governance_changed(current: &MemoryEntry, normalized: &MemoryEntry) -> bool {
         || current.governance_reason != normalized.governance_reason
         || current.governance_source != normalized.governance_source
         || current.governance_at != normalized.governance_at
+        || current.memory_write_layer != normalized.memory_write_layer
+        || current.memory_write_decision != normalized.memory_write_decision
+        || current.memory_write_reason != normalized.memory_write_reason
+        || current.memory_duplicate_strategy != normalized.memory_duplicate_strategy
         || current.archive_reason != normalized.archive_reason
 }
 
@@ -468,14 +473,19 @@ fn update_memory_governance(conn: &Connection, entry: &MemoryEntry) -> Result<()
     conn.execute(
         "update long_term_memory
          set governance_version = ?1, governance_reason = ?2, governance_source = ?3,
-             governance_at = ?4, archive_reason = ?5
-         where id = ?6",
+             governance_at = ?4, archive_reason = ?5, memory_write_layer = ?6,
+             memory_write_decision = ?7, memory_write_reason = ?8, memory_duplicate_strategy = ?9
+         where id = ?10",
         params![
             entry.governance_version,
             entry.governance_reason,
             entry.governance_source,
             entry.governance_at,
             entry.archive_reason,
+            entry.memory_write_layer,
+            entry.memory_write_decision,
+            entry.memory_write_reason,
+            entry.memory_duplicate_strategy,
             entry.id
         ],
     )
@@ -539,205 +549,3 @@ fn decode_tags(value: String) -> Vec<String> {
 fn bool_flag(value: bool) -> i32 {
     if value { 1 } else { 0 }
 }
-
-fn is_runtime_generated_memory(item: &MemoryEntry) -> bool {
-    let project_answer = item.kind == "project_knowledge" || item.kind == "workspace_summary";
-    let generated_answer =
-        item.title.contains("项目说明") || item.summary.contains("已基于项目文档片段完成一次项目说明回答");
-    let tool_trace = item.kind == "lesson_learned"
-        && (item.title.contains("导出知识到思源")
-            || item.title.contains("检索思源笔记")
-            || item.title.contains("读取思源正文")
-            || item.title.contains("复用已存在思源知识")
-            || item.summary.contains("知识已导出到思源目录")
-            || item.summary.contains("已返回思源笔记摘要")
-            || item.summary.contains("思源正文读取成功")
-            || item.summary.contains("命中已存在思源导出"));
-    let fallback =
-        item.kind == "lesson_learned" && (is_garbled_reply(&item.content) || is_capability_fallback(&item.content));
-    item.source_type == "runtime"
-        && (project_answer && generated_answer
-            || tool_trace
-            || fallback
-            || is_low_value_runtime_lesson(item)
-            || is_legacy_preference_noise(item))
-}
-
-fn is_runtime_generated_knowledge(item: &KnowledgeRecord) -> bool {
-    let project_answer =
-        item.title.contains("项目说明") || item.summary.contains("已基于项目文档片段完成一次项目说明回答");
-    item.source_type == "runtime" && item.source.starts_with("run:") && project_answer
-}
-
-fn is_garbled_reply(content: &str) -> bool {
-    content.contains("显示为乱码")
-        || content.contains("无法识别为有效的文字或指令")
-        || content.contains("无法准确识别您想要表达的意思")
-}
-
-fn is_capability_fallback(content: &str) -> bool {
-    content.contains("无法打开你的计算机")
-        || content.contains("无法控制你的计算机硬件")
-        || content.contains("如果你有工作区内的文件管理")
-}
-
-fn is_low_value_runtime_lesson(item: &MemoryEntry) -> bool {
-    let generic_context = item.kind == "lesson_learned"
-        && item.title.contains("基于会话压缩摘要继续回答。")
-        && item.summary.contains("已从最近")
-        && item.summary.contains("完成一次模型回答");
-    let tool_trace = item.kind == "lesson_learned"
-        && (item.title.contains("读取文件：")
-            || item.title.contains("执行命令：")
-            || item.summary.contains("文件读取成功")
-            || item.summary.contains("命令执行成功"));
-    generic_context || tool_trace
-}
-
-fn is_legacy_preference_noise(item: &MemoryEntry) -> bool {
-    item.kind == "preference" && item.title.trim().is_empty() && !item.verified
-}
-
-const SCHEMA_STATEMENTS: [&str; 22] = [
-    "create table if not exists long_term_memory (
-        id text primary key,
-        workspace_id text not null,
-        memory_type text not null,
-        title text not null,
-        summary text not null,
-        content text not null,
-        source text not null,
-        source_run_id text not null,
-        source_type text not null,
-        source_title text not null default '',
-        source_event_type text not null default '',
-        source_artifact_path text not null default '',
-        governance_version text not null default '',
-        governance_reason text not null default '',
-        governance_source text not null default '',
-        governance_at text not null default '',
-        archive_reason text not null default '',
-        verified integer not null default 0,
-        priority integer not null default 0,
-        archived integer not null default 0,
-        archived_at text not null default '',
-        created_at text not null,
-        updated_at text not null,
-        scope text not null,
-        session_id text not null,
-        timestamp text not null
-    )",
-    "create index if not exists idx_memory_workspace_type on long_term_memory (workspace_id, memory_type)",
-    "create index if not exists idx_memory_workspace_updated on long_term_memory (workspace_id, updated_at)",
-    "create index if not exists idx_memory_workspace_priority on long_term_memory (workspace_id, priority)",
-    "create table if not exists knowledge_base (
-        id text primary key,
-        workspace_id text not null,
-        knowledge_type text not null,
-        title text not null,
-        summary text not null,
-        content text not null,
-        tags text not null,
-        source text not null,
-        source_type text not null,
-        verified integer not null default 0,
-        priority integer not null default 0,
-        archived integer not null default 0,
-        created_at text not null,
-        updated_at text not null
-    )",
-    "create index if not exists idx_knowledge_workspace_type on knowledge_base (workspace_id, knowledge_type)",
-    "create index if not exists idx_knowledge_workspace_source on knowledge_base (workspace_id, source_type)",
-    "create index if not exists idx_knowledge_workspace_updated on knowledge_base (workspace_id, updated_at)",
-    "create table if not exists runtime_checkpoints (
-        checkpoint_id text primary key,
-        run_id text not null,
-        session_id text not null,
-        trace_id text not null,
-        workspace_id text not null,
-        status text not null,
-        final_stage text not null,
-        resumable integer not null default 0,
-        resume_reason text not null default '',
-        resume_stage text not null default '',
-        event_count integer not null default 0,
-        request_payload text not null,
-        response_payload text not null,
-        created_at text not null
-    )",
-    "create index if not exists idx_checkpoint_run on runtime_checkpoints (run_id, created_at)",
-    "create table if not exists runtime_observations (
-        id integer primary key autoincrement,
-        workspace_id text not null,
-        session_id text not null,
-        run_id text not null,
-        trace_id text not null,
-        event_type text not null,
-        observation_kind text not null,
-        stage text not null,
-        summary text not null,
-        tool_name text not null default '',
-        artifact_ref text not null default '',
-        created_at text not null
-    )",
-    "create index if not exists idx_runtime_observations_workspace_created on runtime_observations (workspace_id, created_at)",
-    "create index if not exists idx_runtime_observations_workspace_run on runtime_observations (workspace_id, run_id)",
-    "create table if not exists observation_pending_queue (
-        id integer primary key autoincrement,
-        workspace_id text not null,
-        event_type text not null,
-        observation_kind text not null,
-        payload_json text not null,
-        status text not null,
-        retry_count integer not null default 0,
-        last_error text not null default '',
-        updated_at text not null
-    )",
-    "create index if not exists idx_observation_pending_queue_workspace_status on observation_pending_queue (workspace_id, status)",
-    "create index if not exists idx_observation_pending_queue_workspace_updated on observation_pending_queue (workspace_id, updated_at)",
-    "create table if not exists memory_objects (
-        object_id text primary key,
-        workspace_id text not null,
-        memory_type text not null,
-        title text not null,
-        canonical_uri text not null,
-        current_version_id text not null default '',
-        created_at text not null,
-        updated_at text not null
-    )",
-    "create index if not exists idx_memory_objects_workspace_type on memory_objects (workspace_id, memory_type)",
-    "create table if not exists memory_object_versions (
-        version_id text primary key,
-        object_id text not null,
-        summary text not null,
-        content text not null,
-        source_run_id text not null,
-        priority integer not null default 0,
-        verified integer not null default 0,
-        is_current integer not null default 0,
-        restored_from_version_id text not null default '',
-        created_at text not null
-    )",
-    "create index if not exists idx_memory_object_versions_object_created on memory_object_versions (object_id, created_at)",
-    "create table if not exists memory_object_aliases (
-        alias_uri text primary key,
-        object_id text not null,
-        created_at text not null
-    )",
-    "create index if not exists idx_memory_object_aliases_object on memory_object_aliases (object_id)",
-];
-
-const MEMORY_MIGRATIONS: [&str; 12] = [
-    "alter table long_term_memory add column source_title text not null default ''",
-    "alter table long_term_memory add column source_event_type text not null default ''",
-    "alter table long_term_memory add column source_artifact_path text not null default ''",
-    "alter table long_term_memory add column governance_version text not null default ''",
-    "alter table long_term_memory add column governance_reason text not null default ''",
-    "alter table long_term_memory add column governance_source text not null default ''",
-    "alter table long_term_memory add column governance_at text not null default ''",
-    "alter table long_term_memory add column archive_reason text not null default ''",
-    "alter table long_term_memory add column archived_at text not null default ''",
-    "alter table runtime_checkpoints add column resume_reason text not null default ''",
-    "alter table runtime_checkpoints add column resume_stage text not null default ''",
-    "alter table memory_object_versions add column restored_from_version_id text not null default ''",
-];
