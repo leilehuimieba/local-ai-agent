@@ -6,7 +6,8 @@ test.describe("mobile layout", () => {
     await page.waitForLoadState("networkidle")
   })
 
-  test("bottom navigation is visible", async ({ page }) => {
+  test("bottom navigation is visible", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "Only for mobile")
     const nav = page.locator("nav.fixed.bottom-0")
     await expect(nav).toBeVisible()
     await expect(nav).toContainText("任务")
@@ -16,12 +17,14 @@ test.describe("mobile layout", () => {
     await expect(nav).toContainText("新任务")
   })
 
-  test("left sidebar is hidden", async ({ page }) => {
+  test("left sidebar is hidden", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "Only for mobile")
     const sidebar = page.locator("aside")
     await expect(sidebar).toBeHidden()
   })
 
-  test("sheet panel can be opened and closed", async ({ page }) => {
+  test("sheet panel can be opened and closed", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "Only for mobile")
     // Click the drawer toggle in top bar (last button in header controls)
     await page.locator("header >> div.flex.items-center.gap-3 >> button").last().click()
 
