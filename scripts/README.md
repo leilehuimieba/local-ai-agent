@@ -127,6 +127,12 @@
    - 当前口径：只固化当前 `warning / signoff_ready=false` 的提审事实，不把 Gate-H 误写为可签收。
    - 输出格式：`tmp/stage-h-signoff/latest.json` 采用“英文结构字段 + 中文说明字段”的双语 JSON，便于机器读取与人工复核同时使用。
    - 证据输出：`tmp/stage-h-signoff/latest.json`。
+35. `run-knowledge-answer-eval-pack.ps1`
+   - 用途：知识回答主链最小回归包（固定问题集、citation/verification 边界检查、低证据收口检查）。
+   - 真实入口：拉起隔离 `runtime-host` 与 `gateway` 后，通过 `POST /api/v1/chat/run` + `GET /api/v1/logs` 逐题执行。
+   - 默认样例：`docs/11-hermes-rebuild/changes/AP-knowledge-answer-eval-pack-20260506/fixtures/knowledge-answer-cases.json`。
+   - 证据输出：`tmp/knowledge-answer-evals/latest.json`。
+   - 引用文档：`docs/07-test/evidence/20260506-ap-knowledge-answer-eval-pack/README.md`
 
 ## 2. 同步命令示例
 
