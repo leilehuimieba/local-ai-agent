@@ -18,6 +18,7 @@ pub(crate) fn external_connection_slots() -> Vec<ExternalConnectionSlot> {
     vec![
         local_files_slot(),
         local_notes_slot(),
+        mcp_gateway_slot(),
         browser_capture_slot(),
         personal_management_slot(),
     ]
@@ -80,7 +81,7 @@ fn browser_capture_slot() -> ExternalConnectionSlot {
     make_slot(
         "browser_capture_ingest",
         "浏览器摘录与网页入库",
-        3,
+        4,
         "reserved",
         &["knowledge_search", "write_siyuan_knowledge", "project_answer"],
         "本阶段只保留知识读写接入口，不提前接重型浏览器插件或云同步。",
@@ -89,11 +90,24 @@ fn browser_capture_slot() -> ExternalConnectionSlot {
 }
 
 #[allow(dead_code)]
+fn mcp_gateway_slot() -> ExternalConnectionSlot {
+    make_slot(
+        "mcp_gateway",
+        "MCP 网关桥接工具",
+        3,
+        "active",
+        &["mcp"],
+        "当前只接入经过 Gateway allowlist、risk 和 audit 治理后的 MCP 工具，不旁路直连外部执行器。",
+        "后续优先继续补 Runtime registry、确认链和端到端验证，不扩 transport 类型。",
+    )
+}
+
+#[allow(dead_code)]
 fn personal_management_slot() -> ExternalConnectionSlot {
     make_slot(
         "calendar_reminder_management",
         "日历、提醒与更重的个人管理连接",
-        4,
+        5,
         "reserved",
         &["session_context", "project_answer"],
         "当前阶段只保留规划位，不接日历、提醒、任务中心等重连接器。",

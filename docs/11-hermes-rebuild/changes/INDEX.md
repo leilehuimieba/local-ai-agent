@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-1. [AB-diff-preview-ui-20260504](AB-diff-preview-ui-20260504/) — P1：diff apply UI 预览与确认体验
+1. [AD-runtime-mcp-tool-registry-20260505](AD-runtime-mcp-tool-registry-20260505/) — P0：收口 Runtime MCP registry 接入
 
 ## 已完成 change
 

@@ -228,6 +228,7 @@ mod tests {
                 input_schema: "query".to_string(),
                 output_kind: "text_preview".to_string(),
                 requires_confirmation: false,
+                model_schema: None,
             },
             action_summary: "按需召回记忆：对象摘要".to_string(),
             result: ToolCallResult {

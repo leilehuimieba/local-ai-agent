@@ -419,6 +419,7 @@ fn tool_preview(visible_tools: &[ToolDefinition]) -> String {
     summarize_text(
         &visible_tools
             .iter()
+            .filter(|tool| tool.category != "mcp")
             .map(|tool| format!("{}({})", tool.display_name, tool.tool_name))
             .collect::<Vec<_>>()
             .join("、"),
@@ -613,6 +614,7 @@ mod tests {
             input_schema: "path".to_string(),
             output_kind: "text".to_string(),
             requires_confirmation: false,
+            model_schema: None,
         }
     }
 

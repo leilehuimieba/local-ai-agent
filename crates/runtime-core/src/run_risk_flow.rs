@@ -175,12 +175,47 @@ fn confirmation_response(
     confirmation: &ConfirmationRequest,
 ) -> RuntimeRunResponse {
     push_confirmation_plan_event(request, state, events, sequence, confirmation);
-    events.push(make_confirmation_event(request, *sequence, confirmation));
+    let confirmation = enrich_confirmation_request(state, confirmation);
+    let metadata = confirmation_tool_metadata(state, &confirmation);
+    events.push(make_confirmation_event(request, *sequence, &confirmation, metadata));
     RuntimeRunResponse {
         events: events.clone(),
-        result: confirmation_result(request, confirmation),
-        confirmation_request: Some(confirmation.clone()),
+        result: confirmation_result(request, &confirmation),
+        confirmation_request: Some(confirmation),
     }
+}
+
+fn enrich_confirmation_request(state: &RuntimeRunState, confirmation: &ConfirmationRequest) -> ConfirmationRequest {
+    let mut enriched = confirmation.clone();
+    if enriched.tool_name.is_empty() {
+        enriched.tool_name = state.tool_call.spec.tool_name.clone();
+    }
+    if enriched.tool_arguments_json.is_empty() {
+        enriched.tool_arguments_json = crate::tool_registry::tool_call_arguments_json(&state.tool_call);
+    }
+    enriched
+}
+
+fn confirmation_tool_metadata(state: &RuntimeRunState, confirmation: &ConfirmationRequest) -> BTreeMap<String, String> {
+    let mut metadata = BTreeMap::new();
+    metadata.insert("tool_name".to_string(), confirmation.tool_name.clone());
+    metadata.insert(
+        "tool_display_name".to_string(),
+        state.tool_call.spec.display_name.clone(),
+    );
+    metadata.insert("tool_category".to_string(), state.tool_call.spec.category.clone());
+    metadata.insert("output_kind".to_string(), state.tool_call.spec.output_kind.clone());
+    metadata.insert(
+        "tool_arguments_json".to_string(),
+        confirmation.tool_arguments_json.clone(),
+    );
+    if !confirmation.patch_preview_report_json.is_empty() {
+        metadata.insert(
+            "patch_preview_report_json".to_string(),
+            confirmation.patch_preview_report_json.clone(),
+        );
+    }
+    metadata
 }
 
 fn push_confirmation_plan_event(

@@ -125,6 +125,12 @@ pub fn capability_catalog(mode: &str) -> CapabilityListResponse {
     }
 }
 
+pub fn capability_catalog_for_request(request: &RunRequest) -> CapabilityListResponse {
+    CapabilityListResponse {
+        items: tool_registry::runtime_tool_registry().request_capability_specs(request),
+    }
+}
+
 pub fn connector_catalog() -> ConnectorListResponse {
     ConnectorListResponse {
         items: tool_registry::runtime_tool_registry().connector_slot_specs(),

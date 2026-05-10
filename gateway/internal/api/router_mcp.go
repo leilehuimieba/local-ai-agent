@@ -15,6 +15,7 @@ func registerMCPRoutes(mux *http.ServeMux, mgr *mcp.Manager, repoRoot string) {
 	}
 	mux.HandleFunc("/api/v1/mcp/servers", mcpServersHandler(mgr))
 	mux.HandleFunc("/api/v1/mcp/tools", mcpToolsHandler(mgr))
+	mux.HandleFunc("/api/v1/mcp/audits", mcpAuditsHandler(repoRoot))
 	mux.HandleFunc("/api/v1/mcp/call", mcpCallHandler(mgr, repoRoot))
 }
 

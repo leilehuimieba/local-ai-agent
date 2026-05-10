@@ -1,6 +1,5 @@
 use runtime_core::{
-    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_timeline,
-    persist_lifecycle_observations,
+    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_timeline, persist_lifecycle_observations,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -27,12 +26,7 @@ fn sample_events() -> Vec<RunEvent> {
         sample_event("analysis_ready", "Analyze", 2, "analysis for timeline"),
         sample_event("plan_ready", "Plan", 3, "plan timeline view"),
         sample_event("action_completed", "Observe", 4, "timeline api implemented"),
-        sample_event(
-            "verification_completed",
-            "Verify",
-            5,
-            "timeline verification passed",
-        ),
+        sample_event("verification_completed", "Verify", 5, "timeline verification passed"),
         sample_event("run_finished", "Finish", 6, "run finished"),
     ]
 }

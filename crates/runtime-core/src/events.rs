@@ -52,24 +52,47 @@ pub(crate) fn make_confirmation_event(
     request: &RunRequest,
     sequence: u32,
     confirmation: &ConfirmationRequest,
+    extra_metadata: BTreeMap<String, String>,
 ) -> RunEvent {
-    let mut metadata = BTreeMap::new();
-    metadata.insert("confirmation_id".to_string(), confirmation.confirmation_id.clone());
-    metadata.insert("risk_level".to_string(), confirmation.risk_level.clone());
-    metadata.insert("action_summary".to_string(), confirmation.action_summary.clone());
-    metadata.insert("reason".to_string(), confirmation.reason.clone());
-    metadata.insert("impact_scope".to_string(), confirmation.impact_scope.clone());
-    metadata.insert("target_paths".to_string(), confirmation.target_paths.join("\n"));
-    metadata.insert(
-        "reversible".to_string(),
-        if confirmation.reversible { "true" } else { "false" }.to_string(),
-    );
-    metadata.insert("hazards".to_string(), confirmation.hazards.join("\n"));
-    metadata.insert("alternatives".to_string(), confirmation.alternatives.join("\n"));
-    metadata.insert("kind".to_string(), confirmation.kind.clone());
-    metadata.insert("task_title".to_string(), confirmation.action_summary.clone());
-    metadata.insert("next_step".to_string(), "等待用户确认后再继续".to_string());
+    let mut metadata = confirmation_event_metadata(confirmation);
+    append_confirmation_tool_metadata(&mut metadata, confirmation);
+    metadata.extend(extra_metadata);
+    make_confirmation_pause_event(request, sequence, confirmation, metadata)
+}
 
+fn confirmation_event_metadata(confirmation: &ConfirmationRequest) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        ("confirmation_id".to_string(), confirmation.confirmation_id.clone()),
+        ("risk_level".to_string(), confirmation.risk_level.clone()),
+        ("action_summary".to_string(), confirmation.action_summary.clone()),
+        ("reason".to_string(), confirmation.reason.clone()),
+        ("impact_scope".to_string(), confirmation.impact_scope.clone()),
+        ("target_paths".to_string(), confirmation.target_paths.join("\n")),
+        ("reversible".to_string(), bool_text(confirmation.reversible)),
+        ("hazards".to_string(), confirmation.hazards.join("\n")),
+        ("alternatives".to_string(), confirmation.alternatives.join("\n")),
+        ("kind".to_string(), confirmation.kind.clone()),
+        ("task_title".to_string(), confirmation.action_summary.clone()),
+        ("next_step".to_string(), "等待用户确认后再继续".to_string()),
+    ])
+}
+
+fn append_confirmation_tool_metadata(metadata: &mut BTreeMap<String, String>, confirmation: &ConfirmationRequest) {
+    insert_if_present(metadata, "tool_name", &confirmation.tool_name);
+    insert_if_present(metadata, "tool_arguments_json", &confirmation.tool_arguments_json);
+    insert_if_present(
+        metadata,
+        "patch_preview_report_json",
+        &confirmation.patch_preview_report_json,
+    );
+}
+
+fn make_confirmation_pause_event(
+    request: &RunRequest,
+    sequence: u32,
+    confirmation: &ConfirmationRequest,
+    metadata: BTreeMap<String, String>,
+) -> RunEvent {
     make_event(
         request,
         sequence,
@@ -79,6 +102,16 @@ pub(crate) fn make_confirmation_event(
         &confirmation.reason,
         metadata,
     )
+}
+
+fn insert_if_present(metadata: &mut BTreeMap<String, String>, key: &str, value: &str) {
+    if !value.is_empty() {
+        metadata.insert(key.to_string(), value.to_string());
+    }
+}
+
+fn bool_text(value: bool) -> String {
+    if value { "true".to_string() } else { "false".to_string() }
 }
 
 pub(crate) fn make_event(

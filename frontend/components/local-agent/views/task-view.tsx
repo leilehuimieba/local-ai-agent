@@ -43,6 +43,7 @@ import { submitChatRun, submitChatRetry, submitChatCancel, submitConfirmationDec
 import { useSessionEventStream } from "@/hooks/useSessionEventStream"
 import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
 import { LightweightMarkdown } from "@/components/local-agent/markdown"
+import { DiffPreview, DiffPreviewReportCard, inferDiffPreviewReport } from "@/components/local-agent/diff-preview"
 import { toast } from "sonner"
 
 const quickPrompts = [
@@ -648,6 +649,7 @@ function MessageBubble({
         <div className="max-w-[92%] sm:max-w-[80%]">
           <div className="rounded-2xl rounded-tl-md border border-border bg-card p-4">
             <LightweightMarkdown content={message.content} highlightText={highlightText} />
+            <DiffPreview content={message.content} />
             {message.isStreaming && (
               <span className="inline-block w-1.5 h-3 ml-0.5 bg-primary animate-pulse rounded-sm" />
             )}
@@ -867,103 +869,186 @@ function ErrorCard({ error, onRetry }: { error: string; onRetry: () => void }) {
   )
 }
 
-function ConfirmationCard({ 
-  confirmation, 
-  onDecision 
-}: { 
+const riskColors = {
+  low: "text-success",
+  medium: "text-warning",
+  high: "text-destructive",
+  critical: "text-destructive",
+  irreversible: "text-destructive",
+}
+
+const riskLabels: Record<string, string> = {
+  low: "低风险",
+  medium: "中风险",
+  high: "高风险",
+  critical: "极高风险",
+}
+
+type PatchToolArguments = {
+  diff: string
+  dry_run: boolean
+}
+
+export function ConfirmationCard({
+  confirmation,
+  onDecision,
+}: {
   confirmation: Confirmation
-  onDecision: (decision: "approve" | "deny", remember: boolean) => void 
+  onDecision: (decision: "approve" | "deny", remember: boolean) => void
 }) {
   const [remember, setRemember] = useState(false)
-
-  const riskColors = {
-    low: "text-success",
-    medium: "text-warning",
-    high: "text-destructive",
-    critical: "text-destructive",
-  }
-
-  const riskLabels: Record<string, string> = {
-    low: "低风险",
-    medium: "中风险",
-    high: "高风险",
-    critical: "极高风险",
-  }
+  const patchMode = isPatchConfirmation(confirmation)
 
   return (
     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="max-w-[90%] rounded-2xl rounded-tl-md border-l-4 border-l-warning border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className="h-4 w-4 text-warning" />
-          <span className="text-sm font-medium text-warning">需要确认</span>
-          <span className={cn("text-xs font-medium uppercase", riskColors[confirmation.risk_level])}>
-            {riskLabels[confirmation.risk_level] || confirmation.risk_level}
-          </span>
+        <ConfirmationHeader riskLevel={confirmation.risk_level} />
+        <ConfirmationSummary confirmation={confirmation} />
+        <PatchConfirmationPreview confirmation={confirmation} />
+        <ConfirmationActions
+          remember={remember}
+          patchMode={patchMode}
+          onApprove={() => onDecision("approve", remember)}
+          onDeny={() => onDecision("deny", remember)}
+          onRememberChange={(checked) => setRemember(checked)}
+        />
+      </div>
+    </div>
+  )
+}
+
+function ConfirmationHeader({ riskLevel }: { riskLevel: Confirmation["risk_level"] }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <AlertTriangle className="h-4 w-4 text-warning" />
+      <span className="text-sm font-medium text-warning">需要确认</span>
+      <span className={cn("text-xs font-medium uppercase", riskColors[riskLevel])}>
+        {riskLabels[riskLevel] || riskLevel}
+      </span>
+    </div>
+  )
+}
+
+function ConfirmationSummary({ confirmation }: { confirmation: Confirmation }) {
+  return (
+    <>
+      <p className="mb-2 text-sm font-medium text-foreground">{confirmation.action_summary}</p>
+      <p className="mb-3 text-sm text-muted-foreground">{confirmation.reason}</p>
+      <ConfirmationPathList paths={confirmation.target_paths} />
+      <ConfirmationHazards hazards={confirmation.hazards} />
+    </>
+  )
+}
+
+function ConfirmationPathList({ paths }: { paths: string[] }) {
+  if (paths.length === 0) return null
+  return (
+    <div className="mb-3">
+      <p className="mb-1 text-xs font-medium text-muted-foreground">影响路径：</p>
+      <div className="flex flex-wrap gap-1">
+        {paths.map((path) => <code key={path} className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">{path}</code>)}
+      </div>
+    </div>
+  )
+}
+
+function ConfirmationHazards({ hazards }: { hazards: string[] }) {
+  if (hazards.length === 0) return null
+  return (
+    <div className="mb-3">
+      <p className="mb-1 text-xs font-medium text-muted-foreground">潜在风险：</p>
+      <ul className="space-y-0.5">
+        {hazards.map((hazard) => <li key={hazard} className="flex items-center gap-1 text-xs text-destructive"><span className="h-1 w-1 rounded-full bg-destructive" />{hazard}</li>)}
+      </ul>
+    </div>
+  )
+}
+
+function PatchConfirmationPreview({ confirmation }: { confirmation: Confirmation }) {
+  if (!isPatchConfirmation(confirmation)) return null
+  const preview = confirmation.patch_preview_report_json?.trim() || ""
+  if (preview) return <DiffPreview content={preview} />
+  const args = parsePatchToolArguments(confirmation.tool_arguments_json)
+  if (!args) return null
+  return <PatchArgumentsPreview diff={args.diff} dry_run={args.dry_run} />
+}
+
+function PatchArgumentsPreview({ diff, dry_run }: PatchToolArguments) {
+  const report = inferDiffPreviewReport(diff)
+  if (report) {
+    return (
+      <DiffPreviewReportCard
+        report={report}
+        title="Patch 参数预览"
+        subtitle="未收到 dry-run 报告，以下根据 patch 参数生成只读摘要。"
+        badgeLabel={`dry-run: ${dry_run ? "是" : "否"}`}
+      />
+    )
+  }
+  return (
+    <div className="mb-3 rounded-lg border border-border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium text-foreground">Patch 参数预览</p>
+          <p className="text-xs text-muted-foreground">未收到 dry-run 报告，以下展示待确认的 patch 参数原文。</p>
         </div>
-        
-        <p className="text-sm font-medium text-foreground mb-2">
-          {confirmation.action_summary}
-        </p>
-        <p className="text-sm text-muted-foreground mb-3">
-          {confirmation.reason}
-        </p>
+        <span className="text-xs text-muted-foreground">dry-run: {dry_run ? "是" : "否"}</span>
+      </div>
+      <pre className="mt-3 max-h-56 overflow-auto rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground">{diff}</pre>
+    </div>
+  )
+}
 
-        {confirmation.target_paths.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">影响路径：</p>
-            <div className="flex flex-wrap gap-1">
-              {confirmation.target_paths.map((path, i) => (
-                <code key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
-                  {path}
-                </code>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {confirmation.hazards.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">潜在风险：</p>
-            <ul className="space-y-0.5">
-              {confirmation.hazards.map((hazard, i) => (
-                <li key={i} className="text-xs text-destructive flex items-center gap-1">
-                  <span className="h-1 w-1 rounded-full bg-destructive" />
-                  {hazard}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 pt-2">
-          <Button 
-            size="sm" 
-            onClick={() => onDecision("approve", remember)}
-            className="bg-success hover:bg-success/90 text-success-foreground"
-          >
-            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-            批准
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onDecision("deny", remember)}
-          >
-            <XCircle className="h-3.5 w-3.5 mr-1.5" />
-            拒绝
-          </Button>
-          <div className="flex items-center gap-2 ml-auto">
-            <Checkbox
-              id="remember"
-              checked={remember}
-              onCheckedChange={(checked) => setRemember(checked as boolean)}
-            />
-            <label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer">
-              记住此选择
-            </label>
-          </div>
+function ConfirmationActions({
+  remember,
+  patchMode,
+  onApprove,
+  onDeny,
+  onRememberChange,
+}: {
+  remember: boolean
+  patchMode: boolean
+  onApprove: () => void
+  onDeny: () => void
+  onRememberChange: (checked: boolean) => void
+}) {
+  const primaryLabel = patchMode ? "确认应用" : "批准"
+  const secondaryLabel = patchMode ? "取消应用" : "拒绝"
+  return (
+    <div className="pt-2">
+      <PatchApplyHint patchMode={patchMode} />
+      <div className="flex items-center gap-3">
+        <Button size="sm" onClick={onApprove} className="bg-success text-success-foreground hover:bg-success/90"><CheckCircle className="mr-1.5 h-3.5 w-3.5" />{primaryLabel}</Button>
+        <Button variant="outline" size="sm" onClick={onDeny}><XCircle className="mr-1.5 h-3.5 w-3.5" />{secondaryLabel}</Button>
+        <div className="ml-auto flex items-center gap-2">
+          <Checkbox id="remember" checked={remember} onCheckedChange={(checked) => onRememberChange(checked as boolean)} />
+          <label htmlFor="remember" className="cursor-pointer text-xs text-muted-foreground">记住此选择</label>
         </div>
       </div>
     </div>
   )
+}
+
+function PatchApplyHint({ patchMode }: { patchMode: boolean }) {
+  if (!patchMode) return null
+  return <p className="mb-3 text-xs text-muted-foreground">确认应用后才会写入文件，取消应用不会修改工作区。</p>
+}
+
+function isPatchConfirmation(confirmation: Confirmation): boolean {
+  return confirmation.tool_name === "workspace_apply_patch"
+}
+
+function parsePatchToolArguments(raw?: string): PatchToolArguments | null {
+  if (!raw?.trim()) return null
+  try {
+    const value = JSON.parse(raw)
+    if (!isRecord(value) || typeof value.diff !== "string" || !value.diff.trim()) return null
+    return { diff: value.diff, dry_run: value.dry_run === true }
+  } catch {
+    return null
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }

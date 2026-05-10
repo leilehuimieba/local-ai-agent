@@ -11,6 +11,8 @@ pub(crate) struct ToolDefinition {
     pub input_schema: String,
     pub output_kind: String,
     pub requires_confirmation: bool,
+    #[serde(skip)]
+    pub model_schema: Option<Value>,
 }
 
 #[derive(Clone, Debug)]
@@ -59,6 +61,9 @@ pub(crate) fn capability_spec(tool: &ToolDefinition) -> CapabilitySpec {
 }
 
 pub(crate) fn tool_definition_to_json_schema(tool: &ToolDefinition) -> Value {
+    if let Some(schema) = tool.model_schema.clone() {
+        return schema;
+    }
     let properties = tool_schema_properties(&tool.input_schema);
     let required = tool_schema_required(&tool.input_schema);
     let mut parameters = serde_json::json!({ "type": "object", "properties": properties });
@@ -110,6 +115,9 @@ fn verification_policy(tool: &ToolDefinition) -> &'static str {
 }
 
 fn connector_slot(tool: &ToolDefinition) -> String {
+    if tool.category == "mcp" {
+        return "mcp_gateway".to_string();
+    }
     match tool.tool_name.as_str() {
         "workspace_list"
         | "workspace_read"

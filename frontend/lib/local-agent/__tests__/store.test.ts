@@ -76,4 +76,28 @@ describe('useRuntimeStore', () => {
     expect(messages).toHaveLength(1)
     expect(messages[0].content).toBe('msg B')
   })
+
+  it('keeps confirmation tool arguments', async () => {
+    const useStore = await getStore()
+    useStore.getState().clearSession()
+    useStore.getState().applyEvent({
+      event_id: 'event-1',
+      event_type: 'confirmation_required',
+      stage: 'PausedForConfirmation',
+      summary: 'confirm',
+      timestamp: '1',
+      run_id: 'run-1',
+      session_id: useStore.getState().sessionId,
+      metadata: {
+        confirmation_id: 'confirm-1',
+        tool_name: 'workspace_apply_patch',
+        tool_arguments_json: '{"dry_run":true}',
+        patch_preview_report_json: '{"dry_run":true,"changes":[{"path":"a.ts","kind":"modify"}]}',
+      },
+    })
+    expect(useStore.getState().confirmation?.tool_name).toBe('workspace_apply_patch')
+    expect(useStore.getState().confirmation?.tool_arguments_json).toBe('{"dry_run":true}')
+    expect(useStore.getState().confirmation?.patch_preview_report_json)
+      .toBe('{"dry_run":true,"changes":[{"path":"a.ts","kind":"modify"}]}')
+  })
 })

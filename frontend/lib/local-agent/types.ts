@@ -59,12 +59,15 @@ export interface RuntimeEvent {
 export interface Confirmation {
   confirmation_id: string
   run_id: string
-  risk_level: "low" | "medium" | "high" | "critical"
+  risk_level: "low" | "medium" | "high" | "critical" | "irreversible"
   action_summary: string
   reason: string
   target_paths: string[]
   hazards: string[]
   alternatives: string[]
+  tool_name?: string
+  tool_arguments_json?: string
+  patch_preview_report_json?: string
 }
 
 // Runtime State
@@ -171,6 +174,26 @@ export interface MCPServerInfo {
 export interface MCPInfo {
   servers: MCPServerInfo[]
   tools: MCPTool[]
+}
+
+export interface MCPAuditRecord {
+  audit_id: string
+  timestamp: string
+  server_id: string
+  tool_name: string
+  session_id?: string
+  run_id?: string
+  trace_id?: string
+  allowed: boolean
+  risk_level: string
+  requires_confirmation: boolean
+  audit_enabled: boolean
+  policy_source: string
+  arguments_hash: string
+  outcome: string
+  error_code?: string
+  error_message?: string
+  elapsed_ms: number
 }
 
 export interface Settings {

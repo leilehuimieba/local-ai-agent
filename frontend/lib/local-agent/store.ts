@@ -218,6 +218,9 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
             target_paths: metadataList(metadata, "target_paths"),
             hazards: metadataList(metadata, "hazards"),
             alternatives: metadataList(metadata, "alternatives"),
+            tool_name: metadataText(metadata, "tool_name"),
+            tool_arguments_json: metadataText(metadata, "tool_arguments_json"),
+            patch_preview_report_json: metadataText(metadata, "patch_preview_report_json"),
           } as Confirmation,
         }
       }

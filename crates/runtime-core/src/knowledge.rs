@@ -367,7 +367,7 @@ fn search_file_knowledge(request: &RunRequest, query: &str, limit: usize) -> Vec
         .into_iter()
         .filter_map(|path| score_knowledge_file(path, query))
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0));
+    scored.sort_by_key(|right| std::cmp::Reverse(right.0));
     scored.into_iter().map(|(_, hit)| hit).take(limit).collect()
 }
 
@@ -426,7 +426,7 @@ fn search_stored_knowledge(request: &RunRequest, query: &str, limit: usize) -> V
             (score > 0).then_some((score, stored_knowledge_hit(record)))
         })
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0));
+    scored.sort_by_key(|right| std::cmp::Reverse(right.0));
     scored.into_iter().map(|(_, hit)| hit).take(limit).collect()
 }
 
@@ -549,7 +549,7 @@ fn search_siyuan_index(request: &RunRequest, query: &str, limit: usize) -> Vec<K
             ))
         })
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0));
+    scored.sort_by_key(|right| std::cmp::Reverse(right.0));
     scored.into_iter().map(|(_, hit)| hit).take(limit).collect()
 }
 

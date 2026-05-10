@@ -238,6 +238,30 @@
 6. 手机窄屏下是否存在溢出、挤压或滚动错乱。
 7. 新能力是否补齐空态、错态和必要说明。
 
+## 当前人工验收入口
+
+1. 前端验收首页：`http://localhost:3000/acceptance`
+2. patch confirmation 验收页：`http://localhost:3000/acceptance/confirmation-preview`
+3. MCP 观测验收页：`http://localhost:3000/acceptance/mcp-observability`
+
+### patch confirmation 验收点
+
+1. structured preview 能直接展示 `patch_preview_report_json` 的文件级摘要。
+2. fallback summary 在缺少 dry-run report 时，能从 `tool_arguments_json.diff` 推断 `create / modify / delete / rename` 摘要。
+3. patch 确认按钮文案固定为“确认应用 / 取消应用”。
+4. 页面提示必须明确“确认应用后才会写入文件，取消应用不会修改工作区”。
+
+### MCP 观测验收点
+
+1. 概览卡必须稳定展示 `服务器 / 工具 / 待放行 / 高风险` 四项摘要。
+2. 运营视图必须提供关键词筛选、服务器筛选和状态筛选三类入口。
+3. 工具卡必须可直接扫读 `allowlist / 风险等级 / 是否需确认 / 审计状态 / 策略来源`。
+4. 最近动作区必须展示最近 MCP 调用的结果、耗时、时间和必要错误摘要，不显示原始参数正文。
+5. 服务器筛选切换后，最近动作区和错误码聚合必须按同一服务器范围联动收窄。
+6. 错误码聚合至少展示当前范围内的主要错误码摘要，便于快速判断阻塞类型。
+7. 空态下不能只剩空白区域，必须给出稳定说明。
+8. 缺字段态下，工具描述、服务器归属和策略来源必须有可读占位，不得出现布局错乱。
+
 ## 最近增量修正留证
 
 ### 本轮已修复项

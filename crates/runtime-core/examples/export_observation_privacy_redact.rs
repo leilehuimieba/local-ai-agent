@@ -1,6 +1,4 @@
-use runtime_core::{
-    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_privacy_redact_flow,
-};
+use runtime_core::{ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, observation_privacy_redact_flow};
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};

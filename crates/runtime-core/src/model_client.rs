@@ -37,12 +37,7 @@ pub(crate) fn complete_with_model(request: &RunRequest, prompt: &str) -> Result<
 }
 
 fn write_body_file(request: &RunRequest, prompt: &str) -> Result<PathBuf, ModelError> {
-    let visible_tools = crate::capabilities::visible_tools("full_access");
-    let mut mapped_tools: Vec<serde_json::Value> = visible_tools
-        .iter()
-        .map(crate::capabilities::tool_definition_to_json_schema)
-        .collect();
-    mapped_tools.extend(crate::mcp_bridge::mcp_tool_schemas(request));
+    let mapped_tools = crate::tool_registry::runtime_tool_registry().request_tool_schemas(request);
     let tools = if mapped_tools.is_empty() {
         None
     } else {
@@ -80,8 +75,8 @@ fn timestamp_now() -> u128 {
 
 #[cfg(test)]
 mod tests {
-    use crate::mcp_bridge::mcp_tool_schemas;
     use crate::query_engine_testkit::testkit::sample_request;
+    use crate::tool_registry::runtime_tool_registry;
 
     #[test]
     fn mcp_tool_schema_is_loaded_from_context_hints() {
@@ -90,7 +85,11 @@ mod tests {
             "mcp_tool_specs_json".to_string(),
             r#"[{"server_id":"docs","name":"search","function_name":"mcp__docs__search","description":"Search docs","risk_level":"low","requires_confirmation":false,"audit_enabled":true}]"#.to_string(),
         );
-        let schemas = mcp_tool_schemas(&request);
-        assert_eq!(schemas[0]["function"]["name"], "mcp__docs__search");
+        let schemas = runtime_tool_registry().request_tool_schemas(&request);
+        let mcp = schemas
+            .iter()
+            .find(|item| item["function"]["name"] == "mcp__docs__search")
+            .unwrap();
+        assert_eq!(mcp["function"]["name"], "mcp__docs__search");
     }
 }

@@ -40,6 +40,7 @@ func NewRouter(
 	registerProvidersRoutes(mux, cfg, credentialStore, runtimeStore, repoRoot)
 	registerLearningRoutes(mux, memoryDeps)
 	registerSettingsRoutes(mux, repoRoot, cfg, settingsStore, mgr)
+	registerCatalogRoutes(mux, repoRoot, cfg, runtimeClient, settingsStore, mgr)
 	registerLogsRoutes(mux, repoRoot, cfg.RuntimePort, eventBus)
 	registerMemoryRoutes(mux, memoryDeps)
 	registerChatRoutes(mux, chat)

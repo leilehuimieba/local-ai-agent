@@ -124,7 +124,7 @@ fn search_siyuan_notes(request: &RunRequest, root: &Path, query: &str) -> Vec<Kn
         .into_iter()
         .filter_map(|path| score_siyuan_file(path, query))
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0));
+    scored.sort_by_key(|right| std::cmp::Reverse(right.0));
     scored.into_iter().take(3).map(|(_, hit)| hit).collect()
 }
 
@@ -134,7 +134,7 @@ fn search_siyuan_index_hits(request: &RunRequest, query: &str) -> Vec<KnowledgeH
         .filter(|record| record.source_type == "siyuan")
         .filter_map(|record| score_siyuan_record(record, query))
         .collect::<Vec<_>>();
-    scored.sort_by(|left, right| right.0.cmp(&left.0));
+    scored.sort_by_key(|right| std::cmp::Reverse(right.0));
     scored.into_iter().take(3).map(|(_, hit)| hit).collect()
 }
 

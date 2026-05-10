@@ -65,6 +65,24 @@ func (c *Client) Capabilities(ctx context.Context, mode string) (contracts.Capab
 	return getJSON[contracts.CapabilityListResponse](ctx, c.httpClient, c.baseURL+path)
 }
 
+func (c *Client) CapabilitiesForRequest(
+	ctx context.Context,
+	request contracts.RunRequest,
+) (contracts.CapabilityListResponse, error) {
+	body, err := json.Marshal(request)
+	if err != nil {
+		return contracts.CapabilityListResponse{}, fmt.Errorf("marshal capability request: %w", err)
+	}
+	httpReq, err := http.NewRequestWithContext(
+		ctx, http.MethodPost, c.baseURL+"/v1/runtime/capabilities/query", bytes.NewReader(body),
+	)
+	if err != nil {
+		return contracts.CapabilityListResponse{}, fmt.Errorf("create runtime request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	return getJSONFromRequest[contracts.CapabilityListResponse](c.httpClient, httpReq)
+}
+
 func (c *Client) Connectors(ctx context.Context) (contracts.ConnectorListResponse, error) {
 	return getJSON[contracts.ConnectorListResponse](ctx, c.httpClient, c.baseURL+"/v1/runtime/connectors")
 }
@@ -75,6 +93,11 @@ func getJSON[T any](ctx context.Context, client *http.Client, target string) (T,
 	if err != nil {
 		return payload, fmt.Errorf("create runtime request: %w", err)
 	}
+	return getJSONFromRequest[T](client, httpReq)
+}
+
+func getJSONFromRequest[T any](client *http.Client, httpReq *http.Request) (T, error) {
+	var payload T
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return payload, fmt.Errorf("call runtime: %w", err)

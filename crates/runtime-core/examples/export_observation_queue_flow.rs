@@ -1,6 +1,4 @@
-use runtime_core::{
-    ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, run_observation_queue_flow,
-};
+use runtime_core::{ModelRef, ProviderRef, RunEvent, RunRequest, WorkspaceRef, run_observation_queue_flow};
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -65,10 +63,7 @@ fn workspace_ref_for(workspace_id: &str) -> WorkspaceRef {
 
 fn queue_fail_hints() -> BTreeMap<String, String> {
     let mut hints = BTreeMap::new();
-    hints.insert(
-        "force_observation_queue_fail".to_string(),
-        "true".to_string(),
-    );
+    hints.insert("force_observation_queue_fail".to_string(), "true".to_string());
     hints
 }
 

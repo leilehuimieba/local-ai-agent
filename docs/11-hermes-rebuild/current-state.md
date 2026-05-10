@@ -1,7 +1,7 @@
 # Hermes 当前执行状态（单一事实源）
 
-更新时间：2026-05-04
-状态：`自由迭代期：AB-change diff apply UI 预览进行中`
+更新时间：2026-05-05
+状态：`自由迭代期：AD-runtime-mcp-tool-registry-20260505 进行中`
 
 本文件是 `docs/11-hermes-rebuild/` 下关于"当前阶段 / 当前 Gate / 当前活跃 change"的唯一权威记录。
 
@@ -9,8 +9,8 @@
 
 1. 当前阶段：阶段 I（可持续交付与工程治理）
 2. 当前 Gate：Gate-I（已收口）
-3. 当前活跃 change：`AB-diff-preview-ui-20260504`
-4. 上一主推进目录：`docs/11-hermes-rebuild/changes/AA-windows-doctor-launcher-20260504/`
+3. 当前活跃 change：`AD-runtime-mcp-tool-registry-20260505`
+4. 上一主推进目录：`docs/11-hermes-rebuild/changes/archive/2026-05-05/AC-mcp-observability-ui-20260505/`
 
 ## 2. 阶段 I 收口结论
 
@@ -35,6 +35,8 @@
 11. **Y-change（2026-05-04）**：短板补齐第一阶段 — MCP 添加/删除持久化、Runtime MCP 调用闭环、allowlist/risk/audit 安全治理。已收口。
 12. **Z-change（2026-05-04）**：diff apply 最小闭环 — Runtime `workspace_apply_patch` 支持 dry-run、多文件、新增、删除、rename、冲突报告和失败回滚。已收口。
 13. **AA-change（2026-05-04）**：Windows doctor 与一键启动体验 — Gateway 服务状态 API、一键启动器 preflight/start/verify、前端服务状态面板。已收口。
+14. **AB-change（2026-05-05）**：diff apply UI 预览与确认体验 — 前端验收入口正式化，confirmation 预览优先读取 `patch_preview_report_json`，并补齐 fallback 摘要与确认写入边界。已归档。
+15. **AC-change（2026-05-05）**：MCP 可观测与运营面板 — 设置页 MCP 观测面板、验收入口、只读审计 API、最近动作、按服务器联动筛选与错误码聚合。已归档。
 
 ## 4. 阶段 H 收口结论
 

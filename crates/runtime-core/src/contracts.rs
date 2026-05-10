@@ -149,6 +149,12 @@ pub struct ConfirmationRequest {
     pub hazards: Vec<String>,
     pub alternatives: Vec<String>,
     pub kind: String,
+    #[serde(default)]
+    pub tool_name: String,
+    #[serde(default)]
+    pub tool_arguments_json: String,
+    #[serde(default)]
+    pub patch_preview_report_json: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

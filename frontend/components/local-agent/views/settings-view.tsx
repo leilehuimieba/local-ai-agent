@@ -23,9 +23,10 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Brain, CheckCircle, ChevronDown, ChevronRight, Cpu, Database, Eye, EyeOff, FolderOpen, Key, Loader2, Play, Save, Server, Shield, Trash2, Wrench } from "lucide-react"
+import { MCPObservabilityPanel, MCPToolBadges } from "@/components/local-agent/views/mcp-observability-panel"
 import { useMemoryStore, useSettingsStore } from "@/lib/local-agent/store"
-import type { AgentMode, DirectoryApproval, Model, Provider, Workspace } from "@/lib/local-agent/types"
-import { applyProvider, removeProviderCredential, runDiagnosticsCheck, saveProvider, testProvider, updateSettings } from "@/lib/local-agent/api"
+import type { AgentMode, DirectoryApproval, MCPAuditRecord, Model, Provider, Workspace } from "@/lib/local-agent/types"
+import { applyProvider, fetchMCPAudits, removeProviderCredential, runDiagnosticsCheck, saveProvider, testProvider, updateSettings } from "@/lib/local-agent/api"
 import { cn } from "@/lib/utils"
 
 const settingsModules = [
@@ -439,10 +440,13 @@ function DirectoryItem({ dir, onRemove }: { dir: DirectoryApproval; onRemove: (p
 const MCPSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { mcp, loadSettings } = useSettingsStore()
   const servers = mcp?.servers || []
+  const tools = mcp?.tools || []
+  const audits = useMCPAuditFeed(servers.length > 0)
   return (
     <SettingsSection ref={ref} id="mcp" title="MCP" description="模型上下文协议工具" icon={Wrench}>
       <div className="space-y-3">
-        {servers.map((s) => <MCPServerCard key={s.id} server={s} tools={mcp?.tools?.filter((t) => t.server_id === s.id) || []} onReload={loadSettings} />)}
+        <MCPObservabilityPanel servers={servers} tools={tools} audits={audits.items} auditError={audits.error} />
+        {servers.map((s) => <MCPServerCard key={s.id} server={s} tools={tools.filter((t) => t.server_id === s.id)} onReload={loadSettings} />)}
         {servers.length === 0 && <p className="text-sm text-muted-foreground">暂无配置的 MCP 服务器</p>}
         <MCPAddForm onReload={loadSettings} />
       </div>
@@ -450,6 +454,20 @@ const MCPSection = forwardRef<HTMLDivElement>((_, ref) => {
   )
 })
 MCPSection.displayName = "MCPSection"
+
+function useMCPAuditFeed(enabled: boolean) {
+  const [items, setItems] = useState<MCPAuditRecord[] | undefined>(undefined)
+  const [error, setError] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    fetchMCPAudits({ limit: 20 })
+      .then((data) => { if (!cancelled) { setItems(data); setError(undefined) } })
+      .catch(() => { if (!cancelled) { setItems([]); setError("审计 API 已预留，当前环境尚未返回记录。") } })
+    return () => { cancelled = true }
+  }, [enabled])
+  return { items, error }
+}
 
 function MCPServerCard({ server, tools, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; tools: import("@/lib/local-agent/types").MCPTool[]; onReload: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
@@ -526,10 +544,6 @@ function MCPToolRow({ tool, onReload }: { tool: import("@/lib/local-agent/types"
 
 function MCPToolHeader({ tool }: { tool: import("@/lib/local-agent/types").MCPTool }) {
   return <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium text-foreground">{tool.name}</p><MCPToolBadges tool={tool} /></div>
-}
-
-function MCPToolBadges({ tool }: { tool: import("@/lib/local-agent/types").MCPTool }) {
-  return <div className="flex items-center gap-1"><Badge variant={tool.allowed ? "default" : "secondary"} className="text-[10px]">{tool.allowed ? "allow" : "blocked"}</Badge><Badge variant="outline" className="text-[10px]">{tool.risk_level || "medium"}</Badge>{tool.audit_enabled && <Badge variant="outline" className="text-[10px]">audit</Badge>}</div>
 }
 
 function PolicySwitch({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
