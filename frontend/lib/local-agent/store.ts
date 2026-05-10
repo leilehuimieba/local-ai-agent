@@ -212,7 +212,7 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
           confirmation: {
             confirmation_id: metadataText(metadata, "confirmation_id"),
             run_id: event.run_id,
-            risk_level: (metadataText(metadata, "risk_level") as any) || "medium",
+            risk_level: (metadataText(metadata, "risk_level") as Confirmation["risk_level"]) || "medium",
             action_summary: metadataText(metadata, "action_summary") || event.summary,
             reason: metadataText(metadata, "reason") || event.summary,
             target_paths: metadataList(metadata, "target_paths"),
@@ -558,7 +558,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       const providerData = await fetchProviderSettings().catch(() => null)
       const providers = providerData?.providers || data.providers.map(toProviderSettingsItem)
       set({
-        mode: data.mode as any,
+        mode: data.mode as AgentMode,
         model: data.model,
         workspace: data.workspace,
         embedding_provider_id: data.embedding?.provider_id || "",

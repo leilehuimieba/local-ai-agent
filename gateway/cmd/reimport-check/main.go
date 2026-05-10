@@ -17,7 +17,7 @@ func main() {
 	defer rows.Close()
 	for rows.Next() {
 		var t, c string
-		rows.Scan(&t, &c)
+		_ = rows.Scan(&t, &c)
 		total++
 		if c == "" {
 			empty++

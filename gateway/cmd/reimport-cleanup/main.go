@@ -33,10 +33,10 @@ func main() {
 	var records []record
 	for rows.Next() {
 		var r record
-		rows.Scan(&r.id, &r.workspaceID, &r.title, &r.content, &r.source)
+		_ = rows.Scan(&r.id, &r.workspaceID, &r.title, &r.content, &r.source)
 		records = append(records, r)
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	var cleaned int
 	for _, r := range records {

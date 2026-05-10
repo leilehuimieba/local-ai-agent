@@ -28,7 +28,7 @@ func TestMCPRuntimeBridgeE2EUsesGatewayPolicyAndAudit(t *testing.T) {
 	cfg := sampleAppConfig()
 	cfg.Providers[0].APIKey = "test-key"
 	gateway, gatewayToken := startBridgeGateway(t, repoRoot, cfg, rt.port, mgr)
-	defer gateway.Close()
+	defer func() { _ = gateway.Close() }()
 
 	resp := postBridgeChatRun(t, gateway, gatewayToken)
 	require.Equal(t, http.StatusAccepted, resp.StatusCode)
@@ -47,7 +47,7 @@ func TestCapabilitiesAPIIncludesRequestScopedMCPCapability(t *testing.T) {
 	rt := newCatalogRuntime(t)
 	cfg := sampleAppConfig()
 	gateway, gatewayToken := startBridgeGateway(t, repoRoot, cfg, rt.port, mgr)
-	defer gateway.Close()
+	defer func() { _ = gateway.Close() }()
 
 	resp := getCapabilities(t, gateway, gatewayToken)
 	require.Equal(t, http.StatusOK, resp.StatusCode)

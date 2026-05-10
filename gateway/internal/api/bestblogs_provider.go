@@ -67,12 +67,12 @@ func bestblogsArticleListHandler() http.HandlerFunc {
 }
 
 type bestblogsScrapeRequest struct {
-	StartPage    int    `json:"start_page"`
-	EndPage      int    `json:"end_page"`
-	PageSize     int    `json:"page_size"`
-	Language     string `json:"language"`
-	FullContent  bool   `json:"full_content"`
-	MaxArticles  int    `json:"max_articles"`
+	StartPage   int    `json:"start_page"`
+	EndPage     int    `json:"end_page"`
+	PageSize    int    `json:"page_size"`
+	Language    string `json:"language"`
+	FullContent bool   `json:"full_content"`
+	MaxArticles int    `json:"max_articles"`
 }
 
 type bestblogsScrapeResponse struct {
@@ -86,8 +86,8 @@ type bestblogsScrapeResponse struct {
 }
 
 var (
-	scrapeJobMu   sync.Mutex
-	scrapeJobDone = true
+	scrapeJobMu     sync.Mutex
+	scrapeJobDone   = true
 	scrapeJobResult bestblogsScrapeResponse
 )
 

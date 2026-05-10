@@ -35,4 +35,3 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 		ResumeStrategy:         "",
 	}, nil
 }
-
