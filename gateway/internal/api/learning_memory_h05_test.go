@@ -22,19 +22,19 @@ type h05InjectionAuditSample struct {
 }
 
 type h05LatestReport struct {
-	CheckedAt string                 `json:"checked_at"`
-	Status    string                 `json:"status"`
-	H05       h05LatestGate          `json:"h05"`
-	Summary   h05LatestSummary       `json:"summary"`
-	Evidence  map[string]string      `json:"evidence"`
+	CheckedAt string                    `json:"checked_at"`
+	Status    string                    `json:"status"`
+	H05       h05LatestGate             `json:"h05"`
+	Summary   h05LatestSummary          `json:"summary"`
+	Evidence  map[string]string         `json:"evidence"`
 	Samples   []h05InjectionAuditSample `json:"samples"`
 }
 
 type h05LatestGate struct {
-	WriteThresholdReady bool `json:"write_threshold_ready"`
+	WriteThresholdReady  bool `json:"write_threshold_ready"`
 	InjectionBudgetReady bool `json:"injection_budget_ready"`
-	AuditEvidenceReady  bool `json:"audit_evidence_ready"`
-	Ready               bool `json:"ready"`
+	AuditEvidenceReady   bool `json:"audit_evidence_ready"`
+	Ready                bool `json:"ready"`
 }
 
 type h05LatestSummary struct {
@@ -45,8 +45,8 @@ type h05LatestSummary struct {
 }
 
 type h05RollbackDrillReport struct {
-	CheckedAt string                `json:"checked_at"`
-	Status    string                `json:"status"`
+	CheckedAt string                 `json:"checked_at"`
+	Status    string                 `json:"status"`
 	Cases     []h05RollbackDrillCase `json:"cases"`
 }
 
@@ -114,10 +114,10 @@ func countH05Samples(samples []h05InjectionAuditSample) (int, int) {
 func h05EvidenceMap() map[string]string {
 	base := filepath.Join("D:\\newwork\\本地智能体", "tmp", "stage-h-memory-routing")
 	return map[string]string{
-		"report":         filepath.Join(base, "latest.json"),
+		"report":          filepath.Join(base, "latest.json"),
 		"injection_audit": filepath.Join(base, "injection-audit.json"),
-		"rollback_drill": filepath.Join(base, "rollback-drill.json"),
-		"baseline":       filepath.Join("D:\\newwork\\本地智能体", "tmp", "stage-h-learning", "memory-routing.json"),
+		"rollback_drill":  filepath.Join(base, "rollback-drill.json"),
+		"baseline":        filepath.Join("D:\\newwork\\本地智能体", "tmp", "stage-h-learning", "memory-routing.json"),
 	}
 }
 

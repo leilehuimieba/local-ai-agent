@@ -13,15 +13,15 @@ import (
 )
 
 type persistedSettings struct {
-	Mode                   string   `json:"mode"`
-	ModelProviderID        string   `json:"model_provider_id"`
-	ModelID                string   `json:"model_id"`
-	WorkspaceID            string   `json:"workspace_id"`
-	DirectoryPromptEnabled *bool    `json:"directory_prompt_enabled,omitempty"`
-	ShowRiskLevel          *bool    `json:"show_risk_level,omitempty"`
-	ApprovedWorkspaceIDs   []string `json:"approved_workspace_ids"`
+	Mode                   string                    `json:"mode"`
+	ModelProviderID        string                    `json:"model_provider_id"`
+	ModelID                string                    `json:"model_id"`
+	WorkspaceID            string                    `json:"workspace_id"`
+	DirectoryPromptEnabled *bool                     `json:"directory_prompt_enabled,omitempty"`
+	ShowRiskLevel          *bool                     `json:"show_risk_level,omitempty"`
+	ApprovedWorkspaceIDs   []string                  `json:"approved_workspace_ids"`
 	ApprovedDirectories    []ApprovedDirectoryRecord `json:"approved_directories,omitempty"`
-	EmbeddingProviderID    string   `json:"embedding_provider_id,omitempty"`
+	EmbeddingProviderID    string                    `json:"embedding_provider_id,omitempty"`
 }
 
 type ApprovedDirectoryRecord struct {

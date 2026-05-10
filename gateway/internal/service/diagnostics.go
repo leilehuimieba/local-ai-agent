@@ -115,6 +115,7 @@ var gatewayStartRunner = func(repoRoot string, port int) error {
 	cmd.Env = append(os.Environ(), fmt.Sprintf("LOCAL_AGENT_GATEWAY_PORT=%d", port))
 	return cmd.Start()
 }
+
 func RemediateLogsWritable(repoRoot string) logsRemediationResponse {
 	before := ReadLogsRemediationState(repoRoot)
 	after, actions, nextStep, ok := ApplyLogsRemediation(repoRoot, before)

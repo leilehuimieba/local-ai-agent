@@ -40,8 +40,8 @@ type ProviderCredentialStore struct {
 
 func NewProviderCredentialStore(repoRoot string) *ProviderCredentialStore {
 	store := &ProviderCredentialStore{
-		path: filepath.Join(repoRoot, "data", "settings", "provider-credentials.json"),
-		lockPath: filepath.Join(repoRoot, "data", "settings", "provider-credentials.lock"),
+		path:      filepath.Join(repoRoot, "data", "settings", "provider-credentials.json"),
+		lockPath:  filepath.Join(repoRoot, "data", "settings", "provider-credentials.lock"),
 		providers: make(map[string]ProviderCredentialRecord),
 	}
 	store.load()

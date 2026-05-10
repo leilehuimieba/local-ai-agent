@@ -251,14 +251,14 @@ func buildH02ManualGuideEval(repoRoot string) map[string]any {
 	successRate := h02ManualGuideSuccessRate(cases)
 	scoreAvg := h02ManualGuideScoreAvg(cases)
 	return map[string]any{
-		"checked_at":                  "2026-04-16T20:45:00+08:00",
-		"status":                      "passed",
-		"manual_takeover_cases":       cases,
-		"manual_takeover_case_count":  len(cases),
+		"checked_at":                   "2026-04-16T20:45:00+08:00",
+		"status":                       "passed",
+		"manual_takeover_cases":        cases,
+		"manual_takeover_case_count":   len(cases),
 		"manual_takeover_success_rate": successRate,
-		"guide_score_avg":             scoreAvg,
-		"guide_score_threshold":       4.5,
-		"ready":                       scoreAvg >= 4.5 && successRate >= 0.95,
+		"guide_score_avg":              scoreAvg,
+		"guide_score_threshold":        4.5,
+		"ready":                        scoreAvg >= 4.5 && successRate >= 0.95,
 	}
 }
 

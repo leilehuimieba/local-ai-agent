@@ -16,10 +16,10 @@ type Item struct {
 }
 
 type ListResponse struct {
-	Items      []Item         `json:"items"`
-	Categories []string       `json:"categories"`
+	Items        []Item         `json:"items"`
+	Categories   []string       `json:"categories"`
 	CategoryTree []CategoryNode `json:"category_tree,omitempty"`
-	Tags       []string       `json:"tags"`
+	Tags         []string       `json:"tags"`
 }
 
 type CategoryNode struct {

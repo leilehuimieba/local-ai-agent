@@ -421,7 +421,7 @@ func sendChatCompletion(provider config.ProviderConfig, modelID string, prompt s
 			{"role": "user", "content": prompt},
 		},
 		"temperature": 0.3,
-		"max_tokens": 2048,
+		"max_tokens":  2048,
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {

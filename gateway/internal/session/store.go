@@ -20,21 +20,21 @@ type Session struct {
 }
 
 type ChatMessage struct {
-	ID       string `json:"id"`
-	SessionID string `json:"session_id"`
-	Role      string `json:"role"`
-	Content   string `json:"content"`
+	ID         string `json:"id"`
+	SessionID  string `json:"session_id"`
+	Role       string `json:"role"`
+	Content    string `json:"content"`
 	BlocksJSON string `json:"-"`
-	Timestamp string `json:"timestamp"`
+	Timestamp  string `json:"timestamp"`
 }
 
 type MessageBlock struct {
-	Type    string `json:"type"`
-	Content string `json:"content,omitempty"`
-	Language string `json:"language,omitempty"`
-	Headers []string `json:"headers,omitempty"`
-	Rows    [][]string `json:"rows,omitempty"`
-	Items   []string `json:"items,omitempty"`
+	Type     string     `json:"type"`
+	Content  string     `json:"content,omitempty"`
+	Language string     `json:"language,omitempty"`
+	Headers  []string   `json:"headers,omitempty"`
+	Rows     [][]string `json:"rows,omitempty"`
+	Items    []string   `json:"items,omitempty"`
 }
 
 type SessionStore struct {
@@ -209,12 +209,12 @@ func (s *SessionStore) AddMessage(sessionID string, role string, content string,
 	_, _ = db.Exec(`UPDATE sessions SET updated_at = ? WHERE id = ?`, now, sessionID)
 
 	return &ChatMessage{
-		ID:        id,
-		SessionID: sessionID,
-		Role:      role,
-		Content:   content,
+		ID:         id,
+		SessionID:  sessionID,
+		Role:       role,
+		Content:    content,
 		BlocksJSON: blocksJSON,
-		Timestamp: timestamp,
+		Timestamp:  timestamp,
 	}, nil
 }
 

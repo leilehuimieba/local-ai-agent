@@ -90,13 +90,13 @@ type ListArticlesRequest struct {
 }
 
 type ListArticlesResponse struct {
-	OK         bool              `json:"ok"`
-	Provider   string            `json:"provider"`
-	CurrentPage int              `json:"current_page"`
-	PageSize   int              `json:"page_size"`
-	TotalCount int              `json:"total_count"`
-	PageCount  int              `json:"page_count"`
-	Items      []ArticleListItem `json:"items"`
+	OK          bool              `json:"ok"`
+	Provider    string            `json:"provider"`
+	CurrentPage int               `json:"current_page"`
+	PageSize    int               `json:"page_size"`
+	TotalCount  int               `json:"total_count"`
+	PageCount   int               `json:"page_count"`
+	Items       []ArticleListItem `json:"items"`
 }
 
 type ArticleListItem struct {
@@ -119,7 +119,7 @@ type ArticleListItem struct {
 }
 
 type upstreamListEnvelope struct {
-	Success bool           `json:"success"`
+	Success bool             `json:"success"`
 	Data    upstreamListData `json:"data"`
 }
 
@@ -132,22 +132,22 @@ type upstreamListData struct {
 }
 
 type upstreamListItem struct {
-	ID                  string              `json:"id"`
-	Title               string              `json:"title"`
-	OneSentenceSummary  string              `json:"oneSentenceSummary"`
-	Summary             string              `json:"summary"`
-	Tags                []string            `json:"tags"`
-	MainPoints          []upstreamMainPoint `json:"mainPoints"`
-	KeyQuotes           []string            `json:"keyQuotes"`
-	URL                 string              `json:"url"`
-	ReadURL             string              `json:"readUrl"`
-	Domain              string              `json:"domain"`
-	Cover               string              `json:"cover"`
-	SourceName          string              `json:"sourceName"`
-	Authors             []string            `json:"authors"`
-	PublishDateTimeStr  string              `json:"publishDateTimeStr"`
-	CategoryDesc        string              `json:"categoryDesc"`
-	ResourceTypeDesc    string              `json:"resourceTypeDesc"`
-	WordCount           int                 `json:"wordCount"`
-	ReadCount           int                 `json:"readCount"`
+	ID                 string              `json:"id"`
+	Title              string              `json:"title"`
+	OneSentenceSummary string              `json:"oneSentenceSummary"`
+	Summary            string              `json:"summary"`
+	Tags               []string            `json:"tags"`
+	MainPoints         []upstreamMainPoint `json:"mainPoints"`
+	KeyQuotes          []string            `json:"keyQuotes"`
+	URL                string              `json:"url"`
+	ReadURL            string              `json:"readUrl"`
+	Domain             string              `json:"domain"`
+	Cover              string              `json:"cover"`
+	SourceName         string              `json:"sourceName"`
+	Authors            []string            `json:"authors"`
+	PublishDateTimeStr string              `json:"publishDateTimeStr"`
+	CategoryDesc       string              `json:"categoryDesc"`
+	ResourceTypeDesc   string              `json:"resourceTypeDesc"`
+	WordCount          int                 `json:"wordCount"`
+	ReadCount          int                 `json:"readCount"`
 }

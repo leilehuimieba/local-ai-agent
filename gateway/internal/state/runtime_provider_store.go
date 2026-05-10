@@ -37,8 +37,8 @@ type RuntimeProviderStore struct {
 
 func NewRuntimeProviderStore(repoRoot string) *RuntimeProviderStore {
 	store := &RuntimeProviderStore{
-		path: filepath.Join(repoRoot, "data", "settings", "runtime-provider-state.json"),
-		lockPath: filepath.Join(repoRoot, "data", "settings", "runtime-provider-state.lock"),
+		path:      filepath.Join(repoRoot, "data", "settings", "runtime-provider-state.json"),
+		lockPath:  filepath.Join(repoRoot, "data", "settings", "runtime-provider-state.lock"),
 		providers: make(map[string]RuntimeProviderRecord),
 	}
 	store.load()

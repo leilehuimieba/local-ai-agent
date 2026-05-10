@@ -53,8 +53,6 @@ func main() {
 		}
 		records = append(records, r)
 	}
-	rows.Close()
-
 	fmt.Printf("found %d records\n", len(records))
 
 	var updated, skipped, failed, deleted int
