@@ -13,19 +13,17 @@ pub(crate) fn summarize_text(text: &str) -> String {
 pub(crate) fn extract_snippet(content: &str, query: &str) -> String {
     let lower_content = content.to_lowercase();
     let lower_query = query.trim().to_lowercase();
-    if !lower_query.is_empty() {
-        if let Some(index) = lower_content.find(&lower_query) {
-            let prefix_chars = lower_content[..index].chars().count();
-            let query_chars = lower_query.chars().count();
-            let start_char = prefix_chars.saturating_sub(80);
-            let end_char = usize::min(prefix_chars + query_chars + 120, content.chars().count());
-            let snippet = content
-                .chars()
-                .skip(start_char)
-                .take(end_char.saturating_sub(start_char))
-                .collect::<String>();
-            return summarize_text(&snippet);
-        }
+    if let Some(index) = lower_content.find(&lower_query).filter(|_| !lower_query.is_empty()) {
+        let prefix_chars = lower_content[..index].chars().count();
+        let query_chars = lower_query.chars().count();
+        let start_char = prefix_chars.saturating_sub(80);
+        let end_char = usize::min(prefix_chars + query_chars + 120, content.chars().count());
+        let snippet = content
+            .chars()
+            .skip(start_char)
+            .take(end_char.saturating_sub(start_char))
+            .collect::<String>();
+        return summarize_text(&snippet);
     }
     summarize_text(content)
 }

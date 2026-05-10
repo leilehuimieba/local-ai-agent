@@ -131,6 +131,7 @@ impl ActionExecution {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn cached(
         action_summary: String,
         result_summary: String,

@@ -56,7 +56,14 @@ jobs:
           go-version: stable
 
       - name: Go test
-        run: go test $(go list ./... | grep -v 'cmd/launcher')
+        run: go test -coverprofile=coverage.out $(go list ./... | grep -v 'cmd/launcher')
+
+      - name: Upload Go coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: gateway/coverage.out
+          flags: go
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   frontend-lint:
     name: Frontend lint
@@ -108,7 +115,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test
-        run: pnpm run test
+        run: pnpm run test --coverage
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: frontend/coverage
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build
         run: pnpm run build

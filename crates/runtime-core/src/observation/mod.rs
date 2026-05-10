@@ -1,6 +1,5 @@
 use crate::contracts::{RunEvent, RunRequest};
 use crate::paths::observation_audit_file_path;
-use crate::sensitive_data::redact_sensitive_text;
 use crate::sqlite_store::{insert_observation_record, with_connection};
 use crate::storage::{append_jsonl, read_jsonl};
 use std::collections::BTreeSet;
@@ -686,7 +685,7 @@ fn normalize_budget_total_chars(value: usize) -> usize {
     if value == 0 {
         return 1200;
     }
-    value.max(300).min(2_048_000)
+    value.clamp(300, 2_048_000)
 }
 
 pub(crate) fn resolve_observation_budget_chars(request: &RunRequest, fallback: usize) -> usize {
@@ -744,7 +743,7 @@ fn normalize_window(window: usize) -> usize {
 }
 
 fn search_scan_limit(limit: usize) -> usize {
-    (limit.saturating_mul(20)).max(200).min(2000)
+    (limit.saturating_mul(20)).clamp(200, 2000)
 }
 
 fn recent_observation_rows(request: &RunRequest, limit: usize) -> Vec<StoredObservationRow> {

@@ -42,11 +42,9 @@ pub(crate) fn load_repo_context(workspace_root: &Path) -> RepoContextLoadResult 
         None
     };
 
-    let git_snapshot = if let Some(root) = repo_root.as_ref() {
-        Some(load_git_snapshot(Path::new(root), &mut warnings))
-    } else {
-        None
-    };
+    let git_snapshot = repo_root
+        .as_ref()
+        .map(|root| load_git_snapshot(Path::new(root), &mut warnings));
 
     let doc_base = repo_root
         .as_ref()

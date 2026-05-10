@@ -118,6 +118,7 @@ fn invalid_path(action: &str, path: &str, summary: &str, cache_reason: &str) -> 
     )
 }
 
+#[allow(clippy::result_large_err)]
 fn resolve_path(
     request: &RunRequest,
     action: &str,

@@ -98,10 +98,10 @@ fn read_request(stream: &std::net::TcpStream) -> Option<HttpRequest> {
             break;
         }
 
-        if let Some((name, value)) = header_line.split_once(':') {
-            if name.eq_ignore_ascii_case("content-length") {
-                content_length = value.trim().parse::<usize>().unwrap_or(0);
-            }
+        if let Some((name, value)) = header_line.split_once(':')
+            && name.eq_ignore_ascii_case("content-length")
+        {
+            content_length = value.trim().parse::<usize>().unwrap_or(0);
         }
     }
 

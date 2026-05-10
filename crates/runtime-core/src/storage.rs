@@ -14,7 +14,7 @@ where
     let reader = BufReader::new(file);
     reader
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .map(|line| line.trim_start_matches('\u{feff}').to_string())
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| serde_json::from_str::<T>(&line).ok())

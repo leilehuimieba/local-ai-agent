@@ -40,10 +40,8 @@ fn activity_state(event: &RunEvent) -> String {
 }
 
 fn waiting_reason(event: &RunEvent) -> String {
-    if let Some(reason) = event.metadata.get("waiting_reason") {
-        if !reason.is_empty() {
-            return reason.clone();
-        }
+    if let Some(reason) = event.metadata.get("waiting_reason").filter(|r| !r.is_empty()) {
+        return reason.clone();
     }
     match event.event_type.as_str() {
         "confirmation_required" => "confirmation".to_string(),
@@ -54,10 +52,8 @@ fn waiting_reason(event: &RunEvent) -> String {
 }
 
 fn failure_route(event: &RunEvent) -> String {
-    if let Some(route) = event.metadata.get("failure_route") {
-        if !route.is_empty() {
-            return route.clone();
-        }
+    if let Some(route) = event.metadata.get("failure_route").filter(|r| !r.is_empty()) {
+        return route.clone();
     }
     match event.event_type.as_str() {
         "checkpoint_resumed" => "retry".to_string(),
@@ -67,15 +63,11 @@ fn failure_route(event: &RunEvent) -> String {
 }
 
 fn next_action_hint(event: &RunEvent) -> String {
-    if let Some(hint) = event.metadata.get("next_action_hint") {
-        if !hint.is_empty() {
-            return hint.clone();
-        }
+    if let Some(hint) = event.metadata.get("next_action_hint").filter(|h| !h.is_empty()) {
+        return hint.clone();
     }
-    if let Some(next_step) = event.metadata.get("next_step") {
-        if !next_step.is_empty() {
-            return next_step.clone();
-        }
+    if let Some(next_step) = event.metadata.get("next_step").filter(|s| !s.is_empty()) {
+        return next_step.clone();
     }
     match event.event_type.as_str() {
         "run_finished" => "任务已结束".to_string(),
@@ -86,10 +78,8 @@ fn next_action_hint(event: &RunEvent) -> String {
 }
 
 fn task_title(event: &RunEvent) -> String {
-    if let Some(title) = event.metadata.get("task_title") {
-        if !title.is_empty() {
-            return title.clone();
-        }
+    if let Some(title) = event.metadata.get("task_title").filter(|t| !t.is_empty()) {
+        return title.clone();
     }
     event.summary.clone()
 }
@@ -102,10 +92,8 @@ fn active_tool(event: &RunEvent) -> String {
 }
 
 fn evidence_ref(event: &RunEvent) -> String {
-    if let Some(reference) = event.metadata.get("evidence_ref") {
-        if !reference.is_empty() {
-            return reference.clone();
-        }
+    if let Some(reference) = event.metadata.get("evidence_ref").filter(|r| !r.is_empty()) {
+        return reference.clone();
     }
     let artifact = pick_first(
         &event.artifact_path,

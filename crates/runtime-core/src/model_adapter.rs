@@ -3,7 +3,7 @@ use crate::contracts::ProviderRef;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -45,7 +45,7 @@ pub(crate) struct ModelError {
 }
 
 pub(crate) trait ModelAdapter {
-    fn complete(&self, request: &ModelRequest<'_>, body_path: &PathBuf) -> Result<ModelResponse, ModelError>;
+    fn complete(&self, request: &ModelRequest<'_>, body_path: &Path) -> Result<ModelResponse, ModelError>;
 }
 
 #[derive(Clone, Debug)]
@@ -54,7 +54,7 @@ pub(crate) struct OpenAiCompatibleAdapter {
 }
 
 impl ModelAdapter for OpenAiCompatibleAdapter {
-    fn complete(&self, request: &ModelRequest<'_>, body_path: &PathBuf) -> Result<ModelResponse, ModelError> {
+    fn complete(&self, request: &ModelRequest<'_>, body_path: &Path) -> Result<ModelResponse, ModelError> {
         complete_with_parse_retry(&self.provider, request, body_path)
     }
 }
@@ -62,7 +62,7 @@ impl ModelAdapter for OpenAiCompatibleAdapter {
 fn complete_with_parse_retry(
     provider: &ProviderConfig,
     request: &ModelRequest<'_>,
-    body_path: &PathBuf,
+    body_path: &Path,
 ) -> Result<ModelResponse, ModelError> {
     let uri = model_uri(provider);
     let mut output = run_curl_with_retry(provider, body_path, &uri)?;
@@ -82,7 +82,7 @@ fn complete_with_parse_retry(
 fn parse_or_retry_stream(
     provider: &ProviderConfig,
     request: &ModelRequest<'_>,
-    body_path: &PathBuf,
+    body_path: &Path,
     uri: &str,
     output: &[u8],
 ) -> Result<ModelResponse, ModelError> {
@@ -121,7 +121,7 @@ fn model_uri(provider: &ProviderConfig) -> String {
     )
 }
 
-fn run_curl(provider: &ProviderConfig, body_path: &PathBuf, uri: &str) -> Result<Vec<u8>, ModelError> {
+fn run_curl(provider: &ProviderConfig, body_path: &Path, uri: &str) -> Result<Vec<u8>, ModelError> {
     let mut cmd = Command::new("curl.exe");
     #[cfg(target_os = "windows")]
     {
@@ -149,7 +149,7 @@ fn run_curl(provider: &ProviderConfig, body_path: &PathBuf, uri: &str) -> Result
     validate_curl_output(output)
 }
 
-fn run_curl_with_retry(provider: &ProviderConfig, body_path: &PathBuf, uri: &str) -> Result<Vec<u8>, ModelError> {
+fn run_curl_with_retry(provider: &ProviderConfig, body_path: &Path, uri: &str) -> Result<Vec<u8>, ModelError> {
     let mut last_error = None;
     for attempt in 0..3 {
         match run_curl(provider, body_path, uri) {
@@ -294,7 +294,7 @@ fn response_error(value: &Value) -> Option<ModelError> {
     Some(model_error(
         code,
         &format!("provider 返回错误：{}", message),
-        is_retryable_error(code, &message),
+        is_retryable_error(code, message),
     ))
 }
 
@@ -313,7 +313,7 @@ fn is_retryable_error(code: &str, message: &str) -> bool {
 fn retry_with_stream_if_needed(
     provider: &ProviderConfig,
     request: &ModelRequest<'_>,
-    body_path: &PathBuf,
+    body_path: &Path,
     uri: &str,
     error: ModelError,
     output: &[u8],
@@ -343,7 +343,7 @@ fn should_retry_with_stream(error: &ModelError, output: &[u8]) -> bool {
         .contains("stream must be set to true")
 }
 
-fn write_stream_body_file(body_path: &PathBuf) -> Result<PathBuf, ModelError> {
+fn write_stream_body_file(body_path: &Path) -> Result<PathBuf, ModelError> {
     let raw = std::fs::read_to_string(body_path)
         .map_err(|error| model_error("model_request_build_failed", &error.to_string(), false))?;
     let mut body: Value = serde_json::from_str(&raw)

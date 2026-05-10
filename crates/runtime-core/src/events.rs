@@ -39,11 +39,11 @@ pub(crate) fn with_runtime_memory_recall_event(
     {
         return response;
     }
-    if let Some((index, metadata)) = memory_recall_anchor(&response.events) {
-        if let Some(event) = make_memory_recall_event(request, 0, metadata) {
-            response.events.insert(index + 1, event);
-            resequence_events(&mut response.events);
-        }
+    if let Some((index, event)) = memory_recall_anchor(&response.events)
+        .and_then(|(i, m)| make_memory_recall_event(request, 0, m).map(|e| (i, e)))
+    {
+        response.events.insert(index + 1, event);
+        resequence_events(&mut response.events);
     }
     response
 }

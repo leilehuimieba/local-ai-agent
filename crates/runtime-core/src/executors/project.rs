@@ -294,11 +294,10 @@ fn should_recover_project_answer(content: &str, final_answer: &str) -> bool {
 fn fallback_project_summary(snippets: &str) -> String {
     if snippets.contains("当前没有检索到可用项目文档片段") {
         "当前缺少可复用的项目文档片段，建议先补充 README 或开发文档后再追问。".to_string()
-    } else if is_hermes_status_context(snippets) {
-        stable_project_status_answer(snippets)
-    } else if is_loyal_status_context(snippets) {
-        stable_project_status_answer(snippets)
-    } else if is_phase2_status_context(snippets) {
+    } else if is_hermes_status_context(snippets)
+        || is_loyal_status_context(snippets)
+        || is_phase2_status_context(snippets)
+    {
         stable_project_status_answer(snippets)
     } else {
         "当前项目是一个围绕运行时、网关和前端工作台组织能力的本地智能体系统，重点在让在线模型接入后的对话、执行和沉淀链路稳定可用。结合现有文档，当前阶段更偏向主链路收口，而不是继续扩展重型未来能力。".to_string()

@@ -248,7 +248,7 @@ fn read_original(old_path: Option<&Path>, kind: &PatchKind) -> Result<String, Pa
 fn resolve_optional_path(request: &RunRequest, path: Option<&str>) -> Result<Option<PathBuf>, PatchFailure> {
     path.map(|value| resolve_workspace_path(&request.workspace_ref.root_path, value))
         .transpose()
-        .map_err(|error| PatchFailure::boundary(error))
+        .map_err(PatchFailure::boundary)
 }
 
 fn validate_change_target(

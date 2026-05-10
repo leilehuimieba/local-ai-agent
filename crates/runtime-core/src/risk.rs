@@ -3,6 +3,7 @@ use crate::paths::resolve_workspace_path;
 use crate::planner::{PlannedAction, normalize_mode};
 
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub(crate) enum RiskOutcome {
     Proceed,
     RequireConfirmation(ConfirmationRequest),

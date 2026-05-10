@@ -18,6 +18,7 @@ pub(crate) fn read_result_mode(final_answer: &str, completion_status: &str, veri
     "answer"
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn make_run_failed_event(
     request: &RunRequest,
     sequence: u32,

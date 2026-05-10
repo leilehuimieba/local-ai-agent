@@ -251,6 +251,7 @@ fn skipped_resume_event(request: &RunRequest, checkpoint_id: &str, reason: &str)
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn resume_metadata(
     request: &RunRequest,
     checkpoint_id: &str,
@@ -278,6 +279,7 @@ fn resume_metadata(
     metadata
 }
 
+#[allow(clippy::too_many_arguments)]
 fn insert_resume_core_metadata(
     metadata: &mut BTreeMap<String, String>,
     checkpoint_id: &str,
