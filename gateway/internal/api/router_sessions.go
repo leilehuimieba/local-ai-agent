@@ -67,7 +67,7 @@ func (h *SessionHandler) handleSessionDetail(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (h *SessionHandler) listSessions(w http.ResponseWriter, r *http.Request, ) {
+func (h *SessionHandler) listSessions(w http.ResponseWriter, r *http.Request) {
 	sessions, err := h.store.ListSessions()
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -103,9 +103,9 @@ func (h *SessionHandler) getMessages(w http.ResponseWriter, r *http.Request, ses
 }
 
 type addMessageRequest struct {
-	Role      string `json:"role"`
-	Content   string `json:"content"`
-	Timestamp string `json:"timestamp,omitempty"`
+	Role      string                 `json:"role"`
+	Content   string                 `json:"content"`
+	Timestamp string                 `json:"timestamp,omitempty"`
 	Blocks    []session.MessageBlock `json:"blocks,omitempty"`
 }
 

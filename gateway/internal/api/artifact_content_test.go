@@ -25,4 +25,3 @@ func TestResolveArtifactPathRejectsPathOutOfArtifactRoot(t *testing.T) {
 		t.Fatal("resolveArtifactPath() expected error for out-of-scope path")
 	}
 }
-

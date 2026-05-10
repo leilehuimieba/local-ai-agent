@@ -367,7 +367,7 @@ func extractDocx(path string) ExtractResult {
 	if err != nil {
 		return ExtractResult{Error: err}
 	}
-	defer zr.Close()
+	defer func() { _ = zr.Close() }()
 
 	var docFile *zip.File
 	for _, f := range zr.File {

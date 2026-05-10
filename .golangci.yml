@@ -11,15 +11,9 @@ linters:
     - unused
     - gofmt
 
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - (*os.File).Close
-      - (io.Closer).Close
-      - (*sql.DB).Close
-      - (*sql.Rows).Close
-      - os.Remove
-      - os.RemoveAll
-
 issues:
   exclude-use-default: false
+  exclude-rules:
+    - linters:
+        - errcheck
+      source: "defer .*\\.Close\\(\\)"
