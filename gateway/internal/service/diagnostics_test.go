@@ -61,9 +61,8 @@ func TestRemediateGatewayUnreachableStartsWhenReady(t *testing.T) {
 	require.NoError(t, os.MkdirAll(entryPath, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(entryPath, "main.go"), []byte("package main"), 0o644))
 	started := false
-	restoreStart := swapGatewayStartRunner(func(repoRoot string, port int) error { return nil })
 	restoreHealth := swapGatewayHealthChecker(func(port int) bool { return started })
-	restoreStart = swapGatewayStartRunner(func(repoRoot string, port int) error {
+	restoreStart := swapGatewayStartRunner(func(repoRoot string, port int) error {
 		started = true
 		return nil
 	})

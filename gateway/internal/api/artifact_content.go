@@ -65,4 +65,3 @@ func resolveArtifactPath(repoRoot string, rawPath string) (string, error) {
 	}
 	return clean, nil
 }
-

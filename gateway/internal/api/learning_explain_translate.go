@@ -18,7 +18,6 @@ type learningTranslateRequest struct {
 }
 
 type learningExplainResponse = service.LearningExplainResponse
-type learningExplainTerm = service.LearningExplainTerm
 type learningTranslateResponse = service.LearningTranslateResponse
 
 func learningExplainHandler() http.HandlerFunc {

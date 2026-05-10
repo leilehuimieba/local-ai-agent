@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	_ "modernc.org/sqlite"
 	"local-agent/gateway/internal/config"
 	"local-agent/gateway/internal/knowledge"
+	_ "modernc.org/sqlite"
 )
 
 func main() {

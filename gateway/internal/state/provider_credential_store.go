@@ -100,10 +100,6 @@ func (s *ProviderCredentialStore) load() {
 	s.providers = readCredentialRecords(s.path)
 }
 
-func (s *ProviderCredentialStore) saveLocked() error {
-	return withFileLock(s.lockPath, func() error { return s.writeLocked() })
-}
-
 func (s *ProviderCredentialStore) writeLocked() error {
 	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
 		return err

@@ -61,7 +61,7 @@ func mcpCallHandler(mgr *mcp.Manager, repoRoot string) http.HandlerFunc {
 		}
 		writeMCPAudit(repoRoot, newMCPAuditRecord(payload, policy, start, "success", nil))
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(result)
+		_, _ = w.Write(result)
 	}
 }
 

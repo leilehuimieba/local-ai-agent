@@ -41,9 +41,9 @@ type RunRequest struct {
 	TraceID                string                `json:"trace_id"`
 	UserInput              string                `json:"user_input"`
 	Mode                   string                `json:"mode"`
-	ModelRef               ModelRef       `json:"model_ref"`
-	ProviderRef            ProviderRef    `json:"provider_ref"`
-	WorkspaceRef           WorkspaceRef   `json:"workspace_ref"`
+	ModelRef               ModelRef              `json:"model_ref"`
+	ProviderRef            ProviderRef           `json:"provider_ref"`
+	WorkspaceRef           WorkspaceRef          `json:"workspace_ref"`
 	ContextHints           map[string]string     `json:"context_hints,omitempty"`
 	ResumeFromCheckpointID string                `json:"resume_from_checkpoint_id,omitempty"`
 	ResumeStrategy         string                `json:"resume_strategy,omitempty"`

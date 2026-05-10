@@ -45,7 +45,7 @@ func normalizeSummary(meta upstreamMetaData) ArticleSummary {
 func normalizeMainPoints(items []upstreamMainPoint) []MainPoint {
 	points := make([]MainPoint, 0, len(items))
 	for _, item := range items {
-		points = append(points, MainPoint{Point: item.Point, Explanation: item.Explanation})
+		points = append(points, MainPoint(item))
 	}
 	return points
 }

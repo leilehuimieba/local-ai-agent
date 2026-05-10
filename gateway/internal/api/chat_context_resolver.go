@@ -36,10 +36,3 @@ func (h *ChatHandler) buildRunRequest(payload ChatRunRequest) (contracts.RunRequ
 	}, nil
 }
 
-func pickRunIdentity(source string, prefix string) string {
-	return service.PickRunIdentity(source, prefix)
-}
-
-func runContextHints(source map[string]string, repoRoot string, firstSeen bool) map[string]string {
-	return service.RunContextHints(source, repoRoot, firstSeen)
-}

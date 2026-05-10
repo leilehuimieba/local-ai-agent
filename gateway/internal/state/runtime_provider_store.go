@@ -115,10 +115,6 @@ func (s *RuntimeProviderStore) load() {
 	s.activeProviderID, s.providers = readRuntimeRecords(s.path)
 }
 
-func (s *RuntimeProviderStore) saveLocked() error {
-	return withFileLock(s.lockPath, func() error { return s.writeLocked() })
-}
-
 func (s *RuntimeProviderStore) writeLocked() error {
 	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
 		return err

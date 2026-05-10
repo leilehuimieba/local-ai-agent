@@ -112,9 +112,8 @@ func getCapabilities(t *testing.T, server *http.Server, tok string) *http.Respon
 }
 
 type bridgeRuntime struct {
-	port  int
-	token string
-	ch    chan bridgeCapture
+	port int
+	ch   chan bridgeCapture
 }
 
 type bridgeCapture struct {
