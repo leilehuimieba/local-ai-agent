@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
+
+const { mockEditAndResend } = vi.hoisted(() => ({ mockEditAndResend: vi.fn() }))
+
+vi.mock("@/lib/local-agent/store", () => ({
+  useRuntimeStore: Object.assign(vi.fn(), {
+    getState: vi.fn(() => ({ editAndResend: mockEditAndResend })),
+  }),
+}))
 import {
   formatMessageTime,
   deriveStage,
@@ -352,6 +360,14 @@ describe("MessageBubble", () => {
     const message = { id: "m1", role: "user" as const, content: "hello", timestamp: new Date().toISOString() }
     render(<MessageBubble message={message} />)
     expect(screen.getByText("hello")).toBeInTheDocument()
+  })
+
+  it("calls editAndResend on edit button click", () => {
+    mockEditAndResend.mockClear()
+    const message = { id: "m1", role: "user" as const, content: "hello", timestamp: new Date().toISOString() }
+    render(<MessageBubble message={message} />)
+    fireEvent.click(screen.getByText("编辑"))
+    expect(mockEditAndResend).toHaveBeenCalledWith("m1")
   })
 
   it("renders assistant message with copy button", () => {
