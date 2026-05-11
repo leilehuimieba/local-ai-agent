@@ -96,6 +96,22 @@ describe("KnowledgeDraftForm", () => {
     fireEvent.change(screen.getByPlaceholderText("正文"), { target: { value: "New Content" } })
     expect(setDraft).toHaveBeenCalledWith(expect.objectContaining({ content: "New Content" }))
   })
+
+  it("updates category on change", () => {
+    const draft = { title: "", content: "", category: "", tags: [] }
+    const setDraft = vi.fn()
+    render(<KnowledgeDraftForm draft={draft} setDraft={setDraft} />)
+    fireEvent.change(screen.getByPlaceholderText("分类"), { target: { value: "API" } })
+    expect(setDraft).toHaveBeenCalledWith(expect.objectContaining({ category: "API" }))
+  })
+
+  it("updates summary on change", () => {
+    const draft = { title: "", content: "", category: "", tags: [] }
+    const setDraft = vi.fn()
+    render(<KnowledgeDraftForm draft={draft} setDraft={setDraft} />)
+    fireEvent.change(screen.getByPlaceholderText("摘要"), { target: { value: "Summary text" } })
+    expect(setDraft).toHaveBeenCalledWith(expect.objectContaining({ summary: "Summary text" }))
+  })
 })
 
 describe("emptyKnowledgeDraft", () => {
