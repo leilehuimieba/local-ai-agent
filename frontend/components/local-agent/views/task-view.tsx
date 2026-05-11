@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+
 import { TextareaAuto } from "@/components/ui/textarea-auto"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Kbd } from "@/components/ui/kbd"
@@ -34,12 +34,11 @@ import {
   ChevronDown,
   X,
   Paperclip,
-  Pencil,
 } from "lucide-react"
-import { useRuntimeStore, useSettingsStore, useUIStore } from "@/lib/local-agent/store"
+import { useRuntimeStore, useSettingsStore } from "@/lib/local-agent/store"
 import type { Message, RuntimeEvent, ResultBlock, Confirmation, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"
-import { submitChatRun, submitChatRetry, submitChatCancel, submitConfirmationDecision, uploadKnowledgeFile, type SubmitChatRunPayload } from "@/lib/local-agent/api"
+import { submitChatRetry, uploadKnowledgeFile } from "@/lib/local-agent/api"
 import { useSessionEventStream } from "@/hooks/useSessionEventStream"
 import type { ConnectionState as StreamConnectionState } from "@/hooks/useSessionEventStream"
 import { LightweightMarkdown } from "@/components/local-agent/markdown"
@@ -69,10 +68,8 @@ export function TaskView() {
     startNewRun,
     acceptRun,
     applyEvent,
-    completeRun,
     failRun,
     cancelRun,
-    editAndResend,
     setRunState,
     setConnectionState,
     setCriticalError,
@@ -85,7 +82,6 @@ export function TaskView() {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -392,6 +388,7 @@ export function TaskView() {
                   <button
                     onClick={() => { setSearchQuery(""); setCurrentMatchIndex(0) }}
                     className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0"
+                    aria-label="清除搜索"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -578,7 +575,7 @@ export function TaskView() {
   )
 }
 
-function formatMessageTime(isoString: string): string {
+export function formatMessageTime(isoString: string): string {
   const date = new Date(isoString)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -593,7 +590,7 @@ function formatMessageTime(isoString: string): string {
   return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
 }
 
-function MessageBubble({
+export function MessageBubble({
   message,
   highlightText,
   isSearchActive,
@@ -682,7 +679,7 @@ function MessageBubble({
   )
 }
 
-function HighlightedText({ content, highlight }: { content: string; highlight?: string }) {
+export function HighlightedText({ content, highlight }: { content: string; highlight?: string }) {
   if (!highlight?.trim()) {
     return <p className="text-sm text-foreground whitespace-pre-wrap">{content}</p>
   }
@@ -709,7 +706,7 @@ function HighlightedText({ content, highlight }: { content: string; highlight?: 
   return <p className="text-sm text-foreground whitespace-pre-wrap">{parts}</p>
 }
 
-function ResultBlockRenderer({ block }: { block: ResultBlock }) {
+export function ResultBlockRenderer({ block }: { block: ResultBlock }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = (text: string) => {
@@ -803,7 +800,7 @@ function ResultBlockRenderer({ block }: { block: ResultBlock }) {
   }
 }
 
-function RunningCard({ events }: { events: RuntimeEvent[] }) {
+export function RunningCard({ events }: { events: RuntimeEvent[] }) {
   const stage = deriveStage(events)
   const recent = events.slice(-5)
   return (
@@ -835,7 +832,7 @@ function RunningCard({ events }: { events: RuntimeEvent[] }) {
   )
 }
 
-function deriveStage(events: RuntimeEvent[]): string {
+export function deriveStage(events: RuntimeEvent[]): string {
   if (events.length === 0) return "运行中..."
   const last = events[events.length - 1]
   const map: Record<string, string> = {
@@ -851,7 +848,7 @@ function deriveStage(events: RuntimeEvent[]): string {
   return map[last.event_type] || last.summary || "运行中..."
 }
 
-function ErrorCard({ error, onRetry }: { error: string; onRetry: () => void }) {
+export function ErrorCard({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
     <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="max-w-[92%] sm:max-w-[80%] rounded-2xl rounded-tl-md border-l-4 border-l-destructive border border-border bg-card p-4">
@@ -917,7 +914,7 @@ export function ConfirmationCard({
   )
 }
 
-function ConfirmationHeader({ riskLevel }: { riskLevel: Confirmation["risk_level"] }) {
+export function ConfirmationHeader({ riskLevel }: { riskLevel: Confirmation["risk_level"] }) {
   return (
     <div className="mb-3 flex items-center gap-2">
       <AlertTriangle className="h-4 w-4 text-warning" />
@@ -929,7 +926,7 @@ function ConfirmationHeader({ riskLevel }: { riskLevel: Confirmation["risk_level
   )
 }
 
-function ConfirmationSummary({ confirmation }: { confirmation: Confirmation }) {
+export function ConfirmationSummary({ confirmation }: { confirmation: Confirmation }) {
   return (
     <>
       <p className="mb-2 text-sm font-medium text-foreground">{confirmation.action_summary}</p>
@@ -940,7 +937,7 @@ function ConfirmationSummary({ confirmation }: { confirmation: Confirmation }) {
   )
 }
 
-function ConfirmationPathList({ paths }: { paths: string[] }) {
+export function ConfirmationPathList({ paths }: { paths: string[] }) {
   if (paths.length === 0) return null
   return (
     <div className="mb-3">
@@ -952,7 +949,7 @@ function ConfirmationPathList({ paths }: { paths: string[] }) {
   )
 }
 
-function ConfirmationHazards({ hazards }: { hazards: string[] }) {
+export function ConfirmationHazards({ hazards }: { hazards: string[] }) {
   if (hazards.length === 0) return null
   return (
     <div className="mb-3">
@@ -964,7 +961,7 @@ function ConfirmationHazards({ hazards }: { hazards: string[] }) {
   )
 }
 
-function PatchConfirmationPreview({ confirmation }: { confirmation: Confirmation }) {
+export function PatchConfirmationPreview({ confirmation }: { confirmation: Confirmation }) {
   if (!isPatchConfirmation(confirmation)) return null
   const preview = confirmation.patch_preview_report_json?.trim() || ""
   if (preview) return <DiffPreview content={preview} />
@@ -973,7 +970,7 @@ function PatchConfirmationPreview({ confirmation }: { confirmation: Confirmation
   return <PatchArgumentsPreview diff={args.diff} dry_run={args.dry_run} />
 }
 
-function PatchArgumentsPreview({ diff, dry_run }: PatchToolArguments) {
+export function PatchArgumentsPreview({ diff, dry_run }: PatchToolArguments) {
   const report = inferDiffPreviewReport(diff)
   if (report) {
     return (
@@ -999,7 +996,7 @@ function PatchArgumentsPreview({ diff, dry_run }: PatchToolArguments) {
   )
 }
 
-function ConfirmationActions({
+export function ConfirmationActions({
   remember,
   patchMode,
   onApprove,
@@ -1029,16 +1026,16 @@ function ConfirmationActions({
   )
 }
 
-function PatchApplyHint({ patchMode }: { patchMode: boolean }) {
+export function PatchApplyHint({ patchMode }: { patchMode: boolean }) {
   if (!patchMode) return null
   return <p className="mb-3 text-xs text-muted-foreground">确认应用后才会写入文件，取消应用不会修改工作区。</p>
 }
 
-function isPatchConfirmation(confirmation: Confirmation): boolean {
+export function isPatchConfirmation(confirmation: Confirmation): boolean {
   return confirmation.tool_name === "workspace_apply_patch"
 }
 
-function parsePatchToolArguments(raw?: string): PatchToolArguments | null {
+export function parsePatchToolArguments(raw?: string): PatchToolArguments | null {
   if (!raw?.trim()) return null
   try {
     const value = JSON.parse(raw)
@@ -1049,6 +1046,6 @@ function parsePatchToolArguments(raw?: string): PatchToolArguments | null {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
