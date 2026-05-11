@@ -91,4 +91,16 @@ describe("AskTab", () => {
       expect(screen.getByText("Test answer")).toBeInTheDocument()
     })
   })
+
+  it("shows error when askKnowledgeBase fails", async () => {
+    const { askKnowledgeBase } = await import("@/lib/local-agent/api")
+    vi.mocked(askKnowledgeBase).mockRejectedValueOnce(new Error("fail"))
+    render(<AskTab />)
+    const input = screen.getByPlaceholderText("输入问题...")
+    fireEvent.change(input, { target: { value: "Hello" } })
+    fireEvent.keyDown(input, { key: "Enter" })
+    await waitFor(() => {
+      expect(screen.getByText("抱歉，知识库问答服务暂时不可用。请稍后重试。")).toBeInTheDocument()
+    })
+  })
 })
