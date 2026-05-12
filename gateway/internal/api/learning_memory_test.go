@@ -180,7 +180,7 @@ func initLearningMemoryDB(t *testing.T, repoRoot string) {
 	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
 	db, err := sql.Open("sqlite", path)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	_, err = db.Exec(learningMemoryTableSQL)
 	require.NoError(t, err)
 }

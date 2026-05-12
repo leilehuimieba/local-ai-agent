@@ -332,7 +332,7 @@ func fallbackPdftotext(path string, priorErr error) ExtractResult {
 		}
 	}
 	if cleanPath {
-		defer os.Remove(workPath)
+		defer func() { _ = os.Remove(workPath) }()
 	}
 
 	cmd := exec.Command(pt, "-enc", "UTF-8", "-layout", workPath, "-")
@@ -384,7 +384,7 @@ func extractDocx(path string) ExtractResult {
 	if err != nil {
 		return ExtractResult{Error: err}
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	var content strings.Builder
 	decoder := xml.NewDecoder(rc)
@@ -439,7 +439,7 @@ func SaveUploadedFile(src io.Reader, dstPath string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 	_, err = io.Copy(out, src)
 	return err
 }

@@ -13,13 +13,3 @@ linters:
 
 issues:
   exclude-use-default: false
-  exclude-rules:
-    - linters:
-        - errcheck
-      source: "defer .*\\.Close\\(\\)"
-    - linters:
-        - errcheck
-      source: "defer os\\.Remove"
-    - linters:
-        - errcheck
-      source: "os\\.RemoveAll"

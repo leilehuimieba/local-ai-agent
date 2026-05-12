@@ -57,6 +57,7 @@ fn action_label(action: &PlannedAction) -> &'static str {
         PlannedAction::ListFiles { .. } => "workspace_list",
         PlannedAction::WriteMemory { .. } => "memory_write",
         PlannedAction::RecallMemory { .. } => "memory_recall",
+        PlannedAction::SearchFiles { .. } => "workspace_search",
         PlannedAction::SearchKnowledge { .. } => "knowledge_search",
         PlannedAction::SearchSiyuanNotes { .. } => "search_siyuan_notes",
         PlannedAction::ReadSiyuanNote { .. } => "read_siyuan_note",

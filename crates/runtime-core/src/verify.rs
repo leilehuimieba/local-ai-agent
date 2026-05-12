@@ -212,6 +212,7 @@ mod tests {
         ToolCall {
             action: PlannedAction::RunCommand {
                 command: "echo ok".to_string(),
+                timeout_secs: None,
             },
             spec: ToolDefinition {
                 tool_name: "run_command".to_string(),

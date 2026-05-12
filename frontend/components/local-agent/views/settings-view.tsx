@@ -83,7 +83,7 @@ function useSettingsScrollSpy(refs: React.MutableRefObject<Record<string, HTMLDi
   }, [refs, setActive])
 }
 
-function SettingsNav({ activeSection, refs }: { activeSection: string; refs: React.MutableRefObject<Record<string, HTMLDivElement | null>> }) {
+export function SettingsNav({ activeSection, refs }: { activeSection: string; refs: React.MutableRefObject<Record<string, HTMLDivElement | null>> }) {
   return (
     <nav className="w-48 shrink-0 border-r border-border p-4 hidden lg:block">
       <ul className="space-y-1">
@@ -93,7 +93,7 @@ function SettingsNav({ activeSection, refs }: { activeSection: string; refs: Rea
   )
 }
 
-function SettingsNavItem({ active, module, refs }: { active: boolean; module: (typeof settingsModules)[number]; refs: React.MutableRefObject<Record<string, HTMLDivElement | null>> }) {
+export function SettingsNavItem({ active, module, refs }: { active: boolean; module: (typeof settingsModules)[number]; refs: React.MutableRefObject<Record<string, HTMLDivElement | null>> }) {
   const Icon = module.icon
   return (
     <li>
@@ -105,7 +105,7 @@ function SettingsNavItem({ active, module, refs }: { active: boolean; module: (t
   )
 }
 
-const RuntimeSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const RuntimeSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { ports, runtime_status } = useSettingsStore()
   const runtimeState = runtime_status?.ok ? "connected" : "disconnected"
   return (
@@ -119,7 +119,7 @@ const RuntimeSection = forwardRef<HTMLDivElement>((_, ref) => {
 })
 RuntimeSection.displayName = "RuntimeSection"
 
-function ConnectionCard({ name, port, status, detail }: { name: string; port?: number; status: string; detail?: string }) {
+export function ConnectionCard({ name, port, status, detail }: { name: string; port?: number; status: string; detail?: string }) {
   return (
     <Card><CardContent className="pt-6"><div className="flex items-center gap-3">
       <div className={cn("h-3 w-3 rounded-full", status === "connected" ? "bg-success animate-pulse" : "bg-destructive")} />
@@ -131,7 +131,7 @@ function ConnectionCard({ name, port, status, detail }: { name: string; port?: n
   )
 }
 
-const ModelSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const ModelSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { mode, model, available_models, setMode, setModel } = useSettingsStore()
   return (
     <SettingsSection ref={ref} id="model" title="模型" description="AI 模型选择和访问模式" icon={Cpu}>
@@ -144,7 +144,7 @@ const ModelSection = forwardRef<HTMLDivElement>((_, ref) => {
 })
 ModelSection.displayName = "ModelSection"
 
-function ModelSelect({ modelId, models, onSelect }: { modelId: string; models: Model[]; onSelect: (model: Model) => void }) {
+export function ModelSelect({ modelId, models, onSelect }: { modelId: string; models: Model[]; onSelect: (model: Model) => void }) {
   return (
     <div className="space-y-2"><Label>模型</Label><Select value={modelId} onValueChange={(v) => selectModel(v, models, onSelect)}>
       <SelectTrigger><SelectValue placeholder="选择模型" /></SelectTrigger>
@@ -153,12 +153,12 @@ function ModelSelect({ modelId, models, onSelect }: { modelId: string; models: M
   )
 }
 
-function selectModel(value: string, models: Model[], onSelect: (model: Model) => void) {
+export function selectModel(value: string, models: Model[], onSelect: (model: Model) => void) {
   const selected = models.find((m) => m.model_id === value)
   if (selected) onSelect(selected)
 }
 
-function ModeSelect({ mode, onMode }: { mode: AgentMode; onMode: (mode: AgentMode) => void }) {
+export function ModeSelect({ mode, onMode }: { mode: AgentMode; onMode: (mode: AgentMode) => void }) {
   const descriptions = { observe: "只读访问，不允许修改", standard: "平衡访问，风险操作需确认", full_access: "完全访问所有系统功能" }
   return (
     <div className="space-y-3"><Label>访问模式</Label><RadioGroup value={mode} onValueChange={(v) => onMode(v as AgentMode)} className="space-y-2">
@@ -167,7 +167,7 @@ function ModeSelect({ mode, onMode }: { mode: AgentMode; onMode: (mode: AgentMod
   )
 }
 
-function ModeOption({ active, mode, description }: { active: boolean; mode: AgentMode; description: string }) {
+export function ModeOption({ active, mode, description }: { active: boolean; mode: AgentMode; description: string }) {
   return (
     <div className={cn("flex items-center space-x-3 rounded-lg border p-3 transition-colors cursor-pointer", active ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50")}>
       <RadioGroupItem value={mode} id={mode} />
@@ -176,7 +176,7 @@ function ModeOption({ active, mode, description }: { active: boolean; mode: Agen
   )
 }
 
-const ProvidersSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const ProvidersSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { providers, active_provider_id, loadSettings } = useSettingsStore()
   return (
     <SettingsSection ref={ref} id="providers" title="服务商" description="API 密钥和服务商" icon={Key}>
@@ -209,7 +209,7 @@ type ProviderActionMessage = {
   text: string
 }
 
-function ProviderHeader({ provider, active, masked }: { provider: Provider; active: boolean; masked: string }) {
+export function ProviderHeader({ provider, active, masked }: { provider: Provider; active: boolean; masked: string }) {
   return (
     <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3">
       <div className={cn("h-2.5 w-2.5 rounded-full", provider.status === "active" ? "bg-success" : provider.status === "error" ? "bg-destructive" : "bg-muted-foreground")} />
@@ -276,15 +276,15 @@ function ProviderActions({ provider, apiKey, busy, setBusy, setMessage, reload }
   )
 }
 
-function ProviderButton({ label, icon: Icon, busy, disabled, variant = "outline", onClick }: { label: string; icon: React.ElementType; busy: boolean; disabled?: boolean; variant?: "outline" | "ghost"; onClick: () => void }) {
+export function ProviderButton({ label, icon: Icon, busy, disabled, variant = "outline", onClick }: { label: string; icon: React.ElementType; busy: boolean; disabled?: boolean; variant?: "outline" | "ghost"; onClick: () => void }) {
   return <Button variant={variant} size="sm" className="gap-1" onClick={onClick} disabled={busy || disabled}>{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}{label}</Button>
 }
 
-function ProviderActionNotice({ message }: { message: ProviderActionMessage }) {
+export function ProviderActionNotice({ message }: { message: ProviderActionMessage }) {
   return <p className={cn("text-xs", message.ok ? "text-success" : "text-destructive")}>{message.text}</p>
 }
 
-function ProviderStatusBar({ provider }: { provider: Provider }) {
+export function ProviderStatusBar({ provider }: { provider: Provider }) {
   const status = provider.credential_status
   if (!status) return null
   const items: { label: string; value: string; color?: string }[] = []
@@ -320,7 +320,7 @@ function ProviderStatusBar({ provider }: { provider: Provider }) {
   )
 }
 
-function CurrentRoutingInfo() {
+export function CurrentRoutingInfo() {
   const { model, active_provider_id, providers } = useSettingsStore()
   const activeProvider = providers.find((p) => p.provider_id === active_provider_id)
   return (
@@ -347,17 +347,17 @@ async function runProviderAction(name: string, setBusy: (value: string) => void,
   finally { setBusy("") }
 }
 
-function successMessage(result: unknown): ProviderActionMessage {
+export function successMessage(result: unknown): ProviderActionMessage {
   const message = typeof result === "object" && result && "message" in result ? String(result.message) : "操作成功"
   const ok = typeof result === "object" && result && "ok" in result ? Boolean(result.ok) : true
   return { ok, text: message }
 }
 
-function errorMessage(error: unknown) {
+export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "操作失败"
 }
 
-const EmbeddingSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const EmbeddingSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { embedding_provider_id, providers, embedding, setEmbeddingProvider } = useSettingsStore()
   return (
     <SettingsSection ref={ref} id="embedding" title="嵌入" description="向量嵌入模型配置" icon={Database}>
@@ -370,7 +370,7 @@ const EmbeddingSection = forwardRef<HTMLDivElement>((_, ref) => {
 })
 EmbeddingSection.displayName = "EmbeddingSection"
 
-const WorkspacesSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const WorkspacesSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { workspace, available_workspaces, approved_directories, setWorkspace, addDirectory, removeDirectory } = useSettingsStore()
   return (
     <SettingsSection ref={ref} id="workspaces" title="工作区" description="授权目录和工作区路径" icon={FolderOpen}>
@@ -384,12 +384,12 @@ function WorkspaceSelect({ workspaceId, items, onSelect }: { workspaceId: string
   return <div className="space-y-2"><Label>当前工作区</Label><Select value={workspaceId} onValueChange={(v) => selectWorkspace(v, items, onSelect)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{items.map((item) => <SelectItem key={item.workspace_id} value={item.workspace_id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
 }
 
-function selectWorkspace(value: string, items: Workspace[], onSelect: (item: Workspace) => void) {
+export function selectWorkspace(value: string, items: Workspace[], onSelect: (item: Workspace) => void) {
   const selected = items.find((i) => i.workspace_id === value)
   if (selected) onSelect(selected)
 }
 
-function DirectoryList({ items, onAdd, onRemove }: { items: DirectoryApproval[]; onAdd: (name: string, path: string) => Promise<void>; onRemove: (path: string) => Promise<void> }) {
+export function DirectoryList({ items, onAdd, onRemove }: { items: DirectoryApproval[]; onAdd: (name: string, path: string) => Promise<void>; onRemove: (path: string) => Promise<void> }) {
   const [name, setName] = useState("")
   const [path, setPath] = useState("")
   const [busy, setBusy] = useState(false)
@@ -407,7 +407,7 @@ function DirectoryList({ items, onAdd, onRemove }: { items: DirectoryApproval[];
   )
 }
 
-function DirectoryItem({ dir, onRemove }: { dir: DirectoryApproval; onRemove: (path: string) => Promise<void> }) {
+export function DirectoryItem({ dir, onRemove }: { dir: DirectoryApproval; onRemove: (path: string) => Promise<void> }) {
   const [busy, setBusy] = useState(false)
   const handleRemove = async () => { setBusy(true); try { await onRemove(dir.root_path) } finally { setBusy(false) } }
   return (
@@ -437,7 +437,7 @@ function DirectoryItem({ dir, onRemove }: { dir: DirectoryApproval; onRemove: (p
   )
 }
 
-const MCPSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const MCPSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { mcp, loadSettings } = useSettingsStore()
   const servers = mcp?.servers || []
   const tools = mcp?.tools || []
@@ -469,19 +469,26 @@ function useMCPAuditFeed(enabled: boolean) {
   return { items, error }
 }
 
-function MCPServerCard({ server, tools, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; tools: import("@/lib/local-agent/types").MCPTool[]; onReload: () => Promise<void> }) {
+export function MCPServerCard({ server, tools, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; tools: import("@/lib/local-agent/types").MCPTool[]; onReload: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const isStdio = server.type === "stdio" || server.type === "local"
   const statusText = server.ready ? "已连接" : server.enabled ? "未就绪" : "未启用"
   const statusVariant = server.ready ? "default" : "secondary"
   return (
     <div className="rounded-lg border border-border">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-3 text-left">
+      <button onClick={() => { if (!editing) setOpen(!open) }} className="w-full flex items-center justify-between p-3 text-left">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{server.name}</span>
             <Badge variant={statusVariant} className="text-[10px] px-1.5 py-0 shrink-0">{statusText}</Badge>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{isStdio ? "Stdio" : "HTTP"}</Badge>
           </div>
-          <p className="text-xs text-muted-foreground font-mono truncate">{server.url}</p>
+          {isStdio && server.command ? (
+            <p className="text-xs text-muted-foreground font-mono truncate">{server.command}{(server.args || []).length > 0 ? ` ${server.args!.join(" ")}` : ""}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground font-mono truncate">{server.url || "-"}</p>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2">
           <span className="text-xs text-muted-foreground">{server.allowed_tool_count || 0}/{tools.length} 已允许</span>
@@ -490,6 +497,8 @@ function MCPServerCard({ server, tools, onReload }: { server: import("@/lib/loca
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-3">
+          <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)} className="gap-1">{editing ? "取消编辑" : "编辑配置"}</Button>
+          {editing && <MCPEditForm server={server} onReload={async () => { await onReload(); setEditing(false) }} />}
           <MCPToolList tools={tools} onReload={onReload} />
           <MCPRemoveButton server={server} onReload={onReload} />
         </div>
@@ -498,7 +507,7 @@ function MCPServerCard({ server, tools, onReload }: { server: import("@/lib/loca
   )
 }
 
-function MCPRemoveButton({ server, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; onReload: () => Promise<void> }) {
+export function MCPRemoveButton({ server, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; onReload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false)
   const handleRemove = async () => { setBusy(true); try { await updateSettings({ remove_mcp_id: server.id }); await onReload() } finally { setBusy(false) } }
   return (
@@ -512,7 +521,57 @@ function MCPRemoveButton({ server, onReload }: { server: import("@/lib/local-age
   )
 }
 
-function MCPToolList({ tools, onReload }: { tools: import("@/lib/local-agent/types").MCPTool[]; onReload: () => Promise<void> }) {
+function MCPEditForm({ server, onReload }: { server: import("@/lib/local-agent/types").MCPServerInfo; onReload: () => Promise<void> }) {
+  const isStdio = server.type === "stdio" || server.type === "local"
+  const [url, setUrl] = useState(server.url || "")
+  const [command, setCommand] = useState(server.command || "")
+  const [argsText, setArgsText] = useState((server.args || []).join(" "))
+  const [enabled, setEnabled] = useState(server.enabled)
+  const [busy, setBusy] = useState(false)
+
+  const handleSave = async () => {
+    setBusy(true)
+    try {
+      const payload: Record<string, unknown> = {
+        edit_mcp_id: server.id,
+        edit_mcp_enabled: enabled,
+      }
+      if (isStdio) {
+        payload.edit_mcp_command = command
+        payload.edit_mcp_args = argsText ? argsText.split(/\s+/) : []
+        if (url) payload.edit_mcp_url = url
+      } else {
+        payload.edit_mcp_url = url
+      }
+      await updateSettings(payload as import("@/lib/local-agent/api").SettingsUpdatePayload)
+      await onReload()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="rounded bg-muted/50 p-3 space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wider">编辑服务器配置</p>
+      <div className="space-y-2">
+        {isStdio ? (
+          <>
+            <div><Label className="text-xs">命令路径</Label><Input value={command} onChange={(e) => setCommand(e.target.value)} placeholder="/path/to/server" className="h-8 text-sm" /></div>
+            <div><Label className="text-xs">参数（空格分隔）</Label><Input value={argsText} onChange={(e) => setArgsText(e.target.value)} placeholder="--port 3344" className="h-8 text-sm" /></div>
+          </>
+        ) : null}
+        <div><Label className="text-xs">{isStdio ? "健康检查 URL（可选）" : "URL"}</Label><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={isStdio ? "http://127.0.0.1:3344" : "http://127.0.0.1:3344/mcp"} className="h-8 text-sm" /></div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">启用</Label>
+          <Switch checked={enabled} onCheckedChange={setEnabled} />
+        </div>
+        <Button size="sm" onClick={handleSave} disabled={busy}>{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "保存"}</Button>
+      </div>
+    </div>
+  )
+}
+
+export function MCPToolList({ tools, onReload }: { tools: import("@/lib/local-agent/types").MCPTool[]; onReload: () => Promise<void> }) {
   if (tools.length === 0) return <p className="text-xs text-muted-foreground py-1">暂无可用工具</p>
   return (
     <div className="space-y-1.5 pt-2">
@@ -542,15 +601,15 @@ function MCPToolRow({ tool, onReload }: { tool: import("@/lib/local-agent/types"
   )
 }
 
-function MCPToolHeader({ tool }: { tool: import("@/lib/local-agent/types").MCPTool }) {
+export function MCPToolHeader({ tool }: { tool: import("@/lib/local-agent/types").MCPTool }) {
   return <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium text-foreground">{tool.name}</p><MCPToolBadges tool={tool} /></div>
 }
 
-function PolicySwitch({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
+export function PolicySwitch({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
   return <label className="flex items-center gap-1.5 text-muted-foreground"><Switch checked={checked} disabled={disabled} onCheckedChange={onChange} />{label}</label>
 }
 
-function MCPRiskSelect({ value, disabled, onChange }: { value: "low" | "medium" | "high" | "critical"; disabled: boolean; onChange: (value: "low" | "medium" | "high" | "critical") => void }) {
+export function MCPRiskSelect({ value, disabled, onChange }: { value: "low" | "medium" | "high" | "critical"; disabled: boolean; onChange: (value: "low" | "medium" | "high" | "critical") => void }) {
   return <Select value={value} onValueChange={(v) => onChange(v as typeof value)} disabled={disabled}><SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger><SelectContent>{["low", "medium", "high", "critical"].map((risk) => <SelectItem key={risk} value={risk}>{risk}</SelectItem>)}</SelectContent></Select>
 }
 
@@ -558,36 +617,78 @@ async function updateMCPToolPolicy(tool: import("@/lib/local-agent/types").MCPTo
   await updateSettings({ mcp_policy_server_id: tool.server_id, mcp_policy_tool_name: tool.name, mcp_policy_allowed: patch.allowed, mcp_policy_risk_level: patch.risk_level, mcp_policy_requires_confirmation: patch.requires_confirmation })
 }
 
-function MCPAddForm({ onReload }: { onReload: () => Promise<void> }) {
+export function MCPAddForm({ onReload }: { onReload: () => Promise<void> }) {
   const [name, setName] = useState("")
+  const [svcType, setSvcType] = useState<"http" | "stdio">("http")
   const [url, setUrl] = useState("")
+  const [command, setCommand] = useState("")
+  const [argsText, setArgsText] = useState("")
   const [busy, setBusy] = useState(false)
+
   const handleAdd = async () => {
-    if (!url) return
+    if (svcType === "http" && !url) return
+    if (svcType === "stdio" && !command) return
     setBusy(true)
     try {
-      await updateSettings({ add_mcp_name: name || url, add_mcp_url: url })
+      const payload: Record<string, unknown> = {
+        add_mcp_name: name || (svcType === "stdio" ? command : url),
+        add_mcp_type: svcType,
+      }
+      if (svcType === "http") {
+        payload.add_mcp_url = url
+      } else {
+        payload.add_mcp_command = command
+        payload.add_mcp_args = argsText ? argsText.split(/\s+/) : []
+        if (url) payload.add_mcp_url = url // optional health check URL
+      }
+      await updateSettings(payload as import("@/lib/local-agent/api").SettingsUpdatePayload)
       await onReload()
       setName("")
       setUrl("")
+      setCommand("")
+      setArgsText("")
     } finally {
       setBusy(false)
     }
   }
+
+  const canSubmit = (svcType === "http" && url) || (svcType === "stdio" && command)
+
   return (
     <div className="rounded-lg border border-dashed border-border p-3 space-y-2">
       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">添加服务器</p>
       <div className="flex gap-2">
-        <Input placeholder="名称（如：本地MCP）" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
-        <Input placeholder="HTTP 地址" value={url} onChange={(e) => setUrl(e.target.value)} className="flex-[2]" />
-        <Button size="sm" onClick={handleAdd} disabled={busy || !url}>{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "添加"}</Button>
+        <Select value={svcType} onValueChange={(v) => setSvcType(v as "http" | "stdio")}>
+          <SelectTrigger className="w-24 h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="http">HTTP</SelectItem>
+            <SelectItem value="stdio">Stdio</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input placeholder="名称" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
       </div>
-      <p className="text-[10px] text-muted-foreground">当前仅支持 HTTP transport。stdio 类型的 MCP Server 需通过 mcp-proxy 等工具转换。</p>
+      {svcType === "http" ? (
+        <div className="flex gap-2">
+          <Input placeholder="HTTP 地址 (如 http://127.0.0.1:3344/mcp)" value={url} onChange={(e) => setUrl(e.target.value)} className="flex-1" />
+          <Button size="sm" onClick={handleAdd} disabled={busy || !canSubmit}>{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "添加"}</Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input placeholder="命令路径 (如 npx 或 /path/to/server)" value={command} onChange={(e) => setCommand(e.target.value)} className="flex-[2]" />
+            <Button size="sm" onClick={handleAdd} disabled={busy || !canSubmit}>{busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "添加"}</Button>
+          </div>
+          <div className="flex gap-2">
+            <Input placeholder="参数（空格分隔）" value={argsText} onChange={(e) => setArgsText(e.target.value)} className="flex-1" />
+            <Input placeholder="健康检查 URL（可选）" value={url} onChange={(e) => setUrl(e.target.value)} className="flex-1" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-const RiskSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const RiskSection = forwardRef<HTMLDivElement>((_, ref) => {
   const { directory_prompt_enabled, show_risk_level, setDirectoryPromptEnabled, setShowRiskLevel } = useSettingsStore()
   return (
     <SettingsSection ref={ref} id="risk" title="风险" description="安全和风险管理设置" icon={Shield}>
@@ -600,11 +701,11 @@ const RiskSection = forwardRef<HTMLDivElement>((_, ref) => {
 })
 RiskSection.displayName = "RiskSection"
 
-function RiskToggle({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+export function RiskToggle({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return <div className="flex items-center justify-between rounded-lg border border-border p-4"><Label htmlFor={id} className="cursor-pointer">{label}</Label><Switch id={id} checked={checked} onCheckedChange={onChange} /></div>
 }
 
-const MemorySection = forwardRef<HTMLDivElement>((_, ref) => {
+export const MemorySection = forwardRef<HTMLDivElement>((_, ref) => {
   const { memories, loadMemories } = useMemoryStore()
   useEffect(() => { loadMemories() }, [loadMemories])
   return <SettingsSection ref={ref} id="memory" title="记忆" description="智能体记忆和上下文存储" icon={Brain}><div className="space-y-2">{memories.map((memory) => <MemoryItem key={memory.id} memory={memory} />)}</div></SettingsSection>
@@ -639,7 +740,7 @@ function MemoryItem({ memory }: { memory: { id: string; kind: string; title: str
             </AlertDialog></div></CollapsibleContent></Collapsible>
 }
 
-const DiagnosticsSection = forwardRef<HTMLDivElement>((_, ref) => {
+export const DiagnosticsSection = forwardRef<HTMLDivElement>((_, ref) => {
   const [isRunning, setIsRunning] = useState(false)
   const [results, setResults] = useState<DiagnosticRow[]>([])
   return (
@@ -665,7 +766,7 @@ async function runHealthCheck(setRunning: (value: boolean) => void, setResults: 
   finally { setRunning(false) }
 }
 
-function diagnosticRows(data: Awaited<ReturnType<typeof runDiagnosticsCheck>>) {
+export function diagnosticRows(data: Awaited<ReturnType<typeof runDiagnosticsCheck>>) {
   if (data.services?.length) {
     return data.services.map((item) => ({
       category: item.label,
@@ -682,17 +783,17 @@ function diagnosticRows(data: Awaited<ReturnType<typeof runDiagnosticsCheck>>) {
   ]
 }
 
-function normalizeDiagnosticStatus(status: string): DiagnosticRow["status"] {
+export function normalizeDiagnosticStatus(status: string): DiagnosticRow["status"] {
   if (status === "ok" || status === "warning" || status === "error") return status
   return "warning"
 }
 
-function DiagnosticResults({ results }: { results: DiagnosticRow[] }) {
+export function DiagnosticResults({ results }: { results: DiagnosticRow[] }) {
   if (!results.length) return null
   return <div className="mt-4 rounded-lg border border-border p-4 space-y-3">{results.map((r) => <DiagnosticResultRow key={r.category} row={r} />)}</div>
 }
 
-function DiagnosticResultRow({ row }: { row: DiagnosticRow }) {
+export function DiagnosticResultRow({ row }: { row: DiagnosticRow }) {
   return (
     <div className="flex items-start gap-3">
       <CheckCircle className={cn("mt-0.5 h-4 w-4", diagnosticColor(row.status))} />
@@ -708,13 +809,13 @@ function DiagnosticResultRow({ row }: { row: DiagnosticRow }) {
   )
 }
 
-function diagnosticColor(status: DiagnosticRow["status"]) {
+export function diagnosticColor(status: DiagnosticRow["status"]) {
   if (status === "ok") return "text-success"
   if (status === "warning") return "text-warning"
   return "text-destructive"
 }
 
-function diagnosticLabel(status: DiagnosticRow["status"]) {
+export function diagnosticLabel(status: DiagnosticRow["status"]) {
   if (status === "ok") return "正常"
   if (status === "warning") return "提醒"
   return "异常"
@@ -728,7 +829,7 @@ interface SettingsSectionProps {
   children: React.ReactNode
 }
 
-const SettingsSection = forwardRef<HTMLDivElement, SettingsSectionProps>(({ id, title, description, icon: Icon, children }, ref) => {
+export const SettingsSection = forwardRef<HTMLDivElement, SettingsSectionProps>(({ id, title, description, icon: Icon, children }, ref) => {
   const [isOpen, setIsOpen] = useState(true)
   return (
     <div ref={ref} id={id} className="scroll-mt-6"><Collapsible open={isOpen} onOpenChange={setIsOpen}>

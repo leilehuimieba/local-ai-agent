@@ -12,7 +12,7 @@ import type {
   Memory,
   ViewType,
 } from "./types"
-import { submitChatRun, submitChatCancel, submitConfirmationDecision, type SubmitChatRunPayload, fetchKnowledgeItems, fetchSettings, fetchLogs, fetchMemories, deleteMemory, fetchProviderSettings, updateSettings, type ProviderSettingsItem, type SettingsResponse, fetchSessionMessages, addSessionMessage } from "./api"
+import { fetchKnowledgeItems, fetchSettings, fetchLogs, fetchMemories, deleteMemory, fetchProviderSettings, updateSettings, type ProviderSettingsItem, type SettingsResponse, fetchSessionMessages, addSessionMessage } from "./api"
 
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15)

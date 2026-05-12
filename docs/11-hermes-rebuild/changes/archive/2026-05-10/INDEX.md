@@ -2,7 +2,7 @@
 
 归档日期：2026-05-10
 
-本批次归档 9 个已收口 change，覆盖产品化、MCP 补齐、diff apply、会话同步、历史列表、知识库上传、Playwright E2E 等主题。
+本批次归档 12 个已收口 change，覆盖产品化、MCP 补齐、diff apply、会话同步、历史列表、知识库上传、Playwright E2E、Runtime MCP Tool Registry 接入与 CI 修复、frontend 测试覆盖率补充、Go errcheck 修复等主题。
 
 ## 归档项列表
 
@@ -15,3 +15,6 @@
 7. [V-history-session-list-20260503](V-history-session-list-20260503/) — 历史会话列表 UI
 8. [W-knowledge-upload-backend-20260503](W-knowledge-upload-backend-20260503/) — 文件上传接入后端知识库
 9. [X-playwright-mobile-e2e-20260503](X-playwright-mobile-e2e-20260503/) — Playwright E2E 测试覆盖移动端
+10. [AD-runtime-mcp-tool-registry-20260505](AD-runtime-mcp-tool-registry-20260505/) — Runtime MCP Tool Registry 接入与 CI 修复：Runtime MCP 注册接入、request-scoped ToolDefinition、模型 schema 统一出口、capability catalog 化、PR #2 CI 全绿
+11. [AE-frontend-test-coverage-20260510](AE-frontend-test-coverage-20260510/) — Frontend 测试覆盖率补充：新增 4 个测试文件，118 项测试全绿，覆盖率 33% → 62% Lines
+12. [AF-go-errcheck-cleanup-20260510](AF-go-errcheck-cleanup-20260510/) — Go errcheck 逐个修复：移除 `.golangci.yml` 中 errcheck 排除规则，32 个文件 80+ 处显式忽略，errcheck 清零

@@ -342,6 +342,7 @@ fn maybe_recover_required_write(
         &PlannedAction::WriteFile {
             path: target_path.clone(),
             content,
+            write_mode: None,
         },
         session_context,
     );

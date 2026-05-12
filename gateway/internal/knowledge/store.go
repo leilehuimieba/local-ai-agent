@@ -40,7 +40,7 @@ func (s *Store) List(workspaceID string) ([]Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(listKnowledgeSQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -48,7 +48,7 @@ func (s *Store) List(workspaceID string) ([]Item, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanItems(rows)
 }
 
@@ -57,7 +57,7 @@ func (s *Store) Get(workspaceID string, id string) (*Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	row := db.QueryRow(getKnowledgeSQL, workspaceID, id)
 	item, err := scanItem(row)
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *Store) Create(workspaceID string, req CreateRequest) (*Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	if _, err := db.Exec(insertKnowledgeSQL, knowledgeArgs(workspaceID, item)...); err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (s *Store) Update(workspaceID string, id string, req UpdateRequest) (*Item,
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	if _, err := db.Exec(updateKnowledgeSQL, updateArgs(workspaceID, id, *item)...); err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (s *Store) Delete(workspaceID string, id string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	res, err := db.Exec(deleteKnowledgeSQL, workspaceID, id)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func (s *Store) Search(workspaceID string, query string) ([]Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(searchKnowledgeSQL, workspaceID, pattern, pattern, pattern)
 	if err != nil {
 		if isMissingTable(err) {
@@ -171,7 +171,7 @@ func (s *Store) Search(workspaceID string, query string) ([]Item, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanItems(rows)
 }
 
@@ -183,7 +183,7 @@ func (s *Store) CreateChunks(chunks []Chunk) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	for _, c := range chunks {
 		embedRaw, _ := json.Marshal(c.Embedding)
 		if _, err := db.Exec(
@@ -201,7 +201,7 @@ func (s *Store) ListChunksByWorkspace(workspaceID string) ([]Chunk, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(listChunksByWorkspaceSQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -209,7 +209,7 @@ func (s *Store) ListChunksByWorkspace(workspaceID string) ([]Chunk, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var chunks []Chunk
 	for rows.Next() {
 		var c Chunk
@@ -230,7 +230,7 @@ func (s *Store) UpdateChunkEmbedding(chunkID string, embedding []float32) error 
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	embedRaw, _ := json.Marshal(embedding)
 	_, err = db.Exec(`update knowledge_chunks set embedding = ? where id = ?`, string(embedRaw), chunkID)
 	return err
@@ -241,7 +241,7 @@ func (s *Store) DeleteChunksByItemID(itemID string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	_, err = db.Exec(`delete from knowledge_chunks where item_id = ?`, itemID)
 	return err
 }
@@ -251,7 +251,7 @@ func (s *Store) IncrementCitationCount(workspaceID, itemID string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	_, err = db.Exec(`update knowledge_items set citation_count = citation_count + 1 where workspace_id = ? and id = ?`, workspaceID, itemID)
 	return err
 }
@@ -261,7 +261,7 @@ func (s *Store) Categories(workspaceID string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(categoriesSQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -269,7 +269,7 @@ func (s *Store) Categories(workspaceID string) ([]string, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var result []string
 	for rows.Next() {
 		var c string
@@ -285,7 +285,7 @@ func (s *Store) Tags(workspaceID string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(tagsSQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -293,7 +293,7 @@ func (s *Store) Tags(workspaceID string) ([]string, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	set := make(map[string]bool)
 	for rows.Next() {
 		var raw string

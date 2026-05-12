@@ -4,8 +4,7 @@ import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import {
   Target,
   ListTodo,
@@ -189,7 +188,7 @@ function DrawerContent() {
 }
 
 export function RightDrawer() {
-  const { rightDrawerOpen, setRightDrawerOpen, activeView, mobileDrawerOpen, setMobileDrawerOpen } = useUIStore()
+  const { rightDrawerOpen, activeView, mobileDrawerOpen, setMobileDrawerOpen } = useUIStore()
   const isMobile = useIsMobile()
 
   if (activeView !== "task") return null

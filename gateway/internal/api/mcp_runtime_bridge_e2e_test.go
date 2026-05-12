@@ -173,7 +173,7 @@ func callBridgeFromRuntime(request contracts.RunRequest) (int, string) {
 	if err != nil {
 		return 0, err.Error()
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var body bytes.Buffer
 	_, _ = body.ReadFrom(resp.Body)
 	return resp.StatusCode, body.String()

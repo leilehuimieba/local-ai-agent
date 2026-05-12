@@ -10,24 +10,26 @@ import (
 
 // Manager manages multiple MCP clients.
 type Manager struct {
-	clients map[string]*Client
+	clients map[string]MCPClient
 	servers []config.MCPServerConfig
 	mu      sync.RWMutex
 }
 
 // ServerStatus holds the status of a single MCP server.
 type ServerStatus struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	Type             string `json:"type"`
-	URL              string `json:"url"`
-	Enabled          bool   `json:"enabled"`
-	Ready            bool   `json:"ready"`
-	ToolCount        int    `json:"tool_count"`
-	AllowedToolCount int    `json:"allowed_tool_count"`
-	BlockedToolCount int    `json:"blocked_tool_count"`
-	RequiresPolicy   bool   `json:"requires_policy"`
-	Error            string `json:"error,omitempty"`
+	ID               string   `json:"id"`
+	Name             string   `json:"name"`
+	Type             string   `json:"type"`
+	URL              string   `json:"url"`
+	Command          string   `json:"command,omitempty"`
+	Args             []string `json:"args,omitempty"`
+	Enabled          bool     `json:"enabled"`
+	Ready            bool     `json:"ready"`
+	ToolCount        int      `json:"tool_count"`
+	AllowedToolCount int      `json:"allowed_tool_count"`
+	BlockedToolCount int      `json:"blocked_tool_count"`
+	RequiresPolicy   bool     `json:"requires_policy"`
+	Error            string   `json:"error,omitempty"`
 }
 
 // NewManager creates a Manager from server configurations.
@@ -36,13 +38,24 @@ func NewManager(servers []config.MCPServerConfig) *Manager {
 	return m
 }
 
-func configuredClients(servers []config.MCPServerConfig) map[string]*Client {
-	clients := make(map[string]*Client)
+func configuredClients(servers []config.MCPServerConfig) map[string]MCPClient {
+	clients := make(map[string]MCPClient)
 	for _, s := range servers {
-		if !s.Enabled || s.URL == "" {
+		if !s.Enabled {
 			continue
 		}
-		clients[s.ID] = NewClient(s.ID, s.Name, s.URL)
+		switch {
+		case s.Type == "stdio" || s.Type == "local":
+			if s.Command == "" {
+				continue
+			}
+			clients[s.ID] = NewStdioClient(s.ID, s.Name, s.Command, s.Args, s.URL)
+		default:
+			if s.URL == "" {
+				continue
+			}
+			clients[s.ID] = NewClient(s.ID, s.Name, s.URL)
+		}
 	}
 	return clients
 }
@@ -56,6 +69,11 @@ func copyServers(servers []config.MCPServerConfig) []config.MCPServerConfig {
 // ReplaceServers replaces the configured servers and reconnects ready clients.
 func (m *Manager) ReplaceServers(servers []config.MCPServerConfig) {
 	m.mu.Lock()
+	for _, c := range m.clients {
+		if sc, ok := c.(*StdioClient); ok {
+			_ = sc.Shutdown()
+		}
+	}
 	m.servers = copyServers(servers)
 	m.clients = configuredClients(servers)
 	m.mu.Unlock()
@@ -65,7 +83,7 @@ func (m *Manager) ReplaceServers(servers []config.MCPServerConfig) {
 // ConnectAll attempts to connect all managed clients concurrently.
 func (m *Manager) ConnectAll() {
 	m.mu.RLock()
-	clients := make([]*Client, 0, len(m.clients))
+	clients := make([]MCPClient, 0, len(m.clients))
 	for _, c := range m.clients {
 		clients = append(clients, c)
 	}
@@ -74,7 +92,7 @@ func (m *Manager) ConnectAll() {
 	var wg sync.WaitGroup
 	for _, c := range clients {
 		wg.Add(1)
-		go func(client *Client) {
+		go func(client MCPClient) {
 			defer wg.Done()
 			_ = client.Connect()
 		}(c)
@@ -94,6 +112,8 @@ func (m *Manager) Status() []ServerStatus {
 			Name:    s.Name,
 			Type:    s.Type,
 			URL:     s.URL,
+			Command: s.Command,
+			Args:    s.Args,
 			Enabled: s.Enabled,
 		}
 		if c, ok := m.clients[s.ID]; ok {
@@ -134,11 +154,11 @@ func (m *Manager) AllowedTools() []Tool {
 	return out
 }
 
-func (m *Manager) toolsForClient(server config.MCPServerConfig, c *Client) []Tool {
+func (m *Manager) toolsForClient(server config.MCPServerConfig, c MCPClient) []Tool {
 	raw := c.Tools()
 	out := make([]Tool, 0, len(raw))
 	for _, tool := range raw {
-		out = append(out, withPolicy(tool, server, c.ID))
+		out = append(out, withPolicy(tool, server, server.ID))
 	}
 	return out
 }
@@ -213,8 +233,19 @@ func validateCallPolicy(name string, policy ToolPolicy) error {
 }
 
 // GetClient returns a client by server ID.
-func (m *Manager) GetClient(serverID string) *Client {
+func (m *Manager) GetClient(serverID string) MCPClient {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.clients[serverID]
+}
+
+// ShutdownAll shuts down all stdio clients. Call during gateway shutdown.
+func (m *Manager) ShutdownAll() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, c := range m.clients {
+		if sc, ok := c.(*StdioClient); ok {
+			_ = sc.Shutdown()
+		}
+	}
 }

@@ -109,7 +109,9 @@ fn verification_policy(tool: &ToolDefinition) -> &'static str {
         "workspace_delete" => "confirm_delete_effect",
         "run_command" => "inspect_command_result",
         "memory_write" => "confirm_memory_persisted",
-        "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" => "check_result_relevance",
+        "workspace_search" | "knowledge_search" | "search_siyuan_notes" | "read_siyuan_note" => {
+            "check_result_relevance"
+        }
         _ => "check_result_summary",
     }
 }
@@ -120,6 +122,7 @@ fn connector_slot(tool: &ToolDefinition) -> String {
     }
     match tool.tool_name.as_str() {
         "workspace_list"
+        | "workspace_search"
         | "workspace_read"
         | "workspace_write"
         | "workspace_apply_patch"
@@ -143,21 +146,27 @@ fn source_kind(connector_slot: &str) -> &'static str {
 fn tool_schema_properties(input_schema: &str) -> Value {
     match input_schema {
         "command_text" => serde_json::json!({
-            "command": { "type": "string", "description": "The command line string to execute" }
+            "command": { "type": "string", "description": "The command line string to execute" },
+            "timeout_secs": { "type": "integer", "description": "Optional timeout in seconds (default 30, max 300)" }
         }),
         "path" => serde_json::json!({
-            "path": { "type": "string", "description": "The file or directory path" }
+            "path": { "type": "string", "description": "The file path to read" },
+            "offset": { "type": "integer", "description": "Optional 1-based line number to start reading from" },
+            "limit": { "type": "integer", "description": "Optional maximum number of lines to read" }
         }),
         "path_and_content" => serde_json::json!({
             "path": { "type": "string", "description": "The file path" },
-            "content": { "type": "string", "description": "The content to write" }
+            "content": { "type": "string", "description": "The content to write" },
+            "write_mode": { "type": "string", "enum": ["overwrite", "append"], "description": "Write mode: overwrite (default) or append" }
         }),
         "unified_diff" => serde_json::json!({
             "diff": { "type": "string", "description": "A single-file unified diff" },
             "dry_run": { "type": "boolean", "description": "Preview without writing files" }
         }),
         "optional_path" => serde_json::json!({
-            "path": { "type": "string", "description": "The file or directory path (optional)" }
+            "path": { "type": "string", "description": "The file or directory path (optional)" },
+            "recursive": { "type": "boolean", "description": "List recursively showing tree structure (default false)" },
+            "file_glob": { "type": "string", "description": "Optional glob pattern to filter entries (e.g. *.rs)" }
         }),
         "memory_entry" => serde_json::json!({
             "kind": { "type": "string", "description": "The category of memory" },
@@ -166,6 +175,13 @@ fn tool_schema_properties(input_schema: &str) -> Value {
         }),
         "query" => serde_json::json!({
             "query": { "type": "string", "description": "The search term or query string" }
+        }),
+        "grep_query" => serde_json::json!({
+            "query": { "type": "string", "description": "Keyword or regex pattern to search in file contents" },
+            "path": { "type": "string", "description": "Optional subdirectory path to restrict search scope" },
+            "context_lines": { "type": "integer", "description": "Number of context lines before and after each match (default 0)" },
+            "file_glob": { "type": "string", "description": "Optional glob pattern to filter files (e.g. *.rs, **/*.toml)" },
+            "output_mode": { "type": "string", "enum": ["content", "files_with_matches", "count"], "description": "Output mode: content (show matching lines), files_with_matches (show file paths), count (show match counts). Default: content" }
         }),
         "none" => serde_json::json!({}),
         _ => serde_json::json!({}),
@@ -179,7 +195,7 @@ fn tool_schema_required(input_schema: &str) -> Vec<&'static str> {
         "path_and_content" => vec!["path", "content"],
         "unified_diff" => vec!["diff"],
         "memory_entry" => vec!["kind", "summary", "content"],
-        "query" => vec!["query"],
+        "query" | "grep_query" => vec!["query"],
         "optional_path" | "none" => vec![],
         _ => vec![],
     }

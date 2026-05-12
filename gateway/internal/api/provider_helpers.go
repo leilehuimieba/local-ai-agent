@@ -158,7 +158,7 @@ func requestProviderModels(target string, apiKey string) ([]byte, int, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := ioReadAll(resp)
 	return body, resp.StatusCode, err
 }

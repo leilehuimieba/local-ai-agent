@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, PanelRightClose, PanelRight, Wifi, WifiOff, Loader2 } from "lucide-react"
+import { Moon, Sun, PanelRightClose, PanelRight } from "lucide-react"
 import { useRuntimeStore, useUIStore } from "@/lib/local-agent/store"
 import type { ViewType, ConnectionState } from "@/lib/local-agent/types"
 import { cn } from "@/lib/utils"

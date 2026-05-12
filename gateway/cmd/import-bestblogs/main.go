@@ -29,7 +29,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "无法打开文件: %v\n", err)
 		os.Exit(1)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	type articleInput struct {
 		Title    string   `json:"title"`

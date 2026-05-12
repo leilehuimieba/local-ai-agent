@@ -37,33 +37,60 @@ func nextMCPServers(servers []config.MCPServerConfig, payload settingsUpdatePayl
 	if payload.RemoveMCPID != "" {
 		return removeMCPServer(servers, payload.RemoveMCPID)
 	}
+	if payload.EditMCPID != "" {
+		return editMCPServer(servers, payload)
+	}
 	if payload.MCPPolicyServerID != "" || payload.MCPPolicyToolName != "" {
 		return updateMCPToolPolicy(servers, payload)
 	}
-	return addMCPServer(servers, payload.AddMCPName, payload.AddMCPURL)
+	return addMCPServer(servers, payload)
 }
 
 func hasMCPSettingsPatch(payload settingsUpdatePayload) bool {
-	return payload.AddMCPURL != "" || payload.RemoveMCPID != "" || payload.MCPPolicyServerID != "" || payload.MCPPolicyToolName != ""
+	return payload.AddMCPURL != "" || payload.AddMCPCommand != "" || payload.AddMCPType != "" ||
+		payload.RemoveMCPID != "" || payload.EditMCPID != "" ||
+		payload.MCPPolicyServerID != "" || payload.MCPPolicyToolName != ""
 }
 
-func addMCPServer(servers []config.MCPServerConfig, name string, rawURL string) ([]config.MCPServerConfig, error) {
-	name = strings.TrimSpace(name)
-	rawURL = strings.TrimSpace(rawURL)
-	if err := validateMCPURL(rawURL); err != nil {
-		return nil, err
+func addMCPServer(servers []config.MCPServerConfig, payload settingsUpdatePayload) ([]config.MCPServerConfig, error) {
+	name := strings.TrimSpace(payload.AddMCPName)
+	svcType := strings.TrimSpace(payload.AddMCPType)
+	if svcType == "" {
+		svcType = "http"
 	}
-	if hasMCPURL(servers, rawURL) {
-		return nil, errors.New("mcp server url already exists")
+	command := strings.TrimSpace(payload.AddMCPCommand)
+
+	switch svcType {
+	case "stdio", "local":
+		if command == "" {
+			return nil, errors.New("stdio mcp server requires command")
+		}
+		if name == "" {
+			name = command
+		}
+		url := strings.TrimSpace(payload.AddMCPURL)
+		next := append(copyMCPServers(servers), config.MCPServerConfig{
+			ID: mcpServerID(name, command, servers), Name: name,
+			Type: "stdio", URL: url, Command: command, Args: payload.AddMCPArgs, Enabled: true,
+		})
+		return next, nil
+	default:
+		rawURL := strings.TrimSpace(payload.AddMCPURL)
+		if err := validateMCPURL(rawURL); err != nil {
+			return nil, err
+		}
+		if hasMCPURL(servers, rawURL) {
+			return nil, errors.New("mcp server url already exists")
+		}
+		if name == "" {
+			name = rawURL
+		}
+		next := append(copyMCPServers(servers), config.MCPServerConfig{
+			ID: mcpServerID(name, rawURL, servers), Name: name,
+			Type: "http", URL: rawURL, Enabled: true,
+		})
+		return next, nil
 	}
-	if name == "" {
-		name = rawURL
-	}
-	next := append(copyMCPServers(servers), config.MCPServerConfig{
-		ID: mcpServerID(name, rawURL, servers), Name: name,
-		Type: "http", URL: rawURL, Enabled: true,
-	})
-	return next, nil
 }
 
 func updateMCPToolPolicy(servers []config.MCPServerConfig, payload settingsUpdatePayload) ([]config.MCPServerConfig, error) {
@@ -122,6 +149,32 @@ func removeMCPServer(servers []config.MCPServerConfig, id string) ([]config.MCPS
 		return nil, fmt.Errorf("mcp server %q not found", id)
 	}
 	return next, nil
+}
+
+func editMCPServer(servers []config.MCPServerConfig, payload settingsUpdatePayload) ([]config.MCPServerConfig, error) {
+	id := strings.TrimSpace(payload.EditMCPID)
+	if id == "" {
+		return nil, errors.New("edit_mcp_id is required")
+	}
+	next := copyMCPServers(servers)
+	for i := range next {
+		if next[i].ID == id {
+			if payload.EditMCPURL != "" {
+				next[i].URL = strings.TrimSpace(payload.EditMCPURL)
+			}
+			if payload.EditMCPCommand != "" {
+				next[i].Command = strings.TrimSpace(payload.EditMCPCommand)
+			}
+			if payload.EditMCPArgs != nil {
+				next[i].Args = payload.EditMCPArgs
+			}
+			if payload.EditMCPEnabled != nil {
+				next[i].Enabled = *payload.EditMCPEnabled
+			}
+			return next, nil
+		}
+	}
+	return nil, fmt.Errorf("mcp server %q not found", id)
 }
 
 func validateMCPURL(rawURL string) error {

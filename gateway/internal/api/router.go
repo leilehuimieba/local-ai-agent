@@ -169,7 +169,7 @@ func requestRuntimeStatus(runtimePort int) (RuntimeStatus, bool) {
 	if err != nil {
 		return RuntimeStatus{}, false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var payload RuntimeStatus
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return RuntimeStatus{OK: false, Name: "runtime-host", Version: "invalid-response"}, true

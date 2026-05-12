@@ -126,6 +126,9 @@ func mustStartSystem(root string, cfg config.AppConfig, logDir string) {
 		return
 	}
 	fmt.Println("[local-agent-launcher] starting services...")
+	if err := ensureMCPServers(root, cfg, logDir); err != nil {
+		fail("start mcp servers", err)
+	}
 	if err := ensureRuntime(root, cfg, logDir); err != nil {
 		fail("start runtime", err)
 	}
@@ -253,6 +256,51 @@ func ensureGateway(root string, cfg config.AppConfig, logDir string) error {
 	return waitForHealth(gatewayURL, 20*time.Second)
 }
 
+func ensureMCPServers(root string, cfg config.AppConfig, logDir string) error {
+	for _, server := range cfg.MCP.Servers {
+		if !server.Enabled || server.Command == "" {
+			continue
+		}
+		// Skip stdio-type servers — the Gateway manages them directly.
+		if server.Type == "stdio" || server.Type == "local" {
+			fmt.Printf("[local-agent-launcher] mcp server %s is stdio, gateway will manage it\n", server.ID)
+			continue
+		}
+		healthURL := mcpHealthURL(server.URL)
+		if healthOK(healthURL) {
+			fmt.Printf("[local-agent-launcher] mcp server %s already running\n", server.ID)
+			continue
+		}
+		fmt.Printf("[local-agent-launcher] starting mcp server %s...\n", server.ID)
+		cmdPath := server.Command
+		if !filepath.IsAbs(cmdPath) {
+			cmdPath = filepath.Join(root, cmdPath)
+		}
+		if !fileExists(cmdPath) {
+			return fmt.Errorf("mcp server %s command not found: %s", server.ID, cmdPath)
+		}
+		logPath := filepath.Join(logDir, fmt.Sprintf("mcp-%s.log", server.ID))
+		if err := spawnProcess(filepath.Dir(cmdPath), os.Environ(), logPath, cmdPath, server.Args...); err != nil {
+			return fmt.Errorf("mcp server %s: %w", server.ID, err)
+		}
+		if err := waitForHealth(healthURL, 15*time.Second); err != nil {
+			return fmt.Errorf("mcp server %s health check timeout: %w", server.ID, err)
+		}
+		fmt.Printf("[local-agent-launcher] mcp server %s ready\n", server.ID)
+	}
+	return nil
+}
+
+func mcpHealthURL(rawURL string) string {
+	if idx := strings.Index(rawURL, "://"); idx >= 0 {
+		rest := rawURL[idx+3:]
+		if slashIdx := strings.IndexByte(rest, '/'); slashIdx >= 0 {
+			return rawURL[:idx+3+slashIdx]
+		}
+	}
+	return rawURL
+}
+
 func spawnRuntimeProcess(root string, env []string, logPath string) error {
 	binary := filepath.Join(root, "target", "debug", executableName("runtime-host"))
 	if fileExists(binary) {
@@ -336,7 +384,7 @@ func runCommand(workdir string, env []string, logPath string, name string, args 
 	if err != nil {
 		return err
 	}
-	defer logFile.Close()
+	defer func() { _ = logFile.Close() }()
 
 	cmd := exec.Command(name, args...)
 	cmd.Dir = workdir
@@ -404,7 +452,7 @@ func healthOK(url string) bool {
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	return resp.StatusCode == http.StatusOK
 }
 
@@ -427,7 +475,7 @@ func systemInfo(gatewayURL string, repoRoot string) (launcherSystemInfo, bool) {
 	if err != nil {
 		return launcherSystemInfo{}, false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return launcherSystemInfo{}, false
 	}

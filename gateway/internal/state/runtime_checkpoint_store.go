@@ -78,7 +78,7 @@ func (s *RuntimeCheckpointStore) queryCheckpoint(
 	if err != nil {
 		return RuntimeCheckpointRecord{}, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	row := db.QueryRow(query, args...)
 	return scanRuntimeCheckpoint(row)
 }

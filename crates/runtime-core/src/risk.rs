@@ -87,7 +87,7 @@ fn high_risk_confirmation(request: &RunRequest, action: &PlannedAction) -> Optio
     match action {
         PlannedAction::DeletePath { path } => delete_confirmation(request, action, path),
         PlannedAction::ApplyPatch { diff, .. } => Some(patch_confirmation(request, action, diff)),
-        PlannedAction::RunCommand { command } if is_dangerous_command(command) => {
+        PlannedAction::RunCommand { command, .. } if is_dangerous_command(command) => {
             Some(command_confirmation(request, action, command))
         }
         _ => None,
@@ -246,7 +246,14 @@ mod tests {
         request
             .context_hints
             .insert("workspace_first_seen".to_string(), "true".to_string());
-        let outcome = assess_risk(&request, &PlannedAction::ListFiles { path: None });
+        let outcome = assess_risk(
+            &request,
+            &PlannedAction::ListFiles {
+                path: None,
+                recursive: false,
+                file_glob: None,
+            },
+        );
         assert!(matches!(outcome, RiskOutcome::RequireConfirmation(_)));
     }
 
@@ -255,6 +262,7 @@ mod tests {
         let request = sample_request("observe");
         let action = PlannedAction::RunCommand {
             command: "rm test.txt".to_string(),
+            timeout_secs: None,
         };
         let outcome = assess_risk(&request, &action);
         assert!(matches!(outcome, RiskOutcome::Blocked(_)));
@@ -272,6 +280,7 @@ mod tests {
         });
         let action = PlannedAction::RunCommand {
             command: "rm test.txt".to_string(),
+            timeout_secs: None,
         };
         let outcome = assess_risk(&request, &action);
         assert!(matches!(outcome, RiskOutcome::Proceed));

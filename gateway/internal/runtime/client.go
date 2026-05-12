@@ -46,7 +46,7 @@ func (c *Client) doRunRequest(httpReq *http.Request) (contracts.RuntimeRunRespon
 	if err != nil {
 		return contracts.RuntimeRunResponse{}, fmt.Errorf("call runtime: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return contracts.RuntimeRunResponse{}, fmt.Errorf("runtime returned %s", resp.Status)
 	}
@@ -102,7 +102,7 @@ func getJSONFromRequest[T any](client *http.Client, httpReq *http.Request) (T, e
 	if err != nil {
 		return payload, fmt.Errorf("call runtime: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return payload, fmt.Errorf("runtime returned %s", resp.Status)
 	}

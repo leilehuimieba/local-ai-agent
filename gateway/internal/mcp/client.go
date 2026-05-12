@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+// MCPClient is the interface for MCP transport clients (HTTP or stdio).
+type MCPClient interface {
+	Connect() error
+	Call(name string, arguments map[string]any) (json.RawMessage, error)
+	Ready() bool
+	Tools() []Tool
+}
+
 // Client is an MCP HTTP client.
 type Client struct {
 	ID         string
@@ -152,7 +160,7 @@ func (c *Client) post(reqBody rpcRequest) (*rpcResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("mcp http %d", resp.StatusCode)

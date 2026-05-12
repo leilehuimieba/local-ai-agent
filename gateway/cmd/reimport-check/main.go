@@ -11,10 +11,10 @@ import (
 
 func main() {
 	db, _ := sql.Open("sqlite", filepath.Join(`D:\newwork\本地智能体`, "data", "storage", "main.db"))
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	var total, empty, garbled int
 	rows, _ := db.Query(`select title, content from knowledge_items`)
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var t, c string
 		_ = rows.Scan(&t, &c)

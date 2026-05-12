@@ -9,6 +9,17 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+    coverage: {
+      exclude: [
+        'node_modules/**',
+        'e2e/**',
+        'dist/**',
+        'components/ui/**',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'vitest.setup.ts',
+      ],
+    },
   },
   resolve: {
     alias: {

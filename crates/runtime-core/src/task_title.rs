@@ -2,14 +2,15 @@ use crate::planner::PlannedAction;
 
 pub(crate) fn derive_task_title(action: &PlannedAction, user_input: &str) -> String {
     match action {
-        PlannedAction::RunCommand { command } => label_with_text("执行命令", command),
-        PlannedAction::ReadFile { path } => format!("读取文件: {path}"),
+        PlannedAction::RunCommand { command, .. } => label_with_text("执行命令", command),
+        PlannedAction::ReadFile { path, .. } => format!("读取文件: {path}"),
         PlannedAction::WriteFile { path, .. } => format!("写入文件: {path}"),
         PlannedAction::ApplyPatch { dry_run, .. } => patch_title(*dry_run),
         PlannedAction::DeletePath { path } => format!("删除路径: {path}"),
-        PlannedAction::ListFiles { path } => list_files_title(path.as_deref()),
+        PlannedAction::ListFiles { path, .. } => list_files_title(path.as_deref()),
         PlannedAction::WriteMemory { summary, .. } => label_with_text("写入记忆", summary),
         PlannedAction::RecallMemory { query } => label_with_text("召回记忆", query),
+        PlannedAction::SearchFiles { query, .. } => label_with_text("搜索文件内容", query),
         PlannedAction::SearchKnowledge { query } => label_with_text("检索知识", query),
         PlannedAction::SearchSiyuanNotes { query } => label_with_text("检索思源", query),
         PlannedAction::ReadSiyuanNote { path } => label_with_text("读取思源", path),

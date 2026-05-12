@@ -62,7 +62,7 @@ func (s *SessionStore) ListSessions() ([]Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	rows, err := db.Query(`SELECT id, title, created_at, updated_at FROM sessions ORDER BY updated_at DESC`)
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *SessionStore) ListSessions() ([]Session, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	sessions := make([]Session, 0)
 	for rows.Next() {
@@ -89,7 +89,7 @@ func (s *SessionStore) GetSession(id string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	row := db.QueryRow(`SELECT id, title, created_at, updated_at FROM sessions WHERE id = ?`, id)
 	var sess Session
@@ -110,7 +110,7 @@ func (s *SessionStore) CreateSession(id string, title string) (*Session, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err = db.Exec(
 		`INSERT INTO sessions (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)`,
@@ -127,7 +127,7 @@ func (s *SessionStore) TouchSession(id string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	now := time.Now().Format(time.RFC3339)
 	_, err = db.Exec(`UPDATE sessions SET updated_at = ? WHERE id = ?`, now, id)
@@ -139,7 +139,7 @@ func (s *SessionStore) GetMessages(sessionID string) ([]ChatMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	rows, err := db.Query(
 		`SELECT id, session_id, role, content, blocks_json, timestamp FROM chat_messages WHERE session_id = ? ORDER BY timestamp ASC`,
@@ -151,7 +151,7 @@ func (s *SessionStore) GetMessages(sessionID string) ([]ChatMessage, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var messages []ChatMessage
 	for rows.Next() {
@@ -182,7 +182,7 @@ func (s *SessionStore) AddMessage(sessionID string, role string, content string,
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Ensure session exists
 	var count int
@@ -223,7 +223,7 @@ func (s *SessionStore) DeleteSession(id string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err = db.Exec(`DELETE FROM chat_messages WHERE session_id = ?`, id)
 	if err != nil {

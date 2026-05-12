@@ -75,7 +75,7 @@ func readMCPAuditRecords(path string) []mcpAuditRecord {
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	return scanMCPAuditRecords(file)
 }
 

@@ -7,7 +7,7 @@
 
 ## 当前活跃 change
 
-1. [AD-runtime-mcp-tool-registry-20260505](AD-runtime-mcp-tool-registry-20260505/) — P0：收口 Runtime MCP registry 接入
+（无，自由迭代期）
 
 ## 已完成 change
 
@@ -15,15 +15,16 @@
 
 ## 归档入口
 
-1. [archive/2026-05-10/INDEX](archive/2026-05-10/INDEX.md)（S~Z、AA 产品化与治理收口归档入口，共 9 项）
-2. [archive/2026-04-27/INDEX](archive/2026-04-27/INDEX.md)（P/Q/R 产品化治理与模块化收口归档入口）
-3. [archive/2026-04-26/INDEX](archive/2026-04-26/INDEX.md)（D~N 阶段收口项与 H-02/H-03 保留观察归档入口，共 26 项）
-4. [archive/2026-04-24/INDEX](archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
-5. [archive/2026-04-23/INDEX](archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
-6. [archive/2026-04-15/INDEX](archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
-7. [archive/2026-04-14/INDEX](archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
-8. [archive/2026-04-13/INDEX](archive/2026-04-13/INDEX.md)（本轮文档治理收口归档入口）
-9. [archive/2026-04-12/INDEX](archive/2026-04-12/INDEX.md)（更早已收口 change 归档入口）
+1. [archive/2026-05-10/INDEX](archive/2026-05-10/INDEX.md)（AD CI 修复收口归档入口）
+2. [archive/2026-05-10/INDEX](archive/2026-05-10/INDEX.md)（S~Z、AA 产品化与治理收口归档入口，共 9 项）
+3. [archive/2026-04-27/INDEX](archive/2026-04-27/INDEX.md)（P/Q/R 产品化治理与模块化收口归档入口）
+4. [archive/2026-04-26/INDEX](archive/2026-04-26/INDEX.md)（D~N 阶段收口项与 H-02/H-03 保留观察归档入口，共 26 项）
+5. [archive/2026-04-24/INDEX](archive/2026-04-24/INDEX.md)（H-modularity-hardening、H-gateway-service-extraction 归档入口）
+6. [archive/2026-04-23/INDEX](archive/2026-04-23/INDEX.md)（前端重新设计、前端工作台重构归档入口）
+7. [archive/2026-04-15/INDEX](archive/2026-04-15/INDEX.md)（阶段 G 已收口项与 `F-memory-progressive-disclosure-20260414` 归档入口）
+8. [archive/2026-04-14/INDEX](archive/2026-04-14/INDEX.md)（`E-claudecode-shell-alignment`、`E-sensitive-pattern-expansion` 归档入口）
+9. [archive/2026-04-13/INDEX](archive/2026-04-13/INDEX.md)（本轮文档治理收口归档入口）
+10. [archive/2026-04-12/INDEX](archive/2026-04-12/INDEX.md)（更早已收口 change 归档入口）
 
 ## 选择规则
 

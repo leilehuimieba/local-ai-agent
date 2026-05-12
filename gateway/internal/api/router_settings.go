@@ -77,6 +77,14 @@ type settingsUpdatePayload struct {
 	MCPPolicyAllowed       *bool              `json:"mcp_policy_allowed"`
 	MCPPolicyRiskLevel     string             `json:"mcp_policy_risk_level"`
 	MCPPolicyConfirm       *bool              `json:"mcp_policy_requires_confirmation"`
+	AddMCPType             string             `json:"add_mcp_type"`
+	AddMCPCommand          string             `json:"add_mcp_command"`
+	AddMCPArgs             []string           `json:"add_mcp_args"`
+	EditMCPID              string             `json:"edit_mcp_id"`
+	EditMCPURL             string             `json:"edit_mcp_url"`
+	EditMCPCommand         string             `json:"edit_mcp_command"`
+	EditMCPArgs            []string           `json:"edit_mcp_args"`
+	EditMCPEnabled         *bool              `json:"edit_mcp_enabled"`
 }
 
 func updateSettingsStore(store *state.SettingsStore, payload settingsUpdatePayload) error {

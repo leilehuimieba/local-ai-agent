@@ -188,15 +188,47 @@ pub(crate) fn execute_action(
 
 fn execute_action_workspace(request: &RunRequest, action: &PlannedAction) -> Option<ActionExecution> {
     match action {
-        PlannedAction::ReadFile { path } => Some(workspace_executor::execute_file_read(request, path)),
-        PlannedAction::WriteFile { path, content } => {
-            Some(workspace_executor::execute_file_write(request, path, content))
+        PlannedAction::ReadFile { path, offset, limit } => {
+            Some(workspace_executor::execute_file_read(request, path, *offset, *limit))
         }
+        PlannedAction::WriteFile {
+            path,
+            content,
+            write_mode,
+        } => Some(workspace_executor::execute_file_write(
+            request,
+            path,
+            content,
+            write_mode.as_deref(),
+        )),
         PlannedAction::ApplyPatch { diff, dry_run } => {
             Some(patch_executor::execute_apply_patch(request, diff, *dry_run))
         }
         PlannedAction::DeletePath { path } => Some(workspace_executor::execute_delete_path(request, path)),
-        PlannedAction::ListFiles { path } => Some(workspace_executor::execute_list_files(request, path.as_deref())),
+        PlannedAction::ListFiles {
+            path,
+            recursive,
+            file_glob,
+        } => Some(workspace_executor::execute_list_files(
+            request,
+            path.as_deref(),
+            *recursive,
+            file_glob.as_deref(),
+        )),
+        PlannedAction::SearchFiles {
+            query,
+            path,
+            context_lines,
+            file_glob,
+            output_mode,
+        } => Some(workspace_executor::execute_file_search(
+            request,
+            query,
+            path.as_deref(),
+            *context_lines,
+            file_glob.as_deref(),
+            output_mode,
+        )),
         _ => None,
     }
 }
@@ -261,7 +293,10 @@ fn execute_action_misc(
     session_context: &SessionMemory,
 ) -> ActionExecution {
     match action {
-        PlannedAction::RunCommand { command } => command_executor::execute_command(request, command),
+        PlannedAction::RunCommand {
+            command,
+            timeout_secs,
+        } => command_executor::execute_command(request, command, *timeout_secs),
         PlannedAction::Explain => explain_executor::execute_explain(request),
         PlannedAction::AgentResolve => agent_resolve_executor::execute_agent_resolve(request, session_context),
         _ => unreachable!("unexpected planned action branch"),

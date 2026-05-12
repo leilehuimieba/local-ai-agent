@@ -135,7 +135,7 @@ func (b *EventBus) appendEventLog(event contracts.RunEvent) {
 	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	payload, err := json.Marshal(event)
 	if err != nil {
@@ -149,7 +149,7 @@ func (b *EventBus) appendLog(event contracts.RunEvent) {
 	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	entry := logEntryFromEvent(event)
 	payload, err := json.Marshal(entry)
@@ -336,7 +336,7 @@ func (b *EventBus) readLogsFromFile() []contracts.LogEntry {
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	var items []contracts.LogEntry
 	decoder := json.NewDecoder(file)
 	for {

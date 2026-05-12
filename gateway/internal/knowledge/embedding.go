@@ -45,7 +45,7 @@ func GetEmbedding(text string, provider config.ProviderConfig, modelID string) (
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		text, _ := io.ReadAll(resp.Body)

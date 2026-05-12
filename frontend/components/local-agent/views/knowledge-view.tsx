@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -92,7 +92,7 @@ export function KnowledgeView() {
     </div>
   )
 }
-function SourcesTab() {
+export function SourcesTab() {
   const store = useKnowledgeStore()
   const filteredSources = useFilteredSources(store)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -125,10 +125,10 @@ type KnowledgeStoreSnapshot = ReturnType<typeof useKnowledgeStore.getState>
 function useFilteredSources(store: KnowledgeStoreSnapshot) {
   return useMemo(() => {
     return store.items.filter((source) => isKnowledgeVisible(source, store))
-  }, [store.items, store.selectedCategory, store.searchQuery, store.selectedTags])
+  }, [store])
 }
 
-function isKnowledgeVisible(source: KnowledgeItem, store: KnowledgeStoreSnapshot) {
+export function isKnowledgeVisible(source: KnowledgeItem, store: KnowledgeStoreSnapshot) {
   if (store.selectedCategory && store.selectedCategory !== "all" && source.category !== store.selectedCategory) return false
   if (store.searchQuery && !source.title.toLowerCase().includes(store.searchQuery.toLowerCase())) return false
   return !store.selectedTags.length || store.selectedTags.some((tag) => source.tags.includes(tag))
@@ -161,12 +161,12 @@ function CategoryFilter({ selected, onSelect }: { selected: string | null; onSel
   return <div><p className="text-xs font-medium text-muted-foreground mb-2 tracking-wider">分类</p><div className="flex flex-wrap gap-1.5">{categories.map((cat) => <CategoryButton key={cat.id} cat={cat} selected={selected} onSelect={onSelect} />)}</div></div>
 }
 
-function CategoryButton({ cat, selected, onSelect }: { cat: (typeof categories)[number]; selected: string | null; onSelect: (category: string | null) => void }) {
+export function CategoryButton({ cat, selected, onSelect }: { cat: (typeof categories)[number]; selected: string | null; onSelect: (category: string | null) => void }) {
   const active = selected === cat.id || (cat.id === "all" && !selected)
   return <button onClick={() => onSelect(cat.id === "all" ? null : cat.id)} className={cn("px-2.5 py-1 text-xs font-medium rounded-md transition-colors", active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>{cat.label}</button>
 }
 
-function TagFilter({ tags, selected, toggle }: { tags: string[]; selected: string[]; toggle: (tag: string) => void }) {
+export function TagFilter({ tags, selected, toggle }: { tags: string[]; selected: string[]; toggle: (tag: string) => void }) {
   const [query, setQuery] = useState("")
   const [expanded, setExpanded] = useState(false)
   const filtered = query ? tags.filter((t) => t.toLowerCase().includes(query.toLowerCase())) : tags
@@ -210,7 +210,7 @@ function KnowledgeGrid({ items, onSelect }: { items: KnowledgeItem[]; onSelect: 
   return <ScrollArea className="flex-1"><div className="p-4">{items.length ? <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">{items.map((source) => <SourceCard key={source.id} source={source} onSelect={() => onSelect(source)} />)}</div> : <KnowledgeEmpty />}</div></ScrollArea>
 }
 
-function KnowledgeEmpty() {
+export function KnowledgeEmpty() {
   return <div className="flex flex-col items-center justify-center h-64 text-center"><div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-4"><FileText className="h-6 w-6 text-muted-foreground" /></div><h3 className="text-lg font-medium text-foreground mb-2">未找到资料</h3><p className="text-sm text-muted-foreground max-w-sm">尝试调整筛选条件或添加新资料。</p></div>
 }
 
@@ -257,7 +257,7 @@ function KnowledgeEditor({ item, isEditing, content, saving, setContent, save, c
   return <div className="space-y-3"><Textarea value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[300px] font-mono text-sm resize-none" /><div className="flex gap-2"><Button onClick={save} size="sm" disabled={saving}>{saving ? "保存中..." : "保存"}</Button><Button variant="outline" size="sm" onClick={cancel}>取消</Button></div></div>
 }
 
-function KnowledgeTags({ item }: { item: KnowledgeItem }) {
+export function KnowledgeTags({ item }: { item: KnowledgeItem }) {
   return <div className="mt-4 pt-4 border-t border-border"><p className="text-xs font-medium text-muted-foreground mb-2">标签</p><div className="flex flex-wrap gap-1.5">{item.tags.map((tag) => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}</div></div>
 }
 
@@ -301,7 +301,7 @@ function KnowledgeCreateDialog({
   )
 }
 
-function KnowledgeDraftForm({ draft, setDraft }: { draft: KnowledgeDraft; setDraft: (draft: KnowledgeDraft) => void }) {
+export function KnowledgeDraftForm({ draft, setDraft }: { draft: KnowledgeDraft; setDraft: (draft: KnowledgeDraft) => void }) {
   return (
     <div className="space-y-3">
       <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="标题" />
@@ -313,19 +313,19 @@ function KnowledgeDraftForm({ draft, setDraft }: { draft: KnowledgeDraft; setDra
   )
 }
 
-function emptyKnowledgeDraft(): KnowledgeDraft {
+export function emptyKnowledgeDraft(): KnowledgeDraft {
   return { title: "", summary: "", content: "", category: "Documentation", tags: [], source: "" }
 }
 
-function normalizeDraft(draft: KnowledgeDraft): KnowledgeDraft {
+export function normalizeDraft(draft: KnowledgeDraft): KnowledgeDraft {
   return { ...draft, summary: draft.summary || draft.content.slice(0, 120), source: draft.source || "manual" }
 }
 
-function splitTags(value: string) {
+export function splitTags(value: string) {
   return value.split(",").map((tag) => tag.trim()).filter(Boolean)
 }
 
-function SourceCard({
+export function SourceCard({
   source,
   onSelect,
 }: {
@@ -378,8 +378,8 @@ interface AskMessage {
   isLoading?: boolean
 }
 
-function AskTab() {
-  const { items } = useKnowledgeStore()
+export function AskTab() {
+  useKnowledgeStore()
   const [question, setQuestion] = useState("")
   const [messages, setMessages] = useState<AskMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)

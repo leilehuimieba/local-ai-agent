@@ -4,16 +4,27 @@ use crate::memory_schema::canonical_kind;
 use crate::session::SessionMemory;
 
 #[derive(Clone, Debug)]
+pub(crate) enum SearchOutputMode {
+    Content,
+    FilesWithMatches,
+    Count,
+}
+
+#[derive(Clone, Debug)]
 pub(crate) enum PlannedAction {
     RunCommand {
         command: String,
+        timeout_secs: Option<u32>,
     },
     ReadFile {
         path: String,
+        offset: Option<usize>,
+        limit: Option<usize>,
     },
     WriteFile {
         path: String,
         content: String,
+        write_mode: Option<String>,
     },
     ApplyPatch {
         diff: String,
@@ -24,6 +35,8 @@ pub(crate) enum PlannedAction {
     },
     ListFiles {
         path: Option<String>,
+        recursive: bool,
+        file_glob: Option<String>,
     },
     WriteMemory {
         kind: String,
@@ -32,6 +45,13 @@ pub(crate) enum PlannedAction {
     },
     RecallMemory {
         query: String,
+    },
+    SearchFiles {
+        query: String,
+        path: Option<String>,
+        context_lines: u32,
+        file_glob: Option<String>,
+        output_mode: SearchOutputMode,
     },
     SearchKnowledge {
         query: String,
@@ -68,6 +88,7 @@ pub(crate) fn analysis_summary(
         PlannedAction::ListFiles { .. } => "运行时识别到这是一个工作区目录浏览任务。".to_string(),
         PlannedAction::WriteMemory { .. } => "运行时识别到这是一个长期记忆写入任务。".to_string(),
         PlannedAction::RecallMemory { .. } => "运行时识别到这是一个按需记忆召回任务。".to_string(),
+        PlannedAction::SearchFiles { .. } => "运行时识别到这是一个文件内容搜索任务。".to_string(),
         PlannedAction::SearchKnowledge { .. } => "运行时识别到这是一个本地知识检索任务。".to_string(),
         PlannedAction::SearchSiyuanNotes { .. } => "运行时识别到这是一个思源摘要检索任务。".to_string(),
         PlannedAction::ReadSiyuanNote { .. } => "运行时识别到这是一个思源正文读取任务。".to_string(),
@@ -136,6 +157,7 @@ fn explicit_action(input: &str) -> Option<PlannedAction> {
         .or_else(|| delete_path_action(input))
         .or_else(|| list_files_action(input))
         .or_else(|| write_file_action(input))
+        .or_else(|| search_files_action(input))
         .or_else(|| write_memory_action(input))
         .or_else(|| recall_memory_action(input))
         .or_else(|| search_knowledge_action(input))
@@ -146,12 +168,19 @@ fn explicit_action(input: &str) -> Option<PlannedAction> {
 
 fn run_command_action(input: &str) -> Option<PlannedAction> {
     extract_prefixed_value(input, &["cmd:", "command:", "run command:", "执行命令:", "运行命令:"])
-        .map(|command| PlannedAction::RunCommand { command })
+        .map(|command| PlannedAction::RunCommand {
+            command,
+            timeout_secs: None,
+        })
 }
 
 fn read_file_action(input: &str) -> Option<PlannedAction> {
     extract_prefixed_value(input, &["read:", "read file:", "读取文件:", "查看文件:"])
-        .map(|path| PlannedAction::ReadFile { path })
+        .map(|path| PlannedAction::ReadFile {
+            path,
+            offset: None,
+            limit: None,
+        })
 }
 
 fn delete_path_action(input: &str) -> Option<PlannedAction> {
@@ -160,16 +189,32 @@ fn delete_path_action(input: &str) -> Option<PlannedAction> {
 }
 
 fn list_files_action(input: &str) -> Option<PlannedAction> {
-    extract_prefixed_value(input, &["list:", "列出文件:", "列出目录:", "workspace list:"]).map(|path| {
-        PlannedAction::ListFiles {
+    extract_prefixed_value(input, &["list:", "列出文件:", "列出目录:", "workspace list:"])
+        .map(|path| PlannedAction::ListFiles {
             path: if path.is_empty() { None } else { Some(path) },
-        }
-    })
+            recursive: false,
+            file_glob: None,
+        })
+}
+
+fn search_files_action(input: &str) -> Option<PlannedAction> {
+    extract_search_files_request(input, &["grep:", "search:", "搜索文件:", "文件搜索:", "查找:"])
+        .map(|(query, path)| PlannedAction::SearchFiles {
+            query,
+            path,
+            context_lines: 0,
+            file_glob: None,
+            output_mode: SearchOutputMode::Content,
+        })
 }
 
 fn write_file_action(input: &str) -> Option<PlannedAction> {
-    extract_write_request(input, &["write:", "create:", "写入文件:", "创建文件:"])
-        .map(|(path, content)| PlannedAction::WriteFile { path, content })
+    extract_write_request(input, &["write:", "create:", "写入文件:", "创建文件:", "append:", "追加:"])
+        .map(|(path, content)| PlannedAction::WriteFile {
+            path,
+            content,
+            write_mode: None,
+        })
 }
 
 fn write_memory_action(input: &str) -> Option<PlannedAction> {
@@ -306,6 +351,7 @@ fn fuzzy_action(input: &str) -> Option<PlannedAction> {
     if should_open_calculator(&lower) {
         return Some(PlannedAction::RunCommand {
             command: calculator_command(),
+            timeout_secs: None,
         });
     }
     None
@@ -865,6 +911,20 @@ fn extract_write_request(input: &str, prefixes: &[&str]) -> Option<(String, Stri
             let path = lines.next()?.trim().to_string();
             let content = lines.collect::<Vec<_>>().join("\n");
             Some((path, content))
+        } else {
+            None
+        }
+    })
+}
+
+fn extract_search_files_request(input: &str, prefixes: &[&str]) -> Option<(String, Option<String>)> {
+    prefixes.iter().find_map(|prefix| {
+        if input.to_lowercase().starts_with(&prefix.to_lowercase()) {
+            let remainder = input[prefix.len()..].trim_start();
+            let mut lines = remainder.lines();
+            let query = lines.next()?.trim().to_string();
+            let path = lines.next().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+            Some((query, path))
         } else {
             None
         }

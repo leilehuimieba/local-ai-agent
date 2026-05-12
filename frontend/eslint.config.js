@@ -9,7 +9,7 @@ const eslintConfig = [
   ...coreWebVitals,
   ...typescript,
   {
-    ignores: ["dist/**"],
+    ignores: ["dist/**", "coverage/**"],
   },
   {
     rules: {

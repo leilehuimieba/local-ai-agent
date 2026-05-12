@@ -15,7 +15,7 @@ vi.mock("@/lib/local-agent/api", async () => {
   }
 })
 
-const { fetchLogs } = await import("@/lib/local-agent/api")
+const { fetchLogs, fetchSessions } = await import("@/lib/local-agent/api")
 
 function buildRun(overrides: Partial<LogRun> = {}): LogRun {
   return {
@@ -141,6 +141,28 @@ describe("LogsView", () => {
       expect(screen.queryByText("Old")).not.toBeInTheDocument()
       expect(screen.getByText("New")).toBeInTheDocument()
     })
+  })
+
+  it("renders empty sessions state", async () => {
+    const user = userEvent.setup()
+    render(<LogsView />)
+    await user.click(screen.getByText("会话历史"))
+    await waitFor(() => {
+      expect(screen.getByText("暂无会话历史")).toBeInTheDocument()
+    })
+  })
+
+  it("renders sessions list and click session", async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchSessions).mockResolvedValue({
+      items: [{ id: "s1", title: "Session One", created_at: new Date().toISOString(), updated_at: new Date().toISOString() }],
+    })
+    render(<LogsView />)
+    await user.click(screen.getByText("会话历史"))
+    await waitFor(() => {
+      expect(screen.getByText("Session One")).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText("Session One"))
   })
 })
 

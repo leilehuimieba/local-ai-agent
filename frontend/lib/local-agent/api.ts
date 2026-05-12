@@ -143,6 +143,8 @@ export type MCPServerInfo = {
   name: string;
   type: string;
   url: string;
+  command?: string;
+  args?: string[];
   enabled: boolean;
   ready: boolean;
   tool_count: number;
@@ -240,6 +242,14 @@ export type SettingsUpdatePayload = {
   mcp_policy_allowed?: boolean;
   mcp_policy_risk_level?: string;
   mcp_policy_requires_confirmation?: boolean;
+  add_mcp_type?: string;
+  add_mcp_command?: string;
+  add_mcp_args?: string[];
+  edit_mcp_id?: string;
+  edit_mcp_url?: string;
+  edit_mcp_command?: string;
+  edit_mcp_args?: string[];
+  edit_mcp_enabled?: boolean;
 };
 
 export async function updateSettings(patch: SettingsUpdatePayload): Promise<void> {
@@ -415,7 +425,8 @@ export async function updateKnowledgeItem(id: string, patch: Partial<KnowledgeIt
 }
 
 function toKnowledgePatch(patch: Partial<KnowledgeItem>): Record<string, unknown> {
-  const { citationCount, createdAt, updatedAt, ...rest } = patch;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { citationCount: _citationCount, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = patch;
   return rest;
 }
 

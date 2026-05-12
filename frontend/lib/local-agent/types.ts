@@ -163,6 +163,8 @@ export interface MCPServerInfo {
   name: string
   type: string
   url: string
+  command?: string
+  args?: string[]
   enabled: boolean
   ready: boolean
   tool_count: number

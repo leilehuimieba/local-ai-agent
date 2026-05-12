@@ -1,4 +1,4 @@
-use crate::planner::PlannedAction;
+use crate::planner::{PlannedAction, SearchOutputMode};
 
 pub(crate) fn tool_call_to_action(name: &str, arguments: &str) -> Option<PlannedAction> {
     let args: serde_json::Value = serde_json::from_str(arguments).unwrap_or_default();
@@ -9,6 +9,7 @@ pub(crate) fn tool_call_to_action(name: &str, arguments: &str) -> Option<Planned
         "workspace_apply_patch" => tool_call_apply_patch(&args),
         "workspace_delete" => tool_call_delete(&args),
         "workspace_list" => tool_call_list(&args),
+        "workspace_search" => tool_call_search_files(&args),
         "memory_write" => tool_call_memory_write(&args),
         "memory_recall" => tool_call_memory_recall(&args),
         "knowledge_search" => tool_call_knowledge_search(&args),
@@ -21,18 +22,29 @@ pub(crate) fn tool_call_to_action(name: &str, arguments: &str) -> Option<Planned
 
 fn tool_call_command(args: &serde_json::Value) -> Option<PlannedAction> {
     let command = args["command"].as_str()?.to_string();
-    Some(PlannedAction::RunCommand { command })
+    let timeout_secs = args["timeout_secs"].as_u64().map(|v| v as u32);
+    Some(PlannedAction::RunCommand {
+        command,
+        timeout_secs,
+    })
 }
 
 fn tool_call_read(args: &serde_json::Value) -> Option<PlannedAction> {
     let path = args["path"].as_str()?.to_string();
-    Some(PlannedAction::ReadFile { path })
+    let offset = args["offset"].as_u64().map(|v| v as usize);
+    let limit = args["limit"].as_u64().map(|v| v as usize);
+    Some(PlannedAction::ReadFile { path, offset, limit })
 }
 
 fn tool_call_write(args: &serde_json::Value) -> Option<PlannedAction> {
     let path = args["path"].as_str()?.to_string();
     let content = args["content"].as_str().unwrap_or("").to_string();
-    Some(PlannedAction::WriteFile { path, content })
+    let write_mode = args["write_mode"].as_str().map(|s| s.to_string());
+    Some(PlannedAction::WriteFile {
+        path,
+        content,
+        write_mode,
+    })
 }
 
 fn tool_call_apply_patch(args: &serde_json::Value) -> Option<PlannedAction> {
@@ -48,7 +60,32 @@ fn tool_call_delete(args: &serde_json::Value) -> Option<PlannedAction> {
 
 fn tool_call_list(args: &serde_json::Value) -> Option<PlannedAction> {
     let path = args["path"].as_str().map(|s| s.to_string());
-    Some(PlannedAction::ListFiles { path })
+    let recursive = args["recursive"].as_bool().unwrap_or(false);
+    let file_glob = args["file_glob"].as_str().map(|s| s.to_string());
+    Some(PlannedAction::ListFiles {
+        path,
+        recursive,
+        file_glob,
+    })
+}
+
+fn tool_call_search_files(args: &serde_json::Value) -> Option<PlannedAction> {
+    let query = args["query"].as_str()?.to_string();
+    let path = args["path"].as_str().map(|s| s.to_string()).filter(|s| !s.is_empty());
+    let context_lines = args["context_lines"].as_u64().unwrap_or(0) as u32;
+    let file_glob = args["file_glob"].as_str().map(|s| s.to_string()).filter(|s| !s.is_empty());
+    let output_mode = match args["output_mode"].as_str().unwrap_or("content") {
+        "files_with_matches" => SearchOutputMode::FilesWithMatches,
+        "count" => SearchOutputMode::Count,
+        _ => SearchOutputMode::Content,
+    };
+    Some(PlannedAction::SearchFiles {
+        query,
+        path,
+        context_lines,
+        file_glob,
+        output_mode,
+    })
 }
 
 fn tool_call_memory_write(args: &serde_json::Value) -> Option<PlannedAction> {

@@ -200,7 +200,7 @@ func (h *Handler) handleUpload(w http.ResponseWriter, r *http.Request, workspace
 		http.Error(w, "file required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	uploadDir := filepath.Join(h.repoRoot, "data", "knowledge_base", "uploads", safeName(workspaceID))
 	savedPath := filepath.Join(uploadDir, safeName(header.Filename))

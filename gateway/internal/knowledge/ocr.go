@@ -63,7 +63,7 @@ func (c *baiduOCRClient) getToken() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("获取百度token失败: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, _ := io.ReadAll(resp.Body)
 	var t baiduToken
@@ -94,7 +94,7 @@ func (c *baiduOCRClient) recognize(imageBase64 string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("百度OCR请求失败: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, _ := io.ReadAll(resp.Body)
 	var result baiduOCRResponse
@@ -137,7 +137,7 @@ func extractPdfWithOCR(path string, apiKey, secretKey string) ExtractResult {
 		if data, err := os.ReadFile(path); err == nil {
 			_ = os.WriteFile(tmpPath, data, 0o600)
 			workPath = tmpPath
-			defer os.Remove(tmpPath)
+			defer func() { _ = os.Remove(tmpPath) }()
 		}
 	}
 
@@ -145,7 +145,7 @@ func extractPdfWithOCR(path string, apiKey, secretKey string) ExtractResult {
 	if err != nil {
 		return ExtractResult{Error: fmt.Errorf("创建临时目录失败: %w", err)}
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	cmd := exec.Command(ppm, "-png", "-f", "1", "-l", "8", "-r", "100", workPath, filepath.Join(tmpDir, "page"))
 	if prefix := popplerPrefix(); prefix != "" {
@@ -229,7 +229,7 @@ func extractPdfWithTesseract(path string, cmdPath string) ExtractResult {
 		if data, err := os.ReadFile(path); err == nil {
 			_ = os.WriteFile(tmpPath, data, 0o600)
 			workPath = tmpPath
-			defer os.Remove(tmpPath)
+			defer func() { _ = os.Remove(tmpPath) }()
 		}
 	}
 
@@ -237,7 +237,7 @@ func extractPdfWithTesseract(path string, cmdPath string) ExtractResult {
 	if err != nil {
 		return ExtractResult{Error: fmt.Errorf("创建临时目录失败: %w", err)}
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	cmd := exec.Command(ppm, "-png", "-f", "1", "-l", "8", "-r", "300", workPath, filepath.Join(tmpDir, "page"))
 	if prefix := popplerPrefix(); prefix != "" {

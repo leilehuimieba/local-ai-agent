@@ -125,7 +125,7 @@ mod tests {
         let prepared = resumed_prepared_state(&request, &session, &repo, &visible, Some(&checkpoint));
         assert!(matches!(
             prepared.expect("prepared").action,
-            crate::planner::PlannedAction::RunCommand { command }
+            crate::planner::PlannedAction::RunCommand { command, .. }
             if command == "echo restored"
         ));
     }

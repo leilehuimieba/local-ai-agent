@@ -12,6 +12,7 @@ pub(crate) fn resolve_tool(action: &PlannedAction) -> ToolDefinition {
         PlannedAction::ListFiles { .. } => list_files_tool(),
         PlannedAction::WriteMemory { .. } => write_memory_tool(),
         PlannedAction::RecallMemory { .. } => recall_memory_tool(),
+        PlannedAction::SearchFiles { .. } => search_files_tool(),
         PlannedAction::SearchKnowledge { .. } => search_knowledge_tool(),
         PlannedAction::SearchSiyuanNotes { .. } => search_siyuan_tool(),
         PlannedAction::ReadSiyuanNote { .. } => read_siyuan_tool(),
@@ -57,6 +58,7 @@ fn tool_catalog() -> Vec<ToolDefinition> {
         list_files_tool(),
         write_memory_tool(),
         recall_memory_tool(),
+        search_files_tool(),
         search_knowledge_tool(),
         search_siyuan_tool(),
         read_siyuan_tool(),
@@ -156,6 +158,18 @@ fn list_files_tool() -> ToolDefinition {
         "low",
         "optional_path",
         "list_preview",
+        false,
+    )
+}
+
+fn search_files_tool() -> ToolDefinition {
+    make_tool(
+        "workspace_search",
+        "搜索文件内容",
+        "workspace_read",
+        "low",
+        "grep_query",
+        "text_preview",
         false,
     )
 }

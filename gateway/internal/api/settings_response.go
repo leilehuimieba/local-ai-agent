@@ -56,6 +56,7 @@ func serverStatusesFromConfig(mgr *mcp.Manager) []MCPServerStatus {
 	for i, st := range statuses {
 		out[i] = MCPServerStatus{
 			ID: st.ID, Name: st.Name, Type: st.Type, URL: st.URL,
+			Command: st.Command, Args: st.Args,
 			Enabled: st.Enabled, Ready: st.Ready, ToolCount: st.ToolCount,
 			AllowedToolCount: st.AllowedToolCount, BlockedToolCount: st.BlockedToolCount,
 			RequiresPolicy: st.RequiresPolicy,

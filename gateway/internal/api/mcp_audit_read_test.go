@@ -37,14 +37,14 @@ func writeMCPAuditFixture(t *testing.T, repoRoot string, record mcpAuditRecord) 
 	require.NoError(t, err)
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	_, err = file.WriteString(string(raw) + "\n")
 	require.NoError(t, err)
 }
 
 func TestScanMCPAuditRecordsSkipsInvalidLines(t *testing.T) {
 	file := writeTempAuditFile(t, `{"audit_id":"1"}`+"\n"+"bad-json\n")
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	items := scanMCPAuditRecords(file)
 	require.Len(t, items, 1)
 	require.Equal(t, "1", items[0].AuditID)

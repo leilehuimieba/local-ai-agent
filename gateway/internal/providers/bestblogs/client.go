@@ -80,7 +80,7 @@ func (c *Client) fetchArticle(
 	if err != nil {
 		return upstreamEnvelope{}, newUpstreamHTTPError(http.StatusBadGateway, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	return decodeEnvelope(resp)
 }
 
@@ -105,7 +105,7 @@ func (c *Client) ListArticles(ctx context.Context, req ListArticlesRequest) (Lis
 	if err != nil {
 		return ListArticlesResponse{}, newUpstreamHTTPError(http.StatusBadGateway, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	envelope, err := decodeListEnvelope(resp)
 	if err != nil {

@@ -18,14 +18,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "open db failed: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	rows, err := db.Query(`select id, workspace_id, title, content, source from knowledge_items`)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "query failed: %v\n", err)
 		os.Exit(1)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	type record struct {
 		id, workspaceID, title, content, source string

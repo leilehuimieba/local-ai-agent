@@ -41,6 +41,7 @@ func main() {
 	runtimeStore := state.NewRuntimeProviderStore(root)
 
 	mgr := mcp.NewManager(cfg.MCP.Servers)
+	defer mgr.ShutdownAll()
 	if len(mgr.Status()) > 0 {
 		mgr.ConnectAll()
 		for _, st := range mgr.Status() {

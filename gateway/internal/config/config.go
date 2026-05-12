@@ -54,6 +54,8 @@ type MCPServerConfig struct {
 	Name         string          `json:"name"`
 	Type         string          `json:"type"`
 	URL          string          `json:"url"`
+	Command      string          `json:"command,omitempty"`
+	Args         []string        `json:"args,omitempty"`
 	Enabled      bool            `json:"enabled"`
 	ToolPolicies []MCPToolPolicy `json:"tool_policies,omitempty"`
 }

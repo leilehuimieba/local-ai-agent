@@ -4,7 +4,7 @@ use crate::capabilities::{
 };
 use crate::context_builder::RuntimeContextEnvelope;
 use crate::contracts::{CapabilitySpec, ConnectorSlotSpec, RunRequest};
-use crate::planner::{PlannedAction, plan_action_with_context};
+use crate::planner::{PlannedAction, SearchOutputMode, plan_action_with_context};
 use serde_json::Value;
 use serde_json::json;
 
@@ -33,12 +33,60 @@ pub(crate) fn action_arguments_json(action: &PlannedAction) -> String {
 
 fn action_arguments_json_inner(action: &PlannedAction) -> String {
     match action {
-        PlannedAction::RunCommand { command } => json!({ "command": command }).to_string(),
-        PlannedAction::ReadFile { path } => json!({ "path": path }).to_string(),
-        PlannedAction::WriteFile { path, content } => json!({ "path": path, "content": content }).to_string(),
+        PlannedAction::RunCommand {
+            command,
+            timeout_secs,
+        } => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("command".to_string(), json!(command));
+            if let Some(t) = timeout_secs {
+                obj.insert("timeout_secs".to_string(), json!(t));
+            }
+            Value::Object(obj).to_string()
+        }
+        PlannedAction::ReadFile { path, offset, limit } => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("path".to_string(), json!(path));
+            if let Some(o) = offset {
+                obj.insert("offset".to_string(), json!(o));
+            }
+            if let Some(l) = limit {
+                obj.insert("limit".to_string(), json!(l));
+            }
+            Value::Object(obj).to_string()
+        }
+        PlannedAction::WriteFile {
+            path,
+            content,
+            write_mode,
+        } => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("path".to_string(), json!(path));
+            obj.insert("content".to_string(), json!(content));
+            if let Some(mode) = write_mode {
+                obj.insert("write_mode".to_string(), json!(mode));
+            }
+            Value::Object(obj).to_string()
+        }
         PlannedAction::ApplyPatch { diff, dry_run } => json!({ "diff": diff, "dry_run": dry_run }).to_string(),
         PlannedAction::DeletePath { path } => json!({ "path": path }).to_string(),
-        PlannedAction::ListFiles { path } => json!({ "path": path }).to_string(),
+        PlannedAction::ListFiles {
+            path,
+            recursive,
+            file_glob,
+        } => {
+            let mut obj = serde_json::Map::new();
+            if let Some(p) = path {
+                obj.insert("path".to_string(), json!(p));
+            }
+            if *recursive {
+                obj.insert("recursive".to_string(), json!(true));
+            }
+            if let Some(g) = file_glob {
+                obj.insert("file_glob".to_string(), json!(g));
+            }
+            Value::Object(obj).to_string()
+        }
         PlannedAction::WriteMemory { kind, summary, content } => json!({
             "kind": kind,
             "summary": summary,
@@ -46,6 +94,34 @@ fn action_arguments_json_inner(action: &PlannedAction) -> String {
         })
         .to_string(),
         PlannedAction::RecallMemory { query } => json!({ "query": query }).to_string(),
+        PlannedAction::SearchFiles {
+            query,
+            path,
+            context_lines,
+            file_glob,
+            output_mode,
+        } => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("query".to_string(), json!(query));
+            if let Some(p) = path {
+                obj.insert("path".to_string(), json!(p));
+            }
+            if *context_lines > 0 {
+                obj.insert("context_lines".to_string(), json!(context_lines));
+            }
+            if let Some(g) = file_glob {
+                obj.insert("file_glob".to_string(), json!(g));
+            }
+            obj.insert(
+                "output_mode".to_string(),
+                json!(match output_mode {
+                    SearchOutputMode::Content => "content",
+                    SearchOutputMode::FilesWithMatches => "files_with_matches",
+                    SearchOutputMode::Count => "count",
+                }),
+            );
+            Value::Object(obj).to_string()
+        }
         PlannedAction::SearchKnowledge { query } => json!({ "query": query }).to_string(),
         PlannedAction::SearchSiyuanNotes { query } => json!({ "query": query }).to_string(),
         PlannedAction::ReadSiyuanNote { path } => json!({ "path": path }).to_string(),

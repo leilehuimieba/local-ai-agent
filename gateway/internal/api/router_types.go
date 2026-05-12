@@ -42,8 +42,10 @@ type MCPServerStatus struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
 	Type             string `json:"type"`
-	URL              string `json:"url"`
-	Enabled          bool   `json:"enabled"`
+	URL              string   `json:"url"`
+	Command          string   `json:"command,omitempty"`
+	Args             []string `json:"args,omitempty"`
+	Enabled          bool     `json:"enabled"`
 	Ready            bool   `json:"ready"`
 	ToolCount        int    `json:"tool_count"`
 	AllowedToolCount int    `json:"allowed_tool_count"`

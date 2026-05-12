@@ -48,7 +48,7 @@ const timeFilters: { id: TimeFilter; label: string }[] = [
   { id: "30days", label: "30天" },
 ]
 
-function formatDuration(ms: number): string {
+export function formatDuration(ms: number): string {
   if (ms === 0) return "进行中..."
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
@@ -56,7 +56,7 @@ function formatDuration(ms: number): string {
   return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`
 }
 
-function formatTimestamp(isoString: string): string {
+export function formatTimestamp(isoString: string): string {
   const date = new Date(isoString)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -263,7 +263,7 @@ export function LogsView() {
   )
 }
 
-function LogCard({
+export function LogCard({
   log,
   expanded,
   onToggle,
@@ -411,7 +411,7 @@ function LogCard({
         {expanded && (
           <div className="border-t border-border p-4 animate-in fade-in slide-in-from-top-2 duration-200">
             {loadingDetails ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-8" role="status">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : (

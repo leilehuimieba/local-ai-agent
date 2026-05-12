@@ -3,6 +3,9 @@ use crate::execution::ActionExecution;
 use crate::text::summarize_text;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -12,16 +15,61 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 const CACHE_REASON: &str = "命令执行结果依赖实时环境，不使用回答缓存。";
 const COMMAND_SINGLE_RESULT_BUDGET_CHARS: usize = 30_000;
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
+const MAX_TIMEOUT_SECS: u64 = 300;
 
-pub(crate) fn execute_command(request: &RunRequest, command: &str) -> ActionExecution {
-    let output = match run_command(request, command) {
+const DANGEROUS_COMMANDS: &[&str] = &[
+    "rm -rf /",
+    "rm -rf --no-preserve-root",
+    "del /f /s C:\\",
+    "rd /s /q C:\\",
+    "format ",
+    "mkfs.",
+    "dd if=",
+    "> /dev/sda",
+    "shutdown",
+    "reboot",
+    ":(){ :|:& };:",
+    "chmod 777 /",
+    "chmod -R 777 /",
+    "chown -R ",
+    "wget ",
+    "curl ",
+    "nc ",
+    "ncat ",
+    "netcat ",
+    "eval ",
+    "exec ",
+    "Invoke-Expression",
+    "iex ",
+    "Start-Process",
+];
+
+pub(crate) fn execute_command(
+    request: &RunRequest,
+    command: &str,
+    timeout_secs: Option<u32>,
+) -> ActionExecution {
+    if let Some(reason) = check_dangerous_command(command) {
+        return ActionExecution::bypass_fail(
+            format!("尝试执行命令：{}", command),
+            format!("命令被拒绝：{}", reason),
+            format!("命令执行被安全策略拒绝：{}", reason),
+            "检测到潜在危险命令，已阻断执行。".to_string(),
+            CACHE_REASON,
+        );
+    }
+    let timeout = timeout_secs
+        .map(|t| Duration::from_secs(u64::min(t as u64, MAX_TIMEOUT_SECS)))
+        .unwrap_or(Duration::from_secs(DEFAULT_TIMEOUT_SECS));
+    let output = match run_command_with_timeout(request, command, timeout) {
         Ok(output) => output,
         Err(error) => {
             return ActionExecution::bypass_fail(
                 format!("尝试执行命令：{}", command),
-                format!("命令启动失败：{}", error),
-                format!("命令没有成功启动：{}", error),
-                "命令进程未能启动，直接按运行错误收口。".to_string(),
+                format!("命令执行失败：{}", error),
+                format!("命令执行失败：{}", error),
+                "命令进程启动或运行失败，按错误收口。".to_string(),
                 CACHE_REASON,
             );
         }
@@ -33,17 +81,50 @@ pub(crate) fn execute_command(request: &RunRequest, command: &str) -> ActionExec
         final_answer,
         output.status.success(),
         None,
-        "直接执行用户给定命令，并基于 stdout 或 stderr 生成摘要。".to_string(),
+        "执行用户命令，含超时控制与危险命令阻断。".to_string(),
         CACHE_REASON,
     );
     with_command_output_contract(execution, detail_preview, raw_output)
 }
 
-fn run_command(request: &RunRequest, command: &str) -> Result<std::process::Output, std::io::Error> {
+fn check_dangerous_command(command: &str) -> Option<&'static str> {
+    let lower = command.to_lowercase();
+    for dangerous in DANGEROUS_COMMANDS {
+        if lower.contains(&dangerous.to_lowercase()) {
+            return Some("命令匹配危险模式，已拒绝执行。");
+        }
+    }
+    None
+}
+
+fn run_command_with_timeout(
+    request: &RunRequest,
+    command: &str,
+    timeout: Duration,
+) -> Result<std::process::Output, String> {
+    let cmd_str = command.to_string();
+    let root_path = request.workspace_ref.root_path.clone();
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let result = execute_command_blocking(&root_path, &cmd_str);
+        let _ = tx.send(result);
+    });
+    match rx.recv_timeout(timeout) {
+        Ok(result) => result.map_err(|e| e.to_string()),
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            Err(format!("命令执行超时（{} 秒），已终止。", timeout.as_secs()))
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            Err("命令执行线程意外退出。".to_string())
+        }
+    }
+}
+
+fn execute_command_blocking(root_path: &str, command: &str) -> Result<std::process::Output, std::io::Error> {
     if cfg!(target_os = "windows") {
         let wrapped_command = format!(
             "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8; chcp 65001 > $null; Set-Location -LiteralPath {}; {}",
-            ps_single_quote(&request.workspace_ref.root_path),
+            ps_single_quote(root_path),
             command
         );
         let mut cmd = Command::new("powershell");
@@ -60,16 +141,8 @@ fn run_command(request: &RunRequest, command: &str) -> Result<std::process::Outp
         Command::new("sh")
             .arg("-c")
             .arg(command)
-            .current_dir(command_workdir(request))
+            .current_dir(PathBuf::from(root_path))
             .output()
-    }
-}
-
-fn command_workdir(request: &RunRequest) -> PathBuf {
-    if cfg!(target_os = "windows") {
-        PathBuf::from(request.workspace_ref.root_path.replace('/', "\\"))
-    } else {
-        PathBuf::from(&request.workspace_ref.root_path)
     }
 }
 

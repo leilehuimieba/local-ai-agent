@@ -82,7 +82,7 @@ func (s *Store) List(workspaceID string) ([]Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	rows, err := db.Query(listMemorySQL, workspaceID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -90,7 +90,7 @@ func (s *Store) List(workspaceID string) ([]Entry, error) {
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	deleted := s.deletedIDs(workspaceID)
 	items := make([]Entry, 0, 16)
 	for rows.Next() {
@@ -113,7 +113,7 @@ func (s *Store) Delete(workspaceID string, memoryID string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	result, err := db.Exec(deleteMemorySQL, workspaceID, memoryID)
 	if err != nil {
 		if isMissingTable(err) {
@@ -136,7 +136,7 @@ func (s *Store) Save(entry Entry) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	item := normalizedEntry(entry)
 	duplicate, err := hasDuplicateMemory(db, item)
 	if err != nil || duplicate {
@@ -198,7 +198,7 @@ func (s *Store) deletedIDs(workspaceID string) map[string]bool {
 	if err != nil {
 		return map[string]bool{}
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	items := map[string]bool{}
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -219,7 +219,7 @@ func (s *Store) appendTombstone(workspaceID string, memoryID string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	payload, err := json.Marshal(tombstone{MemoryID: memoryID})
 	if err != nil {
 		return err
